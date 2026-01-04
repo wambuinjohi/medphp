@@ -244,6 +244,96 @@ export function useProducts(companyId?: string) {
 }
 
 /**
+ * Hook to create a new product
+ */
+export function useCreateProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (productData: any) => {
+      const { db } = useDatabase();
+      const result = await db.insert('products', productData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record to return full data
+      const { data } = await db.selectOne('products', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success('Product created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating product:', error);
+      const message = error?.message || 'Failed to create product';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to update a product
+ */
+export function useUpdateProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const { db } = useDatabase();
+      const result = await db.update('products', id, data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success('Product updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating product:', error);
+      const message = error?.message || 'Failed to update product';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to get units of measure
+ * @param companyId - Optional company ID for filtering
+ */
+export function useUnitsOfMeasure(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('units_of_measure', filter);
+}
+
+/**
+ * Hook to create a new unit of measure
+ */
+export function useCreateUnitOfMeasure() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (uomData: any) => {
+      const { db } = useDatabase();
+      const result = await db.insert('units_of_measure', uomData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record
+      const { data } = await db.selectOne('units_of_measure', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['units_of_measure'] });
+      toast.success('Unit of measure created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating unit of measure:', error);
+      const message = error?.message || 'Failed to create unit of measure';
+      toast.error(message);
+    },
+  });
+}
+
+/**
  * Hook to get quotations
  * @param companyId - Optional company ID for filtering
  */
