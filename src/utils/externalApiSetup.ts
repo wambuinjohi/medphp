@@ -135,14 +135,16 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
 export async function checkAdminExists(options: SetupOptions = {}): Promise<boolean> {
   const apiUrl =
     options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+  const email = options.email || 'admin@mail.com';
+  const password = options.password || 'Pass123';
 
   try {
     const response = await fetch(`${apiUrl}?action=login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'admin@biolegend.local',
-        password: 'Biolegend2024!Admin',
+        email,
+        password,
       }),
     });
 
