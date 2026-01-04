@@ -5,6 +5,8 @@
 
 interface SetupOptions {
   apiUrl?: string;
+  email?: string;
+  password?: string;
   onProgress?: (message: string) => void;
 }
 
