@@ -82,13 +82,15 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
     // Step 3: Verify login works
     onProgress?.('Verifying authentication...');
 
-    const loginResponse = await fetch(`${apiUrl}?action=login`, {
+    // The login endpoint also expects email and password as query parameters
+    const loginUrl = new URL(apiUrl);
+    loginUrl.searchParams.set('action', 'login');
+    loginUrl.searchParams.set('email', adminEmail);
+    loginUrl.searchParams.set('password', adminPassword);
+
+    const loginResponse = await fetch(loginUrl.toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: adminEmail,
-        password: adminPassword,
-      }),
     });
 
     if (!loginResponse.ok) {
