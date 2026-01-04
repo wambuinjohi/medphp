@@ -160,6 +160,7 @@ export async function createUserViaAPI(
 ): Promise<SetupResult> {
   const apiUrl =
     options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+  const { onProgress } = options;
 
   try {
     onProgress?.(`Creating user: ${email}`);
@@ -172,7 +173,7 @@ export async function createUserViaAPI(
       },
       body: JSON.stringify({
         email,
-        password, // Note: API should hash this
+        password,
         role: 'user',
       }),
     });
@@ -199,9 +200,6 @@ export async function createUserViaAPI(
       message: errorMessage,
     };
   }
-
-  // eslint-disable-next-line no-unreachable
-  const onProgress = options.onProgress;
 }
 
 /**
