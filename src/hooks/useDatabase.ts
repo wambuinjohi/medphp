@@ -307,6 +307,78 @@ export function useRemittanceAdvice(companyId?: string) {
 }
 
 /**
+ * Hook to create a new customer
+ */
+export function useCreateCustomer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (customerData: any) => {
+      const { insert } = useInsert('customers');
+      const result = await insert(customerData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record to return full data
+      const { db } = useDatabase();
+      const { data } = await db.selectOne('customers', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast.success('Customer created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating customer:', error);
+      const message = error?.message || 'Failed to create customer';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to get invoices for a specific customer
+ * @param customerId - Customer ID
+ */
+export function useCustomerInvoices(customerId?: string) {
+  const filter = customerId ? { customer_id: customerId } : undefined;
+  return useSelect('invoices', filter);
+}
+
+/**
+ * Hook to get payments for a specific customer
+ * @param customerId - Customer ID
+ */
+export function useCustomerPayments(customerId?: string) {
+  const filter = customerId ? { customer_id: customerId } : undefined;
+  return useSelect('payments', filter);
+}
+
+/**
+ * Hook to delete a customer
+ */
+export function useDeleteCustomer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (customerId: string) => {
+      const { db } = useDatabase();
+      const result = await db.delete('customers', customerId);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast.success('Customer deleted successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting customer:', error);
+      const message = error?.message || 'Failed to delete customer';
+      toast.error(message);
+    },
+  });
+}
+
+/**
  * Hook to update a customer
  */
 export function useUpdateCustomer() {
