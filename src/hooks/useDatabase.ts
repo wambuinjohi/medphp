@@ -489,6 +489,84 @@ export function useRemittanceAdvice(companyId?: string) {
 }
 
 /**
+ * Hook to create a new remittance advice
+ */
+export function useCreateRemittanceAdvice() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (remittanceData: any) => {
+      const { db } = useDatabase();
+      const result = await db.insert('remittance_advice', remittanceData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record
+      const { data } = await db.selectOne('remittance_advice', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['remittance_advice'] });
+      toast.success('Remittance advice created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating remittance advice:', error);
+      const message = error?.message || 'Failed to create remittance advice';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to update remittance advice
+ */
+export function useUpdateRemittanceAdvice() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const { db } = useDatabase();
+      const result = await db.update('remittance_advice', id, data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['remittance_advice'] });
+      toast.success('Remittance advice updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating remittance advice:', error);
+      const message = error?.message || 'Failed to update remittance advice';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to update remittance advice items
+ */
+export function useUpdateRemittanceAdviceItems() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const { db } = useDatabase();
+      const result = await db.update('remittance_advice_items', id, data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['remittance_advice_items'] });
+      toast.success('Remittance advice items updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating remittance advice items:', error);
+      const message = error?.message || 'Failed to update remittance advice items';
+      toast.error(message);
+    },
+  });
+}
+
+/**
  * Hook to create a new customer
  */
 export function useCreateCustomer() {
