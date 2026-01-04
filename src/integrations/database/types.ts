@@ -3,7 +3,7 @@
  * Defines interfaces for database operations that work with both Supabase and MySQL
  */
 
-export type DatabaseProvider = 'supabase' | 'mysql';
+export type DatabaseProvider = 'supabase' | 'mysql' | 'external-api';
 
 export interface DatabaseConfig {
   provider: DatabaseProvider;
@@ -18,14 +18,19 @@ export interface DatabaseConfig {
     database: string;
     port?: number;
   };
+  externalApi?: {
+    url: string;
+  };
 }
 
 export interface AuthContext {
-  userId: string;
-  email: string;
-  role: 'admin' | 'accountant' | 'stock_manager' | 'user' | 'super_admin';
-  companyId: string | null;
-  status: 'active' | 'inactive' | 'pending';
+  user_id?: string;
+  userId?: string;
+  email?: string;
+  role?: 'admin' | 'accountant' | 'stock_manager' | 'user' | 'super_admin';
+  companyId?: string | null;
+  status?: 'active' | 'inactive' | 'pending';
+  [key: string]: any; // Allow other properties for flexibility
 }
 
 export interface QueryResult<T> {

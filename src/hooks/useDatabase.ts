@@ -207,3 +207,187 @@ export function useDelete(table: string) {
 
   return { delete: delete_, isLoading, error };
 }
+
+// ============================================
+// Table-specific hooks
+// ============================================
+
+/**
+ * Hook to get companies
+ * @param companyId - Optional company ID for filtering
+ */
+export function useCompanies(companyId?: string) {
+  const filter = companyId ? { id: companyId } : undefined;
+  return useSelect('companies', filter);
+}
+
+/**
+ * Hook to get customers
+ * @param companyId - Optional company ID for filtering
+ */
+export function useCustomers(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('customers', filter);
+}
+
+/**
+ * Hook to get products/inventory items
+ * @param companyId - Optional company ID for filtering
+ */
+export function useProducts(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('products', filter);
+}
+
+/**
+ * Hook to get quotations
+ * @param companyId - Optional company ID for filtering
+ */
+export function useQuotations(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('quotations', filter);
+}
+
+/**
+ * Hook to get invoices
+ * @param companyId - Optional company ID for filtering
+ */
+export function useInvoices(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('invoices', filter);
+}
+
+/**
+ * Hook to get payments
+ * @param companyId - Optional company ID for filtering
+ */
+export function usePayments(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('payments', filter);
+}
+
+/**
+ * Hook to get delivery notes
+ * @param companyId - Optional company ID for filtering
+ */
+export function useDeliveryNotes(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('delivery_notes', filter);
+}
+
+/**
+ * Hook to get LPOs (Local Purchase Orders)
+ * @param companyId - Optional company ID for filtering
+ */
+export function useLPOs(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('lpos', filter);
+}
+
+/**
+ * Hook to get stock movements
+ * @param companyId - Optional company ID for filtering
+ */
+export function useStockMovements(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('stock_movements', filter);
+}
+
+/**
+ * Hook to get remittance advice
+ * @param companyId - Optional company ID for filtering
+ */
+export function useRemittanceAdvice(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('remittance_advice', filter);
+}
+
+/**
+ * Hook to update a customer
+ */
+export function useUpdateCustomer() {
+  return useUpdate('customers');
+}
+
+/**
+ * Hook to update a delivery note
+ */
+export function useUpdateDeliveryNote() {
+  return useUpdate('delivery_notes');
+}
+
+/**
+ * Hook to update an LPO
+ */
+export function useUpdateLPO() {
+  return useUpdate('lpos');
+}
+
+/**
+ * Hook to delete a payment
+ */
+export function useDeletePayment() {
+  return useDelete('payments');
+}
+
+/**
+ * Hook to delete an LPO
+ */
+export function useDeleteLPO() {
+  return useDelete('lpos');
+}
+
+/**
+ * Hook for dashboard statistics
+ * Returns aggregated dashboard data
+ */
+export function useDashboardStats() {
+  const [stats, setStats] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        setIsLoading(true);
+        // Dashboard stats aggregation would typically be done server-side
+        // For now, we'll just return null as it should be implemented based on business logic
+        setStats({});
+        setError(null);
+      } catch (err) {
+        setError(err as Error);
+        setStats(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchStats();
+  }, []);
+
+  return { data: stats, isLoading, error };
+}
+
+// ============================================
+// Types for export
+// ============================================
+
+export interface DeliveryNote {
+  id?: string;
+  [key: string]: any;
+}
+
+export interface Invoice {
+  id?: string;
+  [key: string]: any;
+}
+
+export interface Customer {
+  id?: string;
+  [key: string]: any;
+}
+
+export interface Company {
+  id?: string;
+  [key: string]: any;
+}

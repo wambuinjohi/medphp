@@ -12,6 +12,39 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     hmr: false,
+    proxy: {
+      // Proxy API requests to external backend
+      '/api/db': {
+        target: process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke',
+        changeOrigin: true,
+        rewrite: (path) => {
+          // Convert /api/db/* paths to API calls
+          const pathParts = path.replace('/api/db', '').split('/').filter(Boolean);
+          if (pathParts.length === 0) return '/?action=health';
+
+          // Handle different endpoint patterns
+          const [resource, action, id] = pathParts;
+          if (resource === 'health') return '/?action=health';
+          if (resource === 'auth-context') return `/?action=check_auth`;
+          if (resource === 'select' && action) return `/?action=read&table=${action}`;
+          if (resource === 'select-one' && action && id) return `/?action=read&table=${action}&where={"id":"${id}"}`;
+          if (resource === 'insert' && action) return `/?action=create&table=${action}`;
+          if (resource === 'insert-many' && action) return `/?action=create&table=${action}`;
+          if (resource === 'update' && action && id) return `/?action=update&table=${action}&where={"id":"${id}"}`;
+          if (resource === 'update-many' && action) return `/?action=update&table=${action}`;
+          if (resource === 'delete' && action && id) return `/?action=delete&table=${action}&where={"id":"${id}"}`;
+          if (resource === 'delete-many' && action) return `/?action=delete&table=${action}`;
+          if (resource === 'raw') return '/?action=raw';
+          if (resource === 'auth') {
+            if (action === 'can-read') return '/?action=check_auth';
+            if (action === 'can-write') return '/?action=check_auth';
+            if (action === 'can-delete') return '/?action=check_auth';
+          }
+
+          return path;
+        },
+      },
+    },
   },
   plugins: [
     react(),
