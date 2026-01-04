@@ -13,18 +13,15 @@ import './index.css'
 // Suppress ResizeObserver errors before any components render
 enableResizeObserverErrorSuppression();
 
-// Initialize database with the configured provider
+// Initialize database with external API provider only
 const initApp = async () => {
   try {
-    const provider = import.meta.env.VITE_DATABASE_PROVIDER || 'supabase';
-    console.log(`🔧 Initializing app with database provider: ${provider}`);
+    const provider = 'external-api'; // Force external-api provider - Supabase support removed
+    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+    console.log(`🔧 Initializing app with external API provider`);
+    console.log(`📍 Using external API: ${apiUrl}`);
 
-    if (provider === 'external-api') {
-      const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-      console.log(`📍 Using external API: ${apiUrl}`);
-    }
-
-    await initializeDatabase();
+    await initializeDatabase({ provider: 'external-api' as any });
     console.log('✅ Database initialization complete');
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
