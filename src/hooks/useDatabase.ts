@@ -1044,10 +1044,10 @@ export function useDashboardStats() {
  */
 export function useCreateCompany() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async (companyData: any) => {
-      const { db } = useDatabase();
       const result = await db.insert('companies', companyData);
       if (result.error) throw result.error;
 
@@ -1072,10 +1072,10 @@ export function useCreateCompany() {
  */
 export function useUpdateCompany() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { db } = useDatabase();
       const result = await db.update('companies', id, data);
       if (result.error) throw result.error;
       return result;
