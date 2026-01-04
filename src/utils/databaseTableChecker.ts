@@ -120,14 +120,13 @@ export async function createTestUser(email: string, password: string) {
       };
     }
 
-    // Call the admin-create-user edge function
+    // Call the user creation API endpoint
     const response = await fetch(
-      `${supabaseUrl}/functions/v1/admin-create-user`,
+      '/api/admin/users/create',
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseKey}`,
         },
         body: JSON.stringify({
           email,
