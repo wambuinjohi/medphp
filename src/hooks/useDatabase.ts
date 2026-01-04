@@ -1061,6 +1061,63 @@ export function useDashboardStats() {
 }
 
 // ============================================
+// Company Settings Hooks
+// ============================================
+
+/**
+ * Hook to create a new company
+ */
+export function useCreateCompany() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (companyData: any) => {
+      const { db } = useDatabase();
+      const result = await db.insert('companies', companyData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record
+      const { data } = await db.selectOne('companies', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      toast.success('Company created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating company:', error);
+      const message = error?.message || 'Failed to create company';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to update a company
+ */
+export function useUpdateCompany() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const { db } = useDatabase();
+      const result = await db.update('companies', id, data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      toast.success('Company updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating company:', error);
+      const message = error?.message || 'Failed to update company';
+      toast.error(message);
+    },
+  });
+}
+
+// ============================================
 // Tax Settings Hook
 // ============================================
 
@@ -1071,6 +1128,84 @@ export function useDashboardStats() {
  */
 export function useTaxSettings(companyId?: string) {
   return useForceTaxSettings(companyId);
+}
+
+/**
+ * Hook to create a new tax setting
+ */
+export function useCreateTaxSetting() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (taxSettingData: any) => {
+      const { db } = useDatabase();
+      const result = await db.insert('tax_settings', taxSettingData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record
+      const { data } = await db.selectOne('tax_settings', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tax_settings'] });
+      toast.success('Tax setting created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating tax setting:', error);
+      const message = error?.message || 'Failed to create tax setting';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to update a tax setting
+ */
+export function useUpdateTaxSetting() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const { db } = useDatabase();
+      const result = await db.update('tax_settings', id, data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tax_settings'] });
+      toast.success('Tax setting updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating tax setting:', error);
+      const message = error?.message || 'Failed to update tax setting';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to delete a tax setting
+ */
+export function useDeleteTaxSetting() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (taxSettingId: string) => {
+      const { db } = useDatabase();
+      const result = await db.delete('tax_settings', taxSettingId);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tax_settings'] });
+      toast.success('Tax setting deleted successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting tax setting:', error);
+      const message = error?.message || 'Failed to delete tax setting';
+      toast.error(message);
+    },
+  });
 }
 
 // ============================================
