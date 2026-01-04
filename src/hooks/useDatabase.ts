@@ -248,10 +248,10 @@ export function useProducts(companyId?: string) {
  */
 export function useCreateProduct() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async (productData: any) => {
-      const { db } = useDatabase();
       const result = await db.insert('products', productData);
       if (result.error) throw result.error;
 
@@ -276,10 +276,10 @@ export function useCreateProduct() {
  */
 export function useUpdateProduct() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { db } = useDatabase();
       const result = await db.update('products', id, data);
       if (result.error) throw result.error;
       return result;
@@ -310,10 +310,10 @@ export function useUnitsOfMeasure(companyId?: string) {
  */
 export function useCreateUnitOfMeasure() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async (uomData: any) => {
-      const { db } = useDatabase();
       const result = await db.insert('units_of_measure', uomData);
       if (result.error) throw result.error;
 
