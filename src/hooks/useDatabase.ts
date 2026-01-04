@@ -1110,10 +1110,10 @@ export function useTaxSettings(companyId?: string) {
  */
 export function useCreateTaxSetting() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async (taxSettingData: any) => {
-      const { db } = useDatabase();
       const result = await db.insert('tax_settings', taxSettingData);
       if (result.error) throw result.error;
 
@@ -1138,10 +1138,10 @@ export function useCreateTaxSetting() {
  */
 export function useUpdateTaxSetting() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { db } = useDatabase();
       const result = await db.update('tax_settings', id, data);
       if (result.error) throw result.error;
       return result;
@@ -1163,10 +1163,10 @@ export function useUpdateTaxSetting() {
  */
 export function useDeleteTaxSetting() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async (taxSettingId: string) => {
-      const { db } = useDatabase();
       const result = await db.delete('tax_settings', taxSettingId);
       if (result.error) throw result.error;
       return result;
