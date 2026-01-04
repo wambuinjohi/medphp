@@ -372,6 +372,72 @@ export function useDashboardStats() {
 }
 
 // ============================================
+// Tax Settings Hook
+// ============================================
+
+/**
+ * Hook to get tax settings for a company
+ * @param companyId - Company ID
+ * @returns Tax settings data, loading state, and error
+ */
+export function useTaxSettings(companyId?: string) {
+  return useForceTaxSettings(companyId);
+}
+
+// ============================================
+// Document Number Generation Hook
+// ============================================
+
+/**
+ * Hook to generate document numbers (invoice, proforma, credit note, etc.)
+ * @returns Mutation function that takes { companyId, type } and generates appropriate number
+ */
+export function useGenerateDocumentNumber() {
+  return useMutation({
+    mutationFn: async ({
+      companyId,
+      type = 'invoice'
+    }: {
+      companyId: string;
+      type?: 'invoice' | 'proforma' | 'credit_note' | 'lpo' | 'delivery_note' | 'quotation';
+    }) => {
+      try {
+        // Map document type to the appropriate RPC function
+        const rpcFunctionMap: Record<string, string> = {
+          invoice: 'generate_invoice_number',
+          proforma: 'generate_proforma_number',
+          credit_note: 'generate_credit_note_number',
+          lpo: 'generate_lpo_number',
+          delivery_note: 'generate_delivery_note_number',
+          quotation: 'generate_quotation_number',
+        };
+
+        const rpcFunction = rpcFunctionMap[type] || 'generate_invoice_number';
+
+        const { data, error } = await supabase.rpc(rpcFunction, {
+          company_uuid: companyId
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        return data as string;
+      } catch (error) {
+        // Fallback to client-side generation
+        const timestamp = Date.now().toString().slice(-6);
+        const year = new Date().getFullYear();
+        const typePrefix = type.toUpperCase().substring(0, 2);
+        const fallbackNumber = `${typePrefix}-${year}-${timestamp}`;
+
+        console.warn(`Document number generation (${type}) failed, using fallback:`, fallbackNumber);
+        return fallbackNumber;
+      }
+    },
+  });
+}
+
+// ============================================
 // Types for export
 // ============================================
 
