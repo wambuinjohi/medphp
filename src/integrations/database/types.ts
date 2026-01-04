@@ -3,7 +3,7 @@
  * Defines interfaces for database operations that work with both Supabase and MySQL
  */
 
-export type DatabaseProvider = 'supabase' | 'mysql';
+export type DatabaseProvider = 'supabase' | 'mysql' | 'external-api';
 
 export interface DatabaseConfig {
   provider: DatabaseProvider;
