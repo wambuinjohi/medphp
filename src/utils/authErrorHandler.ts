@@ -113,21 +113,36 @@ export function analyzeAuthError(error: AuthError | Error): AuthErrorInfo {
 export function handleAuthError(error: AuthError | Error): AuthErrorInfo {
   const errorInfo = analyzeAuthError(error);
 
-  // Log for debugging (stringify original error for clarity)
+  // Log for debugging with proper serialization
   try {
     const original = parseErrorMessage(error);
-    console.error('Authentication error:', {
+    // Use JSON.stringify to safely serialize the log object
+    const logObject = {
       type: errorInfo.type,
       message: errorInfo.message,
-      originalError: original
-    });
+      originalError: original,
+      timestamp: new Date().toISOString()
+    };
+    console.error('Authentication error:', JSON.stringify(logObject, null, 2));
   } catch (logErr) {
-    console.error('Authentication error:', {
-      type: errorInfo.type,
-      message: errorInfo.message,
-      originalError: String(error),
-      parseError: logErr instanceof Error ? logErr.message : 'Unknown parse error'
-    });
+    // Fallback logging with safe error serialization
+    try {
+      const fallbackLog = {
+        type: errorInfo.type,
+        message: errorInfo.message,
+        originalError: String(error),
+        error: error instanceof Error ? error.message : 'Unknown error',
+        parseError: logErr instanceof Error ? logErr.message : 'Unknown parse error',
+        timestamp: new Date().toISOString()
+      };
+      console.error('Authentication error:', JSON.stringify(fallbackLog, null, 2));
+    } catch {
+      // Last resort logging
+      console.error('Authentication error occurred - unable to fully serialize:', {
+        type: errorInfo.type,
+        message: errorInfo.message
+      });
+    }
   }
 
   // Show appropriate toast
