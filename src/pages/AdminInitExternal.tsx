@@ -271,7 +271,7 @@ export default function AdminInitExternal() {
                         <button
                           onClick={() =>
                             copyToClipboard(
-                              `curl -X POST "${apiUrl}?action=setup&email=${encodeURIComponent(customEmail)}&password=${encodeURIComponent(customPassword)}" -H "Content-Type: application/json"`
+                              `curl -X POST "${apiUrl}" -H "Content-Type: application/x-www-form-urlencoded" -d "action=setup&email=${encodeURIComponent(customEmail)}&password=${encodeURIComponent(customPassword)}"`
                             )
                           }
                           className="text-gray-400 hover:text-gray-200 transition flex-shrink-0"
