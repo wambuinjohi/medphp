@@ -1,12 +1,13 @@
 /**
  * Database Manager
  * Singleton that manages database connection and adapter selection
- * Supports both Supabase and MySQL providers
+ * Supports Supabase, MySQL, and External API providers
  */
 
 import type { IDatabase, DatabaseConfig, DatabaseProvider } from './types';
 import { SupabaseAdapter } from './supabase-adapter';
 import { MySQLAdapter } from './mysql-adapter';
+import { ExternalAPIAdapter } from './external-api-adapter';
 
 class DatabaseManager {
   private adapter: IDatabase | null = null;
