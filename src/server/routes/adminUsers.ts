@@ -2,17 +2,17 @@ import { adminCreateUser } from '../lib/adminCreateUser';
 import { adminResetPassword } from '../lib/adminResetPassword';
 import { fixProfileRls } from '../lib/fixProfileRls';
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+const API_AUTH_TOKEN = process.env.API_AUTH_TOKEN || '';
 
 /**
  * API Route Handler for creating users
- * Replaces the admin-create-user edge function
- * 
+ * Calls the external API (med.wayrus.co.ke/api.php)
+ *
  * Usage:
  * POST /api/admin/users/create
  * Content-Type: application/json
- * 
+ *
  * Body:
  * {
  *   "email": "user@example.com",
@@ -40,8 +40,8 @@ export async function handleCreateUser(body: any) {
         position: body.position,
         invited_by: body.invited_by
       },
-      SUPABASE_URL,
-      SUPABASE_SERVICE_KEY
+      EXTERNAL_API_URL,
+      API_AUTH_TOKEN
     );
 
     return {
