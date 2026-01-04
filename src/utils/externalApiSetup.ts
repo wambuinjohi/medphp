@@ -53,13 +53,19 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
     onProgress?.('Initializing database tables...');
     onProgress?.(`Creating admin user: ${adminEmail}`);
 
-    const setupResponse = await fetch(`${apiUrl}?action=setup`, {
+    const setupUrl = new URL(apiUrl);
+    setupUrl.searchParams.set('action', 'setup');
+    setupUrl.searchParams.set('email', adminEmail);
+    setupUrl.searchParams.set('password', adminPassword);
+
+    const setupResponse = await fetch(setupUrl.toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: adminEmail,
         password: adminPassword,
       }),
+      credentials: 'include',
     });
 
     if (!setupResponse.ok) {
