@@ -28,7 +28,17 @@ export function analyzeAuthError(error: AuthError | Error): AuthErrorInfo {
       } else if ('msg' in error && typeof (error as any).msg === 'string') {
         errorMessage = (error as any).msg;
       } else {
-        errorMessage = 'An authentication error occurred';
+        // Try to serialize the object to extract any useful information
+        try {
+          const serialized = JSON.stringify(error, null, 2);
+          if (serialized && serialized !== '{}' && serialized !== 'null') {
+            errorMessage = serialized;
+          } else {
+            errorMessage = 'An authentication error occurred';
+          }
+        } catch {
+          errorMessage = 'An authentication error occurred';
+        }
       }
     } else if (typeof error === 'string') {
       errorMessage = error;
