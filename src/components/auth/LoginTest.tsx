@@ -96,9 +96,9 @@ export function LoginTest() {
           <Alert>
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>✅ Supabase Connected</strong><br />
-              URL: https://mfhcbgnkxpifbhrtmgbv.supabase.co<br />
-              Key: ...{process.env.VITE_SUPABASE_ANON_KEY?.slice(-10) || 'configured'}
+              <strong>✅ External API Connected</strong><br />
+              URL: {import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php'}<br />
+              Provider: External API
             </AlertDescription>
           </Alert>
 
