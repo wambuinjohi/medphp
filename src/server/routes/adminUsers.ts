@@ -62,12 +62,12 @@ export async function handleCreateUser(body: any) {
 
 /**
  * API Route Handler for password reset
- * Replaces the admin-reset-password edge function
- * 
+ * Calls the external API (med.wayrus.co.ke/api.php)
+ *
  * Usage:
  * POST /api/admin/users/reset-password
  * Content-Type: application/json
- * 
+ *
  * Body:
  * {
  *   "email": "user@example.com",
@@ -85,8 +85,8 @@ export async function handleResetPassword(body: any) {
         admin_id: body.admin_id,
         redirectUrl: body.redirectUrl
       },
-      SUPABASE_URL,
-      SUPABASE_SERVICE_KEY
+      EXTERNAL_API_URL,
+      API_AUTH_TOKEN
     );
 
     return {
