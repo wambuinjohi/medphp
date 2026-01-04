@@ -70,10 +70,28 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
       );
     }
 
-    const setupData = await setupResponse.json();
+    let setupData: any;
+    try {
+      setupData = await setupResponse.json();
+    } catch (e) {
+      const text = await setupResponse.text();
+      throw new Error(`Setup endpoint returned invalid JSON: ${text.substring(0, 200)}`);
+    }
 
     if (!setupData.status || setupData.status !== 'success') {
-      throw new Error(setupData.message || 'Setup endpoint returned error');
+      // Provide more detailed error information
+      const errorMessage = setupData.message || 'Setup endpoint returned error';
+
+      // Check for common database errors
+      if (errorMessage.includes('table') && errorMessage.includes('doesn\'t exist')) {
+        throw new Error(`Database table issue: ${errorMessage} - You may need to manually create the users table or check database configuration.`);
+      }
+
+      if (errorMessage.includes('Connection') || errorMessage.includes('connection')) {
+        throw new Error(`Database connection issue: ${errorMessage} - Check that the database host, user, and password are correct.`);
+      }
+
+      throw new Error(errorMessage);
     }
 
     onProgress?.('✓ Admin user created successfully');
