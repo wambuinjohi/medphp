@@ -34,6 +34,7 @@ import SetupAndTest from "./components/SetupAndTest";
 import AuthTest from "./components/AuthTest";
 import DatabaseDebug from "./pages/DatabaseDebug";
 import AdminInit from "./pages/AdminInit";
+import AdminInitExternal from "./pages/AdminInitExternal";
 
 const App = () => {
 
@@ -49,6 +50,9 @@ const App = () => {
       <Routes>
         {/* Admin initialization route - Accessible without authentication */}
         <Route path="/admin-init" element={<AdminInit />} />
+
+        {/* External API admin initialization route */}
+        <Route path="/admin-init-external" element={<AdminInitExternal />} />
 
         {/* Debug routes - Accessible without authentication */}
         <Route path="/debug/database" element={<DatabaseDebug />} />

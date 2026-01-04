@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "admin:create-user": "ts-node scripts/admin/create-user.ts",
     "admin:reset-password": "ts-node scripts/admin/reset-password.ts",
-    "admin:fix-rls": "ts-node scripts/admin/fix-rls.ts"
+    "admin:fix-rls": "ts-node scripts/admin/fix-rls.ts",
+    "setup:external-api": "node scripts/setup-external-api.js",
+    "setup:external-api:dry": "node scripts/setup-external-api.js --dry-run"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

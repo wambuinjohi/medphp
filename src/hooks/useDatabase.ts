@@ -244,6 +244,96 @@ export function useProducts(companyId?: string) {
 }
 
 /**
+ * Hook to create a new product
+ */
+export function useCreateProduct() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (productData: any) => {
+      const result = await db.insert('products', productData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record to return full data
+      const { data } = await db.selectOne('products', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success('Product created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating product:', error);
+      const message = error?.message || 'Failed to create product';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to update a product
+ */
+export function useUpdateProduct() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const result = await db.update('products', id, data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success('Product updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating product:', error);
+      const message = error?.message || 'Failed to update product';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to get units of measure
+ * @param companyId - Optional company ID for filtering
+ */
+export function useUnitsOfMeasure(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('units_of_measure', filter);
+}
+
+/**
+ * Hook to create a new unit of measure
+ */
+export function useCreateUnitOfMeasure() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (uomData: any) => {
+      const result = await db.insert('units_of_measure', uomData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record
+      const { data } = await db.selectOne('units_of_measure', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['units_of_measure'] });
+      toast.success('Unit of measure created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating unit of measure:', error);
+      const message = error?.message || 'Failed to create unit of measure';
+      toast.error(message);
+    },
+  });
+}
+
+/**
  * Hook to get quotations
  * @param companyId - Optional company ID for filtering
  */
@@ -289,6 +379,74 @@ export function useLPOs(companyId?: string) {
 }
 
 /**
+ * Hook to create a new LPO
+ */
+export function useCreateLPO() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (lpoData: any) => {
+      const result = await db.insert('lpos', lpoData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record
+      const { data } = await db.selectOne('lpos', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lpos'] });
+      toast.success('LPO created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating LPO:', error);
+      const message = error?.message || 'Failed to create LPO';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to generate an LPO number
+ */
+export function useGenerateLPONumber() {
+  return useGenerateDocumentNumber();
+}
+
+/**
+ * Hook to get all suppliers and customers
+ */
+export function useAllSuppliersAndCustomers(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('customers', filter);
+}
+
+/**
+ * Hook to update an LPO with items
+ */
+export function useUpdateLPOWithItems() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const result = await db.update('lpos', id, data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lpos'] });
+      toast.success('LPO updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating LPO:', error);
+      const message = error?.message || 'Failed to update LPO';
+      toast.error(message);
+    },
+  });
+}
+
+/**
  * Hook to get stock movements
  * @param companyId - Optional company ID for filtering
  */
@@ -304,6 +462,155 @@ export function useStockMovements(companyId?: string) {
 export function useRemittanceAdvice(companyId?: string) {
   const filter = companyId ? { company_id: companyId } : undefined;
   return useSelect('remittance_advice', filter);
+}
+
+/**
+ * Hook to create a new remittance advice
+ */
+export function useCreateRemittanceAdvice() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (remittanceData: any) => {
+      const result = await db.insert('remittance_advice', remittanceData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record
+      const { data } = await db.selectOne('remittance_advice', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['remittance_advice'] });
+      toast.success('Remittance advice created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating remittance advice:', error);
+      const message = error?.message || 'Failed to create remittance advice';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to update remittance advice
+ */
+export function useUpdateRemittanceAdvice() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const result = await db.update('remittance_advice', id, data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['remittance_advice'] });
+      toast.success('Remittance advice updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating remittance advice:', error);
+      const message = error?.message || 'Failed to update remittance advice';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to update remittance advice items
+ */
+export function useUpdateRemittanceAdviceItems() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const result = await db.update('remittance_advice_items', id, data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['remittance_advice_items'] });
+      toast.success('Remittance advice items updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating remittance advice items:', error);
+      const message = error?.message || 'Failed to update remittance advice items';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to create a new customer
+ */
+export function useCreateCustomer() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (customerData: any) => {
+      const result = await db.insert('customers', customerData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record to return full data
+      const { data } = await db.selectOne('customers', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast.success('Customer created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating customer:', error);
+      const message = error?.message || 'Failed to create customer';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to get invoices for a specific customer
+ * @param customerId - Customer ID
+ */
+export function useCustomerInvoices(customerId?: string) {
+  const filter = customerId ? { customer_id: customerId } : undefined;
+  return useSelect('invoices', filter);
+}
+
+/**
+ * Hook to get payments for a specific customer
+ * @param customerId - Customer ID
+ */
+export function useCustomerPayments(customerId?: string) {
+  const filter = customerId ? { customer_id: customerId } : undefined;
+  return useSelect('payments', filter);
+}
+
+/**
+ * Hook to delete a customer
+ */
+export function useDeleteCustomer() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (customerId: string) => {
+      const result = await db.delete('customers', customerId);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast.success('Customer deleted successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting customer:', error);
+      const message = error?.message || 'Failed to delete customer';
+      toast.error(message);
+    },
+  });
 }
 
 /**
@@ -729,6 +1036,63 @@ export function useDashboardStats() {
 }
 
 // ============================================
+// Company Settings Hooks
+// ============================================
+
+/**
+ * Hook to create a new company
+ */
+export function useCreateCompany() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (companyData: any) => {
+      const result = await db.insert('companies', companyData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record
+      const { data } = await db.selectOne('companies', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      toast.success('Company created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating company:', error);
+      const message = error?.message || 'Failed to create company';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to update a company
+ */
+export function useUpdateCompany() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const result = await db.update('companies', id, data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      toast.success('Company updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating company:', error);
+      const message = error?.message || 'Failed to update company';
+      toast.error(message);
+    },
+  });
+}
+
+// ============================================
 // Tax Settings Hook
 // ============================================
 
@@ -739,6 +1103,84 @@ export function useDashboardStats() {
  */
 export function useTaxSettings(companyId?: string) {
   return useForceTaxSettings(companyId);
+}
+
+/**
+ * Hook to create a new tax setting
+ */
+export function useCreateTaxSetting() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (taxSettingData: any) => {
+      const result = await db.insert('tax_settings', taxSettingData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record
+      const { data } = await db.selectOne('tax_settings', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tax_settings'] });
+      toast.success('Tax setting created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating tax setting:', error);
+      const message = error?.message || 'Failed to create tax setting';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to update a tax setting
+ */
+export function useUpdateTaxSetting() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const result = await db.update('tax_settings', id, data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tax_settings'] });
+      toast.success('Tax setting updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating tax setting:', error);
+      const message = error?.message || 'Failed to update tax setting';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to delete a tax setting
+ */
+export function useDeleteTaxSetting() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (taxSettingId: string) => {
+      const result = await db.delete('tax_settings', taxSettingId);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tax_settings'] });
+      toast.success('Tax setting deleted successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting tax setting:', error);
+      const message = error?.message || 'Failed to delete tax setting';
+      toast.error(message);
+    },
+  });
 }
 
 // ============================================
