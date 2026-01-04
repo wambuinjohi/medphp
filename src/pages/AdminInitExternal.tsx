@@ -103,17 +103,23 @@ export default function AdminInitExternal() {
           duration: 5000,
         });
       } else {
+        // Show error with troubleshooting info
+        const errorLines = result.message.split('\n');
         toast.error('Initialization failed', {
-          description: result.message,
-          duration: 5000,
+          description: errorLines[0],
+          duration: 8000,
         });
+
+        // Log full error for user to see
+        setInitProgress(prev => [...prev, '❌ ERROR: ' + result.message]);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast.error('Initialization error', {
-        description: errorMessage,
-        duration: 5000,
+        description: errorMessage.split('\n')[0],
+        duration: 8000,
       });
+      setInitProgress(prev => [...prev, '❌ ERROR: ' + errorMessage]);
       console.error('Init error:', error);
     } finally {
       setInitializing(false);
