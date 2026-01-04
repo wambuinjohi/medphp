@@ -1,8 +1,11 @@
 /**
- * MySQL Database Adapter
- * Implements IDatabase interface for MySQL backend
- * NOTE: This adapter is for backend/server-side use only
- * For client-side use, communicate with MySQL via REST API endpoints
+ * MySQL Database Adapter (Client-Side)
+ * Implements IDatabase interface for MySQL backend via REST API
+ *
+ * NOTE: This adapter communicates with MySQL through backend API endpoints.
+ * The server-side MySQL connection and authorization layers are in:
+ * - src/server/db/mysql/connection.ts (backend only)
+ * - src/server/db/mysql/authorization.ts (backend only)
  */
 
 import type {
@@ -14,24 +17,6 @@ import type {
   UpdateResult,
   DeleteResult,
 } from './types';
-
-// These imports are for server-side use only
-// @ts-ignore - Server-side imports
-import {
-  query,
-  queryOne,
-  queryAll,
-  insert,
-  execute,
-  transaction,
-} from '@/server/db/mysql/connection';
-// @ts-ignore - Server-side imports
-import {
-  getAuthContext,
-  canRead as authCanRead,
-  canWrite as authCanWrite,
-  canDelete as authCanDelete,
-} from '@/server/db/mysql/authorization';
 
 export class MySQLAdapter implements IDatabase {
   async getAuthContext(userId: string): Promise<AuthContext | null> {
