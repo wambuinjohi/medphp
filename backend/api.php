@@ -340,8 +340,8 @@ try {
 
     // Authentication
     if ($action === "login") {
-        $email = $_POST['email'] ?? null;
-        $password = $_POST['password'] ?? null;
+        $email = $_POST['email'] ?? ($json_body['email'] ?? null);
+        $password = $_POST['password'] ?? ($json_body['password'] ?? null);
 
         if (!$email || !$password) {
             throw new Exception("Missing email or password");
