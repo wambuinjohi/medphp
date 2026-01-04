@@ -266,12 +266,12 @@ export default function AdminInitExternal() {
                     <div className="bg-gray-900 rounded p-4 font-mono text-xs text-green-400 overflow-x-auto">
                       <div className="flex items-start justify-between gap-4">
                         <span className="flex-1 break-all">
-                          {`curl -X POST "${apiUrl}?action=setup" -H "Content-Type: application/json" -d '{"email":"${customEmail}","password":"${customPassword}"}'`}
+                          {`curl -X POST "${apiUrl}?action=setup&email=${encodeURIComponent(customEmail)}&password=${encodeURIComponent(customPassword)}" -H "Content-Type: application/json"`}
                         </span>
                         <button
                           onClick={() =>
                             copyToClipboard(
-                              `curl -X POST "${apiUrl}?action=setup" -H "Content-Type: application/json" -d '{"email":"${customEmail}","password":"${customPassword}"}'`
+                              `curl -X POST "${apiUrl}?action=setup&email=${encodeURIComponent(customEmail)}&password=${encodeURIComponent(customPassword)}" -H "Content-Type: application/json"`
                             )
                           }
                           className="text-gray-400 hover:text-gray-200 transition flex-shrink-0"
