@@ -342,6 +342,240 @@ export function useDeleteLPO() {
 }
 
 /**
+ * Hook to get payment methods
+ * @param companyId - Optional company ID for filtering
+ */
+export function usePaymentMethods(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('payment_methods', filter);
+}
+
+/**
+ * Hook to create a new payment method
+ */
+export function useCreatePaymentMethod() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (paymentMethod: {
+      code: string;
+      name: string;
+      description?: string;
+      company_id?: string;
+      icon_name?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .insert(paymentMethod)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
+      toast.success('Payment method created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating payment method:', error);
+      toast.error('Failed to create payment method. Please try again.');
+    },
+  });
+}
+
+/**
+ * Hook to create a payment
+ * Attempts to use server-side RPC if available, falls back to client-side insertion
+ */
+export function useCreatePayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (paymentRecord: {
+      company_id: string;
+      customer_id?: string | null;
+      invoice_id: string;
+      payment_number: string;
+      payment_date: string;
+      amount: number;
+      payment_method: string;
+      reference_number?: string;
+      notes?: string;
+    }) => {
+      try {
+        // Try to use the server-side RPC function for atomic payment + allocation
+        const { data, error } = await supabase.rpc('record_payment_with_allocation', {
+          p_company_id: paymentRecord.company_id,
+          p_customer_id: paymentRecord.customer_id,
+          p_invoice_id: paymentRecord.invoice_id,
+          p_payment_number: paymentRecord.payment_number,
+          p_payment_date: paymentRecord.payment_date,
+          p_amount: paymentRecord.amount,
+          p_payment_method: paymentRecord.payment_method,
+          p_reference_number: paymentRecord.reference_number || paymentRecord.payment_number,
+          p_notes: paymentRecord.notes || null
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        return {
+          success: true,
+          fallback_used: false,
+          allocation_failed: false,
+          data
+        };
+      } catch (rpcError: any) {
+        console.warn('RPC function record_payment_with_allocation not available, using fallback:', rpcError?.message);
+
+        // Fallback: Insert payment directly
+        try {
+          const { data: paymentData, error: insertError } = await supabase
+            .from('payments')
+            .insert(paymentRecord)
+            .select()
+            .single();
+
+          if (insertError) {
+            throw insertError;
+          }
+
+          // Try to create payment allocation
+          let allocation_failed = false;
+          try {
+            // Check if payment_allocations table exists
+            const { error: allocError } = await supabase
+              .from('payment_allocations')
+              .insert({
+                payment_id: paymentData.id,
+                invoice_id: paymentRecord.invoice_id,
+                allocated_amount: paymentRecord.amount,
+                allocation_date: paymentRecord.payment_date,
+              })
+              .select()
+              .single();
+
+            if (allocError) {
+              console.warn('Failed to create payment allocation:', allocError?.message);
+              allocation_failed = true;
+            }
+          } catch (allocError: any) {
+            console.warn('Payment allocation failed (table might not exist):', allocError?.message);
+            allocation_failed = true;
+          }
+
+          return {
+            success: true,
+            fallback_used: true,
+            allocation_failed,
+            data: paymentData
+          };
+        } catch (fallbackError: any) {
+          throw fallbackError;
+        }
+      }
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['paymentAllocations'] });
+
+      if (!result.fallback_used) {
+        toast.success('Payment recorded successfully!');
+      }
+    },
+    onError: (error: any) => {
+      console.error('Error creating payment:', error);
+      const errorMessage = error?.message || 'Failed to record payment. Please try again.';
+      toast.error(errorMessage);
+    },
+  });
+}
+
+/**
+ * Hook to create a credit note for overpayments
+ */
+export function useCreateOverpaymentCreditNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (overpaymentData: {
+      invoice_id: string;
+      company_id: string;
+      customer_id?: string | null;
+      overpayment_amount: number;
+      payment_date: string;
+      payment_reference: string;
+    }) => {
+      try {
+        // Generate credit note number
+        const { data: creditNoteNumber, error: numberError } = await supabase.rpc(
+          'generate_credit_note_number',
+          { company_uuid: overpaymentData.company_id }
+        );
+
+        if (numberError) {
+          console.warn('Failed to generate credit note number via RPC, using fallback');
+          // Fallback generation
+          const timestamp = Date.now().toString().slice(-6);
+          const year = new Date().getFullYear();
+          var finalCreditNoteNumber = `CN-${year}-${timestamp}`;
+        } else {
+          var finalCreditNoteNumber = creditNoteNumber as string;
+        }
+
+        // Create the credit note
+        const creditNoteRecord = {
+          company_id: overpaymentData.company_id,
+          customer_id: overpaymentData.customer_id || null,
+          invoice_id: overpaymentData.invoice_id,
+          credit_note_number: finalCreditNoteNumber,
+          credit_note_date: overpaymentData.payment_date,
+          status: 'draft' as const,
+          reason: 'Overpayment from payment',
+          subtotal: overpaymentData.overpayment_amount,
+          tax_amount: 0,
+          total_amount: overpaymentData.overpayment_amount,
+          applied_amount: 0,
+          balance: overpaymentData.overpayment_amount,
+          affects_inventory: false,
+          notes: `Overpayment credit note for payment reference: ${overpaymentData.payment_reference}`
+        };
+
+        const { data: creditNote, error: createError } = await supabase
+          .from('credit_notes')
+          .insert(creditNoteRecord)
+          .select()
+          .single();
+
+        if (createError) {
+          throw createError;
+        }
+
+        return {
+          success: true,
+          credit_note_number: finalCreditNoteNumber,
+          credit_note_id: creditNote.id
+        };
+      } catch (error: any) {
+        console.error('Error creating overpayment credit note:', error);
+        throw error;
+      }
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
+      queryClient.invalidateQueries({ queryKey: ['customerCreditNotes'] });
+    },
+    onError: (error: any) => {
+      console.error('Error creating overpayment credit note:', error);
+      throw error;
+    },
+  });
+}
+
+/**
  * Hook for dashboard statistics
  * Returns aggregated dashboard data
  */
