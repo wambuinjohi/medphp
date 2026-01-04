@@ -109,7 +109,7 @@ export function analyzeAuthError(error: Error | any): AuthErrorInfo {
   };
 }
 
-export function handleAuthError(error: AuthError | Error): AuthErrorInfo {
+export function handleAuthError(error: Error | any): AuthErrorInfo {
   const errorInfo = analyzeAuthError(error);
 
   // Log for debugging with proper serialization
