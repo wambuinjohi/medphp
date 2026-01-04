@@ -24,11 +24,13 @@ interface SetupResult {
 export async function initializeExternalAPI(options: SetupOptions = {}): Promise<SetupResult> {
   const {
     apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php',
+    email,
+    password,
     onProgress,
   } = options;
 
-  const adminEmail = 'admin@biolegend.local';
-  const adminPassword = 'Biolegend2024!Admin';
+  const adminEmail = email || 'admin@mail.com';
+  const adminPassword = password || 'Pass123';
 
   try {
     // Step 1: Test API connectivity
