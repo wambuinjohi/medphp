@@ -214,72 +214,92 @@ export function useDelete(table: string) {
 
 /**
  * Hook to get companies
+ * @param companyId - Optional company ID for filtering
  */
-export function useCompanies() {
-  return useSelect('companies');
+export function useCompanies(companyId?: string) {
+  const filter = companyId ? { id: companyId } : undefined;
+  return useSelect('companies', filter);
 }
 
 /**
  * Hook to get customers
+ * @param companyId - Optional company ID for filtering
  */
-export function useCustomers() {
-  return useSelect('customers');
+export function useCustomers(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('customers', filter);
 }
 
 /**
  * Hook to get products/inventory items
+ * @param companyId - Optional company ID for filtering
  */
-export function useProducts() {
-  return useSelect('products');
+export function useProducts(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('products', filter);
 }
 
 /**
  * Hook to get quotations
+ * @param companyId - Optional company ID for filtering
  */
-export function useQuotations() {
-  return useSelect('quotations');
+export function useQuotations(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('quotations', filter);
 }
 
 /**
  * Hook to get invoices
+ * @param companyId - Optional company ID for filtering
  */
-export function useInvoices() {
-  return useSelect('invoices');
+export function useInvoices(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('invoices', filter);
 }
 
 /**
  * Hook to get payments
+ * @param companyId - Optional company ID for filtering
  */
-export function usePayments() {
-  return useSelect('payments');
+export function usePayments(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('payments', filter);
 }
 
 /**
  * Hook to get delivery notes
+ * @param companyId - Optional company ID for filtering
  */
-export function useDeliveryNotes() {
-  return useSelect('delivery_notes');
+export function useDeliveryNotes(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('delivery_notes', filter);
 }
 
 /**
  * Hook to get LPOs (Local Purchase Orders)
+ * @param companyId - Optional company ID for filtering
  */
-export function useLPOs() {
-  return useSelect('lpos');
+export function useLPOs(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('lpos', filter);
 }
 
 /**
  * Hook to get stock movements
+ * @param companyId - Optional company ID for filtering
  */
-export function useStockMovements() {
-  return useSelect('stock_movements');
+export function useStockMovements(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('stock_movements', filter);
 }
 
 /**
  * Hook to get remittance advice
+ * @param companyId - Optional company ID for filtering
  */
-export function useRemittanceAdvice() {
-  return useSelect('remittance_advice');
+export function useRemittanceAdvice(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('remittance_advice', filter);
 }
 
 /**
