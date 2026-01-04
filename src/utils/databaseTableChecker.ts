@@ -100,23 +100,13 @@ export async function createTestUser(email: string, password: string) {
   try {
     console.log(`🔄 Creating test user: ${email}`);
 
-    // Get environment variables
-    const supabaseUrl = import.meta.env.NEXT_PUBLIC_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ||
-                        import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-                        import.meta.env.VITE_SUPABASE_ANON_KEY;
+    // Check API configuration
+    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
 
-    if (!supabaseUrl) {
+    if (!apiUrl) {
       return {
         success: false,
-        error: 'Supabase URL not configured'
-      };
-    }
-
-    if (!supabaseKey) {
-      return {
-        success: false,
-        error: 'Supabase key not configured'
+        error: 'External API URL not configured'
       };
     }
 
