@@ -30,6 +30,22 @@ export {
   shutdownDatabase,
 } from './manager';
 
+// Auth Manager
+export {
+  authManager,
+  signIn,
+  signUp,
+  signOut,
+  getSession,
+  resetPassword,
+  updatePassword,
+  createUser,
+  onAuthStateChange,
+} from './auth-manager';
+
+// Adapters
+export { SupabaseAuthAdapter, MySQLAuthAdapter } from './auth-adapter';
+
 // Re-export for convenience
 export { supabaseAdapter } from './supabase-adapter';
 export { mysqlAdapter } from './mysql-adapter';
