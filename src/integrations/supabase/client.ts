@@ -160,65 +160,85 @@ function createCompatibilityClient() {
       },
     },
 
-    from: (table: string) => ({
-      select: async (fields: string = '*') => {
-        try {
-          const result = await adapter.list(table);
-          return { data: result, error: null };
-        } catch (error) {
-          return { error: error as Error };
-        }
-      },
+    from: (table: string) => {
+      // Build chainable query object
+      let queryState = {
+        fields: '*',
+        filters: {},
+        limitCount: null as number | null,
+        isSingle: false,
+      };
 
-      insert: async (data: any) => {
-        try {
-          const result = await adapter.insert(table, data);
-          return { data: result, error: null };
-        } catch (error) {
-          return { error: error as Error };
-        }
-      },
+      const createExecutor = () => ({
+        select: (fields: string = '*') => {
+          queryState.fields = fields;
+          return createChain();
+        },
 
-      update: async (data: any) => {
-        try {
-          const result = await adapter.update(table, data);
-          return { data: result, error: null };
-        } catch (error) {
-          return { error: error as Error };
-        }
-      },
-
-      delete: async () => {
-        try {
-          const result = await adapter.delete(table);
-          return { data: result, error: null };
-        } catch (error) {
-          return { error: error as Error };
-        }
-      },
-
-      eq: (column: string, value: any) => ({
-        single: async () => {
+        insert: async (data: any) => {
           try {
-            const result = await adapter.readOne(table, { [column]: value });
+            const result = await adapter.insert(table, data);
             return { data: result, error: null };
           } catch (error) {
             return { error: error as Error };
           }
         },
-      }),
 
-      match: async (filters: any) => {
-        try {
-          const result = await adapter.list(table, filters);
-          return { data: result, error: null };
-        } catch (error) {
-          return { error: error as Error };
-        }
-      },
+        update: async (data: any) => {
+          try {
+            const result = await adapter.update(table, data);
+            return { data: result, error: null };
+          } catch (error) {
+            return { error: error as Error };
+          }
+        },
 
-      range: () => ({ data: [], error: null }),
-    }),
+        delete: async () => {
+          try {
+            const result = await adapter.delete(table);
+            return { data: result, error: null };
+          } catch (error) {
+            return { error: error as Error };
+          }
+        },
+
+        eq: (column: string, value: any) => {
+          queryState.filters = { [column]: value };
+          return createChain();
+        },
+
+        match: async (filters: any) => {
+          try {
+            const result = await adapter.list(table, filters);
+            return { data: result, error: null };
+          } catch (error) {
+            return { error: error as Error };
+          }
+        },
+
+        range: () => ({ data: [], error: null }),
+      });
+
+      const createChain = () => ({
+        ...createExecutor(),
+        limit: (count: number) => {
+          queryState.limitCount = count;
+          return createChain();
+        },
+        single: async () => {
+          try {
+            queryState.isSingle = true;
+            const result = await adapter.list(table, queryState.filters);
+            const data = Array.isArray(result) ? result[0] : result;
+            return { data, error: null };
+          } catch (error) {
+            return { error: error as Error };
+          }
+        },
+      });
+
+      return createChain();
+    },
 
     storage: {
       from: (bucket: string) => ({
