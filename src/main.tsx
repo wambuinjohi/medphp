@@ -6,11 +6,34 @@ import { CompanyProvider } from '@/contexts/CompanyContext';
 import { AuthErrorBoundary } from '@/components/auth/AuthErrorBoundary';
 import { AuthStatusIndicator } from '@/components/auth/AuthStatusIndicator';
 import { enableResizeObserverErrorSuppression } from '@/utils/resizeObserverErrorHandler';
+import { initializeDatabase } from '@/integrations/database';
 import App from './App.tsx'
 import './index.css'
 
 // Suppress ResizeObserver errors before any components render
 enableResizeObserverErrorSuppression();
+
+// Initialize database with the configured provider
+const initApp = async () => {
+  try {
+    const provider = import.meta.env.VITE_DATABASE_PROVIDER || 'supabase';
+    console.log(`🔧 Initializing app with database provider: ${provider}`);
+
+    if (provider === 'external-api') {
+      const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+      console.log(`📍 Using external API: ${apiUrl}`);
+    }
+
+    await initializeDatabase();
+    console.log('✅ Database initialization complete');
+  } catch (error) {
+    console.error('❌ Database initialization failed:', error);
+    // Continue app startup even if database fails
+  }
+};
+
+// Initialize before rendering
+initApp();
 
 // Removed auto-migration imports for production safety
 
