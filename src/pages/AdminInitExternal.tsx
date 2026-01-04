@@ -35,7 +35,7 @@ export default function AdminInitExternal() {
     try {
       setCheckingAdmin(true);
 
-      const exists = await checkAdminExists({ apiUrl });
+      const exists = await checkAdminExists({ apiUrl, email: customEmail, password: customPassword });
       setAdminExists(exists);
 
       // Also get database info
