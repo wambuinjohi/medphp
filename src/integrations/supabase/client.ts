@@ -2,6 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+// Get database provider setting
+const DATABASE_PROVIDER = import.meta.env.VITE_DATABASE_PROVIDER || 'supabase';
+
 // Get environment variables with fallbacks
 // Note: Vite only exposes VITE_ prefixed variables via import.meta.env
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -9,15 +12,17 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ||
                                 import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// Check for missing configuration
+// Check for missing configuration (only warn if Supabase is the chosen provider)
 const isMissingConfig = !SUPABASE_URL || SUPABASE_URL === 'undefined' ||
                        !SUPABASE_PUBLISHABLE_KEY || SUPABASE_PUBLISHABLE_KEY === 'undefined';
 
-if (isMissingConfig) {
+if (isMissingConfig && DATABASE_PROVIDER === 'supabase') {
   console.warn('⚠️ Supabase configuration is missing.');
   console.warn('   VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL ? '✓ Set' : '✗ Missing');
   console.warn('   VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '✓ Set' : '✗ Missing');
   console.warn('   App will continue with limited functionality.');
+} else if (DATABASE_PROVIDER !== 'supabase') {
+  console.log(`ℹ️  Using ${DATABASE_PROVIDER} database provider. Supabase client will not be initialized.`);
 }
 
 // Lazy initialize the Supabase client
