@@ -905,22 +905,28 @@ export const useUserManagement = () => {
         return { success: false, error: 'User not found' };
       }
 
-      // Call Edge Function to send password reset email
-      const { data: fnData, error: fnError } = await supabase.functions.invoke('admin-reset-password', {
-        body: {
+      // Call API endpoint to send password reset email
+      const response = await fetch('/api/admin/users/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           email: user.email,
           user_id: userId,
           admin_id: currentUser?.id,
-        }
+        })
       });
 
-      if (fnError) {
-        const fnErrorMessage = parseErrorMessageWithCodes(fnError, 'password reset');
-        return { success: false, error: fnErrorMessage || 'Failed to send password reset email' };
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = parseErrorMessageWithCodes(data.error, 'password reset');
+        return { success: false, error: errorMessage || 'Failed to send password reset email' };
       }
 
-      if (fnData && !fnData.success) {
-        return { success: false, error: fnData.error || 'Failed to send password reset email' };
+      if (data && !data.success) {
+        return { success: false, error: data.error || 'Failed to send password reset email' };
       }
 
       toast.success(`Password reset email sent to ${user.email}`);
