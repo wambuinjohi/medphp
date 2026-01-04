@@ -5,6 +5,8 @@
 
 interface SetupOptions {
   apiUrl?: string;
+  email?: string;
+  password?: string;
   onProgress?: (message: string) => void;
 }
 
@@ -22,11 +24,13 @@ interface SetupResult {
 export async function initializeExternalAPI(options: SetupOptions = {}): Promise<SetupResult> {
   const {
     apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php',
+    email,
+    password,
     onProgress,
   } = options;
 
-  const adminEmail = 'admin@biolegend.local';
-  const adminPassword = 'Biolegend2024!Admin';
+  const adminEmail = email || 'admin@mail.com';
+  const adminPassword = password || 'Pass123';
 
   try {
     // Step 1: Test API connectivity
@@ -49,13 +53,16 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
     onProgress?.('Initializing database tables...');
     onProgress?.(`Creating admin user: ${adminEmail}`);
 
-    const setupResponse = await fetch(`${apiUrl}?action=setup`, {
+    // The setup endpoint expects email and password as form-encoded POST data
+    const formData = new URLSearchParams();
+    formData.append('action', 'setup');
+    formData.append('email', adminEmail);
+    formData.append('password', adminPassword);
+
+    const setupResponse = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: adminEmail,
-        password: adminPassword,
-      }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData.toString(),
     });
 
     if (!setupResponse.ok) {
@@ -76,13 +83,16 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
     // Step 3: Verify login works
     onProgress?.('Verifying authentication...');
 
-    const loginResponse = await fetch(`${apiUrl}?action=login`, {
+    // The login endpoint also expects email and password as form-encoded POST data
+    const loginFormData = new URLSearchParams();
+    loginFormData.append('action', 'login');
+    loginFormData.append('email', adminEmail);
+    loginFormData.append('password', adminPassword);
+
+    const loginResponse = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: adminEmail,
-        password: adminPassword,
-      }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: loginFormData.toString(),
     });
 
     if (!loginResponse.ok) {
@@ -131,15 +141,19 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
 export async function checkAdminExists(options: SetupOptions = {}): Promise<boolean> {
   const apiUrl =
     options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+  const email = options.email || 'admin@mail.com';
+  const password = options.password || 'Pass123';
 
   try {
-    const response = await fetch(`${apiUrl}?action=login`, {
+    const formData = new URLSearchParams();
+    formData.append('action', 'login');
+    formData.append('email', email);
+    formData.append('password', password);
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: 'admin@biolegend.local',
-        password: 'Biolegend2024!Admin',
-      }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData.toString(),
     });
 
     return response.ok;

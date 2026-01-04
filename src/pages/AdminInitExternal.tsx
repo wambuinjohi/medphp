@@ -18,14 +18,14 @@ export default function AdminInitExternal() {
   const [initProgress, setInitProgress] = useState<string[]>([]);
   const [databaseInfo, setDatabaseInfo] = useState<any>(null);
   const [copied, setCopied] = useState(false);
-  const [customEmail, setCustomEmail] = useState('admin@biolegend.local');
-  const [customPassword, setCustomPassword] = useState('Biolegend2024!Admin');
+  const [customEmail, setCustomEmail] = useState('admin@mail.com');
+  const [customPassword, setCustomPassword] = useState('Pass123');
   const [apiUrl, setApiUrl] = useState(
     import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php'
   );
 
-  const ADMIN_EMAIL = 'admin@biolegend.local';
-  const ADMIN_PASSWORD = 'Biolegend2024!Admin';
+  const ADMIN_EMAIL = 'admin@mail.com';
+  const ADMIN_PASSWORD = 'Pass123';
 
   useEffect(() => {
     checkAdminUser();
@@ -35,7 +35,7 @@ export default function AdminInitExternal() {
     try {
       setCheckingAdmin(true);
 
-      const exists = await checkAdminExists({ apiUrl });
+      const exists = await checkAdminExists({ apiUrl, email: customEmail, password: customPassword });
       setAdminExists(exists);
 
       // Also get database info
@@ -62,6 +62,8 @@ export default function AdminInitExternal() {
     try {
       const result = await initializeExternalAPI({
         apiUrl,
+        email: customEmail,
+        password: customPassword,
         onProgress: (message: string) => {
           setInitProgress(prev => [...prev, message]);
         },
@@ -264,12 +266,12 @@ export default function AdminInitExternal() {
                     <div className="bg-gray-900 rounded p-4 font-mono text-xs text-green-400 overflow-x-auto">
                       <div className="flex items-start justify-between gap-4">
                         <span className="flex-1 break-all">
-                          {`curl -X POST "${apiUrl}?action=setup" -H "Content-Type: application/json" -d '{"email":"${customEmail}","password":"${customPassword}"}'`}
+                          {`curl -X POST "${apiUrl}" -H "Content-Type: application/x-www-form-urlencoded" -d "action=setup&email=${encodeURIComponent(customEmail)}&password=${encodeURIComponent(customPassword)}"`}
                         </span>
                         <button
                           onClick={() =>
                             copyToClipboard(
-                              `curl -X POST "${apiUrl}?action=setup" -H "Content-Type: application/json" -d '{"email":"${customEmail}","password":"${customPassword}"}'`
+                              `curl -X POST "${apiUrl}" -H "Content-Type: application/x-www-form-urlencoded" -d "action=setup&email=${encodeURIComponent(customEmail)}&password=${encodeURIComponent(customPassword)}"`
                             )
                           }
                           className="text-gray-400 hover:text-gray-200 transition flex-shrink-0"
