@@ -24,11 +24,13 @@ export interface DatabaseConfig {
 }
 
 export interface AuthContext {
-  userId: string;
-  email: string;
-  role: 'admin' | 'accountant' | 'stock_manager' | 'user' | 'super_admin';
-  companyId: string | null;
-  status: 'active' | 'inactive' | 'pending';
+  user_id?: string;
+  userId?: string;
+  email?: string;
+  role?: 'admin' | 'accountant' | 'stock_manager' | 'user' | 'super_admin';
+  companyId?: string | null;
+  status?: 'active' | 'inactive' | 'pending';
+  [key: string]: any; // Allow other properties for flexibility
 }
 
 export interface QueryResult<T> {
