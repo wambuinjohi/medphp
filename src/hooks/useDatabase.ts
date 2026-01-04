@@ -571,15 +571,14 @@ export function useUpdateRemittanceAdviceItems() {
  */
 export function useCreateCustomer() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async (customerData: any) => {
-      const { insert } = useInsert('customers');
-      const result = await insert(customerData);
+      const result = await db.insert('customers', customerData);
       if (result.error) throw result.error;
 
       // Fetch the created record to return full data
-      const { db } = useDatabase();
       const { data } = await db.selectOne('customers', result.id);
       return data;
     },
