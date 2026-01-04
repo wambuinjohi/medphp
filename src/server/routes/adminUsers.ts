@@ -107,20 +107,20 @@ export async function handleResetPassword(body: any) {
 
 /**
  * API Route Handler for fixing profile RLS
- * Replaces the fix-profile-rls edge function
- * 
+ * Calls the external API (med.wayrus.co.ke/api.php)
+ *
  * Usage:
  * POST /api/admin/database/fix-rls
  * Content-Type: application/json
- * 
+ *
  * Body:
  * {} (no body needed)
- * 
- * This generates SQL that can be executed manually in Supabase SQL editor
+ *
+ * RLS management is handled by the external API
  */
 export async function handleFixProfileRls() {
   try {
-    const result = await fixProfileRls(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const result = await fixProfileRls(EXTERNAL_API_URL, API_AUTH_TOKEN);
 
     return {
       status: result.success ? 200 : 400,
