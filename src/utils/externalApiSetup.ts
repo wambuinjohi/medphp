@@ -142,9 +142,20 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
 
     onProgress?.(`✗ Error: ${errorMessage}`);
 
+    // Provide specific guidance based on the error
+    let guideMessage = errorMessage;
+
+    if (errorMessage.includes('Cannot reach API')) {
+      guideMessage = `${errorMessage}\n\nTroubleshooting:\n1. Verify the API URL is correct\n2. Check your internet connection\n3. Ensure the API server is running\n4. Check firewall/network restrictions`;
+    } else if (errorMessage.includes('Connection') || errorMessage.includes('table')) {
+      guideMessage = `${errorMessage}\n\nTroubleshooting:\n1. The remote database may not be properly configured\n2. Contact your system administrator\n3. Or set up a local database instead`;
+    } else if (errorMessage.includes('Invalid JSON')) {
+      guideMessage = `${errorMessage}\n\nTroubleshooting:\n1. The API endpoint may be misconfigured\n2. Verify it's pointing to a valid PHP API\n3. Check the API server logs`;
+    }
+
     return {
       success: false,
-      message: errorMessage,
+      message: guideMessage,
     };
   }
 }
