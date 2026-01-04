@@ -209,21 +209,13 @@ export const useUserManagement = () => {
         return { success: false, error: 'You can only create users for your own company' };
       }
 
-      // If password is provided, create the user directly using the edge function
+      // If password is provided, create the user directly using the API endpoint
       if (userData.password) {
         try {
-          const { data: { session } } = await supabase.auth.getSession();
-          const token = session?.access_token;
-
-          if (!token) {
-            return { success: false, error: 'Authentication token not found. Please log in again.' };
-          }
-
-          const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-create-user`, {
+          const response = await fetch('/api/admin/users/create', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
             },
             body: JSON.stringify({
               email: userData.email,
@@ -241,7 +233,7 @@ export const useUserManagement = () => {
           const result = await response.json();
 
           if (!response.ok) {
-            console.error('Edge function error:', result);
+            console.error('API error:', result);
             return { success: false, error: result.error || 'Failed to create user' };
           }
 
@@ -260,7 +252,7 @@ export const useUserManagement = () => {
           await fetchUsers();
           return { success: true, password: userData.password };
         } catch (err) {
-          console.error('Error calling admin-create-user function:', err);
+          console.error('Error calling user creation API:', err);
           return { success: false, error: `Failed to create user: ${err instanceof Error ? err.message : String(err)}` };
         }
       }
