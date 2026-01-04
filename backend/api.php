@@ -260,8 +260,8 @@ ensureTables($conn);
 try {
     // Setup endpoint - create admin user
     if ($action === "setup") {
-        $email = $_POST['email'] ?? $_GET['email'] ?? null;
-        $password = $_POST['password'] ?? $_GET['password'] ?? null;
+        $email = $_POST['email'] ?? $_GET['email'] ?? ($json_body['email'] ?? null);
+        $password = $_POST['password'] ?? $_GET['password'] ?? ($json_body['password'] ?? null);
 
         if (!$email || !$password) {
             throw new Exception("Missing email or password");
