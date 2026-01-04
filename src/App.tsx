@@ -34,6 +34,7 @@ import SetupAndTest from "./components/SetupAndTest";
 import AuthTest from "./components/AuthTest";
 import DatabaseDebug from "./pages/DatabaseDebug";
 import AdminInit from "./pages/AdminInit";
+import AdminInitExternal from "./pages/AdminInitExternal";
 
 const App = () => {
 
