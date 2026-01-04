@@ -593,10 +593,10 @@ export function useCustomerPayments(customerId?: string) {
  */
 export function useDeleteCustomer() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async (customerId: string) => {
-      const { db } = useDatabase();
       const result = await db.delete('customers', customerId);
       if (result.error) throw result.error;
       return result;
