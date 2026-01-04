@@ -1,7 +1,8 @@
 /**
  * MySQL Database Adapter
  * Implements IDatabase interface for MySQL backend
- * Works with existing MySQL connection utilities
+ * NOTE: This adapter is for backend/server-side use only
+ * For client-side use, communicate with MySQL via REST API endpoints
  */
 
 import type {
@@ -13,6 +14,9 @@ import type {
   UpdateResult,
   DeleteResult,
 } from './types';
+
+// These imports are for server-side use only
+// @ts-ignore - Server-side imports
 import {
   query,
   queryOne,
@@ -21,6 +25,7 @@ import {
   execute,
   transaction,
 } from '@/server/db/mysql/connection';
+// @ts-ignore - Server-side imports
 import {
   getAuthContext,
   canRead as authCanRead,
