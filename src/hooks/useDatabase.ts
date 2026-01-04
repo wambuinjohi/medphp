@@ -379,6 +379,98 @@ export function useLPOs(companyId?: string) {
 }
 
 /**
+ * Hook to create a new LPO
+ */
+export function useCreateLPO() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (lpoData: any) => {
+      const { db } = useDatabase();
+      const result = await db.insert('lpos', lpoData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record
+      const { data } = await db.selectOne('lpos', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lpos'] });
+      toast.success('LPO created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating LPO:', error);
+      const message = error?.message || 'Failed to create LPO';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to generate an LPO number
+ */
+export function useGenerateLPONumber() {
+  return useGenerateDocumentNumber();
+}
+
+/**
+ * Hook to get all suppliers and customers
+ */
+export function useAllSuppliersAndCustomers(companyId?: string) {
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const { db } = useDatabase();
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true);
+        const filter = companyId ? { company_id: companyId } : undefined;
+        const result = await db.select('customers', filter);
+        setData(result.data);
+        setError(result.error);
+      } catch (err) {
+        setError(err as Error);
+        setData([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [db, companyId]);
+
+  return { data, isLoading, error };
+}
+
+/**
+ * Hook to update an LPO with items
+ */
+export function useUpdateLPOWithItems() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const { db } = useDatabase();
+      const result = await db.update('lpos', id, data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lpos'] });
+      toast.success('LPO updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating LPO:', error);
+      const message = error?.message || 'Failed to update LPO';
+      toast.error(message);
+    },
+  });
+}
+
+/**
  * Hook to get stock movements
  * @param companyId - Optional company ID for filtering
  */
