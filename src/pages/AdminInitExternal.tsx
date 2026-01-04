@@ -18,14 +18,14 @@ export default function AdminInitExternal() {
   const [initProgress, setInitProgress] = useState<string[]>([]);
   const [databaseInfo, setDatabaseInfo] = useState<any>(null);
   const [copied, setCopied] = useState(false);
-  const [customEmail, setCustomEmail] = useState('admin@biolegend.local');
-  const [customPassword, setCustomPassword] = useState('Biolegend2024!Admin');
+  const [customEmail, setCustomEmail] = useState('admin@mail.com');
+  const [customPassword, setCustomPassword] = useState('Pass123');
   const [apiUrl, setApiUrl] = useState(
     import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php'
   );
 
-  const ADMIN_EMAIL = 'admin@biolegend.local';
-  const ADMIN_PASSWORD = 'Biolegend2024!Admin';
+  const ADMIN_EMAIL = 'admin@mail.com';
+  const ADMIN_PASSWORD = 'Pass123';
 
   useEffect(() => {
     checkAdminUser();
