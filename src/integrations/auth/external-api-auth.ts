@@ -1,0 +1,280 @@
+/**
+ * External API Authentication Handler
+ * Manages JWT token-based authentication with med.wayrus.co.ke/api.php
+ */
+
+export interface AuthToken {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+  };
+  expiresAt: number;
+}
+
+class ExternalAPIAuthHandler {
+  private apiUrl: string;
+  private tokenKey = 'med_api_auth_token';
+  private userKey = 'med_api_auth_user';
+
+  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
+    this.apiUrl = apiUrl;
+  }
+
+  /**
+   * Login with email and password
+   */
+  async login(email: string, password: string): Promise<{ token?: string; user?: any; error?: Error }> {
+    try {
+      const response = await fetch(`${this.apiUrl}?action=login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.status === 'error') {
+        return { error: new Error(result.message || 'Login failed') };
+      }
+
+      const token = result.token;
+      const user = result.user;
+
+      if (token && user) {
+        // Store token and user info
+        const authData: AuthToken = {
+          token,
+          user,
+          expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+        };
+
+        localStorage.setItem(this.tokenKey, JSON.stringify(authData));
+        localStorage.setItem(this.userKey, JSON.stringify(user));
+
+        return { token, user };
+      }
+
+      return { error: new Error('No token received') };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  }
+
+  /**
+   * Logout - clear stored credentials
+   */
+  async logout(): Promise<{ error?: Error }> {
+    try {
+      // Notify backend about logout (optional, for logging)
+      const token = this.getToken();
+      if (token) {
+        await fetch(`${this.apiUrl}?action=logout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }).catch(() => {
+          // Ignore errors during logout notification
+        });
+      }
+
+      // Clear local storage
+      localStorage.removeItem(this.tokenKey);
+      localStorage.removeItem(this.userKey);
+
+      return {};
+    } catch (error) {
+      return { error: error as Error };
+    }
+  }
+
+  /**
+   * Get stored auth token
+   */
+  getToken(): string | null {
+    try {
+      const authData = localStorage.getItem(this.tokenKey);
+      if (!authData) return null;
+
+      const auth: AuthToken = JSON.parse(authData);
+
+      // Check if token is expired
+      if (auth.expiresAt && Date.now() > auth.expiresAt) {
+        this.logout().catch(() => {});
+        return null;
+      }
+
+      return auth.token;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Get stored user info
+   */
+  getUser(): any {
+    try {
+      const user = localStorage.getItem(this.userKey);
+      return user ? JSON.parse(user) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Check if user is authenticated
+   */
+  isAuthenticated(): boolean {
+    return !!this.getToken();
+  }
+
+  /**
+   * Verify token with server
+   */
+  async verifyToken(): Promise<{ valid: boolean; user?: any; error?: Error }> {
+    const token = this.getToken();
+    if (!token) {
+      return { valid: false, error: new Error('No token found') };
+    }
+
+    try {
+      const response = await fetch(`${this.apiUrl}?action=check_auth`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.status === 'error') {
+        // Token is invalid, clear it
+        this.logout().catch(() => {});
+        return { valid: false, error: new Error(result.message || 'Token verification failed') };
+      }
+
+      return { valid: true, user: result };
+    } catch (error) {
+      return { valid: false, error: error as Error };
+    }
+  }
+
+  /**
+   * Create user (admin only)
+   */
+  async createUser(userData: {
+    email: string;
+    password: string;
+    role: string;
+    full_name?: string;
+    phone?: string;
+    department?: string;
+    position?: string;
+  }): Promise<{ user?: any; error?: Error }> {
+    const token = this.getToken();
+    if (!token) {
+      return { error: new Error('Not authenticated') };
+    }
+
+    try {
+      const response = await fetch(`${this.apiUrl}?action=create&table=users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.status === 'error') {
+        return { error: new Error(result.message || 'User creation failed') };
+      }
+
+      return { user: result.data };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  }
+
+  /**
+   * Reset password (admin only)
+   */
+  async resetPassword(email: string, newPassword: string): Promise<{ error?: Error }> {
+    const token = this.getToken();
+    if (!token) {
+      return { error: new Error('Not authenticated') };
+    }
+
+    try {
+      const response = await fetch(`${this.apiUrl}?action=update&table=users`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          email,
+          password: newPassword,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.status === 'error') {
+        return { error: new Error(result.message || 'Password reset failed') };
+      }
+
+      return {};
+    } catch (error) {
+      return { error: error as Error };
+    }
+  }
+
+  /**
+   * Setup initial admin user
+   */
+  async setupAdmin(email: string, password: string): Promise<{ user?: any; error?: Error }> {
+    try {
+      const response = await fetch(`${this.apiUrl}?action=setup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.status === 'error') {
+        return { error: new Error(result.message || 'Admin setup failed') };
+      }
+
+      return { user: result };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  }
+}
+
+// Export singleton instance
+export const externalApiAuth = new ExternalAPIAuthHandler();
+
+/**
+ * Convenience functions for use in components/hooks
+ */
+export function useExternalApiAuth() {
+  return {
+    login: (email: string, password: string) => externalApiAuth.login(email, password),
+    logout: () => externalApiAuth.logout(),
+    getToken: () => externalApiAuth.getToken(),
+    getUser: () => externalApiAuth.getUser(),
+    isAuthenticated: () => externalApiAuth.isAuthenticated(),
+    verifyToken: () => externalApiAuth.verifyToken(),
+  };
+}
