@@ -1,0 +1,380 @@
+/**
+ * External MySQL API Adapter
+ * Communicates with med.wayrus.co.ke/api.php MySQL backend
+ */
+
+import type {
+  IDatabase,
+  AuthContext,
+  QueryResult,
+  ListQueryResult,
+  InsertResult,
+  UpdateResult,
+  DeleteResult,
+} from './types';
+
+export class ExternalAPIAdapter implements IDatabase {
+  private apiBase: string;
+  private authToken: string | null = null;
+
+  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
+    this.apiBase = apiUrl;
+    // Load token from localStorage if available
+    const storedToken = localStorage.getItem('med_api_token');
+    if (storedToken) {
+      this.authToken = storedToken;
+    }
+  }
+
+  setAuthToken(token: string) {
+    this.authToken = token;
+    localStorage.setItem('med_api_token', token);
+  }
+
+  clearAuthToken() {
+    this.authToken = null;
+    localStorage.removeItem('med_api_token');
+  }
+
+  private async apiCall<T>(
+    method: string,
+    action: string,
+    table?: string,
+    data?: any,
+    where?: any
+  ): Promise<{ data: T; error: Error | null; status: number }> {
+    try {
+      const params = new URLSearchParams();
+      params.append('action', action);
+      if (table) params.append('table', table);
+      if (where) params.append('where', JSON.stringify(where));
+
+      const url = `${this.apiBase}?${params.toString()}`;
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      if (this.authToken) {
+        headers['Authorization'] = `Bearer ${this.authToken}`;
+      }
+
+      const response = await fetch(url, {
+        method,
+        headers,
+        body: data ? JSON.stringify(data) : undefined,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          data: null as any,
+          error: new Error(result.message || `HTTP ${response.status}`),
+          status: response.status,
+        };
+      }
+
+      return { data: result.data || result, error: null, status: response.status };
+    } catch (error) {
+      return {
+        data: null as any,
+        error: error as Error,
+        status: 500,
+      };
+    }
+  }
+
+  async login(email: string, password: string): Promise<{ token: string; user: any; error: Error | null }> {
+    try {
+      const response = await fetch(`${this.apiBase}?action=login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          token: '',
+          user: null,
+          error: new Error(result.message || 'Login failed'),
+        };
+      }
+
+      if (result.token) {
+        this.setAuthToken(result.token);
+      }
+
+      return {
+        token: result.token || '',
+        user: result.user,
+        error: null,
+      };
+    } catch (error) {
+      return {
+        token: '',
+        user: null,
+        error: error as Error,
+      };
+    }
+  }
+
+  async logout(): Promise<{ error: Error | null }> {
+    try {
+      const response = await fetch(`${this.apiBase}?action=logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        return { error: new Error(result.message || 'Logout failed') };
+      }
+
+      this.clearAuthToken();
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  }
+
+  async checkAuth(): Promise<{ user: any; error: Error | null }> {
+    try {
+      const response = await fetch(`${this.apiBase}?action=check_auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: this.authToken }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        this.clearAuthToken();
+        return {
+          user: null,
+          error: new Error(result.message || 'Not authenticated'),
+        };
+      }
+
+      return { user: result, error: null };
+    } catch (error) {
+      return { user: null, error: error as Error };
+    }
+  }
+
+  async getAuthContext(userId: string): Promise<AuthContext | null> {
+    // For external API, auth context is simpler
+    const { user, error } = await this.checkAuth();
+    if (error || !user) return null;
+
+    return {
+      user_id: user.id,
+      email: user.email,
+      role: user.role,
+    };
+  }
+
+  async select<T>(table: string, filter?: Record<string, any>): Promise<ListQueryResult<T>> {
+    try {
+      const { data, error } = await this.apiCall('POST', 'read', table, null, filter);
+
+      if (error) {
+        return { data: [], error, count: 0 };
+      }
+
+      const rows = Array.isArray(data) ? data : [];
+      return {
+        data: rows,
+        error: null,
+        count: rows.length,
+      };
+    } catch (error) {
+      return { data: [], error: error as Error, count: 0 };
+    }
+  }
+
+  async selectOne<T>(table: string, id: string): Promise<QueryResult<T>> {
+    try {
+      const { data, error } = await this.apiCall('POST', 'read', table, null, { id });
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      const rows = Array.isArray(data) ? data : [];
+      return { data: rows[0] || null, error: null };
+    } catch (error) {
+      return { data: null, error: error as Error };
+    }
+  }
+
+  async selectBy<T>(table: string, filter: Record<string, any>): Promise<ListQueryResult<T>> {
+    return this.select<T>(table, filter);
+  }
+
+  async insert<T>(table: string, data: Partial<T>): Promise<InsertResult> {
+    try {
+      const { data: result, error } = await this.apiCall('POST', 'create', table, data);
+
+      if (error) {
+        return { id: '', error };
+      }
+
+      return { id: result?.id || '', error: null };
+    } catch (error) {
+      return { id: '', error: error as Error };
+    }
+  }
+
+  async insertMany<T>(table: string, data: Partial<T>[]): Promise<InsertResult> {
+    try {
+      // For bulk insert, we'll insert each record and track the first ID
+      let firstId = '';
+      for (const record of data) {
+        const { data: result, error } = await this.apiCall('POST', 'create', table, record);
+        if (!error && result?.id && !firstId) {
+          firstId = result.id;
+        }
+      }
+
+      return { id: firstId, error: null };
+    } catch (error) {
+      return { id: '', error: error as Error };
+    }
+  }
+
+  async update<T>(table: string, id: string, data: Partial<T>): Promise<UpdateResult> {
+    try {
+      const { error } = await this.apiCall('PUT', 'update', table, data, { id });
+      return { error };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  }
+
+  async updateMany<T>(table: string, filter: Record<string, any>, data: Partial<T>): Promise<UpdateResult> {
+    try {
+      // External API requires updating one by one
+      // First get all matching records
+      const { data: records, error: selectError } = await this.select(table, filter);
+      if (selectError) {
+        return { error: selectError };
+      }
+
+      // Update each record
+      for (const record of records as any[]) {
+        await this.update(table, record.id, data);
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  }
+
+  async delete(table: string, id: string): Promise<DeleteResult> {
+    try {
+      const { error } = await this.apiCall('DELETE', 'delete', table, null, { id });
+      return { error };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  }
+
+  async deleteMany(table: string, filter: Record<string, any>): Promise<DeleteResult> {
+    try {
+      // Get matching records first
+      const { data: records, error: selectError } = await this.select(table, filter);
+      if (selectError) {
+        return { error: selectError };
+      }
+
+      // Delete each record
+      for (const record of records as any[]) {
+        await this.delete(table, record.id);
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  }
+
+  async raw<T>(sql: string, params?: any[]): Promise<ListQueryResult<T>> {
+    try {
+      const response = await fetch(`${this.apiBase}?action=raw`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sql, params }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          data: [],
+          error: new Error(result.message || 'Query failed'),
+        };
+      }
+
+      const rows = Array.isArray(result.data) ? result.data : [];
+      return { data: rows, error: null };
+    } catch (error) {
+      return { data: [], error: error as Error };
+    }
+  }
+
+  async canRead(table: string, recordId: string, auth: AuthContext): Promise<boolean> {
+    // Simple authorization - admin can read everything
+    // Users can only read their own records or public records
+    if (auth?.role === 'admin') {
+      return true;
+    }
+
+    // For now, allow all authenticated users to read
+    // This should be enhanced based on actual business logic
+    return !!auth?.user_id;
+  }
+
+  async canWrite(table: string, recordId: string | null, companyId: string, auth: AuthContext): Promise<boolean> {
+    // Only admins can write for now
+    return auth?.role === 'admin';
+  }
+
+  async canDelete(table: string, recordId: string, auth: AuthContext): Promise<boolean> {
+    // Only admins can delete
+    return auth?.role === 'admin';
+  }
+
+  async transaction<T>(callback: (db: IDatabase) => Promise<T>): Promise<T> {
+    // External API transactions handled server-side
+    return callback(this);
+  }
+
+  async initialize(): Promise<void> {
+    console.log('✅ External API adapter initialized for:', this.apiBase);
+    // Verify connection
+    const { error } = await this.checkAuth().catch(() => ({ error: new Error('Not authenticated yet') }));
+    if (error) {
+      console.warn('⚠️  API not yet authenticated. Login required.');
+    }
+  }
+
+  async close(): Promise<void> {
+    console.log('External API adapter closed');
+  }
+
+  async health(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.apiBase}?action=health`);
+      return response.ok;
+    } catch (error) {
+      console.error('External API health check failed:', error);
+      return false;
+    }
+  }
+}
+
+export const externalApiAdapter = new ExternalAPIAdapter();
