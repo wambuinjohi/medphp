@@ -4,6 +4,28 @@ import { toast } from 'sonner';
 import { initializeAuth, clearAuthTokens, safeAuthOperation } from '@/utils/authHelpers';
 import { logError, getUserFriendlyErrorMessage, isErrorType } from '@/utils/errorLogger';
 
+// Type definitions for authentication (previously from @supabase/supabase-js)
+export interface User {
+  id: string;
+  email?: string;
+  user_metadata?: Record<string, any>;
+  app_metadata?: Record<string, any>;
+}
+
+export interface Session {
+  user: User;
+  access_token: string;
+  refresh_token?: string;
+  expires_at?: number;
+}
+
+export class AuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}
+
 export interface UserProfile {
   id: string;
   email: string;
