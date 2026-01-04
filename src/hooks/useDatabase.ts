@@ -207,3 +207,167 @@ export function useDelete(table: string) {
 
   return { delete: delete_, isLoading, error };
 }
+
+// ============================================
+// Table-specific hooks
+// ============================================
+
+/**
+ * Hook to get companies
+ */
+export function useCompanies() {
+  return useSelect('companies');
+}
+
+/**
+ * Hook to get customers
+ */
+export function useCustomers() {
+  return useSelect('customers');
+}
+
+/**
+ * Hook to get products/inventory items
+ */
+export function useProducts() {
+  return useSelect('products');
+}
+
+/**
+ * Hook to get quotations
+ */
+export function useQuotations() {
+  return useSelect('quotations');
+}
+
+/**
+ * Hook to get invoices
+ */
+export function useInvoices() {
+  return useSelect('invoices');
+}
+
+/**
+ * Hook to get payments
+ */
+export function usePayments() {
+  return useSelect('payments');
+}
+
+/**
+ * Hook to get delivery notes
+ */
+export function useDeliveryNotes() {
+  return useSelect('delivery_notes');
+}
+
+/**
+ * Hook to get LPOs (Local Purchase Orders)
+ */
+export function useLPOs() {
+  return useSelect('lpos');
+}
+
+/**
+ * Hook to get stock movements
+ */
+export function useStockMovements() {
+  return useSelect('stock_movements');
+}
+
+/**
+ * Hook to get remittance advice
+ */
+export function useRemittanceAdvice() {
+  return useSelect('remittance_advice');
+}
+
+/**
+ * Hook to update a customer
+ */
+export function useUpdateCustomer() {
+  return useUpdate('customers');
+}
+
+/**
+ * Hook to update a delivery note
+ */
+export function useUpdateDeliveryNote() {
+  return useUpdate('delivery_notes');
+}
+
+/**
+ * Hook to update an LPO
+ */
+export function useUpdateLPO() {
+  return useUpdate('lpos');
+}
+
+/**
+ * Hook to delete a payment
+ */
+export function useDeletePayment() {
+  return useDelete('payments');
+}
+
+/**
+ * Hook to delete an LPO
+ */
+export function useDeleteLPO() {
+  return useDelete('lpos');
+}
+
+/**
+ * Hook for dashboard statistics
+ * Returns aggregated dashboard data
+ */
+export function useDashboardStats() {
+  const [stats, setStats] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        setIsLoading(true);
+        // Dashboard stats aggregation would typically be done server-side
+        // For now, we'll just return null as it should be implemented based on business logic
+        setStats({});
+        setError(null);
+      } catch (err) {
+        setError(err as Error);
+        setStats(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchStats();
+  }, []);
+
+  return { data: stats, isLoading, error };
+}
+
+// ============================================
+// Types for export
+// ============================================
+
+export interface DeliveryNote {
+  id?: string;
+  [key: string]: any;
+}
+
+export interface Invoice {
+  id?: string;
+  [key: string]: any;
+}
+
+export interface Customer {
+  id?: string;
+  [key: string]: any;
+}
+
+export interface Company {
+  id?: string;
+  [key: string]: any;
+}
