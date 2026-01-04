@@ -24,6 +24,9 @@ export default function AdminInitExternal() {
   const [apiUrl, setApiUrl] = useState(
     import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php'
   );
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [diagnosticsRunning, setDiagnosticsRunning] = useState(false);
+  const [diagnosticsResults, setDiagnosticsResults] = useState<any[]>([]);
 
   const ADMIN_EMAIL = 'admin@mail.com';
   const ADMIN_PASSWORD = 'Pass123';
