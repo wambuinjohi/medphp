@@ -95,6 +95,10 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
     const loginResponse = await fetch(loginUrl.toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: adminEmail,
+        password: adminPassword,
+      }),
     });
 
     if (!loginResponse.ok) {
