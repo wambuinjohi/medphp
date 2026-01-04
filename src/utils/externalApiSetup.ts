@@ -141,18 +141,19 @@ export async function checkAdminExists(options: SetupOptions = {}): Promise<bool
   const password = options.password || 'Pass123';
 
   try {
-    const formData = new URLSearchParams();
-    formData.append('action', 'login');
-    formData.append('email', email);
-    formData.append('password', password);
-
-    const response = await fetch(apiUrl, {
+    const response = await fetch(`${apiUrl}?action=login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData.toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
     });
 
-    return response.ok;
+    // Check if login was successful (HTTP 200 and has token)
+    if (response.ok) {
+      const data = await response.json();
+      return data?.token ? true : false;
+    }
+
+    return false;
   } catch (error) {
     console.error('Error checking admin:', error);
     return false;
