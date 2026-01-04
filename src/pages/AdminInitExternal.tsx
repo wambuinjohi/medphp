@@ -53,6 +53,26 @@ export default function AdminInitExternal() {
     }
   }
 
+  async function runDiagnostics() {
+    try {
+      setDiagnosticsRunning(true);
+      const results = await runApiDiagnostics(apiUrl);
+      setDiagnosticsResults(results);
+
+      const report = generateDiagnosticReport(results);
+      console.log(report);
+
+      toast.success('Diagnostics complete - check console for full report', {
+        duration: 5000,
+      });
+    } catch (error) {
+      toast.error('Error running diagnostics');
+      console.error('Diagnostics error:', error);
+    } finally {
+      setDiagnosticsRunning(false);
+    }
+  }
+
   function copyToClipboard(text: string) {
     navigator.clipboard.writeText(text);
     setCopied(true);
