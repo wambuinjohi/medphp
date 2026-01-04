@@ -277,3 +277,44 @@ export class MySQLAdapter implements IDatabase {
 }
 
 export const mysqlAdapter = new MySQLAdapter();
+
+/**
+ * MySQL Adapter Architecture
+ *
+ * This adapter uses a REST API approach for client-side communication:
+ *
+ * 1. Client-side (Browser):
+ *    - MySQLAdapter makes HTTP requests to backend API endpoints
+ *    - Uses /api/db/* endpoints for database operations
+ *    - Cannot directly import Node.js packages (mysql2/promise)
+ *
+ * 2. Server-side (Backend API):
+ *    - Backend API receives HTTP requests from client
+ *    - Uses actual MySQL connection via src/server/db/mysql/connection.ts
+ *    - Uses authorization layer: src/server/db/mysql/authorization.ts
+ *    - Returns JSON responses to client
+ *
+ * Backend API Endpoints Required:
+ * - GET  /api/db/health                  - Health check
+ * - GET  /api/db/auth-context/:userId    - Get auth context
+ * - POST /api/db/select/:table           - Select records
+ * - GET  /api/db/select-one/:table/:id   - Select single record
+ * - POST /api/db/insert/:table           - Insert record
+ * - POST /api/db/insert-many/:table      - Insert multiple records
+ * - PUT  /api/db/update/:table/:id       - Update record
+ * - PUT  /api/db/update-many/:table      - Update multiple records
+ * - DEL  /api/db/delete/:table/:id       - Delete record
+ * - POST /api/db/delete-many/:table      - Delete multiple records
+ * - POST /api/db/raw                     - Execute raw SQL
+ * - POST /api/db/auth/can-read           - Check read permission
+ * - POST /api/db/auth/can-write          - Check write permission
+ * - POST /api/db/auth/can-delete         - Check delete permission
+ *
+ * To use MySQL with this application:
+ * 1. Create backend API endpoints that use src/server/db/mysql/
+ * 2. Set VITE_DATABASE_PROVIDER=mysql
+ * 3. The adapter will make REST calls to your backend
+ *
+ * Note: If not using a backend, Supabase is the recommended option
+ * as it provides these endpoints out-of-the-box via PostgREST.
+ */
