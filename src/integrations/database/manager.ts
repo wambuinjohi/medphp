@@ -31,12 +31,15 @@ class DatabaseManager {
     }
 
     const provider = config?.provider || this.getProvider();
-    
+
     console.log(`🔧 Initializing database with provider: ${provider}`);
 
-    if (provider === 'mysql') {
+    if (provider === 'external-api') {
+      const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+      this.adapter = new ExternalAPIAdapter(apiUrl);
+    } else if (provider === 'mysql') {
       this.adapter = new MySQLAdapter();
-      
+
       // Initialize MySQL connection pool if needed
       // This would typically be done on the server side
       // For client-side, MySQL operations would go through an API
@@ -47,7 +50,7 @@ class DatabaseManager {
 
     await this.adapter.initialize();
     this.initialized = true;
-    
+
     console.log(`✅ Database manager initialized with ${provider} adapter`);
   }
 
