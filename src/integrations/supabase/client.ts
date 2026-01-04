@@ -215,7 +215,7 @@ function createCompatibilityClient() {
         } catch (error) {
           return { error: error as Error };
         }
-      }),
+      },
 
       range: () => ({ data: [], error: null }),
     }),
