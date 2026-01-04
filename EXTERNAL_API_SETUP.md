@@ -1,453 +1,360 @@
-# External API Setup and Testing Guide
+# External API Integration Guide
 
-This guide provides complete instructions for setting up and testing the external MySQL API backend integration.
+## Overview
 
-## Quick Start
+This document explains how the application has been configured to use an external MySQL API (`med.wayrus.co.ke/api.php`) instead of Supabase as the backend.
 
-### 1. Configure Environment Variables
+## Architecture
 
-Create a `.env.local` file in the project root:
+### Database Abstraction Layer
+
+The application uses a sophisticated database abstraction layer that supports multiple providers:
+
+```
+src/integrations/database/
+├── types.ts                    # Interface definitions
+├── manager.ts                  # Database manager (singleton)
+├── supabase-adapter.ts        # Supabase implementation
+├── mysql-adapter.ts           # MySQL implementation
+├── external-api-adapter.ts    # External API implementation
+├── auth-adapter.ts            # Authentication implementations
+├── auth-manager.ts            # Auth manager
+└── index.ts                   # Exports
+```
+
+### Database Provider Selection
+
+The active database provider is selected via the `VITE_DATABASE_PROVIDER` environment variable:
+
+- **`supabase`** (default) - Uses Supabase PostgreSQL backend
+- **`mysql`** - Uses direct MySQL connection (server-side)
+- **`external-api`** - Uses REST API for all database operations
+
+## Configuration
+
+### Environment Variables
+
+Set in `.env.local`:
 
 ```env
+# Database Provider Configuration
 VITE_DATABASE_PROVIDER=external-api
+
+# External API Configuration
 VITE_EXTERNAL_API_URL=https://med.wayrus.co.ke/api.php
-JWT_SECRET=wayrus-secret-key-2024
 ```
 
-### 2. Start Development Server
+### Environment Setup
 
-```bash
-npm install  # If not already done
-npm run dev
-```
+1. Copy `.env.local` to your local environment:
+   ```bash
+   cp .env.local .env.local
+   ```
 
-Check the browser console for initialization messages:
-```
-✅ Database manager initialized with external-api adapter
-ℹ️  External API adapter initialized for: https://med.wayrus.co.ke/api.php
-```
+2. Update the API URL if necessary:
+   ```env
+   VITE_EXTERNAL_API_URL=https://your-domain.com/api.php
+   ```
 
-### 3. Test API Connectivity
+## API Endpoints
 
-Open the browser DevTools console and run:
-
-```javascript
-// Test API connectivity
-import { testExternalAPI } from '/src/integrations/database/api-test-utility.js';
-await testExternalAPI();
-```
-
-Expected output:
-```
-🧪 Starting API Test Suite...
-
-✅ Health Check                    [PASS] (245ms)
-   📝 API is healthy (200)
-
-✅ Auth Status                     [PASS] (156ms)
-   📝 Not authenticated (expected if not logged in)
-
-📈 Summary: 2 passed, 0 failed out of 2 tests
-```
-
-## Detailed Testing
-
-### Test Health Check
-```javascript
-// Verify API is responsive
-const response = await fetch('https://med.wayrus.co.ke/api.php?action=health');
-console.log('Health:', response.ok ? 'Healthy' : 'Unhealthy');
-```
-
-### Test Authentication Flow
-
-#### 1. Login
-```javascript
-import { externalApiAuth } from '/src/integrations/auth/external-api-auth.js';
-
-const { token, user, error } = await externalApiAuth.login('admin@example.com', 'password');
-
-if (token) {
-  console.log('Login successful!');
-  console.log('User:', user);
-  console.log('Token:', token.substring(0, 20) + '...');
-} else {
-  console.log('Login failed:', error?.message);
-}
-```
-
-#### 2. Verify Token
-```javascript
-const { valid, user } = await externalApiAuth.verifyToken();
-console.log('Token valid:', valid);
-console.log('Current user:', user);
-```
-
-#### 3. Logout
-```javascript
-await externalApiAuth.logout();
-console.log('Logged out');
-```
-
-### Test Database Operations
-
-#### 1. Read Records
-```javascript
-import { ExternalAPIAdapter } from '/src/integrations/database/external-api-adapter.js';
-
-const adapter = new ExternalAPIAdapter();
-const { data, error } = await adapter.select('contacts');
-
-if (error) {
-  console.error('Read failed:', error.message);
-} else {
-  console.log('Records:', data);
-  console.log('Count:', data.length);
-}
-```
-
-#### 2. Create Record
-```javascript
-const { id, error } = await adapter.insert('contacts', {
-  name: 'John Doe',
-  email: 'john@example.com',
-  phone: '1234567890',
-  subject: 'Test',
-  message: 'Test message'
-});
-
-if (error) {
-  console.error('Create failed:', error.message);
-} else {
-  console.log('Record created with ID:', id);
-}
-```
-
-#### 3. Update Record
-```javascript
-const { error } = await adapter.update('contacts', '1', {
-  status: 'responded'
-});
-
-if (error) {
-  console.error('Update failed:', error.message);
-} else {
-  console.log('Record updated');
-}
-```
-
-#### 4. Delete Record
-```javascript
-const { error } = await adapter.delete('contacts', '1');
-
-if (error) {
-  console.error('Delete failed:', error.message);
-} else {
-  console.log('Record deleted');
-}
-```
-
-### Run Full Test Suite
-```javascript
-import { APITestSuite } from '/src/integrations/database/api-test-utility.js';
-
-const suite = new APITestSuite();
-
-// Test health and auth
-await suite.runAllTests();
-
-// Test individual operations (after logging in)
-await suite.testReadOperation('contacts');
-await suite.testCreateOperation('contacts', {
-  name: 'Test',
-  email: 'test@example.com',
-  phone: '1234567890',
-  subject: 'Test',
-  message: 'Test'
-});
-```
-
-## API Endpoints Reference
+The external API (`api.php`) supports the following actions:
 
 ### Authentication
 
-**Login**
-```
-POST https://med.wayrus.co.ke/api.php?action=login
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-
-Response:
-{
-  "status": "success",
-  "token": "eyJhbGc...",
-  "user": {
-    "id": 1,
+- **Login**: `POST /?action=login`
+  ```json
+  {
     "email": "user@example.com",
-    "role": "admin"
+    "password": "password123"
   }
-}
-```
+  ```
+  Returns: `{ token, user: { id, email, role } }`
 
-**Check Auth**
-```
-POST https://med.wayrus.co.ke/api.php?action=check_auth
-Authorization: Bearer <token>
-Content-Type: application/json
+- **Check Auth**: `POST /?action=check_auth`
+  ```json
+  {
+    "token": "jwt_token"
+  }
+  ```
+  Returns: `{ id, email, role }`
 
-{
-  "token": "<token>"
-}
-
-Response:
-{
-  "status": "success",
-  "id": 1,
-  "email": "user@example.com",
-  "role": "admin"
-}
-```
-
-**Logout**
-```
-POST https://med.wayrus.co.ke/api.php?action=logout
-Content-Type: application/json
-
-Response:
-{
-  "status": "success",
-  "message": "Logout successful"
-}
-```
+- **Logout**: `POST /?action=logout`
 
 ### CRUD Operations
 
-**Create**
-```
-POST https://med.wayrus.co.ke/api.php?action=create&table=contacts
-Authorization: Bearer <token>
-Content-Type: application/json
+- **Read**: `POST /?action=read&table=<table_name>`
+  ```json
+  {
+    "where": { "id": "123" }
+  }
+  ```
 
-{
-  "name": "John",
-  "email": "john@example.com",
-  "phone": "1234567890",
-  "subject": "Subject",
-  "message": "Message"
-}
+- **Create**: `POST /?action=create&table=<table_name>`
+  ```json
+  {
+    "name": "John Doe",
+    "email": "john@example.com"
+  }
+  ```
+
+- **Update**: `PUT /?action=update&table=<table_name>`
+  ```json
+  {
+    "id": "123",
+    "name": "Jane Doe"
+  }
+  ```
+
+- **Delete**: `DELETE /?action=delete&table=<table_name>`
+  ```json
+  {
+    "id": "123"
+  }
+  ```
+
+## API Features
+
+### Authentication
+
+The API uses JWT tokens for stateless authentication:
+
+1. User logs in via `login` action
+2. API returns a JWT token
+3. Token is stored in `localStorage` under key `med_api_token`
+4. Token is sent in `Authorization: Bearer <token>` header for authenticated requests
+
+### Database Operations
+
+- All CRUD operations go through the REST API
+- Parameters are sent as JSON in request body or URL query parameters
+- Responses follow standard format: `{ status, data, message, error }`
+
+### CORS Support
+
+The API includes CORS headers:
+- `Access-Control-Allow-Origin`: *
+- `Access-Control-Allow-Methods`: GET, POST, PUT, DELETE, OPTIONS
+- `Access-Control-Allow-Headers`: Content-Type, Accept, Authorization
+- `Access-Control-Allow-Credentials`: true
+
+## Implementation Details
+
+### ExternalAPIAdapter
+
+Location: `src/integrations/database/external-api-adapter.ts`
+
+Key methods:
+- `login(email, password)` - Authenticate user
+- `select(table, filter)` - Fetch records
+- `selectOne(table, id)` - Fetch single record
+- `insert(table, data)` - Create record
+- `update(table, id, data)` - Update record
+- `delete(table, id)` - Delete record
+- `raw(sql, params)` - Execute raw SQL
+
+### Database Manager
+
+The `DatabaseManager` (singleton) handles provider initialization:
+
+```typescript
+import { initializeDatabase, getDatabase } from '@/integrations/database';
+
+// Initialize on app startup
+await initializeDatabase();
+
+// Get the active database instance
+const db = getDatabase();
+
+// Use it in components
+const { data, error } = await db.select('users');
+```
+
+## Migration from Supabase
+
+### Direct Supabase References
+
+Some components still directly reference Supabase:
+- `src/integrations/supabase/client.ts` - Creates Supabase client
+- Components using `supabase` directly for auth, storage, etc.
+
+To fully migrate:
+
+1. Replace direct `supabase` imports with database manager
+2. Update auth flows to use `authManager` instead of `supabase.auth`
+3. Handle file uploads differently (no Supabase Storage)
+
+### Key Files Needing Updates
+
+```
+src/integrations/supabase/         # Direct Supabase usage
+src/contexts/AuthContext.tsx        # Uses supabase.auth
+src/hooks/useDatabase.ts           # Database hooks
+src/hooks/useCreditNotes.ts        # Credit note operations
+src/hooks/useQuotationItems.ts     # Quotation operations
+```
+
+## Database Schema
+
+The MySQL database should have the following tables. See `public/api.php` for the schema definition.
+
+Required tables:
+- `users` - User authentication
+- `contacts` - Contact management
+- `newsletter` - Newsletter subscriptions
+- `leads` - Sales leads
+- `quotations` - Quotations
+- `portfolios` - Portfolio items
+- And others as needed by the application
+
+## API Reference Implementation
+
+The reference API implementation is in `public/api.php`:
+
+```php
+// Database Configuration
+$db_host = $_ENV['DB_HOST'] ?? 'localhost';
+$db_user = $_ENV['DB_USER'] ?? 'root';
+$db_pass = $_ENV['DB_PASS'] ?? 'password';
+$db_name = $_ENV['DB_NAME'] ?? 'app_db';
+
+// Connection
+$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+```
+
+### Setting Up Your Own API Server
+
+1. Deploy `public/api.php` to your server
+2. Set environment variables on the server:
+   ```bash
+   DB_HOST=your-mysql-host
+   DB_USER=your-mysql-user
+   DB_PASS=your-mysql-password
+   DB_NAME=your-database-name
+   JWT_SECRET=your-secret-key
+   ```
+3. Ensure PHP has:
+   - MySQLi extension
+   - JSON support
+   - OpenSSL (for JWT)
+
+## Testing
+
+### Health Check
+
+```bash
+curl https://med.wayrus.co.ke/api.php?action=health
+```
 
 Response:
+```json
 {
   "status": "success",
-  "id": 123,
-  "data": { ... }
+  "message": "API is healthy"
 }
 ```
 
-**Read**
-```
-POST https://med.wayrus.co.ke/api.php?action=read&table=contacts
-Content-Type: application/json
+### Login Test
 
-Response:
-{
-  "status": "success",
-  "data": [ ... ],
-  "count": 10
-}
+```bash
+curl -X POST https://med.wayrus.co.ke/api.php?action=login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@example.com",
+    "password": "password123"
+  }'
 ```
 
-**Update**
-```
-PUT https://med.wayrus.co.ke/api.php?action=update&table=contacts
-Authorization: Bearer <token>
-Content-Type: application/json
+### Create Record Test
 
-{
-  "where": { "id": 1 },
-  "data": { "status": "resolved" }
-}
-
-Response:
-{
-  "status": "success",
-  "message": "Record updated"
-}
-```
-
-**Delete**
-```
-DELETE https://med.wayrus.co.ke/api.php?action=delete&table=contacts
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "where": { "id": 1 }
-}
-
-Response:
-{
-  "status": "success",
-  "message": "Record deleted"
-}
+```bash
+curl -X POST 'https://med.wayrus.co.ke/api.php' \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-token>" \
+  -d '{
+    "action": "create",
+    "table": "contacts",
+    "data": {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "phone": "123456789"
+    }
+  }'
 ```
 
 ## Troubleshooting
 
-### Issue: "Cannot read properties of undefined (reading 'select')"
+### "API not authenticated" Error
 
-**Cause**: Supabase client is being used instead of external API adapter
+1. Check token is being saved in localStorage
+2. Verify token is being sent in Authorization header
+3. Check token hasn't expired (24 hour expiry by default)
+4. Verify user has correct role and permissions
 
-**Solution**: 
-1. Verify `VITE_DATABASE_PROVIDER=external-api` in `.env.local`
-2. Restart development server
-3. Check browser console for correct initialization message
+### "Database connection failed" Error
 
-### Issue: CORS Error
-```
-Access to XMLHttpRequest blocked by CORS policy
-```
+1. Check `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME` environment variables
+2. Verify MySQL server is running and accessible
+3. Check network connectivity to database server
+4. Verify user has appropriate database permissions
 
-**Cause**: External API doesn't have correct CORS headers
+### CORS Issues
 
-**Solution**:
-1. Verify med.wayrus.co.ke returns proper CORS headers:
-   ```
-   Access-Control-Allow-Origin: *
-   Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
-   Access-Control-Allow-Headers: Content-Type, Accept, Authorization
-   ```
-2. Check that preflight OPTIONS requests are handled
+1. Ensure API has CORS headers configured
+2. Check browser console for CORS error details
+3. Verify `Access-Control-Allow-Origin` header matches your domain
+4. Test with `curl` to verify API works directly
 
-### Issue: 401 Unauthorized
-```
-{
-  "status": "error",
-  "message": "Invalid email or password"
-}
-```
+## Performance Considerations
 
-**Cause**: Wrong credentials or token expired
+### Advantages
+- Stateless (no session management needed)
+- Flexible deployment (can use any web server)
+- Database independent (easy to switch MySQL versions)
+- Scalable (can implement caching, CDN, etc.)
 
-**Solution**:
-1. Verify credentials are correct for med.wayrus.co.ke
-2. Check that initial admin user is set up
-3. To set up initial admin:
-   ```javascript
-   const { user, error } = await externalApiAuth.setupAdmin('admin@example.com', 'password123');
-   ```
+### Disadvantages
+- Network latency for each database operation
+- Limited transaction support (single operation per API call)
+- No real-time subscriptions (would need WebSocket or polling)
+- File storage requires alternative solution (not built-in)
 
-### Issue: 500 Server Error
-```
-{
-  "status": "error",
-  "message": "Connection failed"
-}
-```
+## File Uploads
 
-**Cause**: Database connection issue on server
+The external API does not include file upload support. For file handling:
 
-**Solution**:
-1. Verify MySQL database is running on med.wayrus.co.ke
-2. Check database credentials in api.php configuration
-3. Verify .env file on server has correct DB_HOST, DB_USER, DB_PASS, DB_NAME
+1. Use a separate file upload service (AWS S3, Google Cloud Storage, etc.)
+2. Store file URLs in database
+3. Implement file upload API endpoint separately
 
-### Issue: Token Expired
+## Security Considerations
 
-**Symptoms**: Getting "Not authenticated" errors after extended use
+1. **JWT Tokens**
+   - Change `JWT_SECRET` in production
+   - Implement token refresh mechanism
+   - Add token expiration validation
 
-**Solution**: Token expires after 24 hours
-1. Implement token refresh: `await externalApiAuth.verifyToken()`
-2. Or log in again: `await externalApiAuth.login(email, password)`
+2. **Input Validation**
+   - API uses basic SQL escaping
+   - Implement stronger validation in production
+   - Use prepared statements if migrating to modern PHP
 
-## Browser DevTools Tips
+3. **CORS**
+   - Update `$origin` to restrict to your domain
+   - Don't allow wildcard in production
+   - Implement proper CORS policy
 
-### View Stored Token
-```javascript
-// In console:
-console.log(JSON.parse(localStorage.getItem('med_api_auth_token')));
-```
-
-### View Network Requests
-1. Open DevTools → Network tab
-2. Perform an operation
-3. Look for requests to `med.wayrus.co.ke/api.php`
-4. Check response headers and body
-
-### Enable Debug Logging
-```javascript
-// Store extended logs
-const originalFetch = window.fetch;
-window.fetch = function(...args) {
-  console.log('API Call:', args[0], args[1]);
-  return originalFetch.apply(this, args).then(response => {
-    console.log('API Response:', response.status);
-    return response;
-  });
-};
-```
-
-## Performance Testing
-
-### Measure API Response Time
-```javascript
-const start = performance.now();
-const { data } = await adapter.select('contacts');
-const duration = performance.now() - start;
-console.log(`Query took ${duration.toFixed(2)}ms`);
-```
-
-### Load Test
-```javascript
-async function loadTest(table, count = 100) {
-  const adapter = new ExternalAPIAdapter();
-  const times = [];
-
-  for (let i = 0; i < count; i++) {
-    const start = performance.now();
-    await adapter.select(table);
-    times.push(performance.now() - start);
-  }
-
-  const avg = times.reduce((a, b) => a + b) / times.length;
-  const min = Math.min(...times);
-  const max = Math.max(...times);
-
-  console.log(`
-    Requests: ${count}
-    Average: ${avg.toFixed(2)}ms
-    Min: ${min.toFixed(2)}ms
-    Max: ${max.toFixed(2)}ms
-  `);
-}
-
-await loadTest('contacts', 100);
-```
-
-## Next Steps
-
-1. ✅ Environment variables configured
-2. ✅ API connectivity verified
-3. ✅ Authentication tested
-4. 📋 Migrate existing application code to use external API
-5. 📋 Test all application features
-6. 📋 Deploy to production
+4. **Rate Limiting**
+   - Consider adding rate limiting
+   - Implement API key authentication
+   - Add request throttling
 
 ## Support
 
-For issues:
-1. Check this guide's troubleshooting section
-2. Review `EXTERNAL_API_MIGRATION.md` for overview
-3. Check `backend/api.php` implementation
-4. Review browser DevTools console and network tabs
-5. Check server logs at med.wayrus.co.ke
+For issues or questions:
+1. Check this documentation
+2. Review API logs on server
+3. Test API endpoints with curl
+4. Check browser developer console for errors
+5. Verify environment variables are set correctly
 
-## Additional Resources
-
-- [API Reference](#api-endpoints-reference)
-- [Migration Guide](EXTERNAL_API_MIGRATION.md)
-- [Database Schema](#tables-and-schema)
