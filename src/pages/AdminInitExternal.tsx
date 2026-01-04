@@ -266,7 +266,7 @@ export default function AdminInitExternal() {
                     <div className="bg-gray-900 rounded p-4 font-mono text-xs text-green-400 overflow-x-auto">
                       <div className="flex items-start justify-between gap-4">
                         <span className="flex-1 break-all">
-                          {`curl -X POST "${apiUrl}?action=setup&email=${encodeURIComponent(customEmail)}&password=${encodeURIComponent(customPassword)}" -H "Content-Type: application/json"`}
+                          {`curl -X POST "${apiUrl}" -H "Content-Type: application/x-www-form-urlencoded" -d "action=setup&email=${encodeURIComponent(customEmail)}&password=${encodeURIComponent(customPassword)}"`}
                         </span>
                         <button
                           onClick={() =>
