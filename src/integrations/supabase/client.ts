@@ -33,6 +33,12 @@ function getSupabaseClient() {
     return supabaseInstance;
   }
 
+  // If using external API or MySQL provider, return mock client
+  if (DATABASE_PROVIDER !== 'supabase') {
+    console.log(`ℹ️  Using ${DATABASE_PROVIDER} provider. Returning mock Supabase client.`);
+    return createMockClient();
+  }
+
   if (isMissingConfig) {
   console.error('❌ Cannot initialize Supabase: Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY');
   console.error('   Required environment variables:');
