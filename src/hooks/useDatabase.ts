@@ -383,10 +383,10 @@ export function useLPOs(companyId?: string) {
  */
 export function useCreateLPO() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async (lpoData: any) => {
-      const { db } = useDatabase();
       const result = await db.insert('lpos', lpoData);
       if (result.error) throw result.error;
 
@@ -417,32 +417,8 @@ export function useGenerateLPONumber() {
  * Hook to get all suppliers and customers
  */
 export function useAllSuppliersAndCustomers(companyId?: string) {
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const { db } = useDatabase();
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setIsLoading(true);
-        const filter = companyId ? { company_id: companyId } : undefined;
-        const result = await db.select('customers', filter);
-        setData(result.data);
-        setError(result.error);
-      } catch (err) {
-        setError(err as Error);
-        setData([]);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [db, companyId]);
-
-  return { data, isLoading, error };
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('customers', filter);
 }
 
 /**
@@ -450,10 +426,10 @@ export function useAllSuppliersAndCustomers(companyId?: string) {
  */
 export function useUpdateLPOWithItems() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { db } = useDatabase();
       const result = await db.update('lpos', id, data);
       if (result.error) throw result.error;
       return result;
