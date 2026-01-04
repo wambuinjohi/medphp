@@ -1,4 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+/**
+ * Admin Reset Password - External API Version
+ * Uses med.wayrus.co.ke/api.php for password reset operations
+ */
 
 interface ResetPasswordRequest {
   email: string;
@@ -13,22 +16,18 @@ interface ResetPasswordResponse {
 }
 
 /**
- * Sends a password reset email to a user
- * This function:
- * 1. Verifies the admin user has permission to reset passwords
- * 2. Verifies the target user exists
- * 3. Sends a password reset email
- * 4. Logs the action in audit logs
+ * Sends a password reset email via external API
+ * This function calls med.wayrus.co.ke/api.php with the admin_reset_password action
  *
  * @param request - Password reset request with email, user_id, admin_id
- * @param supabaseUrl - Supabase project URL
- * @param supabaseServiceKey - Supabase service role key
+ * @param apiUrl - External API URL (med.wayrus.co.ke/api.php)
+ * @param authToken - Admin authentication token for the API
  * @returns Response with success status or error message
  */
 export async function adminResetPassword(
   request: ResetPasswordRequest,
-  supabaseUrl: string,
-  supabaseServiceKey: string
+  apiUrl: string = 'https://med.wayrus.co.ke/api.php',
+  authToken?: string
 ): Promise<ResetPasswordResponse> {
   // Validate required fields
   if (!request.email || !request.user_id || !request.admin_id) {
@@ -38,104 +37,61 @@ export async function adminResetPassword(
     };
   }
 
-  // Validate environment variables
-  if (!supabaseUrl || !supabaseServiceKey) {
+  // Validate API URL
+  if (!apiUrl) {
     return {
       success: false,
-      error: 'Missing Supabase configuration'
+      error: 'Missing API URL configuration'
     };
   }
 
-  // Create Supabase client with service role
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  });
-
   try {
-    // Verify admin user exists and is admin
-    const { data: adminUser, error: adminError } = await supabase
-      .from('profiles')
-      .select('id, role, email')
-      .eq('id', request.admin_id)
-      .maybeSingle();
-
-    if (adminError || !adminUser || adminUser.role !== 'admin') {
-      return {
-        success: false,
-        error: 'Unauthorized: Only admins can reset passwords'
-      };
-    }
-
-    // Verify target user exists
-    const { data: targetUser, error: targetError } = await supabase
-      .from('profiles')
-      .select('id, email')
-      .eq('id', request.user_id)
-      .maybeSingle();
-
-    if (targetError || !targetUser) {
-      return {
-        success: false,
-        error: 'User not found'
-      };
-    }
-
-    // Send password reset email using Supabase auth
-    try {
-      const redirectUrl = request.redirectUrl ||
-        `${supabaseUrl.replace(/\/$/, '')}/auth/v1/callback`;
-
-      const { error } = await supabase.auth.resetPasswordForEmail(request.email, {
-        redirectTo: redirectUrl
-      });
-
-      if (error) {
-        console.error('Password reset email error:', error);
-        return {
-          success: false,
-          error: `Failed to send password reset email: ${error.message}`
-        };
-      }
-    } catch (err) {
-      console.error('Error sending password reset email:', err);
-      return {
-        success: false,
-        error: `Failed to send password reset email: ${err instanceof Error ? err.message : String(err)}`
-      };
-    }
-
-    // Log password reset request in audit trail
-    try {
-      await supabase
-        .from('audit_logs')
-        .insert({
-          action: 'APPROVE',
-          entity_type: 'user_creation',
-          record_id: request.user_id,
-          company_id: null,
-          actor_user_id: request.admin_id,
-          actor_email: adminUser.email,
-          details: {
-            action_type: 'password_reset',
-            target_user_email: request.email,
-            timestamp: new Date().toISOString()
-          }
-        });
-    } catch (auditErr) {
-      console.warn('Failed to log password reset to audit trail:', auditErr);
-    }
-
-    return {
-      success: true
+    // Prepare headers
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json'
     };
-  } catch (error) {
-    console.error('Unexpected error:', error);
+
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
+    // Call external API to reset password
+    const response = await fetch(`${apiUrl}?action=admin_reset_password`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        email: request.email,
+        user_id: request.user_id,
+        admin_id: request.admin_id,
+        redirectUrl: request.redirectUrl || null
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || result.status === 'error') {
+      console.error('API password reset error:', result);
+      return {
+        success: false,
+        error: result.message || `API error: ${response.status}`
+      };
+    }
+
+    if (result.success) {
+      return {
+        success: true
+      };
+    }
+
     return {
       success: false,
-      error: `Server error: ${error instanceof Error ? error.message : String(error)}`
+      error: result.message || 'Failed to reset password'
+    };
+  } catch (error) {
+    console.error('Password reset error:', error);
+    return {
+      success: false,
+      error: `Error: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 }

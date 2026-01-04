@@ -12,7 +12,7 @@
  *   --full-name "John Doe"
  * 
  * Or with environment variables:
- * SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
+ * VITE_EXTERNAL_API_URL=... API_AUTH_TOKEN=... \
  * npm run admin:create-user
  */
 
@@ -69,19 +69,13 @@ function parseArgs(): CliArgs {
 }
 
 async function main() {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    console.error('Error: Missing environment variables:');
-    console.error('  SUPABASE_URL or VITE_SUPABASE_URL');
-    console.error('  SUPABASE_SERVICE_ROLE_KEY');
-    process.exit(1);
-  }
+  const apiUrl = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+  const authToken = process.env.API_AUTH_TOKEN;
 
   const args = parseArgs();
 
-  console.log('\n🔐 Creating user...\n');
+  console.log('\n🔐 Creating user via external API...\n');
+  console.log(`API URL: ${apiUrl}`);
   console.log(`Email: ${args.email}`);
   console.log(`Role: ${args.role}`);
   console.log(`Company ID: ${args.companyId}`);
@@ -100,8 +94,8 @@ async function main() {
       position: args.position,
       invited_by: args.invitedBy
     },
-    supabaseUrl,
-    supabaseKey
+    apiUrl,
+    authToken
   );
 
   if (result.success) {

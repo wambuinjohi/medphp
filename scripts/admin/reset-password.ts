@@ -11,7 +11,7 @@
  *   --redirect-url "https://yourapp.com/reset" (optional)
  * 
  * Or with environment variables:
- * SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
+ * VITE_EXTERNAL_API_URL=... API_AUTH_TOKEN=... \
  * npm run admin:reset-password
  */
 
@@ -53,19 +53,13 @@ function parseArgs(): CliArgs {
 }
 
 async function main() {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    console.error('Error: Missing environment variables:');
-    console.error('  SUPABASE_URL or VITE_SUPABASE_URL');
-    console.error('  SUPABASE_SERVICE_ROLE_KEY');
-    process.exit(1);
-  }
+  const apiUrl = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+  const authToken = process.env.API_AUTH_TOKEN;
 
   const args = parseArgs();
 
-  console.log('\n🔐 Sending password reset email...\n');
+  console.log('\n🔐 Resetting password via external API...\n');
+  console.log(`API URL: ${apiUrl}`);
   console.log(`Email: ${args.email}`);
   console.log(`User ID: ${args.userId}`);
   console.log(`Admin ID: ${args.adminId}`);
@@ -79,15 +73,15 @@ async function main() {
       admin_id: args.adminId,
       redirectUrl: args.redirectUrl
     },
-    supabaseUrl,
-    supabaseKey
+    apiUrl,
+    authToken
   );
 
   if (result.success) {
     console.log('✅ Password reset email sent successfully!');
-    console.log('The user will receive an email with instructions to reset their password.\n');
+    console.log('User should receive a password reset email shortly.\n');
   } else {
-    console.error('❌ Failed to send password reset email:');
+    console.error('❌ Failed to reset password:');
     console.error(`Error: ${result.error}\n`);
     process.exit(1);
   }

@@ -1,4 +1,3 @@
-import { AuthError } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { parseErrorMessage } from './errorHelpers';
 
@@ -9,7 +8,7 @@ export interface AuthErrorInfo {
   retry?: boolean;
 }
 
-export function analyzeAuthError(error: AuthError | Error): AuthErrorInfo {
+export function analyzeAuthError(error: Error | any): AuthErrorInfo {
   // Safely extract error message with fallback
   let errorMessage = '';
 
@@ -110,7 +109,7 @@ export function analyzeAuthError(error: AuthError | Error): AuthErrorInfo {
   };
 }
 
-export function handleAuthError(error: AuthError | Error): AuthErrorInfo {
+export function handleAuthError(error: Error | any): AuthErrorInfo {
   const errorInfo = analyzeAuthError(error);
 
   // Log for debugging with proper serialization

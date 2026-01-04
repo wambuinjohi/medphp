@@ -2,17 +2,17 @@ import { adminCreateUser } from '../lib/adminCreateUser';
 import { adminResetPassword } from '../lib/adminResetPassword';
 import { fixProfileRls } from '../lib/fixProfileRls';
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+const API_AUTH_TOKEN = process.env.API_AUTH_TOKEN || '';
 
 /**
  * API Route Handler for creating users
- * Replaces the admin-create-user edge function
- * 
+ * Calls the external API (med.wayrus.co.ke/api.php)
+ *
  * Usage:
  * POST /api/admin/users/create
  * Content-Type: application/json
- * 
+ *
  * Body:
  * {
  *   "email": "user@example.com",
@@ -40,8 +40,8 @@ export async function handleCreateUser(body: any) {
         position: body.position,
         invited_by: body.invited_by
       },
-      SUPABASE_URL,
-      SUPABASE_SERVICE_KEY
+      EXTERNAL_API_URL,
+      API_AUTH_TOKEN
     );
 
     return {
@@ -62,12 +62,12 @@ export async function handleCreateUser(body: any) {
 
 /**
  * API Route Handler for password reset
- * Replaces the admin-reset-password edge function
- * 
+ * Calls the external API (med.wayrus.co.ke/api.php)
+ *
  * Usage:
  * POST /api/admin/users/reset-password
  * Content-Type: application/json
- * 
+ *
  * Body:
  * {
  *   "email": "user@example.com",
@@ -85,8 +85,8 @@ export async function handleResetPassword(body: any) {
         admin_id: body.admin_id,
         redirectUrl: body.redirectUrl
       },
-      SUPABASE_URL,
-      SUPABASE_SERVICE_KEY
+      EXTERNAL_API_URL,
+      API_AUTH_TOKEN
     );
 
     return {
@@ -107,20 +107,20 @@ export async function handleResetPassword(body: any) {
 
 /**
  * API Route Handler for fixing profile RLS
- * Replaces the fix-profile-rls edge function
- * 
+ * Calls the external API (med.wayrus.co.ke/api.php)
+ *
  * Usage:
  * POST /api/admin/database/fix-rls
  * Content-Type: application/json
- * 
+ *
  * Body:
  * {} (no body needed)
- * 
- * This generates SQL that can be executed manually in Supabase SQL editor
+ *
+ * RLS management is handled by the external API
  */
 export async function handleFixProfileRls() {
   try {
-    const result = await fixProfileRls(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const result = await fixProfileRls(EXTERNAL_API_URL, API_AUTH_TOKEN);
 
     return {
       status: result.success ? 200 : 400,

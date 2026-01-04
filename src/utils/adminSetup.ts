@@ -1,11 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/integrations/supabase/types';
+/**
+ * Admin Setup Utility - External API Version
+ * Uses med.wayrus.co.ke/api.php for admin user creation
+ */
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ||
-                     import.meta.env.NEXT_PUBLIC_SUPABASE_URL;
-
-const SERVICE_ROLE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY ||
-                         import.meta.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+const EXTERNAL_API_URL = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
 
 export interface CreateAdminOptions {
   email: string;
@@ -17,163 +15,89 @@ export interface CreateAdminOptions {
 export async function createAdminUser(options: CreateAdminOptions) {
   const { email, password, fullName, onProgress } = options;
 
-  if (!SUPABASE_URL) {
-    throw new Error('Supabase URL not configured');
+  if (!EXTERNAL_API_URL) {
+    throw new Error('External API URL not configured');
   }
-
-  if (!SERVICE_ROLE_KEY) {
-    throw new Error('Service Role Key not available. Please run: ./setup-admin.sh');
-  }
-
-  // Create a Supabase client with the service role key
-  const supabaseAdmin = createClient<Database>(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
 
   try {
-    // Step 1: Check if company exists
+    // Step 1: Check for default company
     onProgress?.('📋 Checking for default company...');
-    const { data: companies, error: companiesError } = await supabaseAdmin
-      .from('companies')
-      .select('id, name')
-      .limit(1);
 
-    if (companiesError) {
-      throw new Error(`Failed to check companies: ${companiesError.message}`);
-    }
+    const checkCompanyResponse = await fetch(`${EXTERNAL_API_URL}?action=list_companies&limit=1`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
 
+    const companiesData = await checkCompanyResponse.json();
     let companyId: string | null = null;
 
-    if (companies && companies.length > 0) {
-      companyId = companies[0].id;
-      onProgress?.(`✅ Found company: ${companies[0].name}`);
+    if (companiesData && companiesData.data && companiesData.data.length > 0) {
+      companyId = companiesData.data[0].id;
+      onProgress?.(`✅ Found company: ${companiesData.data[0].name}`);
     } else {
+      // Create default company
       onProgress?.('📋 Creating default company...');
-      const { data: newCompany, error: companyError } = await supabaseAdmin
-        .from('companies')
-        .insert({
+
+      const createCompanyResponse = await fetch(`${EXTERNAL_API_URL}?action=create_company`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           name: 'Medical Supplies',
           email: email,
           currency: 'KES',
+          timezone: 'Africa/Nairobi'
         })
-        .select('id')
-        .single();
+      });
 
-      if (companyError) {
-        throw new Error(`Failed to create company: ${companyError.message}`);
+      const companyResult = await createCompanyResponse.json();
+
+      if (!createCompanyResponse.ok || companyResult.status === 'error') {
+        throw new Error(`Failed to create company: ${companyResult.message || 'Unknown error'}`);
       }
 
-      if (newCompany) {
-        companyId = newCompany.id;
-        onProgress?.('✅ Created default company: Medical Supplies');
-      }
+      companyId = companyResult.data?.id || companyResult.id;
+      onProgress?.(`✅ Created company: Medical Supplies`);
     }
 
     if (!companyId) {
-      throw new Error('Failed to get or create company ID');
+      throw new Error('Failed to get or create company');
     }
 
-    // Step 2: Create auth user
-    onProgress?.('🔐 Creating authentication user...');
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: email,
-      password: password,
-      email_confirm: true,
+    // Step 2: Create admin user
+    onProgress?.('🔐 Creating admin user...');
+
+    const createUserResponse = await fetch(`${EXTERNAL_API_URL}?action=admin_create_user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        full_name: fullName,
+        role: 'super_admin',
+        company_id: companyId
+      })
     });
 
-    if (authError) {
-      if (authError.message?.includes('already exists') || authError.message?.includes('already registered')) {
-        onProgress?.('⚠️ User already exists, retrieving...');
-        // Try to get existing user
-        const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-        if (!listError && users) {
-          const existingUser = users.find(u => u.email === email);
-          if (existingUser?.id) {
-            // User exists, update their profile
-            await supabaseAdmin
-              .from('profiles')
-              .update({
-                role: 'admin',
-                status: 'active',
-                full_name: fullName,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', existingUser.id);
-            onProgress?.('✅ Updated existing user to admin');
-            return { success: true, userId: existingUser.id, message: 'Admin updated successfully' };
-          }
-        }
-      }
-      throw new Error(`Failed to create auth user: ${authError.message}`);
-    }
+    const userResult = await createUserResponse.json();
 
-    const userId = authData.user?.id;
-    if (!userId) {
-      throw new Error('Failed to get user ID from auth creation');
-    }
-
-    onProgress?.(`✅ Auth user created (ID: ${userId.substring(0, 8)}...)`);
-
-    // Step 3: Create or update profile (use upsert to handle auto-created profile from auth trigger)
-    onProgress?.('📝 Creating user profile...');
-    const now = new Date().toISOString();
-    const { error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .upsert({
-        id: userId,
-        email: email,
-        full_name: fullName,
-        role: 'admin',
-        status: 'active',
-        company_id: companyId,
-        created_at: now,
-        updated_at: now,
-      }, {
-        onConflict: 'id',
-        returning: 'minimal'
-      });
-
-    if (profileError) {
-      // Try to delete the auth user if profile creation fails
-      try {
-        await supabaseAdmin.auth.admin.deleteUser(userId);
-      } catch (cleanup) {
-        console.error('Cleanup failed:', cleanup);
-      }
-      throw new Error(`Failed to create profile: ${profileError.message}`);
-    }
-
-    onProgress?.('✅ Profile created');
-
-    // Step 4: Assign permissions
-    onProgress?.('🔑 Assigning permissions...');
-    try {
-      const { error: permError } = await supabaseAdmin
-        .from('user_permissions')
-        .insert({
-          user_id: userId,
-          permission_name: 'view_dashboard_summary',
-          granted: true,
-        });
-
-      if (permError && !permError.message?.includes('duplicate')) {
-        console.warn('Permission assignment warning:', permError);
-      } else {
-        onProgress?.('✅ Permissions assigned');
-      }
-    } catch (permErr) {
-      console.warn('Permission assignment error:', permErr);
-      // Don't fail if permissions fail
+    if (!createUserResponse.ok || userResult.status === 'error') {
+      throw new Error(`Failed to create admin user: ${userResult.message || 'Unknown error'}`);
     }
 
     onProgress?.('✅ Admin user created successfully!');
+
     return {
       success: true,
-      userId: userId,
-      message: `Admin user ${email} created successfully`,
+      userId: userResult.user_id || userResult.data?.id,
+      email,
+      role: 'super_admin',
+      companyId
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
