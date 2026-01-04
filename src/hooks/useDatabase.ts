@@ -495,6 +495,128 @@ export function useCreatePayment() {
 }
 
 /**
+ * Hook to update an existing payment
+ * Updates payment details and recalculates invoice balances if amount changed
+ */
+export function useUpdatePayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      paymentId,
+      paymentData,
+      oldAmount
+    }: {
+      paymentId: string;
+      paymentData: {
+        amount: number;
+        payment_date: string;
+        payment_method: string;
+        reference_number?: string;
+        notes?: string;
+      };
+      oldAmount: number;
+    }) => {
+      // 1. Get payment allocations to know which invoices to update
+      const { data: allocations, error: allocError } = await supabase
+        .from('payment_allocations')
+        .select('invoice_id, allocated_amount')
+        .eq('payment_id', paymentId);
+
+      if (allocError) {
+        console.warn('Could not fetch payment allocations:', allocError?.message);
+      }
+
+      // 2. Update the payment record
+      const { data: updatedPayment, error: updateError } = await supabase
+        .from('payments')
+        .update({
+          amount: paymentData.amount,
+          payment_date: paymentData.payment_date,
+          payment_method: paymentData.payment_method,
+          reference_number: paymentData.reference_number,
+          notes: paymentData.notes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', paymentId)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // 3. If amount changed, update invoice balances
+      if (Math.abs(oldAmount - paymentData.amount) > 0.01 && allocations && allocations.length > 0) {
+        const amountDifference = paymentData.amount - oldAmount;
+
+        for (const allocation of allocations) {
+          try {
+            // Get current invoice data
+            const { data: invoice, error: invoiceError } = await supabase
+              .from('invoices')
+              .select('id, total_amount, paid_amount, balance_due, status')
+              .eq('id', allocation.invoice_id)
+              .single();
+
+            if (invoiceError) {
+              console.warn(`Could not fetch invoice ${allocation.invoice_id}:`, invoiceError?.message);
+              continue;
+            }
+
+            // Calculate new amounts
+            const newPaidAmount = (invoice.paid_amount || 0) + amountDifference;
+            const newBalanceDue = invoice.total_amount - newPaidAmount;
+
+            // Determine new status with tolerance for floating-point precision
+            let newStatus = invoice.status || 'draft';
+            const tolerance = 0.01;
+
+            if (Math.abs(newBalanceDue) < tolerance) {
+              newStatus = 'paid';
+            } else if (newPaidAmount > tolerance) {
+              newStatus = 'partial';
+            } else {
+              newStatus = 'draft';
+            }
+
+            // Update invoice
+            const { error: invoiceUpdateError } = await supabase
+              .from('invoices')
+              .update({
+                paid_amount: Math.max(0, newPaidAmount),
+                balance_due: Math.max(0, newBalanceDue),
+                status: newStatus,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', allocation.invoice_id);
+
+            if (invoiceUpdateError) {
+              console.warn(`Could not update invoice ${allocation.invoice_id}:`, invoiceUpdateError?.message);
+            }
+          } catch (error: any) {
+            console.warn(`Error updating invoice ${allocation.invoice_id}:`, error?.message);
+          }
+        }
+      }
+
+      return updatedPayment;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['customer_invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['paymentAllocations'] });
+    },
+    onError: (error: any) => {
+      console.error('Error updating payment:', error);
+      const errorMessage = error?.message || 'Failed to update payment. Please try again.';
+      toast.error(errorMessage);
+    },
+  });
+}
+
+/**
  * Hook to create a credit note for overpayments
  */
 export function useCreateOverpaymentCreditNote() {
