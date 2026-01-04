@@ -62,6 +62,8 @@ export default function AdminInitExternal() {
     try {
       const result = await initializeExternalAPI({
         apiUrl,
+        email: customEmail,
+        password: customPassword,
         onProgress: (message: string) => {
           setInitProgress(prev => [...prev, message]);
         },
