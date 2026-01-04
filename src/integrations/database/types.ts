@@ -18,6 +18,9 @@ export interface DatabaseConfig {
     database: string;
     port?: number;
   };
+  externalApi?: {
+    url: string;
+  };
 }
 
 export interface AuthContext {
