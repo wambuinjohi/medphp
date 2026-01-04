@@ -53,16 +53,14 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
     onProgress?.('Initializing database tables...');
     onProgress?.(`Creating admin user: ${adminEmail}`);
 
-    // The setup endpoint expects email and password as form-encoded POST data
-    const formData = new URLSearchParams();
-    formData.append('action', 'setup');
-    formData.append('email', adminEmail);
-    formData.append('password', adminPassword);
-
-    const setupResponse = await fetch(apiUrl, {
+    // The setup endpoint expects email and password as JSON POST data
+    const setupResponse = await fetch(`${apiUrl}?action=setup`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData.toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: adminEmail,
+        password: adminPassword,
+      }),
     });
 
     if (!setupResponse.ok) {
