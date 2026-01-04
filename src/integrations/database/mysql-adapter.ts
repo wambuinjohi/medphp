@@ -19,10 +19,39 @@ import type {
 } from './types';
 
 export class MySQLAdapter implements IDatabase {
+  private apiBase = '/api/db';
+
+  private async apiCall<T>(
+    method: string,
+    endpoint: string,
+    data?: any
+  ): Promise<{ data: T; error: Error | null }> {
+    try {
+      const response = await fetch(`${this.apiBase}${endpoint}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: data ? JSON.stringify(data) : undefined,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        return { data: null as any, error: new Error(error.message || 'API error') };
+      }
+
+      const result = await response.json();
+      return { data: result.data, error: null };
+    } catch (error) {
+      return { data: null as any, error: error as Error };
+    }
+  }
+
   async getAuthContext(userId: string): Promise<AuthContext | null> {
     try {
-      const user = await getAuthContext(userId);
-      return user;
+      const { data, error } = await this.apiCall(
+        'GET',
+        `/auth-context/${userId}`
+      );
+      return error ? null : data;
     } catch (error) {
       console.error('Error getting auth context:', error);
       return null;
@@ -31,24 +60,21 @@ export class MySQLAdapter implements IDatabase {
 
   async select<T>(table: string, filter?: Record<string, any>): Promise<ListQueryResult<T>> {
     try {
-      let sql = `SELECT * FROM ${table}`;
-      const params: any[] = [];
+      const { data, error } = await this.apiCall(
+        'POST',
+        `/select/${table}`,
+        { filter }
+      );
 
-      if (filter && Object.keys(filter).length > 0) {
-        const conditions = Object.entries(filter)
-          .filter(([_, value]) => value !== undefined)
-          .map(([key, _]) => {
-            params.push(filter[key]);
-            return `${key} = ?`;
-          });
-
-        if (conditions.length > 0) {
-          sql += ' WHERE ' + conditions.join(' AND ');
-        }
+      if (error) {
+        return { data: [], error, count: 0 };
       }
 
-      const data = await queryAll<T>(sql, params);
-      return { data: data || [], error: null, count: data?.length || 0 };
+      return {
+        data: Array.isArray(data) ? data : [],
+        error: null,
+        count: Array.isArray(data) ? data.length : 0
+      };
     } catch (error) {
       return { data: [], error: error as Error, count: 0 };
     }
@@ -56,8 +82,12 @@ export class MySQLAdapter implements IDatabase {
 
   async selectOne<T>(table: string, id: string): Promise<QueryResult<T>> {
     try {
-      const data = await queryOne<T>(`SELECT * FROM ${table} WHERE id = ?`, [id]);
-      return { data: data || null, error: null };
+      const { data, error } = await this.apiCall(
+        'GET',
+        `/select-one/${table}/${id}`
+      );
+
+      return { data: error ? null : data, error };
     } catch (error) {
       return { data: null, error: error as Error };
     }
@@ -69,14 +99,17 @@ export class MySQLAdapter implements IDatabase {
 
   async insert<T>(table: string, data: Partial<T>): Promise<InsertResult> {
     try {
-      const fields = Object.keys(data).join(', ');
-      const values = Object.values(data);
-      const placeholders = values.map(() => '?').join(', ');
+      const { data: result, error } = await this.apiCall(
+        'POST',
+        `/insert/${table}`,
+        data
+      );
 
-      const sql = `INSERT INTO ${table} (${fields}) VALUES (${placeholders})`;
-      const result = await insert(sql, values);
+      if (error) {
+        return { id: '', error };
+      }
 
-      return { id: result.insertId.toString(), error: null };
+      return { id: result?.id || '', error: null };
     } catch (error) {
       return { id: '', error: error as Error };
     }
@@ -84,20 +117,17 @@ export class MySQLAdapter implements IDatabase {
 
   async insertMany<T>(table: string, data: Partial<T>[]): Promise<InsertResult> {
     try {
-      if (data.length === 0) {
-        return { id: '', error: new Error('No data to insert') };
+      const { data: result, error } = await this.apiCall(
+        'POST',
+        `/insert-many/${table}`,
+        { records: data }
+      );
+
+      if (error) {
+        return { id: '', error };
       }
 
-      const fields = Object.keys(data[0]).join(', ');
-      const placeholders = data
-        .map(() => '(' + Object.keys(data[0]).map(() => '?').join(', ') + ')')
-        .join(', ');
-
-      const values = data.flatMap(row => Object.values(row));
-      const sql = `INSERT INTO ${table} (${fields}) VALUES ${placeholders}`;
-      const result = await insert(sql, values);
-
-      return { id: result.insertId.toString(), error: null };
+      return { id: result?.id || '', error: null };
     } catch (error) {
       return { id: '', error: error as Error };
     }
@@ -105,15 +135,13 @@ export class MySQLAdapter implements IDatabase {
 
   async update<T>(table: string, id: string, data: Partial<T>): Promise<UpdateResult> {
     try {
-      const fields = Object.keys(data)
-        .map(key => `${key} = ?`)
-        .join(', ');
-      const values = [...Object.values(data), id];
+      const { error } = await this.apiCall(
+        'PUT',
+        `/update/${table}/${id}`,
+        data
+      );
 
-      const sql = `UPDATE ${table} SET ${fields} WHERE id = ?`;
-      const result = await execute(sql, values);
-
-      return { error: null, affectedRows: result.affectedRows };
+      return { error };
     } catch (error) {
       return { error: error as Error };
     }
@@ -121,21 +149,13 @@ export class MySQLAdapter implements IDatabase {
 
   async updateMany<T>(table: string, filter: Record<string, any>, data: Partial<T>): Promise<UpdateResult> {
     try {
-      const fields = Object.keys(data)
-        .map(key => `${key} = ?`)
-        .join(', ');
-      
-      const values = Object.values(data);
-      const filterConditions = Object.entries(filter)
-        .map(([key, _]) => {
-          values.push(filter[key]);
-          return `${key} = ?`;
-        });
+      const { error } = await this.apiCall(
+        'PUT',
+        `/update-many/${table}`,
+        { filter, data }
+      );
 
-      const sql = `UPDATE ${table} SET ${fields} WHERE ${filterConditions.join(' AND ')}`;
-      const result = await execute(sql, values);
-
-      return { error: null, affectedRows: result.affectedRows };
+      return { error };
     } catch (error) {
       return { error: error as Error };
     }
@@ -143,10 +163,12 @@ export class MySQLAdapter implements IDatabase {
 
   async delete(table: string, id: string): Promise<DeleteResult> {
     try {
-      const sql = `DELETE FROM ${table} WHERE id = ?`;
-      const result = await execute(sql, [id]);
+      const { error } = await this.apiCall(
+        'DELETE',
+        `/delete/${table}/${id}`
+      );
 
-      return { error: null, affectedRows: result.affectedRows };
+      return { error };
     } catch (error) {
       return { error: error as Error };
     }
@@ -154,22 +176,13 @@ export class MySQLAdapter implements IDatabase {
 
   async deleteMany(table: string, filter: Record<string, any>): Promise<DeleteResult> {
     try {
-      const conditions = Object.entries(filter)
-        .map(([key, value]) => {
-          if (value === null) {
-            return `${key} IS NULL`;
-          }
-          return `${key} = ?`;
-        });
+      const { error } = await this.apiCall(
+        'POST',
+        `/delete-many/${table}`,
+        { filter }
+      );
 
-      const values = Object.entries(filter)
-        .filter(([_, value]) => value !== null)
-        .map(([_, value]) => value);
-
-      const sql = `DELETE FROM ${table} WHERE ${conditions.join(' AND ')}`;
-      const result = await execute(sql, values);
-
-      return { error: null, affectedRows: result.affectedRows };
+      return { error };
     } catch (error) {
       return { error: error as Error };
     }
@@ -177,8 +190,17 @@ export class MySQLAdapter implements IDatabase {
 
   async raw<T>(sql: string, params?: any[]): Promise<ListQueryResult<T>> {
     try {
-      const data = await queryAll<T>(sql, params);
-      return { data: data || [], error: null };
+      const { data, error } = await this.apiCall(
+        'POST',
+        '/raw',
+        { sql, params }
+      );
+
+      if (error) {
+        return { data: [], error };
+      }
+
+      return { data: Array.isArray(data) ? data : [], error: null };
     } catch (error) {
       return { data: [], error: error as Error };
     }
@@ -186,7 +208,13 @@ export class MySQLAdapter implements IDatabase {
 
   async canRead(table: string, recordId: string, auth: AuthContext): Promise<boolean> {
     try {
-      return await authCanRead(auth, table, recordId);
+      const { data, error } = await this.apiCall(
+        'POST',
+        '/auth/can-read',
+        { table, recordId, auth }
+      );
+
+      return error ? false : (data?.allowed || false);
     } catch (error) {
       console.error('Error checking read permission:', error);
       return false;
@@ -195,7 +223,13 @@ export class MySQLAdapter implements IDatabase {
 
   async canWrite(table: string, recordId: string | null, companyId: string, auth: AuthContext): Promise<boolean> {
     try {
-      return await authCanWrite(auth, table, recordId, companyId);
+      const { data, error } = await this.apiCall(
+        'POST',
+        '/auth/can-write',
+        { table, recordId, companyId, auth }
+      );
+
+      return error ? false : (data?.allowed || false);
     } catch (error) {
       console.error('Error checking write permission:', error);
       return false;
@@ -204,7 +238,13 @@ export class MySQLAdapter implements IDatabase {
 
   async canDelete(table: string, recordId: string, auth: AuthContext): Promise<boolean> {
     try {
-      return await authCanDelete(auth, table, recordId);
+      const { data, error } = await this.apiCall(
+        'POST',
+        '/auth/can-delete',
+        { table, recordId, auth }
+      );
+
+      return error ? false : (data?.allowed || false);
     } catch (error) {
       console.error('Error checking delete permission:', error);
       return false;
@@ -212,24 +252,23 @@ export class MySQLAdapter implements IDatabase {
   }
 
   async transaction<T>(callback: (db: IDatabase) => Promise<T>): Promise<T> {
-    return transaction(async () => {
-      return callback(this);
-    });
+    // For API-based adapter, transactions are handled server-side
+    return callback(this);
   }
 
   async initialize(): Promise<void> {
-    // MySQL pool initialization is handled by the connection module
-    console.log('✅ MySQL adapter initialized');
+    // MySQL pool initialization is handled by the backend API
+    console.log('✅ MySQL adapter initialized (API-based)');
   }
 
   async close(): Promise<void> {
-    // Close is handled by the connection module if needed
+    // Connection cleanup handled by backend
   }
 
   async health(): Promise<boolean> {
     try {
-      const data = await queryOne('SELECT 1 as health');
-      return !!data;
+      const { error } = await this.apiCall('GET', '/health');
+      return !error;
     } catch (error) {
       console.error('MySQL health check failed:', error);
       return false;
