@@ -145,14 +145,15 @@ export async function checkAdminExists(options: SetupOptions = {}): Promise<bool
   const password = options.password || 'Pass123';
 
   try {
-    const url = new URL(apiUrl);
-    url.searchParams.set('action', 'login');
-    url.searchParams.set('email', email);
-    url.searchParams.set('password', password);
+    const formData = new URLSearchParams();
+    formData.append('action', 'login');
+    formData.append('email', email);
+    formData.append('password', password);
 
-    const response = await fetch(url.toString(), {
+    const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData.toString(),
     });
 
     return response.ok;
