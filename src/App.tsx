@@ -51,6 +51,9 @@ const App = () => {
         {/* Admin initialization route - Accessible without authentication */}
         <Route path="/admin-init" element={<AdminInit />} />
 
+        {/* External API admin initialization route */}
+        <Route path="/admin-init-external" element={<AdminInitExternal />} />
+
         {/* Debug routes - Accessible without authentication */}
         <Route path="/debug/database" element={<DatabaseDebug />} />
 
