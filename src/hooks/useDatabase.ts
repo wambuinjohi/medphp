@@ -469,10 +469,10 @@ export function useRemittanceAdvice(companyId?: string) {
  */
 export function useCreateRemittanceAdvice() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async (remittanceData: any) => {
-      const { db } = useDatabase();
       const result = await db.insert('remittance_advice', remittanceData);
       if (result.error) throw result.error;
 
@@ -497,10 +497,10 @@ export function useCreateRemittanceAdvice() {
  */
 export function useUpdateRemittanceAdvice() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { db } = useDatabase();
       const result = await db.update('remittance_advice', id, data);
       if (result.error) throw result.error;
       return result;
@@ -522,10 +522,10 @@ export function useUpdateRemittanceAdvice() {
  */
 export function useUpdateRemittanceAdviceItems() {
   const queryClient = useQueryClient();
+  const { db } = useDatabase();
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { db } = useDatabase();
       const result = await db.update('remittance_advice_items', id, data);
       if (result.error) throw result.error;
       return result;
