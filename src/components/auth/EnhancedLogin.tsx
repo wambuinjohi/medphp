@@ -221,21 +221,23 @@ export function EnhancedLogin() {
               </div>
             </form>
 
-            {/* Demo Credentials Section */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border-2 border-blue-200">
-              <p className="text-xs sm:text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
-                <span className="text-base">🎯</span> Demo Credentials (for testing)
+            {/* Setup Instructions Section */}
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border-2 border-purple-200">
+              <p className="text-xs sm:text-sm font-bold text-purple-900 mb-3 flex items-center gap-2">
+                <span className="text-base">⚙️</span> First Time Setup
               </p>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between bg-white rounded p-2 border border-blue-100">
-                  <span className="text-xs font-medium text-gray-700">Email:</span>
-                  <span className="text-xs font-mono font-semibold text-blue-600">admin@mail.com</span>
-                </div>
-                <div className="flex items-center justify-between bg-white rounded p-2 border border-blue-100">
-                  <span className="text-xs font-medium text-gray-700">Password:</span>
-                  <span className="text-xs font-mono font-semibold text-blue-600">Admin.12</span>
-                </div>
-              </div>
+              <p className="text-xs sm:text-sm text-purple-800 mb-4">
+                If this is your first time, you need to initialize the system and create an admin account.
+              </p>
+              <Button
+                onClick={() => {
+                  navigate('/admin-init-external');
+                }}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-2 rounded-lg transition-all"
+              >
+                <span className="text-base">🚀</span>
+                <span className="ml-2">Initialize System & Create Admin</span>
+              </Button>
             </div>
 
             {/* Footer Message */}
