@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: heal-app
+    runtime: node
+    startCommand: npm install -g serve && serve -s dist -l 8080
+    buildCommand: npm install && npm run build
+    envVars:
+      - key: NODE_ENV
+        value: production

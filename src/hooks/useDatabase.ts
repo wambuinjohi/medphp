@@ -1,0 +1,2853 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+// Types
+export interface Company {
+  id: string;
+  name: string;
+  registration_number?: string;
+  tax_number?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
+  currency?: string;
+  logo_url?: string;
+  fiscal_year_start?: number;
+  tax_settings?: TaxSetting[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TaxSetting {
+  id: string;
+  company_id: string;
+  name: string;
+  rate: number;
+  is_active: boolean;
+  is_default?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UnitOfMeasure {
+  id: string;
+  company_id: string;
+  name: string;
+  abbreviation: string;
+  description?: string;
+  is_active: boolean;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PaymentMethod {
+  id: string;
+  company_id: string;
+  name: string;
+  code: string;
+  description?: string;
+  icon_name?: string;
+  is_active: boolean;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface StockMovement {
+  id: string;
+  company_id: string;
+  product_id: string;
+  movement_type: 'IN' | 'OUT' | 'ADJUSTMENT';
+  reference_type: 'INVOICE' | 'DELIVERY_NOTE' | 'RESTOCK' | 'ADJUSTMENT';
+  reference_id?: string;
+  quantity: number;
+  cost_per_unit?: number;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Customer {
+  id: string;
+  company_id: string;
+  customer_code: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  credit_limit?: number;
+  payment_terms?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Product {
+  id: string;
+  company_id: string;
+  category_id?: string;
+  product_code: string;
+  name: string;
+  description?: string;
+  unit_of_measure?: string;
+  cost_price?: number;
+  selling_price: number;
+  stock_quantity?: number;
+  minimum_stock_level?: number;
+  maximum_stock_level?: number;
+  reorder_point?: number;
+  is_active?: boolean;
+  track_inventory?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Invoice {
+  id: string;
+  company_id: string;
+  customer_id: string;
+  invoice_number: string;
+  invoice_date: string;
+  due_date: string;
+  status: string;
+  subtotal?: number;
+  tax_amount?: number;
+  total_amount?: number;
+  paid_amount?: number;
+  balance_due?: number;
+  notes?: string;
+  terms_and_conditions?: string;
+  affects_inventory?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Payment {
+  id: string;
+  company_id: string;
+  customer_id: string;
+  payment_number: string;
+  payment_date: string;
+  amount: number;
+  payment_method: string;
+  reference_number?: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface RemittanceAdvice {
+  id: string;
+  company_id: string;
+  customer_id: string;
+  advice_number: string;
+  advice_date: string;
+  total_payment: number;
+  status: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface DeliveryNote {
+  id: string;
+  company_id: string;
+  customer_id: string;
+  invoice_id?: string;
+  delivery_number: string; // Matches database schema
+  delivery_note_number?: string; // For backward compatibility
+  delivery_date: string;
+  delivery_address: string;
+  delivery_method: string;
+  tracking_number?: string;
+  carrier?: string;
+  status: string;
+  notes?: string;
+  delivered_by?: string;
+  received_by?: string;
+  invoice_number?: string;
+  created_at?: string;
+  updated_at?: string;
+  // Related data
+  customers?: {
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+  };
+  invoices?: {
+    invoice_number: string;
+    total_amount: number;
+  };
+  delivery_note_items?: DeliveryNoteItem[];
+}
+
+export interface DeliveryNoteItem {
+  id: string;
+  delivery_note_id: string;
+  product_id?: string;
+  description: string;
+  quantity_ordered: number;
+  quantity_delivered: number;
+  unit_price?: number;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
+  // Related data
+  products?: {
+    name: string;
+    unit_of_measure?: string;
+  };
+}
+
+export interface LPO {
+  id: string;
+  company_id: string;
+  supplier_id: string;
+  lpo_number: string;
+  lpo_date: string;
+  delivery_date?: string;
+  status: 'draft' | 'sent' | 'approved' | 'received' | 'cancelled';
+  subtotal: number;
+  tax_amount: number;
+  total_amount: number;
+  notes?: string;
+  terms_and_conditions?: string;
+  delivery_address?: string;
+  contact_person?: string;
+  contact_phone?: string;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+  // Related data
+  suppliers?: {
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+  };
+  lpo_items?: LPOItem[];
+}
+
+export interface LPOItem {
+  id: string;
+  lpo_id: string;
+  product_id?: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  tax_rate: number;
+  tax_amount: number;
+  line_total: number;
+  notes?: string;
+  sort_order: number;
+  // Related data
+  products?: {
+    name: string;
+    product_code: string;
+    unit_of_measure?: string;
+  };
+}
+
+// Companies hooks
+export const useCompanies = () => {
+  return useQuery({
+    queryKey: ['companies'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as Company[];
+    },
+  });
+};
+
+export const useCreateCompany = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (company: Omit<Company, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('companies')
+        .insert([company])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: async (data) => {
+      try {
+        // Import and call seed functions for new company
+        const { seedDefaultUnitsOfMeasure, seedDefaultPaymentMethods } = await import('@/utils/setupDatabase');
+
+        // Seed default units of measure
+        const unitsResult = await seedDefaultUnitsOfMeasure(data.id);
+        if (!unitsResult.success) {
+          console.warn('Warning: Could not seed default units:', unitsResult.error);
+        }
+
+        // Seed default payment methods
+        const methodsResult = await seedDefaultPaymentMethods(data.id);
+        if (!methodsResult.success) {
+          console.warn('Warning: Could not seed default payment methods:', methodsResult.error);
+        }
+      } catch (seedError) {
+        console.warn('Warning: Error seeding data for new company:', seedError);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+    },
+  });
+};
+
+export const useUpdateCompany = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...company }: Partial<Company> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('companies')
+        .update(company)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+    },
+  });
+};
+
+// Customers hooks
+export const useCustomers = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['customers', companyId],
+    queryFn: async () => {
+      let query = supabase
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (companyId) {
+        query = query.eq('company_id', companyId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data as Customer[];
+    },
+  });
+};
+
+export const useCreateCustomer = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('customers')
+        .insert([customer])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+    onError: (error: any) => {
+      console.error('Error creating customer (useCreateCustomer):', error);
+      try {
+        // dynamic import to avoid circular deps
+        import('@/lib/utils').then(({ formatError }) => {
+          const message = formatError(error);
+          toast.error(`Failed to create customer: ${message}`);
+        }).catch((_) => {
+          const message = error?.message ?? (error?.error ?? (typeof error === 'object' ? JSON.stringify(error) : String(error)));
+          toast.error(`Failed to create customer: ${message}`);
+        });
+      } catch (_e) {
+        const message = error?.message ?? (error?.error ?? (typeof error === 'object' ? JSON.stringify(error) : String(error)));
+        toast.error(`Failed to create customer: ${message}`);
+      }
+    },
+  });
+};
+
+export const useUpdateCustomer = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...customer }: Partial<Customer> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('customers')
+        .update(customer)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+  });
+};
+
+export const useDeleteCustomer = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // 1. Fetch the complete customer with all related data counts
+      const { data: customer, error: fetchError } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!customer) throw new Error('Customer not found');
+
+      // 2. Count related records
+      const [invoices, quotations, creditNotes, deliveryNotes, payments, lposAsSupplier] = await Promise.all([
+        supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('customer_id', id),
+        supabase.from('quotations').select('id', { count: 'exact', head: true }).eq('customer_id', id),
+        supabase.from('credit_notes').select('id', { count: 'exact', head: true }).eq('customer_id', id),
+        supabase.from('delivery_notes').select('id', { count: 'exact', head: true }).eq('customer_id', id),
+        supabase.from('payments').select('id', { count: 'exact', head: true }).eq('customer_id', id),
+        supabase.from('lpos').select('id', { count: 'exact', head: true }).eq('supplier_id', id),
+      ]);
+
+      const relatedCounts = {
+        invoices: invoices.count || 0,
+        quotations: quotations.count || 0,
+        credit_notes: creditNotes.count || 0,
+        delivery_notes: deliveryNotes.count || 0,
+        payments: payments.count || 0,
+        lpos_as_supplier: lposAsSupplier.count || 0,
+      };
+
+      // 3. Delete the customer (cascade deletes related records)
+      const { error: deleteError } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+
+      // 4. Log the deletion with full snapshot
+      try {
+        const { data } = await supabase.auth.getUser();
+        const userId = data?.user?.id || null;
+        const userEmail = (data?.user?.email as string) || null;
+
+        await supabase.from('audit_logs').insert([
+          {
+            action: 'DELETE',
+            entity_type: 'customer',
+            record_id: id,
+            company_id: customer.company_id,
+            actor_user_id: userId,
+            actor_email: userEmail,
+            details: {
+              customer_code: customer.customer_code,
+              name: customer.name,
+              email: customer.email,
+              phone: customer.phone,
+              credit_limit: customer.credit_limit,
+              is_active: customer.is_active,
+              invoices_deleted: relatedCounts.invoices,
+              quotations_deleted: relatedCounts.quotations,
+              credit_notes_deleted: relatedCounts.credit_notes,
+              delivery_notes_deleted: relatedCounts.delivery_notes,
+              payments_deleted: relatedCounts.payments,
+              lpos_as_supplier_deleted: relatedCounts.lpos_as_supplier,
+            },
+          },
+        ]);
+      } catch (auditError) {
+        console.warn('Audit log creation failed:', auditError);
+      }
+
+      return { customerId: id, relatedCounts };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
+      queryClient.invalidateQueries({ queryKey: ['deliveryNotes'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['lpos'] });
+      toast.success('Customer deleted successfully! All related records have been updated.');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting customer:', error);
+      const errorMessage = error.message || 'Failed to delete customer. Please try again.';
+      toast.error(errorMessage);
+    },
+  });
+};
+
+// Products hooks
+export const useProducts = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['products', companyId],
+    queryFn: async () => {
+      let query = supabase
+        .from('products')
+        .select(`
+          *,
+          product_categories(name)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (companyId) {
+        query = query.eq('company_id', companyId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+export const useCreateProduct = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (product: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('products')
+        .insert([product])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+};
+
+export const useUpdateProduct = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...product }: Partial<Product> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('products')
+        .update(product)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+};
+
+// Stock Movement hooks
+export const useCreateStockMovement = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (movement: Omit<StockMovement, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('stock_movements')
+        .insert([movement])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stock_movements'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+};
+
+// Tax Settings hooks
+export const useTaxSettings = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['tax_settings', companyId],
+    queryFn: async () => {
+      let query = supabase
+        .from('tax_settings')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (companyId) {
+        query = query.eq('company_id', companyId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data as TaxSetting[];
+    },
+  });
+};
+
+export const useCreateTaxSetting = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (taxSetting: Omit<TaxSetting, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('tax_settings')
+        .insert([taxSetting])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tax_settings'] });
+    },
+  });
+};
+
+export const useUpdateTaxSetting = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...taxSetting }: Partial<TaxSetting> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('tax_settings')
+        .update(taxSetting)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tax_settings'] });
+    },
+  });
+};
+
+export const useDeleteTaxSetting = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('tax_settings')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tax_settings'] });
+    },
+  });
+};
+
+// Invoices hooks - Fixed to avoid relationship ambiguity
+export const useInvoices = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['invoices', companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      if (!companyId) return [];
+
+      try {
+        // Step 1: Get invoices without embedded relationships
+        let query = supabase
+          .from('invoices')
+          .select(`
+            id,
+            company_id,
+            customer_id,
+            invoice_number,
+            invoice_date,
+            due_date,
+            status,
+            subtotal,
+            tax_amount,
+            total_amount,
+            paid_amount,
+            balance_due,
+            notes,
+            terms_and_conditions,
+            lpo_number,
+            created_at,
+            updated_at
+          `)
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false });
+
+        const { data: invoices, error: invoicesError } = await query;
+
+        if (invoicesError) throw invoicesError;
+        if (!invoices || invoices.length === 0) return [];
+
+        // Step 2: Get customers separately (filter out invalid UUIDs)
+        const customerIds = [...new Set(invoices.map(invoice => invoice.customer_id).filter(id => id && typeof id === 'string' && id.length === 36))];
+        const { data: customers } = customerIds.length > 0 ? await supabase
+          .from('customers')
+          .select('id, name, email, phone, address, city, country')
+          .in('id', customerIds) : { data: [] };
+
+        // Step 3: Get invoice items separately (including product details for delivery notes)
+        const invoiceIds = invoices.map(inv => inv.id);
+        const { data: invoiceItems } = invoiceIds.length > 0 ? await supabase
+          .from('invoice_items')
+          .select(`
+            id,
+            invoice_id,
+            product_id,
+            description,
+            quantity,
+            unit_price,
+            discount_before_vat,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive,
+            line_total,
+            sort_order,
+            products(id, name, product_code, unit_of_measure)
+          `)
+          .in('invoice_id', invoiceIds) : { data: [], error: null };
+
+        // Step 4: Create lookup maps
+        const customerMap = new Map();
+        (customers || []).forEach(customer => {
+          customerMap.set(customer.id, customer);
+        });
+
+        const itemsMap = new Map();
+        (invoiceItems || []).forEach(item => {
+          if (!itemsMap.has(item.invoice_id)) {
+            itemsMap.set(item.invoice_id, []);
+          }
+          itemsMap.get(item.invoice_id).push(item);
+        });
+
+        // Step 5: Combine data
+        return invoices.map(invoice => ({
+          ...invoice,
+          customers: customerMap.get(invoice.customer_id) || {
+            name: 'Unknown Customer',
+            email: null,
+            phone: null
+          },
+          invoice_items: itemsMap.get(invoice.id) || []
+        }));
+
+      } catch (error) {
+        console.error('Error in useInvoices:', error);
+        // Import parseErrorMessage at the top if not already imported
+        const errorMessage = typeof error === 'string' ? error :
+                            (error as any)?.message ||
+                            'Failed to load invoices';
+        throw new Error(errorMessage);
+      }
+    },
+  });
+};
+
+export const useCustomerInvoices = (customerId?: string, companyId?: string) => {
+  return useQuery({
+    queryKey: ['customer_invoices', customerId, companyId],
+    queryFn: async () => {
+      if (!customerId) return [];
+
+      try {
+        // Get invoices without embedded relationships
+        let query = supabase
+          .from('invoices')
+          .select(`
+            id,
+            company_id,
+            customer_id,
+            invoice_number,
+            invoice_date,
+            due_date,
+            status,
+            subtotal,
+            tax_amount,
+            total_amount,
+            paid_amount,
+            balance_due,
+            notes,
+            terms_and_conditions,
+            lpo_number,
+            created_at,
+            updated_at
+          `)
+          .eq('customer_id', customerId)
+          .order('created_at', { ascending: false });
+
+        if (companyId) {
+          query = query.eq('company_id', companyId);
+        }
+
+        const { data: invoices, error: invoicesError } = await query;
+
+        if (invoicesError) throw invoicesError;
+        if (!invoices || invoices.length === 0) return [];
+
+        // Get invoice items separately
+        const invoiceIds2 = invoices.map(inv => inv.id);
+        const { data: invoiceItems } = invoiceIds2.length > 0 ? await supabase
+          .from('invoice_items')
+          .select(`
+            id,
+            invoice_id,
+            product_id,
+            description,
+            quantity,
+            unit_price,
+            discount_before_vat,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive,
+            line_total,
+            sort_order
+          `)
+          .in('invoice_id', invoiceIds2) : { data: [], error: null };
+
+        // Group items by invoice
+        const itemsMap = new Map();
+        (invoiceItems || []).forEach(item => {
+          if (!itemsMap.has(item.invoice_id)) {
+            itemsMap.set(item.invoice_id, []);
+          }
+          itemsMap.get(item.invoice_id).push(item);
+        });
+
+        // Combine data
+        return invoices.map(invoice => ({
+          ...invoice,
+          invoice_items: itemsMap.get(invoice.id) || []
+        }));
+
+      } catch (error) {
+        console.error('Error in useCustomerInvoices:', error);
+        const errorMessage = typeof error === 'string' ? error :
+                            (error as any)?.message ||
+                            'Failed to load customer invoices';
+        throw new Error(errorMessage);
+      }
+    },
+    enabled: !!customerId,
+  });
+};
+
+export const useCreateInvoice = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (invoice: Omit<Invoice, 'id' | 'created_at' | 'updated_at'>) => {
+      // Ensure created_by defaults to authenticated user
+      const payload: any = { ...invoice };
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const authUserId = userData?.user?.id || null;
+        if (authUserId) {
+          payload.created_by = authUserId;
+        } else if (typeof payload.created_by === 'undefined') {
+          payload.created_by = null;
+        }
+      } catch {
+        if (typeof payload.created_by === 'undefined') payload.created_by = null;
+      }
+
+      let dataRes; let errorRes: any;
+      {
+        const { data, error } = await supabase
+          .from('invoices')
+          .insert([payload])
+          .select()
+          .single();
+        dataRes = data; errorRes = error as any;
+      }
+      if (errorRes && errorRes.code === '23503' && String(errorRes.message || '').includes('created_by')) {
+        const retryPayload = { ...payload, created_by: null };
+        const { data: retryData, error: retryError } = await supabase
+          .from('invoices')
+          .insert([retryPayload])
+          .select()
+          .single();
+        dataRes = retryData; errorRes = retryError as any;
+      }
+
+      if (errorRes) throw errorRes;
+      return dataRes;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    },
+  });
+};
+
+// Payments hooks
+export const usePayments = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['payments', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+
+      try {
+        // Step 1: Get payments without embedded relationships
+        let query = supabase
+          .from('payments')
+          .select(`
+            id,
+            company_id,
+            customer_id,
+            payment_number,
+            payment_date,
+            amount,
+            payment_method,
+            reference_number,
+            notes,
+            created_at,
+            updated_at
+          `)
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false });
+
+        const { data: payments, error: paymentsError } = await query;
+
+        if (paymentsError) throw paymentsError;
+        if (!payments || payments.length === 0) return [];
+
+        // Step 2: Get customers separately (filter out invalid UUIDs)
+        const customerIds = [...new Set(payments.map(payment => payment.customer_id).filter(id => id && typeof id === 'string' && id.length === 36))];
+        const { data: customers } = customerIds.length > 0 ? await supabase
+          .from('customers')
+          .select('id, name, email, phone, address, city, country')
+          .in('id', customerIds) : { data: [] };
+
+        // Step 3: Get payment allocations separately
+        const { data: paymentAllocations } = await supabase
+          .from('payment_allocations')
+          .select(`
+            id,
+            payment_id,
+            invoice_id,
+            amount_allocated,
+            invoices(id, invoice_number, total_amount)
+          `)
+          .in('payment_id', payments.map(payment => payment.id));
+
+        // Step 4: Create lookup maps
+        const customerMap = new Map();
+        (customers || []).forEach(customer => {
+          customerMap.set(customer.id, customer);
+        });
+
+        const allocationsMap = new Map();
+        (paymentAllocations || []).forEach(allocation => {
+          if (!allocationsMap.has(allocation.payment_id)) {
+            allocationsMap.set(allocation.payment_id, []);
+          }
+          allocationsMap.get(allocation.payment_id).push({
+            id: allocation.id,
+            invoice_number: allocation.invoices?.invoice_number || 'N/A',
+            allocated_amount: allocation.amount_allocated,
+            invoice_total: allocation.invoices?.total_amount || 0
+          });
+        });
+
+        // Step 5: Combine data
+        return payments.map(payment => ({
+          ...payment,
+          customers: customerMap.get(payment.customer_id) || {
+            name: 'Unknown Customer',
+            email: null,
+            phone: null
+          },
+          payment_allocations: allocationsMap.get(payment.id) || []
+        }));
+
+      } catch (error) {
+        console.error('Error in usePayments:', error);
+        const errorMessage = typeof error === 'string' ? error :
+                            (error as any)?.message ||
+                            'Failed to load payments';
+        throw new Error(errorMessage);
+      }
+    },
+  });
+};
+
+export const useCustomerPayments = (customerId?: string, companyId?: string) => {
+  return useQuery({
+    queryKey: ['customer_payments', customerId, companyId],
+    queryFn: async () => {
+      if (!customerId) return [];
+
+      let query = supabase
+        .from('payments')
+        .select(`
+          *,
+          payment_allocations(*, invoices(invoice_number, total_amount))
+        `)
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
+
+      if (companyId) {
+        query = query.eq('company_id', companyId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!customerId,
+  });
+};
+
+export const useCreatePayment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (paymentData: Omit<Payment, 'id' | 'created_at' | 'updated_at'> & { invoice_id: string }) => {
+      // Validate UUID fields before insert
+      if (!paymentData.company_id || typeof paymentData.company_id !== 'string' || paymentData.company_id.length !== 36) {
+        throw new Error('Invalid company ID. Please refresh and try again.');
+      }
+      if (paymentData.customer_id && (typeof paymentData.customer_id !== 'string' || paymentData.customer_id.length !== 36)) {
+        throw new Error('Invalid customer ID. Please select a valid invoice.');
+      }
+      if (!paymentData.invoice_id || typeof paymentData.invoice_id !== 'string' || paymentData.invoice_id.length !== 36) {
+        throw new Error('Invalid invoice ID. Please select a valid invoice.');
+      }
+
+      // Try using the database function first
+      const { data, error } = await supabase.rpc('record_payment_with_allocation', {
+        p_company_id: paymentData.company_id,
+        p_customer_id: paymentData.customer_id,
+        p_invoice_id: paymentData.invoice_id,
+        p_payment_number: paymentData.payment_number,
+        p_payment_date: paymentData.payment_date,
+        p_amount: paymentData.amount,
+        p_payment_method: paymentData.payment_method,
+        p_reference_number: paymentData.reference_number || paymentData.payment_number,
+        p_notes: paymentData.notes || null
+      });
+
+      // If function doesn't exist (PGRST202), fall back to manual approach
+      if (error && error.code === 'PGRST202') {
+        console.warn('Database function not found, using fallback method');
+
+        // Fallback: Manual payment recording with invoice updates
+        const { invoice_id, ...paymentFields } = paymentData;
+
+        // 1. Insert payment
+        const { data: paymentResult, error: paymentError } = await supabase
+          .from('payments')
+          .insert([paymentFields])
+          .select()
+          .single();
+
+        if (paymentError) throw paymentError;
+
+        // 2. Create payment allocation with enhanced error handling
+        let allocationError: any = null;
+        try {
+          // First check if payment_allocations table exists
+          const { error: tableCheckError } = await supabase
+            .from('payment_allocations')
+            .select('id')
+            .limit(1);
+
+          if (tableCheckError && tableCheckError.message.includes('relation') && tableCheckError.message.includes('does not exist')) {
+            allocationError = new Error('payment_allocations table does not exist. Please run the table setup SQL.');
+          } else {
+            // Table exists, try to insert allocation
+            const { error: insertError } = await supabase
+              .from('payment_allocations')
+              .insert([{
+                payment_id: paymentResult.id,
+                invoice_id: invoice_id,
+                amount_allocated: paymentData.amount
+              }]);
+
+            allocationError = insertError;
+          }
+        } catch (err) {
+          allocationError = err;
+        }
+
+        if (allocationError) {
+          console.error('Failed to create allocation:', allocationError);
+          console.error('Allocation error details:', JSON.stringify(allocationError, null, 2));
+          console.error('Payment was recorded successfully, but allocation failed');
+
+          // If it's an RLS error, provide specific guidance
+          if (allocationError.message?.includes('row-level security') || allocationError.message?.includes('permission denied')) {
+            console.error('RLS Error: User profile may not be linked to a company or RLS policies are blocking the insert');
+          }
+
+          // Continue anyway - payment was recorded
+          // The UI should show this as a warning, not a complete failure
+        }
+
+        // 3. Get current invoice data and update balances
+        const { data: invoice, error: fetchError } = await supabase
+          .from('invoices')
+          .select('id, total_amount, paid_amount, balance_due')
+          .eq('id', invoice_id)
+          .single();
+
+        if (!fetchError && invoice) {
+          const newPaidAmount = (invoice.paid_amount || 0) + paymentData.amount;
+          const newBalanceDue = invoice.total_amount - newPaidAmount;
+          let newStatus = invoice.status;
+
+          // Determine status based on balance and any payment activity (using tolerance for floating-point precision)
+          const tolerance = 0.01;
+          const adjustedBalance = Math.abs(newBalanceDue) < tolerance ? 0 : newBalanceDue;
+          if (adjustedBalance <= 0 && newPaidAmount !== 0) {
+            // Fully paid or overpaid (balance is 0 or negative)
+            newStatus = 'paid';
+          } else if (newPaidAmount !== 0 && adjustedBalance > 0) {
+            // Partially paid (has payment but balance remains)
+            newStatus = 'partial';
+          } else if (newPaidAmount === 0 && adjustedBalance > 0) {
+            // No payments (negative payment fully reversed to 0)
+            newStatus = 'draft';
+          }
+
+          const { error: invoiceError } = await supabase
+            .from('invoices')
+            .update({
+              paid_amount: newPaidAmount,
+              balance_due: newBalanceDue,
+              status: newStatus,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', invoice_id);
+
+          if (invoiceError) {
+            const errorMessage = invoiceError?.message || JSON.stringify(invoiceError);
+            console.error('Failed to update invoice balance:', errorMessage);
+            console.error('Invoice update error details:', {
+              message: invoiceError?.message,
+              code: invoiceError?.code,
+              details: invoiceError?.details,
+              hint: invoiceError?.hint,
+              status: invoiceError?.status
+            });
+            // Continue anyway - payment and allocation were recorded
+          }
+        }
+
+        return {
+          success: true,
+          payment_id: paymentResult.id,
+          invoice_id: invoice_id,
+          amount_allocated: paymentData.amount,
+          fallback_used: true,
+          allocation_failed: !!allocationError,
+          allocation_error: allocationError ? JSON.stringify(allocationError) : null
+        };
+      }
+
+      // If other error, throw it
+      if (error) {
+        console.error('Database function error:', error);
+        throw error;
+      }
+
+      if (!data || !data.success) {
+        throw new Error(data?.error || 'Failed to record payment');
+      }
+
+      return data;
+    },
+    onSuccess: (result) => {
+      // Invalidate multiple cache keys to refresh UI
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice', result.invoice_id] });
+      queryClient.invalidateQueries({ queryKey: ['customer_invoices'] });
+    },
+  });
+};
+
+// Hook to update a payment and recalculate invoice balances
+export const useUpdatePayment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      paymentId: string;
+      paymentData: {
+        amount: number;
+        payment_date: string;
+        payment_method: string;
+        reference_number?: string;
+        notes?: string;
+      };
+      oldAmount: number;
+    }) => {
+      const { paymentId, paymentData, oldAmount } = params;
+
+      // 1. Fetch payment details including allocations
+      const { data: payment, error: fetchPaymentError } = await supabase
+        .from('payments')
+        .select(`
+          *,
+          payment_allocations (
+            id,
+            invoice_id,
+            amount_allocated
+          )
+        `)
+        .eq('id', paymentId)
+        .single();
+
+      if (fetchPaymentError) throw fetchPaymentError;
+      if (!payment) throw new Error('Payment not found');
+
+      // 2. Update the payment record
+      const { error: updatePaymentError } = await supabase
+        .from('payments')
+        .update({
+          amount: paymentData.amount,
+          payment_date: paymentData.payment_date,
+          payment_method: paymentData.payment_method,
+          reference_number: paymentData.reference_number || payment.reference_number,
+          notes: paymentData.notes || payment.notes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', paymentId);
+
+      if (updatePaymentError) throw updatePaymentError;
+
+      // 3. If the amount changed, update allocations and invoice balances
+      const amountDifference = paymentData.amount - oldAmount;
+
+      if (payment.payment_allocations && payment.payment_allocations.length > 0) {
+        for (const allocation of payment.payment_allocations) {
+          // Update the allocation amount
+          const newAllocationAmount = Math.max(0, allocation.amount_allocated + amountDifference);
+
+          const { error: updateAllocationError } = await supabase
+            .from('payment_allocations')
+            .update({
+              amount_allocated: newAllocationAmount
+            })
+            .eq('id', allocation.id);
+
+          if (updateAllocationError) {
+            console.error('Failed to update allocation:', updateAllocationError);
+            throw new Error(`Failed to update payment allocation: ${updateAllocationError.message}`);
+          }
+
+          // Fetch current invoice state
+          const { data: invoice, error: fetchInvoiceError } = await supabase
+            .from('invoices')
+            .select('id, total_amount, paid_amount, balance_due, status')
+            .eq('id', allocation.invoice_id)
+            .single();
+
+          if (!fetchInvoiceError && invoice) {
+            // Calculate new amounts with the updated allocation
+            const newPaidAmount = (invoice.paid_amount || 0) + amountDifference;
+            const newBalanceDue = invoice.total_amount - newPaidAmount;
+            let newStatus = invoice.status;
+
+            // Determine status based on balance and payment activity
+            const tolerance = 0.01;
+            const adjustedBalance = Math.abs(newBalanceDue) < tolerance ? 0 : newBalanceDue;
+            if (adjustedBalance <= 0 && newPaidAmount !== 0) {
+              newStatus = 'paid';
+            } else if (newPaidAmount !== 0 && adjustedBalance > 0) {
+              newStatus = 'partial';
+            } else if (newPaidAmount === 0 && adjustedBalance > 0) {
+              newStatus = 'draft';
+            }
+
+            // Update invoice
+            const { error: updateInvoiceError } = await supabase
+              .from('invoices')
+              .update({
+                paid_amount: newPaidAmount,
+                balance_due: newBalanceDue,
+                status: newStatus,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', allocation.invoice_id);
+
+            if (updateInvoiceError) {
+              console.error(`Failed to update invoice ${allocation.invoice_id}:`, updateInvoiceError);
+              throw new Error(`Failed to update invoice balance: ${updateInvoiceError.message}`);
+            }
+          }
+        }
+      }
+
+      return {
+        success: true,
+        payment_id: paymentId,
+        invoices_updated: payment.payment_allocations?.length || 0
+      };
+    },
+    onSuccess: (result) => {
+      // Invalidate all relevant cache keys
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['invoice', result.payment_id] });
+      queryClient.invalidateQueries({ queryKey: ['customer_invoices'] });
+    },
+  });
+};
+
+// Hook to create a credit note for overpayment
+export const useCreateOverpaymentCreditNote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      invoice_id: string;
+      company_id: string;
+      customer_id: string | null;
+      overpayment_amount: number;
+      payment_date: string;
+      payment_reference?: string;
+    }) => {
+      const {
+        invoice_id,
+        company_id,
+        customer_id,
+        overpayment_amount,
+        payment_date,
+        payment_reference
+      } = params;
+
+      // Fetch invoice details
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('invoices')
+        .select('id, invoice_number, total_amount, customers!inner(name)')
+        .eq('id', invoice_id)
+        .single();
+
+      if (invoiceError) throw invoiceError;
+      if (!invoice) throw new Error('Invoice not found');
+
+      // Generate unique credit note number
+      const timestamp = Date.now();
+      const creditNoteNumber = `CN-${timestamp}`;
+
+      // Create credit note with overpayment amount
+      const creditNoteData = {
+        company_id,
+        customer_id,
+        invoice_id,
+        credit_note_number: creditNoteNumber,
+        credit_note_date: payment_date,
+        status: 'draft',
+        reason: 'Overpayment from Payment',
+        subtotal: overpayment_amount,
+        tax_amount: 0,
+        total_amount: overpayment_amount,
+        applied_amount: 0,
+        balance: overpayment_amount,
+        affects_inventory: false,
+        notes: `Auto-generated credit note for overpayment on invoice ${invoice.invoice_number}${payment_reference ? ` (Payment Ref: ${payment_reference})` : ''}`,
+        terms_and_conditions: null,
+        created_by: null
+      };
+
+      // Insert credit note
+      const { data: createdCreditNote, error: creditNoteError } = await supabase
+        .from('credit_notes')
+        .insert([creditNoteData])
+        .select()
+        .single();
+
+      if (creditNoteError) {
+        // Retry with created_by as null if foreign key constraint error
+        if (creditNoteError.code === '23503' && String(creditNoteError.message || '').includes('created_by')) {
+          const retryData = { ...creditNoteData, created_by: null };
+          const retryRes = await supabase
+            .from('credit_notes')
+            .insert([retryData])
+            .select()
+            .single();
+
+          if (retryRes.error) throw retryRes.error;
+
+          return {
+            success: true,
+            credit_note_id: retryRes.data.id,
+            credit_note_number: retryRes.data.credit_note_number,
+            amount: overpayment_amount
+          };
+        }
+        throw creditNoteError;
+      }
+
+      if (!createdCreditNote) {
+        throw new Error('Failed to create credit note');
+      }
+
+      // Create a single line item for the credit note
+      const creditNoteItem = {
+        credit_note_id: createdCreditNote.id,
+        product_id: null,
+        description: `Overpayment credit from invoice ${invoice.invoice_number}`,
+        quantity: 1,
+        unit_price: overpayment_amount,
+        tax_percentage: 0,
+        tax_amount: 0,
+        tax_inclusive: false,
+        tax_setting_id: null,
+        line_total: overpayment_amount,
+        sort_order: 0
+      };
+
+      const { error: itemError } = await supabase
+        .from('credit_note_items')
+        .insert([creditNoteItem]);
+
+      if (itemError) {
+        console.error('Error creating credit note item:', {
+          message: itemError.message,
+          code: itemError.code,
+          details: itemError.details,
+          hint: itemError.hint
+        });
+        // Delete the credit note if item creation fails
+        await supabase
+          .from('credit_notes')
+          .delete()
+          .eq('id', createdCreditNote.id);
+        const errorMsg = itemError.message || JSON.stringify(itemError);
+        throw new Error(`Failed to create credit note item: ${errorMsg}`);
+      }
+
+      return {
+        success: true,
+        credit_note_id: createdCreditNote.id,
+        credit_note_number: createdCreditNote.credit_note_number,
+        amount: overpayment_amount
+      };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
+      queryClient.invalidateQueries({ queryKey: ['customerCreditNotes'] });
+    },
+    onError: (error: any) => {
+      console.error('Error creating overpayment credit note:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        fullError: error
+      });
+    }
+  });
+};
+
+// Hook to delete a payment and reverse invoice updates
+export const useDeletePayment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (paymentId: string) => {
+      // 1. Fetch payment details including allocations
+      const { data: payment, error: fetchPaymentError } = await supabase
+        .from('payments')
+        .select(`
+          *,
+          payment_allocations (
+            id,
+            invoice_id,
+            amount_allocated
+          )
+        `)
+        .eq('id', paymentId)
+        .single();
+
+      if (fetchPaymentError) throw fetchPaymentError;
+      if (!payment) throw new Error('Payment not found');
+
+      // 2. For each allocation, reverse the invoice balance updates
+      if (payment.payment_allocations && payment.payment_allocations.length > 0) {
+        for (const allocation of payment.payment_allocations) {
+          // Fetch current invoice state
+          const { data: invoice, error: fetchInvoiceError } = await supabase
+            .from('invoices')
+            .select('id, total_amount, paid_amount, balance_due, status')
+            .eq('id', allocation.invoice_id)
+            .single();
+
+          if (!fetchInvoiceError && invoice) {
+            // Calculate new amounts after reversing the payment
+            const newPaidAmount = Math.max(0, (invoice.paid_amount || 0) - allocation.amount_allocated);
+            const newBalanceDue = invoice.total_amount - newPaidAmount;
+            let newStatus = 'draft';
+
+            // Determine status based on balance and payment activity (using tolerance for floating-point precision)
+            const tolerance = 0.01;
+            const adjustedBalance = Math.abs(newBalanceDue) < tolerance ? 0 : newBalanceDue;
+            if (adjustedBalance <= 0 && newPaidAmount !== 0) {
+              newStatus = 'paid';
+            } else if (newPaidAmount !== 0 && adjustedBalance > 0) {
+              newStatus = 'partial';
+            } else {
+              newStatus = 'draft';
+            }
+
+            // Update invoice
+            const { error: updateInvoiceError } = await supabase
+              .from('invoices')
+              .update({
+                paid_amount: newPaidAmount,
+                balance_due: newBalanceDue,
+                status: newStatus,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', allocation.invoice_id);
+
+            if (updateInvoiceError) {
+              console.error(`Failed to update invoice ${allocation.invoice_id}:`, updateInvoiceError);
+              throw new Error(`Failed to update invoice balance: ${updateInvoiceError.message}`);
+            }
+          }
+
+          // Delete the allocation
+          const { error: deleteAllocationError } = await supabase
+            .from('payment_allocations')
+            .delete()
+            .eq('id', allocation.id);
+
+          if (deleteAllocationError) {
+            console.error('Failed to delete allocation:', deleteAllocationError);
+            throw new Error(`Failed to delete payment allocation: ${deleteAllocationError.message}`);
+          }
+        }
+      }
+
+      // 3. Delete associated overpayment credit notes
+      // Look for credit notes that were auto-generated for this payment's overpayment
+      const { data: associatedCreditNotes, error: fetchCreditNotesError } = await supabase
+        .from('credit_notes')
+        .select('id')
+        .eq('reason', 'Overpayment from Payment')
+        .like('notes', `%Payment Ref: ${payment.reference_number}%`);
+
+      if (fetchCreditNotesError) {
+        console.warn('Could not fetch associated credit notes:', fetchCreditNotesError);
+      } else if (associatedCreditNotes && associatedCreditNotes.length > 0) {
+        // Delete credit note items first (due to foreign key constraints)
+        for (const creditNote of associatedCreditNotes) {
+          const { error: deleteItemsError } = await supabase
+            .from('credit_note_items')
+            .delete()
+            .eq('credit_note_id', creditNote.id);
+
+          if (deleteItemsError) {
+            console.warn(`Failed to delete credit note items for ${creditNote.id}:`, deleteItemsError);
+          }
+
+          // Then delete the credit note
+          const { error: deleteCreditNoteError } = await supabase
+            .from('credit_notes')
+            .delete()
+            .eq('id', creditNote.id);
+
+          if (deleteCreditNoteError) {
+            console.warn(`Failed to delete credit note ${creditNote.id}:`, deleteCreditNoteError);
+          }
+        }
+      }
+
+      // 4. Delete the payment
+      const { error: deletePaymentError } = await supabase
+        .from('payments')
+        .delete()
+        .eq('id', paymentId);
+
+      if (deletePaymentError) throw deletePaymentError;
+
+      return {
+        success: true,
+        payment_id: paymentId,
+        invoices_updated: payment.payment_allocations?.length || 0,
+        credit_notes_deleted: associatedCreditNotes?.length || 0
+      };
+    },
+    onSuccess: (result) => {
+      // Invalidate all relevant cache keys
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['customer_invoices'] });
+    },
+    onError: (error) => {
+      console.error('Delete payment mutation error:', error);
+    }
+  });
+};
+
+// Remittance Advice hooks
+export const useRemittanceAdvice = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['remittance_advice', companyId],
+    queryFn: async () => {
+      let query = supabase
+        .from('remittance_advice')
+        .select(`
+          *,
+          customers:customers!customer_id(name, email, address),
+          remittance_advice_items(*, payments(payment_number), invoices(invoice_number))
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (companyId) {
+        query = query.eq('company_id', companyId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+export const useCreateRemittanceAdvice = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (remittance: Omit<RemittanceAdvice, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('remittance_advice')
+        .insert([remittance])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['remittance_advice'] });
+    },
+  });
+};
+
+export const useUpdateRemittanceAdvice = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (remittance: Partial<RemittanceAdvice> & { id: string }) => {
+      const { id, ...updateData } = remittance;
+      const { data, error } = await supabase
+        .from('remittance_advice')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['remittance_advice'] });
+    },
+  });
+};
+
+// Remittance Advice Items hooks
+export const useCreateRemittanceAdviceItems = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (items: Array<{
+      remittance_advice_id: string;
+      document_date: string;
+      document_number: string;
+      document_type: 'invoice' | 'credit_note' | 'payment';
+      invoice_amount?: number;
+      credit_amount?: number;
+      payment_amount: number;
+      payment_id?: string;
+      invoice_id?: string;
+      sort_order?: number;
+    }>) => {
+      const { data, error } = await supabase
+        .from('remittance_advice_items')
+        .insert(items)
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['remittance_advice'] });
+    },
+  });
+};
+
+export const useUpdateRemittanceAdviceItems = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      remittanceId,
+      items
+    }: {
+      remittanceId: string;
+      items: Array<{
+        id?: string;
+        document_date: string;
+        document_number: string;
+        document_type: 'invoice' | 'credit_note' | 'payment';
+        invoice_amount?: number;
+        credit_amount?: number;
+        payment_amount: number;
+        payment_id?: string;
+        invoice_id?: string;
+        sort_order?: number;
+      }>;
+    }) => {
+      // First, delete existing items
+      await supabase
+        .from('remittance_advice_items')
+        .delete()
+        .eq('remittance_advice_id', remittanceId);
+
+      // Then insert new items
+      if (items.length > 0) {
+        const itemsToInsert = items.map((item, index) => ({
+          remittance_advice_id: remittanceId,
+          document_date: item.document_date,
+          document_number: item.document_number,
+          document_type: item.document_type,
+          invoice_amount: item.invoice_amount || null,
+          credit_amount: item.credit_amount || null,
+          payment_amount: item.payment_amount,
+          payment_id: item.payment_id || null,
+          invoice_id: item.invoice_id || null,
+          sort_order: index + 1,
+        }));
+
+        const { data, error } = await supabase
+          .from('remittance_advice_items')
+          .insert(itemsToInsert)
+          .select();
+
+        if (error) throw error;
+        return data;
+      }
+      return [];
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['remittance_advice'] });
+    },
+  });
+};
+
+// Quotations hooks - Fixed to avoid relationship ambiguity
+export const useQuotations = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['quotations', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+
+      try {
+        // Step 1: Get quotations without embedded relationships
+        let query = supabase
+          .from('quotations')
+          .select(`
+            id,
+            company_id,
+            customer_id,
+            quotation_number,
+            quotation_date,
+            valid_until,
+            status,
+            subtotal,
+            tax_amount,
+            total_amount,
+            notes,
+            terms_and_conditions,
+            created_at,
+            updated_at
+          `)
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false });
+
+        const { data: quotations, error: quotationsError } = await query;
+
+        if (quotationsError) throw quotationsError;
+        if (!quotations || quotations.length === 0) return [];
+
+        // Step 2: Get customers separately (filter out invalid UUIDs)
+        const customerIds = [...new Set(quotations.map(quotation => quotation.customer_id).filter(id => id && typeof id === 'string' && id.length === 36))];
+        const { data: customers } = customerIds.length > 0 ? await supabase
+          .from('customers')
+          .select('id, name, email, phone, address, city, country')
+          .in('id', customerIds) : { data: [] };
+
+        // Step 3: Get quotation items separately
+        const { data: quotationItems } = await supabase
+          .from('quotation_items')
+          .select(`
+            id,
+            quotation_id,
+            product_id,
+            description,
+            quantity,
+            unit_price,
+            discount_percentage,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive,
+            line_total,
+            sort_order
+          `)
+          .in('quotation_id', quotations.map(quot => quot.id));
+
+        // Step 4: Get products for quotation items
+        const productIds = [...new Set((quotationItems || []).map(item => item.product_id).filter(id => id))];
+        const { data: products } = productIds.length > 0 ? await supabase
+          .from('products')
+          .select('id, name, unit_of_measure')
+          .in('id', productIds) : { data: [] };
+
+        // Step 5: Create lookup maps
+        const customerMap = new Map();
+        (customers || []).forEach(customer => {
+          customerMap.set(customer.id, customer);
+        });
+
+        const productMap = new Map();
+        (products || []).forEach(product => {
+          productMap.set(product.id, product);
+        });
+
+        const itemsMap = new Map();
+        (quotationItems || []).forEach(item => {
+          if (!itemsMap.has(item.quotation_id)) {
+            itemsMap.set(item.quotation_id, []);
+          }
+          itemsMap.get(item.quotation_id).push({
+            ...item,
+            products: productMap.get(item.product_id) || null
+          });
+        });
+
+        // Step 6: Combine data
+        return quotations.map(quotation => ({
+          ...quotation,
+          customers: customerMap.get(quotation.customer_id) || {
+            name: 'Unknown Customer',
+            email: null,
+            phone: null,
+            address: null,
+            city: null,
+            country: null
+          },
+          quotation_items: itemsMap.get(quotation.id) || []
+        }));
+
+      } catch (error) {
+        console.error('Error in useQuotations:', error);
+        const errorMessage = typeof error === 'string' ? error :
+                            (error as any)?.message ||
+                            'Failed to load quotations';
+        throw new Error(errorMessage);
+      }
+    },
+  });
+};
+
+export const useCreateQuotation = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (quotation: any) => {
+      // Ensure created_by defaults to authenticated user
+      const payload: any = { ...quotation };
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const authUserId = userData?.user?.id || null;
+        if (authUserId) {
+          payload.created_by = authUserId;
+        } else if (typeof payload.created_by === 'undefined') {
+          payload.created_by = null;
+        }
+      } catch {
+        if (typeof payload.created_by === 'undefined') payload.created_by = null;
+      }
+
+      let dataRes; let errorRes: any;
+      {
+        const { data, error } = await supabase
+          .from('quotations')
+          .insert([payload])
+          .select()
+          .single();
+        dataRes = data; errorRes = error as any;
+      }
+      if (errorRes && errorRes.code === '23503' && String(errorRes.message || '').includes('created_by')) {
+        const retryPayload = { ...payload, created_by: null };
+        const { data: retryData, error: retryError } = await supabase
+          .from('quotations')
+          .insert([retryPayload])
+          .select()
+          .single();
+        dataRes = retryData; errorRes = retryError as any;
+      }
+
+      if (errorRes) throw errorRes;
+      return dataRes;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+    },
+  });
+};
+
+// Stock movements hooks
+export const useStockMovements = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['stock_movements', companyId],
+    queryFn: async () => {
+      let query = supabase
+        .from('stock_movements')
+        .select(`
+          *,
+          products(name, product_code, unit_of_measure)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (companyId) {
+        query = query.eq('company_id', companyId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+// Helper function to generate document numbers
+export const useGenerateDocumentNumber = () => {
+  return useMutation({
+    mutationFn: async ({ companyId, type }: { companyId: string; type: 'quotation' | 'invoice' | 'remittance' | 'proforma' }) => {
+      const functionName = `generate_${type}_number`;
+      const { data, error } = await supabase.rpc(functionName, { company_uuid: companyId });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+// Delivery Notes hooks
+export const useDeliveryNotes = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['delivery_notes', companyId],
+    queryFn: async () => {
+      let query = supabase
+        .from('delivery_notes')
+        .select(`
+          *,
+          customers:customers!customer_id(name, email, phone, address, city, country),
+          invoices:invoices!invoice_id(invoice_number, total_amount),
+          delivery_note_items(*, products(name, unit_of_measure))
+        `)
+        .order('created_at', { ascending: false });
+
+      if (companyId) {
+        query = query.eq('company_id', companyId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+export const useCreateDeliveryNote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (deliveryNote: Omit<DeliveryNote, 'id' | 'created_at' | 'updated_at'>) => {
+      // Validate that delivery note is backed by a sale (invoice)
+      if (!deliveryNote.invoice_id) {
+        throw new Error('Delivery note must be linked to an existing invoice or sale.');
+      }
+
+      // Verify the invoice exists and belongs to the same company
+      const { data: invoice, error: invoiceError } = await supabase
+        .from('invoices')
+        .select('id, customer_id, company_id')
+        .eq('id', deliveryNote.invoice_id)
+        .eq('company_id', deliveryNote.company_id)
+        .single();
+
+      if (invoiceError || !invoice) {
+        throw new Error('Related invoice not found or does not belong to this company.');
+      }
+
+      // Verify customer matches
+      if (invoice.customer_id !== deliveryNote.customer_id) {
+        throw new Error('Delivery note customer must match the invoice customer.');
+      }
+
+      const { data, error } = await supabase
+        .from('delivery_notes')
+        .insert([deliveryNote])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delivery_notes'] });
+    },
+  });
+};
+
+export const useUpdateDeliveryNote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...deliveryNote }: Partial<DeliveryNote> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('delivery_notes')
+        .update(deliveryNote)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delivery_notes'] });
+    },
+  });
+};
+
+// Dashboard stats hook
+export const useDashboardStats = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['dashboard_stats', companyId],
+    queryFn: async () => {
+      // Get counts and totals
+      const [
+        { data: invoices },
+        { data: customers },
+        { data: products },
+        { data: payments }
+      ] = await Promise.all([
+        supabase
+          .from('invoices')
+          .select('total_amount, status')
+          .eq('company_id', companyId || '550e8400-e29b-41d4-a716-446655440000'),
+        supabase
+          .from('customers')
+          .select('id')
+          .eq('company_id', companyId || '550e8400-e29b-41d4-a716-446655440000'),
+        supabase
+          .from('products')
+          .select('stock_quantity, minimum_stock_level')
+          .eq('company_id', companyId || '550e8400-e29b-41d4-a716-446655440000'),
+        supabase
+          .from('payments')
+          .select('amount')
+          .eq('company_id', companyId || '550e8400-e29b-41d4-a716-446655440000')
+      ]);
+
+      const totalRevenue = invoices?.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0) || 0;
+      const totalPayments = payments?.reduce((sum, pay) => sum + Number(pay.amount || 0), 0) || 0;
+      const lowStockProducts = products?.filter(p => p.stock_quantity <= p.minimum_stock_level).length || 0;
+      const pendingInvoices = invoices?.filter(inv => inv.status === 'sent').length || 0;
+
+      return {
+        totalRevenue,
+        totalPayments,
+        customerCount: customers?.length || 0,
+        productCount: products?.length || 0,
+        lowStockProducts,
+        pendingInvoices,
+        totalInvoices: invoices?.length || 0
+      };
+    },
+  });
+};
+
+// ============= LPO Hooks =============
+
+export const useLPOs = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['lpos', companyId],
+    queryFn: async () => {
+      let query = supabase
+        .from('lpos')
+        .select(`
+          *,
+          suppliers:customers!supplier_id(name, email, phone, address, city, country),
+          lpo_items(*, products(name, product_code, unit_of_measure))
+        `)
+        .order('created_at', { ascending: false });
+
+      if (companyId) {
+        query = query.eq('company_id', companyId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!companyId,
+  });
+};
+
+export const useLPO = (lpoId?: string) => {
+  return useQuery({
+    queryKey: ['lpo', lpoId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lpos')
+        .select(`
+          *,
+          suppliers:customers!supplier_id(name, email, phone, address, city, country),
+          lpo_items(*, products(name, product_code, unit_of_measure))
+        `)
+        .eq('id', lpoId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!lpoId,
+  });
+};
+
+export const useCreateLPO = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ lpo, items }: { lpo: Omit<LPO, 'id' | 'created_at' | 'updated_at'>; items: Omit<LPOItem, 'id' | 'lpo_id'>[] }) => {
+      // Validate required fields
+      if (!lpo.company_id) {
+        throw new Error('Company ID is required');
+      }
+      if (!lpo.supplier_id) {
+        throw new Error('Supplier is required');
+      }
+      if (!lpo.lpo_number) {
+        throw new Error('LPO number is required');
+      }
+      if (!items || items.length === 0) {
+        throw new Error('At least one item is required');
+      }
+
+      // Create LPO (default created_by to authenticated user if column exists)
+      const lpoPayload: any = { ...lpo };
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const authUserId = userData?.user?.id || null;
+        if (authUserId) {
+          // Ensure the referenced user exists in the profiles table to avoid FK violations
+          try {
+            const { data: existingProfile, error: profileCheckError } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('id', authUserId)
+              .single();
+
+            if (profileCheckError) {
+              console.warn('Could not verify auth user against profiles table:', profileCheckError);
+              lpoPayload.created_by = null;
+            } else if (existingProfile && existingProfile.id) {
+              lpoPayload.created_by = authUserId;
+            } else {
+              // Auth user not present in profiles table - avoid FK violation
+              console.warn('Auth user id not found in profiles table, setting created_by to null:', authUserId);
+              lpoPayload.created_by = null;
+            }
+          } catch (e) {
+            console.warn('Error checking profiles table for auth user:', e);
+            lpoPayload.created_by = null;
+          }
+        } else if (typeof lpoPayload.created_by === 'undefined') {
+          lpoPayload.created_by = null;
+        }
+      } catch (outerErr) {
+        console.warn('Error while obtaining auth user for LPO creation:', outerErr);
+        if (typeof lpoPayload.created_by === 'undefined') lpoPayload.created_by = null;
+      }
+
+      const { data: lpoData, error: lpoError } = await supabase
+        .from('lpos')
+        .insert([lpoPayload])
+        .select()
+        .single();
+
+      if (lpoError) throw lpoError;
+
+      // Create LPO items
+      if (items.length > 0) {
+        const lpoItems = items.map((item, index) => ({
+          ...item,
+          lpo_id: lpoData.id,
+          sort_order: index + 1
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('lpo_items')
+          .insert(lpoItems);
+
+        if (itemsError) throw itemsError;
+      }
+
+      return lpoData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lpos'] });
+    },
+  });
+};
+
+export const useUpdateLPO = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<LPO> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('lpos')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lpos'] });
+      queryClient.invalidateQueries({ queryKey: ['lpo'] });
+    },
+  });
+};
+
+export const useDeleteLPO = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // 1. Fetch the complete LPO with all related data
+      const { data: lpo, error: fetchError } = await supabase
+        .from('lpos')
+        .select('*, lpo_items(*)')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!lpo) throw new Error('Purchase order not found');
+
+      // 2. Count related invoices (if any)
+      const { count: invoiceCount = 0 } = await supabase
+        .from('invoices')
+        .select('id', { count: 'exact', head: true })
+        .eq('lpo_id', id);
+
+      // 3. Delete the LPO (cascade deletes lpo_items)
+      const { error: deleteError } = await supabase
+        .from('lpos')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+
+      // 4. Log the deletion with full snapshot
+      try {
+        const { data } = await supabase.auth.getUser();
+        const userId = data?.user?.id || null;
+        const userEmail = (data?.user?.email as string) || null;
+
+        await supabase.from('audit_logs').insert([
+          {
+            action: 'DELETE',
+            entity_type: 'lpo',
+            record_id: id,
+            company_id: lpo.company_id,
+            actor_user_id: userId,
+            actor_email: userEmail,
+            details: {
+              lpo_number: lpo.lpo_number,
+              supplier_id: lpo.supplier_id,
+              status: lpo.status,
+              total_amount: lpo.total_amount,
+              items_deleted: lpo.lpo_items?.length || 0,
+              invoices_affected: invoiceCount,
+            },
+          },
+        ]);
+      } catch (auditError) {
+        console.warn('Audit log creation failed:', auditError);
+      }
+
+      return { lpoId: id, itemsCount: lpo.lpo_items?.length || 0, invoiceCount };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lpos'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast.success('Purchase order deleted successfully! All related records have been updated.');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting purchase order:', error);
+      const errorMessage = error.message || 'Failed to delete purchase order. Please try again.';
+      toast.error(errorMessage);
+    },
+  });
+};
+
+// Generate LPO number
+export const useGenerateLPONumber = () => {
+  return useMutation({
+    mutationFn: async (companyId: string) => {
+      if (!companyId) {
+        throw new Error('Company ID is required to generate LPO number');
+      }
+
+      const { data, error } = await supabase
+        .rpc('generate_lpo_number', { company_uuid: companyId });
+
+      if (error) {
+        console.error('Error generating LPO number:', error);
+        throw new Error(`Failed to generate LPO number: ${error.message}`);
+      }
+
+      if (!data) {
+        throw new Error('No LPO number was generated');
+      }
+
+      return data;
+    },
+  });
+};
+
+// Get suppliers (only customers that are actually used as suppliers in LPOs)
+export const useSuppliers = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['suppliers', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+
+      try {
+        // First, get unique supplier IDs from LPOs
+        const { data: lpoSuppliers, error: lpoError } = await supabase
+          .from('lpos')
+          .select('supplier_id')
+          .eq('company_id', companyId)
+          .not('supplier_id', 'is', null);
+
+        if (lpoError) throw lpoError;
+
+        // Get unique supplier IDs
+        const supplierIds = [...new Set(lpoSuppliers?.map(lpo => lpo.supplier_id).filter(Boolean))] || [];
+
+        if (supplierIds.length === 0) {
+          // No LPOs exist yet, return empty array instead of all customers
+          return [];
+        }
+
+        // Get only customers that are actually used as suppliers
+        const { data: suppliers, error: suppliersError } = await supabase
+          .from('customers')
+          .select('*')
+          .in('id', supplierIds)
+          .eq('is_active', true)
+          .eq('company_id', companyId)
+          .order('name', { ascending: true });
+
+        if (suppliersError) throw suppliersError;
+
+        return suppliers || [];
+
+      } catch (error) {
+        console.error('Error fetching suppliers:', error);
+        throw error;
+      }
+    },
+    enabled: !!companyId,
+  });
+};
+
+// Get potential suppliers (customers that haven't been used as suppliers yet)
+export const usePotentialSuppliers = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['potential_suppliers', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+
+      try {
+        // Get all customers for this company
+        const { data: allCustomers, error: customersError } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('company_id', companyId)
+          .eq('is_active', true)
+          .order('name', { ascending: true });
+
+        if (customersError) throw customersError;
+
+        // Get existing supplier IDs from LPOs
+        const { data: lpoSuppliers, error: lpoError } = await supabase
+          .from('lpos')
+          .select('supplier_id')
+          .eq('company_id', companyId)
+          .not('supplier_id', 'is', null);
+
+        if (lpoError) throw lpoError;
+
+        const existingSupplierIds = new Set(lpoSuppliers?.map(lpo => lpo.supplier_id).filter(Boolean) || []);
+
+        // Return customers that are NOT already suppliers
+        return allCustomers?.filter(customer => !existingSupplierIds.has(customer.id)) || [];
+
+      } catch (error) {
+        console.error('Error fetching potential suppliers:', error);
+        throw error;
+      }
+    },
+    enabled: !!companyId,
+  });
+};
+
+// Get all suppliers (existing + potential) - for comprehensive supplier selection
+export const useAllSuppliersAndCustomers = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['all_suppliers_customers', companyId],
+    queryFn: async () => {
+      if (!companyId) return { existing: [], potential: [], all: [] };
+
+      try {
+        // Get all customers for this company
+        const { data: allCustomers, error: customersError } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('company_id', companyId)
+          .eq('is_active', true)
+          .order('name', { ascending: true });
+
+        if (customersError) throw customersError;
+
+        // Get existing supplier IDs from LPOs
+        const { data: lpoSuppliers, error: lpoError } = await supabase
+          .from('lpos')
+          .select('supplier_id')
+          .eq('company_id', companyId)
+          .not('supplier_id', 'is', null);
+
+        if (lpoError) throw lpoError;
+
+        const existingSupplierIds = new Set(lpoSuppliers?.map(lpo => lpo.supplier_id).filter(Boolean) || []);
+
+        const existing = allCustomers?.filter(customer => existingSupplierIds.has(customer.id)) || [];
+        const potential = allCustomers?.filter(customer => !existingSupplierIds.has(customer.id)) || [];
+
+        // Add labels to distinguish them
+        const existingWithLabels = existing.map(supplier => ({
+          ...supplier,
+          display_name: `${supplier.name} (Current Supplier)`,
+          is_existing_supplier: true
+        }));
+
+        const potentialWithLabels = potential.map(customer => ({
+          ...customer,
+          display_name: `${customer.name} (Customer)`,
+          is_existing_supplier: false
+        }));
+
+        return {
+          existing: existingWithLabels,
+          potential: potentialWithLabels,
+          all: [...existingWithLabels, ...potentialWithLabels]
+        };
+
+      } catch (error) {
+        console.error('Error fetching all suppliers and customers:', error);
+        throw error;
+      }
+    },
+    enabled: !!companyId,
+  });
+};
+
+// LPO Items Management Hooks
+
+// Create LPO Item
+export const useCreateLPOItem = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (item: Omit<LPOItem, 'id'>) => {
+      const { data, error } = await supabase
+        .from('lpo_items')
+        .insert([item])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['lpos'] });
+      queryClient.invalidateQueries({ queryKey: ['lpo', data.lpo_id] });
+    },
+  });
+};
+
+// Update LPO Item
+export const useUpdateLPOItem = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<LPOItem> }) => {
+      const { data, error } = await supabase
+        .from('lpo_items')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['lpos'] });
+      queryClient.invalidateQueries({ queryKey: ['lpo', data.lpo_id] });
+    },
+  });
+};
+
+// Delete LPO Item
+export const useDeleteLPOItem = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('lpo_items')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lpos'] });
+    },
+  });
+};
+
+// Update LPO with Items (complete update)
+export const useUpdateLPOWithItems = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      lpoId,
+      lpoUpdates,
+      items
+    }: {
+      lpoId: string;
+      lpoUpdates: Partial<LPO>;
+      items: (Omit<LPOItem, 'lpo_id'> & { id?: string })[];
+    }) => {
+      // Update LPO
+      const { data: lpoData, error: lpoError } = await supabase
+        .from('lpos')
+        .update(lpoUpdates)
+        .eq('id', lpoId)
+        .select()
+        .single();
+
+      if (lpoError) throw lpoError;
+
+      // Get existing items
+      const { data: existingItems, error: existingError } = await supabase
+        .from('lpo_items')
+        .select('id')
+        .eq('lpo_id', lpoId);
+
+      if (existingError) throw existingError;
+
+      // Delete all existing items
+      if (existingItems && existingItems.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('lpo_items')
+          .delete()
+          .eq('lpo_id', lpoId);
+
+        if (deleteError) throw deleteError;
+      }
+
+      // Insert new items
+      if (items.length > 0) {
+        // Build insertion payload explicitly to avoid sending `id: null` which can
+        // violate NOT NULL constraints if present in the incoming objects.
+        const lpoItems = items.map((item, index) => ({
+          product_id: item.product_id,
+          description: item.description || item.product_name || null,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          tax_rate: item.tax_rate,
+          tax_amount: item.tax_amount,
+          line_total: item.line_total,
+          unit_of_measure: (item as any).unit_of_measure || null,
+          lpo_id: lpoId,
+          sort_order: index + 1,
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('lpo_items')
+          .insert(lpoItems);
+
+        if (itemsError) throw itemsError;
+      }
+
+      return lpoData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lpos'] });
+      queryClient.invalidateQueries({ queryKey: ['lpo'] });
+    },
+  });
+};
+
+// Units of Measure hooks
+export const useUnitsOfMeasure = (companyId?: string) => {
+  return useQuery({
+    queryKey: ['units_of_measure', companyId],
+    queryFn: async () => {
+      if (!companyId) return [];
+
+      let query = supabase
+        .from('units_of_measure')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // If no units exist, seed default units
+      if (!data || data.length === 0) {
+        try {
+          const defaultUnits = [
+            { name: 'Pieces', abbreviation: 'pcs', sort_order: 1 },
+            { name: 'Boxes', abbreviation: 'box', sort_order: 2 },
+            { name: 'Bottles', abbreviation: 'bot', sort_order: 3 },
+            { name: 'Vials', abbreviation: 'vial', sort_order: 4 },
+            { name: 'Packs', abbreviation: 'pack', sort_order: 5 },
+            { name: 'Kits', abbreviation: 'kit', sort_order: 6 },
+            { name: 'Liters', abbreviation: 'L', sort_order: 7 },
+            { name: 'Kilograms', abbreviation: 'kg', sort_order: 8 },
+          ];
+
+          const unitsToInsert = defaultUnits.map(unit => ({
+            company_id: companyId,
+            ...unit,
+            is_active: true
+          }));
+
+          const { data: seededData, error: seededError } = await supabase
+            .from('units_of_measure')
+            .insert(unitsToInsert)
+            .select();
+
+          if (seededError) {
+            console.warn('Warning: Could not seed default units of measure:', seededError);
+            return data || [];
+          }
+
+          return seededData as UnitOfMeasure[];
+        } catch (seedError) {
+          console.warn('Warning: Error seeding units of measure:', seedError);
+          return data || [];
+        }
+      }
+
+      return data as UnitOfMeasure[];
+    },
+    enabled: !!companyId,
+  });
+};
+
+export const useCreateUnitOfMeasure = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (unit: Omit<UnitOfMeasure, 'id' | 'created_at' | 'updated_at'>) => {
+      console.log('Creating unit of measure:', unit);
+
+      const { data, error } = await supabase
+        .from('units_of_measure')
+        .insert([unit])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase error creating unit:', error);
+        const errorMsg = error.message || JSON.stringify(error);
+        throw new Error(`Failed to create unit of measure: ${errorMsg}`);
+      }
+
+      console.log('Unit created successfully:', data);
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log('Invalidating cache for company:', data.company_id);
+      queryClient.invalidateQueries({ queryKey: ['units_of_measure', data.company_id] });
+    },
+    onError: (error) => {
+      console.error('Mutation error:', error);
+    },
+  });
+};
+
+// Hook to fetch payment methods for a company
+export const usePaymentMethods = (companyId?: string) => {
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: ['payment_methods', companyId],
+    queryFn: async () => {
+      if (!companyId) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      if (error) {
+        const errorMessage = error?.message || JSON.stringify(error);
+        console.error('Error fetching payment methods:', errorMessage);
+        console.error('Full error details:', error);
+
+        // Check if this is a "table doesn't exist" error
+        if (errorMessage.includes('does not exist') || errorMessage.includes('relation') || errorMessage.includes('not found')) {
+          console.warn('⚠️ payment_methods table does not exist. Please run the database migration.');
+          // Return empty array with a warning instead of throwing
+          return [];
+        }
+
+        throw new Error(`Failed to fetch payment methods: ${errorMessage}`);
+      }
+
+      // If no payment methods exist, seed the defaults
+      if (!data || data.length === 0) {
+        try {
+          const { seedDefaultPaymentMethods } = await import('@/utils/setupDatabase');
+          const seedResult = await seedDefaultPaymentMethods(companyId);
+
+          if (seedResult.success) {
+            // Fetch again after seeding
+            const { data: seededData, error: seededError } = await supabase
+              .from('payment_methods')
+              .select('*')
+              .eq('company_id', companyId)
+              .eq('is_active', true)
+              .order('sort_order', { ascending: true });
+
+            if (seededError) {
+              console.warn('Warning: Could not seed default payment methods:', seededError);
+              return data || [];
+            }
+
+            return seededData as PaymentMethod[];
+          }
+        } catch (seedError) {
+          console.warn('Warning: Error seeding payment methods:', seedError);
+          return data || [];
+        }
+      }
+
+      return data as PaymentMethod[];
+    },
+    enabled: !!companyId,
+  });
+};
+
+export const useCreatePaymentMethod = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (method: Omit<PaymentMethod, 'id' | 'created_at' | 'updated_at'>) => {
+      console.log('Creating payment method:', method);
+
+      const { data, error } = await supabase
+        .from('payment_methods')
+        .insert([method])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase error creating payment method:', error);
+        const errorMsg = error.message || JSON.stringify(error);
+        throw new Error(`Failed to create payment method: ${errorMsg}`);
+      }
+
+      console.log('Payment method created successfully:', data);
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log('Invalidating cache for company:', data.company_id);
+      queryClient.invalidateQueries({ queryKey: ['payment_methods', data.company_id] });
+    },
+    onError: (error) => {
+      console.error('Mutation error:', error);
+    },
+  });
+};
