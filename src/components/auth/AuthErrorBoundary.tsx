@@ -35,9 +35,16 @@ export class AuthErrorBoundary extends Component<Props, State> {
     // Log a readable error message
     try {
       const parsed = parseErrorMessage(error);
-      console.error('Auth error boundary caught an error:', parsed, errorInfo);
+      // Properly serialize the error info to prevent [object Object] logging
+      const serializedInfo = {
+        message: parsed,
+        componentStack: errorInfo?.componentStack,
+        timestamp: new Date().toISOString()
+      };
+      console.error('Auth error boundary caught an error:', JSON.stringify(serializedInfo, null, 2));
     } catch (e) {
-      console.error('Auth error boundary caught an error:', String(error), errorInfo);
+      // Fallback logging
+      console.error('Auth error boundary caught an error:', String(error));
     }
   }
 

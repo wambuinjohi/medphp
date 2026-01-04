@@ -123,10 +123,15 @@ export async function adminCreateUser(
             };
           }
         } else {
-          console.error('Auth creation error:', authError);
+          // Safely extract error message
+          const errorMsg = authError instanceof Error ? authError.message :
+                          (authError && typeof authError === 'object' && 'message' in authError)
+                            ? (authError as any).message
+                            : String(authError);
+          console.error('Auth creation error:', errorMsg);
           return {
             success: false,
-            error: `Auth error: ${authError.message}`
+            error: `Auth error: ${errorMsg}`
           };
         }
       } else if (authData.user?.id) {
