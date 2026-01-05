@@ -615,6 +615,12 @@ try {
             'deleted' => 0
         ]);
     }
+    elseif ($action === "health") {
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'API is healthy'
+        ]);
+    }
     else {
         throw new Exception("Unknown action: $action");
     }
