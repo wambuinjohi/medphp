@@ -140,8 +140,18 @@ export class ExternalAPIAdapter implements IDatabase {
       }
 
       this.clearAuthToken();
+
+      // Also clear user info from localStorage
+      localStorage.removeItem('med_api_user_id');
+      localStorage.removeItem('med_api_user_email');
+
       return { error: null };
     } catch (error) {
+      // Clear tokens even if logout fails
+      this.clearAuthToken();
+      localStorage.removeItem('med_api_user_id');
+      localStorage.removeItem('med_api_user_email');
+
       return { error: error as Error };
     }
   }
