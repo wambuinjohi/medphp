@@ -93,12 +93,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Fetch user profile from database with error handling and retry logic
   const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
     try {
-
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('id, email, full_name, avatar_url, phone, company_id, department, position, role, status, last_login, created_at, updated_at')
         .eq('id', userId)
-        .maybeSingle(); // Use maybeSingle to handle 0 results gracefully
+        .maybeSingle();
 
       if (error) {
         throw error;
@@ -107,7 +106,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!profileData) {
         return null;
       }
-
 
       return profileData;
     } catch (error) {
@@ -471,7 +469,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(false);
     setTimeout(() => toast.success('Signed in successfully'), 0);
     return { error: null };
-  }, []);
+  }, [fetchProfile]);
 
   const signUp = useCallback(async (email: string, password: string, fullName?: string) => {
     const { data, error } = await safeAuthOperation(async () => {
