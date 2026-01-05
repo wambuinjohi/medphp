@@ -337,12 +337,30 @@ export const supabaseCompat = {
 
     getUser: async () => {
       const userId = localStorage.getItem('med_api_user_id');
+      const email = localStorage.getItem('med_api_user_email');
       if (userId) {
         return {
           data: {
-            user: { id: userId },
+            user: { id: userId, email: email || undefined },
           },
         };
+      }
+      return { data: { user: null } };
+    },
+
+    // Return profile data when available (some code expects this)
+    getProfile: async () => {
+      const userId = localStorage.getItem('med_api_user_id');
+      if (userId) {
+        // Try to fetch the profile from the database
+        const result = await apiAdapter.selectOne('profiles', userId);
+        if (result.data) {
+          return {
+            data: {
+              user: result.data,
+            },
+          };
+        }
       }
       return { data: { user: null } };
     },
