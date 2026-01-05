@@ -270,6 +270,33 @@ const server = http.createServer((req, res) => {
         return;
       }
 
+      // List profiles
+      if (action === 'read' && query.table === 'profiles') {
+        const db = initDb();
+        const userId = query.id || data.id;
+
+        // If specific user ID requested, return that profile
+        if (userId) {
+          const profile = db.profiles && db.profiles.find(p => String(p.id) === String(userId));
+          res.writeHead(200);
+          res.end(JSON.stringify({
+            status: 'success',
+            data: profile || null,
+          }));
+          return;
+        }
+
+        // Otherwise return all profiles
+        res.writeHead(200);
+        res.end(
+          JSON.stringify({
+            status: 'success',
+            data: db.profiles || [],
+          })
+        );
+        return;
+      }
+
       // Reset database (dev endpoint)
       if (pathname === '/reset') {
         saveDb({ users: [], nextId: 1 });
