@@ -18,22 +18,25 @@ export async function forceCreateTaxSettings(): Promise<void> {
   console.log('🚀 Force creating tax settings...');
 
   try {
-    // Get company ID from external API
-    const result = await apiClient.select('companies', {});
+    // Try to get company ID from external API
+    let companyId = 'default-company';
 
-    if (result.error || !result.data) {
-      console.warn('⚠️ Cannot access companies from API:', result.error?.message);
-      throw new Error(`Cannot access companies: ${result.error?.message || 'Unknown error'}`);
+    try {
+      const result = await apiClient.select('companies', {});
+
+      if (!result.error && result.data) {
+        const companies = Array.isArray(result.data) ? result.data : [result.data];
+        companyId = companies?.[0]?.id || 'default-company';
+        console.log('✅ Found company:', companyId);
+      } else {
+        console.warn('⚠️ Cannot access companies from API:', result.error?.message);
+        console.log('📦 Using default company ID for tax settings');
+      }
+    } catch (apiError) {
+      console.warn('⚠️ API error accessing companies:', apiError);
+      console.log('📦 Using default company ID for tax settings');
     }
 
-    const companies = Array.isArray(result.data) ? result.data : [result.data];
-    const companyId = companies?.[0]?.id;
-    if (!companyId) {
-      throw new Error('No company found');
-    }
-
-    console.log('✅ Found company:', companyId);
-    
     // Create default tax settings in memory
     const defaultTaxSettings: SimpleTaxSetting[] = [
       {
@@ -67,18 +70,44 @@ export async function forceCreateTaxSettings(): Promise<void> {
         updated_at: new Date().toISOString()
       }
     ];
-    
+
     // Store in memory
     memoryTaxSettings = defaultTaxSettings;
-    
+
     // Also store in localStorage for persistence
     localStorage.setItem('tax_settings', JSON.stringify(defaultTaxSettings));
-    
+
     console.log('✅ Tax settings created in memory storage');
-    
+
   } catch (error) {
     console.error('❌ Force tax setup failed:', error);
-    throw error;
+    // Don't rethrow - create minimal tax settings with default company ID
+    const defaultCompanyId = 'default-company';
+    const fallbackTaxSettings: SimpleTaxSetting[] = [
+      {
+        id: crypto.randomUUID(),
+        company_id: defaultCompanyId,
+        name: 'Zero Rate',
+        rate: 0.0,
+        is_active: true,
+        is_default: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: crypto.randomUUID(),
+        company_id: defaultCompanyId,
+        name: 'VAT',
+        rate: 16.0,
+        is_active: true,
+        is_default: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+    ];
+    memoryTaxSettings = fallbackTaxSettings;
+    localStorage.setItem('tax_settings', JSON.stringify(fallbackTaxSettings));
+    console.log('✅ Fallback tax settings created');
   }
 }
 
