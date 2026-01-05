@@ -189,7 +189,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // If profile exists but is not active, immediately sign out and block access
           if (userProfile && userProfile.status && userProfile.status !== 'active') {
             setTimeout(() => toast.error('Your account is pending approval. Please contact an administrator.'), 0);
-            try { await supabase.auth.signOut(); } catch {}
+            try { await apiClient.auth.logout(); } catch {}
             setSession(null);
             setUser(null);
             setProfile(null);
