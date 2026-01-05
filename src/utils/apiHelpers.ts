@@ -40,7 +40,6 @@ export async function isAuthenticated(): Promise<boolean> {
 
 /**
  * Generic query builder for database operations
- * Replaces: supabase.from(table).select().eq().maybeSingle()
  */
 export async function queryOne<T>(
   table: string,
@@ -48,12 +47,9 @@ export async function queryOne<T>(
   value: any
 ): Promise<{ data: T | null; error: Error | null }> {
   try {
-    const { data, error } = await supabase
-      .from(table)
-      .select('*')
-      .eq(column, value)
-      .maybeSingle();
-    return { data, error };
+    const result = await apiClient.select(table, { [column]: value });
+    const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
+    return { data, error: result.error };
   } catch (error) {
     return { data: null, error: error as Error };
   }
@@ -61,23 +57,15 @@ export async function queryOne<T>(
 
 /**
  * Query multiple rows
- * Replaces: supabase.from(table).select().eq()
  */
 export async function queryMany<T>(
   table: string,
   filters?: Record<string, any>
 ): Promise<{ data: T[] | null; error: Error | null }> {
   try {
-    let query = supabase.from(table).select('*');
-    
-    if (filters) {
-      for (const [column, value] of Object.entries(filters)) {
-        query = query.eq(column, value) as any;
-      }
-    }
-    
-    const { data, error } = await query;
-    return { data: data as T[], error };
+    const result = await apiClient.select(table, filters || {});
+    const data = Array.isArray(result.data) ? result.data : null;
+    return { data: data as T[], error: result.error };
   } catch (error) {
     return { data: null, error: error as Error };
   }
@@ -85,19 +73,14 @@ export async function queryMany<T>(
 
 /**
  * Insert a single record
- * Replaces: supabase.from(table).insert(data).select().single()
  */
 export async function insertOne<T>(
   table: string,
   data: any
 ): Promise<{ data: T | null; error: Error | null }> {
   try {
-    const { data: result, error } = await supabase
-      .from(table)
-      .insert(data)
-      .select()
-      .single();
-    return { data: result, error };
+    const result = await apiClient.insert(table, data);
+    return { data: result.data as T, error: result.error };
   } catch (error) {
     return { data: null, error: error as Error };
   }
@@ -105,18 +88,14 @@ export async function insertOne<T>(
 
 /**
  * Insert multiple records
- * Replaces: supabase.from(table).insert(dataArray).select()
  */
 export async function insertMany<T>(
   table: string,
   data: any[]
 ): Promise<{ data: T[] | null; error: Error | null }> {
   try {
-    const { data: result, error } = await supabase
-      .from(table)
-      .insert(data)
-      .select();
-    return { data: result as T[], error };
+    const result = await apiClient.insertMany(table, data);
+    return { data: result.data as T[], error: result.error };
   } catch (error) {
     return { data: null, error: error as Error };
   }
@@ -124,7 +103,6 @@ export async function insertMany<T>(
 
 /**
  * Update a single record by ID
- * Replaces: supabase.from(table).update(data).eq('id', id)
  */
 export async function updateOne(
   table: string,
@@ -132,11 +110,8 @@ export async function updateOne(
   data: any
 ): Promise<{ error: Error | null }> {
   try {
-    const { error } = await supabase
-      .from(table)
-      .update(data)
-      .eq('id', id);
-    return { error };
+    const result = await apiClient.update(table, String(id), data);
+    return { error: result.error };
   } catch (error) {
     return { error: error as Error };
   }
@@ -144,7 +119,6 @@ export async function updateOne(
 
 /**
  * Update multiple records by filter
- * Replaces: supabase.from(table).update(data).eq(column, value)
  */
 export async function updateMany(
   table: string,
@@ -152,14 +126,8 @@ export async function updateMany(
   data: any
 ): Promise<{ error: Error | null }> {
   try {
-    let query = supabase.from(table).update(data);
-    
-    for (const [column, value] of Object.entries(filters)) {
-      query = query.eq(column, value) as any;
-    }
-    
-    const { error } = await query;
-    return { error };
+    const result = await apiClient.updateMany(table, filters, data);
+    return { error: result.error };
   } catch (error) {
     return { error: error as Error };
   }
@@ -167,18 +135,14 @@ export async function updateMany(
 
 /**
  * Delete a single record by ID
- * Replaces: supabase.from(table).delete().eq('id', id)
  */
 export async function deleteOne(
   table: string,
   id: string | number
 ): Promise<{ error: Error | null }> {
   try {
-    const { error } = await supabase
-      .from(table)
-      .delete()
-      .eq('id', id);
-    return { error };
+    const result = await apiClient.delete(table, String(id));
+    return { error: result.error };
   } catch (error) {
     return { error: error as Error };
   }
@@ -186,21 +150,14 @@ export async function deleteOne(
 
 /**
  * Delete multiple records by filter
- * Replaces: supabase.from(table).delete().eq(column, value)
  */
 export async function deleteMany(
   table: string,
   filters: Record<string, any>
 ): Promise<{ error: Error | null }> {
   try {
-    let query = supabase.from(table).delete();
-    
-    for (const [column, value] of Object.entries(filters)) {
-      query = query.eq(column, value) as any;
-    }
-    
-    const { error } = await query;
-    return { error };
+    const result = await apiClient.deleteMany(table, filters);
+    return { error: result.error };
   } catch (error) {
     return { error: error as Error };
   }
@@ -208,12 +165,11 @@ export async function deleteMany(
 
 /**
  * Check if a table exists
- * Replaces: supabase.from(table).select('id').limit(1)
  */
 export async function tableExists(table: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase.from(table).select('id').limit(1);
-    return !error && data !== null;
+    const result = await apiClient.select(table);
+    return !result.error;
   } catch {
     return false;
   }
@@ -221,7 +177,6 @@ export async function tableExists(table: string): Promise<boolean> {
 
 /**
  * Check if a record exists
- * Replaces: supabase.from(table).select('id').eq(column, value).limit(1)
  */
 export async function recordExists(
   table: string,
@@ -229,12 +184,9 @@ export async function recordExists(
   value: any
 ): Promise<boolean> {
   try {
-    const { data, error } = await supabase
-      .from(table)
-      .select('id')
-      .eq(column, value)
-      .limit(1);
-    return !error && data && data.length > 0;
+    const result = await apiClient.select(table, { [column]: value });
+    const data = Array.isArray(result.data) ? result.data : [];
+    return !result.error && data.length > 0;
   } catch {
     return false;
   }
@@ -242,23 +194,15 @@ export async function recordExists(
 
 /**
  * Count records matching a filter
- * Replaces: supabase.from(table).select('id', { count: 'exact' })
  */
 export async function countRecords(
   table: string,
   filters?: Record<string, any>
 ): Promise<number> {
   try {
-    let query = supabase.from(table).select('id');
-    
-    if (filters) {
-      for (const [column, value] of Object.entries(filters)) {
-        query = query.eq(column, value) as any;
-      }
-    }
-    
-    const { data, error } = await query;
-    return !error && data ? data.length : 0;
+    const result = await apiClient.select(table, filters || {});
+    const data = Array.isArray(result.data) ? result.data : [];
+    return !result.error ? data.length : 0;
   } catch {
     return 0;
   }
