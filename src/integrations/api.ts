@@ -378,23 +378,44 @@ export const supabaseCompat = {
     },
 
     onAuthStateChange: (callback: any) => {
-      const handleStorageChange = () => {
-        const token = localStorage.getItem('med_api_token');
-        const userId = localStorage.getItem('med_api_user_id');
-        if (token && userId) {
+      // Check initial auth state immediately
+      const token = localStorage.getItem('med_api_token');
+      const userId = localStorage.getItem('med_api_user_id');
+      if (token && userId) {
+        // Emit initial state on next tick
+        setTimeout(() => {
           callback('SIGNED_IN', {
             user: { id: userId },
             access_token: token,
           });
-        } else {
-          callback('SIGNED_OUT', null);
+        }, 0);
+      }
+
+      // Also listen for storage changes (for multi-tab sync)
+      const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'med_api_token' || e.key === 'med_api_user_id') {
+          const newToken = localStorage.getItem('med_api_token');
+          const newUserId = localStorage.getItem('med_api_user_id');
+          if (newToken && newUserId) {
+            callback('SIGNED_IN', {
+              user: { id: newUserId },
+              access_token: newToken,
+            });
+          } else {
+            callback('SIGNED_OUT', null);
+          }
         }
       };
+
       window.addEventListener('storage', handleStorageChange);
+
+      // Return proper subscription object that matches Supabase interface
       return {
         data: {
           subscription: {
-            unsubscribe: () => window.removeEventListener('storage', handleStorageChange),
+            unsubscribe: () => {
+              window.removeEventListener('storage', handleStorageChange);
+            },
           },
         },
       };
