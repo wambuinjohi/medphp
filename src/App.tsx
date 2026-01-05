@@ -35,6 +35,7 @@ import AuthTest from "./components/AuthTest";
 import DatabaseDebug from "./pages/DatabaseDebug";
 import AdminInit from "./pages/AdminInit";
 import AdminInitExternal from "./pages/AdminInitExternal";
+import DatabaseManagementAdmin from "./pages/DatabaseManagementAdmin";
 
 const App = () => {
 
@@ -174,6 +175,15 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <AuditLogs />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/app/admin/database"
+                  element={
+                    <ProtectedRoute>
+                      <DatabaseManagementAdmin />
                     </ProtectedRoute>
                   }
                 />

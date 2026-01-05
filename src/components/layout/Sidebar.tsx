@@ -19,7 +19,8 @@ import {
   FileSpreadsheet,
   ShoppingCart,
   RotateCcw,
-  Globe
+  Globe,
+  Database
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -103,7 +104,7 @@ const sidebarItems: SidebarItem[] = [
     children: [
       { title: 'Company Settings', icon: Building2, href: '/app/settings/company' },
       { title: 'User Management', icon: Users, href: '/app/settings/users' },
-      { title: 'Database Setup', icon: Package, href: '/database-setup' }
+      { title: 'Database Management', icon: Database, href: '/app/admin/database' }
     ]
   }
 ];
