@@ -1,19 +1,17 @@
 /**
  * API Helper Functions
- * Centralizes common patterns of supabase calls for easy migration to external API
+ * Centralizes common patterns of external API calls
  * These helpers abstract the underlying API call details
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 
 /**
  * Get the current authenticated user ID
- * Replaces: supabase.auth.getUser()
  */
 export async function getCurrentUserId(): Promise<string | null> {
   try {
-    const { data } = await supabase.auth.getUser();
-    return data?.user?.id || null;
+    return localStorage.getItem('med_api_user_id');
   } catch (error) {
     console.warn('Failed to get current user:', error);
     return null;
@@ -22,12 +20,10 @@ export async function getCurrentUserId(): Promise<string | null> {
 
 /**
  * Get the current session
- * Replaces: supabase.auth.getSession()
  */
 export async function getCurrentSession() {
   try {
-    const { data } = await supabase.auth.getSession();
-    return data?.session || null;
+    return await apiClient.auth.getSession();
   } catch (error) {
     console.warn('Failed to get session:', error);
     return null;
