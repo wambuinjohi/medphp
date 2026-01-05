@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseCompat } from '@/integrations/api';
+import { apiClient } from '@/integrations/api';
 import { toast } from 'sonner';
 import { initializeAuth, clearAuthTokens, safeAuthOperation } from '@/utils/authHelpers';
 import { logError, getUserFriendlyErrorMessage, isErrorType } from '@/utils/errorLogger';
