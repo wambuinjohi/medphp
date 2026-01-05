@@ -107,7 +107,13 @@ export class ExternalAPIAdapter implements IDatabase {
         body: JSON.stringify({ email, password }),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
       console.log('📝 Login response status:', response.status, 'Result:', result);
 
       if (!response.ok || result.status === 'error') {
