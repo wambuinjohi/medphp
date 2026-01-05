@@ -139,15 +139,30 @@ const server = http.createServer((req, res) => {
           return;
         }
 
+        const userId = db.nextId++;
         const user = {
-          id: db.nextId++,
+          id: userId,
           email,
           password: hashPassword(password),
           role: 'admin',
           created_at: new Date().toISOString(),
         };
 
+        // Auto-create profile for new user
+        const profile = {
+          id: userId,
+          email,
+          full_name: email.split('@')[0],
+          role: 'admin',
+          status: 'active',
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
         db.users.push(user);
+        if (!db.profiles) db.profiles = [];
+        db.profiles.push(profile);
         saveDb(db);
 
         res.writeHead(200);
