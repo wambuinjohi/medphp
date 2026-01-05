@@ -1,45 +1,19 @@
-import { supabase } from '@/integrations/supabase/client';
-
 /**
- * Simple function to just add the currency column
+ * ADD CURRENCY COLUMN - DISABLED
+ * 
+ * This module attempted to alter table schema using Supabase RPC,
+ * which is not available with external MySQL API.
+ * 
+ * To add currency support:
+ * 1. Modify PHP backend code
+ * 2. Use MySQL ALTER TABLE commands directly
+ * 3. Implement custom API endpoint for schema modifications
  */
-export async function addCurrencyColumn(): Promise<{ success: boolean; message: string }> {
-  try {
-    console.log('Adding currency column to companies table...');
-    
-    // Simple SQL to add the currency column
-    const sql = `ALTER TABLE companies ADD COLUMN IF NOT EXISTS currency VARCHAR(3) DEFAULT 'KES';`;
-    
-    // Try to execute using RPC if available
-    const { error } = await supabase.rpc('exec_sql', { 
-      sql_query: sql 
-    });
 
-    if (error) {
-      // If RPC doesn't work, provide the SQL for manual execution
-      console.error('RPC failed:', error);
-      return {
-        success: false,
-        message: `Please execute this SQL manually in Supabase: ${sql}`
-      };
-    }
-
-    console.log('✅ Currency column added successfully');
-    return {
-      success: true,
-      message: 'Currency column added successfully'
-    };
-
-  } catch (error) {
-    console.error('Error adding currency column:', error);
-    return {
-      success: false,
-      message: `Error: ${error instanceof Error ? error.message : String(error)}`
-    };
-  }
+export async function addCurrencyColumn() {
+  console.warn('⚠️ addCurrencyColumn is disabled');
+  return {
+    success: false,
+    message: 'Please execute SQL directly or ask backend administrator'
+  };
 }
-
-/**
- * Just the SQL command if you want to run it manually
- */
-export const ADD_CURRENCY_COLUMN_SQL = `ALTER TABLE companies ADD COLUMN IF NOT EXISTS currency VARCHAR(3) DEFAULT 'KES';`;
