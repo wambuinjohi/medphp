@@ -246,7 +246,13 @@ class ExternalAPIAuthHandler {
         }),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. Password reset failed.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok || result.status === 'error') {
         return { error: new Error(result.message || 'Password reset failed') };
