@@ -53,16 +53,14 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
     onProgress?.('Initializing database tables...');
     onProgress?.(`Creating admin user: ${adminEmail}`);
 
-    // The setup endpoint expects email and password as form-encoded POST data
-    const formData = new URLSearchParams();
-    formData.append('action', 'setup');
-    formData.append('email', adminEmail);
-    formData.append('password', adminPassword);
-
-    const setupResponse = await fetch(apiUrl, {
+    // The setup endpoint expects email and password as JSON POST data
+    const setupResponse = await fetch(`${apiUrl}?action=setup`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData.toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: adminEmail,
+        password: adminPassword,
+      }),
     });
 
     if (!setupResponse.ok) {
@@ -72,10 +70,28 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
       );
     }
 
-    const setupData = await setupResponse.json();
+    let setupData: any;
+    try {
+      setupData = await setupResponse.json();
+    } catch (e) {
+      const text = await setupResponse.text();
+      throw new Error(`Setup endpoint returned invalid JSON: ${text.substring(0, 200)}`);
+    }
 
     if (!setupData.status || setupData.status !== 'success') {
-      throw new Error(setupData.message || 'Setup endpoint returned error');
+      // Provide more detailed error information
+      const errorMessage = setupData.message || 'Setup endpoint returned error';
+
+      // Check for common database errors
+      if (errorMessage.includes('table') && errorMessage.includes('doesn\'t exist')) {
+        throw new Error(`Database table issue: ${errorMessage} - You may need to manually create the users table or check database configuration.`);
+      }
+
+      if (errorMessage.includes('Connection') || errorMessage.includes('connection')) {
+        throw new Error(`Database connection issue: ${errorMessage} - Check that the database host, user, and password are correct.`);
+      }
+
+      throw new Error(errorMessage);
     }
 
     onProgress?.('✓ Admin user created successfully');
@@ -83,16 +99,14 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
     // Step 3: Verify login works
     onProgress?.('Verifying authentication...');
 
-    // The login endpoint also expects email and password as form-encoded POST data
-    const loginFormData = new URLSearchParams();
-    loginFormData.append('action', 'login');
-    loginFormData.append('email', adminEmail);
-    loginFormData.append('password', adminPassword);
-
-    const loginResponse = await fetch(apiUrl, {
+    // The login endpoint expects email and password as JSON POST data
+    const loginResponse = await fetch(`${apiUrl}?action=login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: loginFormData.toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: adminEmail,
+        password: adminPassword,
+      }),
     });
 
     if (!loginResponse.ok) {
@@ -128,9 +142,20 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
 
     onProgress?.(`✗ Error: ${errorMessage}`);
 
+    // Provide specific guidance based on the error
+    let guideMessage = errorMessage;
+
+    if (errorMessage.includes('Cannot reach API')) {
+      guideMessage = `${errorMessage}\n\nTroubleshooting:\n1. Verify the API URL is correct\n2. Check your internet connection\n3. Ensure the API server is running\n4. Check firewall/network restrictions`;
+    } else if (errorMessage.includes('Connection') || errorMessage.includes('table')) {
+      guideMessage = `${errorMessage}\n\nTroubleshooting:\n1. The remote database may not be properly configured\n2. Contact your system administrator\n3. Or set up a local database instead`;
+    } else if (errorMessage.includes('Invalid JSON')) {
+      guideMessage = `${errorMessage}\n\nTroubleshooting:\n1. The API endpoint may be misconfigured\n2. Verify it's pointing to a valid PHP API\n3. Check the API server logs`;
+    }
+
     return {
       success: false,
-      message: errorMessage,
+      message: guideMessage,
     };
   }
 }
@@ -145,18 +170,19 @@ export async function checkAdminExists(options: SetupOptions = {}): Promise<bool
   const password = options.password || 'Pass123';
 
   try {
-    const formData = new URLSearchParams();
-    formData.append('action', 'login');
-    formData.append('email', email);
-    formData.append('password', password);
-
-    const response = await fetch(apiUrl, {
+    const response = await fetch(`${apiUrl}?action=login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData.toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
     });
 
-    return response.ok;
+    // Check if login was successful (HTTP 200 and has token)
+    if (response.ok) {
+      const data = await response.json();
+      return data?.token ? true : false;
+    }
+
+    return false;
   } catch (error) {
     console.error('Error checking admin:', error);
     return false;

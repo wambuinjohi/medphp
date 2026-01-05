@@ -50,11 +50,11 @@ export function analyzeAuthError(error: Error | any): AuthErrorInfo {
 
   const message = errorMessage.toLowerCase();
 
-  if (message.includes('invalid login credentials')) {
+  if (message.includes('invalid login credentials') || message.includes('invalid email or password')) {
     return {
       type: 'invalid_credentials',
       message: 'Invalid email or password',
-      action: 'Check your credentials or create an admin account using the setup above'
+      action: 'Check your credentials or contact your administrator'
     };
   }
 

@@ -3,13 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Copy, CheckCircle2, Zap, AlertCircle, Server } from 'lucide-react';
+import { Loader2, Copy, CheckCircle2, Zap, AlertCircle, Server, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   initializeExternalAPI,
   checkAdminExists,
   getDatabaseInfo,
 } from '@/utils/externalApiSetup';
+import { runApiDiagnostics, generateDiagnosticReport } from '@/utils/apiDiagnostics';
 
 export default function AdminInitExternal() {
   const [adminExists, setAdminExists] = useState(false);
@@ -23,6 +24,9 @@ export default function AdminInitExternal() {
   const [apiUrl, setApiUrl] = useState(
     import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php'
   );
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [diagnosticsRunning, setDiagnosticsRunning] = useState(false);
+  const [diagnosticsResults, setDiagnosticsResults] = useState<any[]>([]);
 
   const ADMIN_EMAIL = 'admin@mail.com';
   const ADMIN_PASSWORD = 'Pass123';
@@ -46,6 +50,26 @@ export default function AdminInitExternal() {
       setAdminExists(false);
     } finally {
       setCheckingAdmin(false);
+    }
+  }
+
+  async function runDiagnostics() {
+    try {
+      setDiagnosticsRunning(true);
+      const results = await runApiDiagnostics(apiUrl);
+      setDiagnosticsResults(results);
+
+      const report = generateDiagnosticReport(results);
+      console.log(report);
+
+      toast.success('Diagnostics complete - check console for full report', {
+        duration: 5000,
+      });
+    } catch (error) {
+      toast.error('Error running diagnostics');
+      console.error('Diagnostics error:', error);
+    } finally {
+      setDiagnosticsRunning(false);
     }
   }
 
@@ -79,17 +103,23 @@ export default function AdminInitExternal() {
           duration: 5000,
         });
       } else {
+        // Show error with troubleshooting info
+        const errorLines = result.message.split('\n');
         toast.error('Initialization failed', {
-          description: result.message,
-          duration: 5000,
+          description: errorLines[0],
+          duration: 8000,
         });
+
+        // Log full error for user to see
+        setInitProgress(prev => [...prev, '❌ ERROR: ' + result.message]);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast.error('Initialization error', {
-        description: errorMessage,
-        duration: 5000,
+        description: errorMessage.split('\n')[0],
+        duration: 8000,
       });
+      setInitProgress(prev => [...prev, '❌ ERROR: ' + errorMessage]);
       console.error('Init error:', error);
     } finally {
       setInitializing(false);
@@ -320,6 +350,81 @@ export default function AdminInitExternal() {
               </div>
             </div>
           )}
+
+          {/* Diagnostics Section */}
+          <div className="border-t pt-6">
+            <Button
+              onClick={() => setShowDiagnostics(!showDiagnostics)}
+              variant="outline"
+              className="w-full mb-4"
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              {showDiagnostics ? 'Hide' : 'Show'} Advanced Diagnostics
+            </Button>
+
+            {showDiagnostics && (
+              <div className="space-y-4 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <p className="text-sm text-gray-600">
+                  Click below to run diagnostics and troubleshoot API connectivity issues:
+                </p>
+
+                <Button
+                  onClick={runDiagnostics}
+                  disabled={diagnosticsRunning}
+                  className="w-full bg-purple-600 hover:bg-purple-700"
+                >
+                  {diagnosticsRunning ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Running Diagnostics...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="mr-2 h-4 w-4" />
+                      Run API Diagnostics
+                    </>
+                  )}
+                </Button>
+
+                {diagnosticsResults.length > 0 && (
+                  <div className="space-y-3 mt-4 bg-white rounded-lg p-4 border border-gray-200">
+                    <p className="font-semibold text-gray-900">Diagnostic Results:</p>
+                    {diagnosticsResults.map((result, index) => (
+                      <div
+                        key={index}
+                        className={`rounded p-3 text-sm ${
+                          result.status === 'success'
+                            ? 'bg-green-50 border border-green-200'
+                            : result.status === 'warning'
+                            ? 'bg-yellow-50 border border-yellow-200'
+                            : 'bg-red-50 border border-red-200'
+                        }`}
+                      >
+                        <div className="font-medium text-gray-900 flex items-center gap-2">
+                          <span>
+                            {result.status === 'success' ? '✅' : result.status === 'warning' ? '⚠️' : '❌'}
+                          </span>
+                          {result.name}
+                        </div>
+                        <p className="text-gray-700 mt-1">{result.message}</p>
+                        {result.details && (
+                          <details className="mt-2 text-xs text-gray-600">
+                            <summary className="cursor-pointer underline">Show details</summary>
+                            <pre className="mt-2 bg-gray-900 text-green-400 p-2 rounded overflow-x-auto">
+                              {JSON.stringify(result.details, null, 2)}
+                            </pre>
+                          </details>
+                        )}
+                      </div>
+                    ))}
+                    <p className="text-xs text-gray-500 mt-3 bg-blue-50 p-2 rounded border border-blue-200">
+                      💡 Full diagnostic report printed to browser console. Open developer tools (F12) to see detailed logs.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

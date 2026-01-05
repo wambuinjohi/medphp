@@ -235,6 +235,16 @@ function createCompatibilityClient() {
             return { error: error as Error };
           }
         },
+        maybeSingle: async () => {
+          try {
+            queryState.isSingle = true;
+            const result = await adapter.list(table, queryState.filters);
+            const data = Array.isArray(result) ? result[0] || null : result;
+            return { data, error: null };
+          } catch (error) {
+            return { error: error as Error };
+          }
+        },
       });
 
       return createChain();
