@@ -325,7 +325,7 @@ const server = http.createServer((req, res) => {
 
       // Reset database (dev endpoint)
       if (pathname === '/reset') {
-        saveDb({ users: [], nextId: 1 });
+        saveDb({ users: [], profiles: [], nextId: 1 });
         res.writeHead(200);
         res.end(JSON.stringify({ status: 'success', message: 'Database reset' }));
         return;
