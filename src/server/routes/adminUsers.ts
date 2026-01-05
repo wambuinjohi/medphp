@@ -490,5 +490,53 @@ export const adminUserAPI = {
       body: '{}'
     });
     return response.json();
+  },
+
+  /**
+   * Check roles status
+   */
+  async checkRolesStatus() {
+    const response = await fetch('/api/admin/roles/check-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    return response.json();
+  },
+
+  /**
+   * Create default roles
+   */
+  async createDefaultRoles() {
+    const response = await fetch('/api/admin/roles/create-default', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    return response.json();
+  },
+
+  /**
+   * Setup role permissions
+   */
+  async setupRolePermissions() {
+    const response = await fetch('/api/admin/roles/setup-permissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    return response.json();
+  },
+
+  /**
+   * Complete role setup (create roles + setup permissions)
+   */
+  async completeRoleSetup() {
+    const response = await fetch('/api/admin/roles/setup-complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    return response.json();
   }
 };
