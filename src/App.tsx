@@ -37,6 +37,7 @@ import DatabaseDebug from "./pages/DatabaseDebug";
 import AdminInit from "./pages/AdminInit";
 import AdminInitExternal from "./pages/AdminInitExternal";
 import DatabaseManagementAdmin from "./pages/DatabaseManagementAdmin";
+import { APIDiagnosticsPage } from "./pages/APIDiagnosticsPage";
 
 const App = () => {
 
