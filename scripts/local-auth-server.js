@@ -126,6 +126,32 @@ const server = http.createServer((req, res) => {
         if (existingUser) {
           existingUser.password = hashPassword(password);
           existingUser.role = 'admin';
+
+          // Ensure profile exists or update it
+          if (!db.profiles) db.profiles = [];
+          let profile = db.profiles.find(p => String(p.id) === String(existingUser.id));
+
+          if (profile) {
+            // Update existing profile
+            profile.role = 'admin';
+            profile.status = 'active';
+            profile.is_active = true;
+            profile.updated_at = new Date().toISOString();
+          } else {
+            // Create new profile
+            profile = {
+              id: existingUser.id,
+              email,
+              full_name: email.split('@')[0],
+              role: 'admin',
+              status: 'active',
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            db.profiles.push(profile);
+          }
+
           saveDb(db);
 
           res.writeHead(200);
