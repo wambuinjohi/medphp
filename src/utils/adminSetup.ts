@@ -30,7 +30,13 @@ export async function createAdminUser(options: CreateAdminOptions) {
       }
     });
 
-    const companiesData = await checkCompanyResponse.json();
+    // Defensively parse JSON
+    const companiesData = await checkCompanyResponse.json().catch(() => {
+      if (!checkCompanyResponse.ok) {
+        throw new Error(`Server error: HTTP ${checkCompanyResponse.status}. Failed to check companies.`);
+      }
+      throw new Error('Invalid response from server: Expected valid JSON');
+    });
     let companyId: string | null = null;
 
     if (companiesData && companiesData.data && companiesData.data.length > 0) {
@@ -53,7 +59,13 @@ export async function createAdminUser(options: CreateAdminOptions) {
         })
       });
 
-      const companyResult = await createCompanyResponse.json();
+      // Defensively parse JSON
+      const companyResult = await createCompanyResponse.json().catch(() => {
+        if (!createCompanyResponse.ok) {
+          throw new Error(`Server error: HTTP ${createCompanyResponse.status}. Failed to create company.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!createCompanyResponse.ok || companyResult.status === 'error') {
         throw new Error(`Failed to create company: ${companyResult.message || 'Unknown error'}`);
