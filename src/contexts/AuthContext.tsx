@@ -169,10 +169,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Update last login timestamp silently
   const updateLastLogin = useCallback(async (userId: string) => {
     try {
-      await supabase
+      await supabaseCompat
         .from('profiles')
         .update({ last_login: new Date().toISOString(), is_active: true })
-        .eq('id', userId);
+        .eq('id', userId)
+        .execute();
     } catch (error) {
       logError('Error updating last login:', error, { userId, context: 'updateLastLogin' });
     }
