@@ -2,6 +2,7 @@ import { adminCreateUser } from '../lib/adminCreateUser';
 import { adminResetPassword } from '../lib/adminResetPassword';
 import { fixProfileRls } from '../lib/fixProfileRls';
 import { checkDatabaseStatus, initializeDatabase, getDatabaseStats } from '../lib/dbInitialize';
+import { checkRolesStatus, createDefaultRoles, setupRolePermissions, completeRoleSetup } from '../lib/setupRoles';
 
 const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
 const API_AUTH_TOKEN = process.env.API_AUTH_TOKEN || '';
