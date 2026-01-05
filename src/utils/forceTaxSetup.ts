@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 
 export interface SimpleTaxSetting {
   id: string;
@@ -16,22 +16,23 @@ let memoryTaxSettings: SimpleTaxSetting[] = [];
 
 export async function forceCreateTaxSettings(): Promise<void> {
   console.log('🚀 Force creating tax settings...');
-  
+
   try {
-    // Get company ID
-    const { data: companies, error: companiesError } = await supabase
-      .from('companies')
-      .select('id')
-      .limit(1);
-    
-    if (companiesError) {
-      throw new Error(`Cannot access companies: ${companiesError.message}`);
+    // Get company ID from external API
+    const result = await apiClient.select('companies', {});
+
+    if (result.error || !result.data) {
+      console.warn('⚠️ Cannot access companies from API:', result.error?.message);
+      throw new Error(`Cannot access companies: ${result.error?.message || 'Unknown error'}`);
     }
-    
+
+    const companies = Array.isArray(result.data) ? result.data : [result.data];
     const companyId = companies?.[0]?.id;
     if (!companyId) {
       throw new Error('No company found');
     }
+
+    console.log('✅ Found company:', companyId);
     
     // Create default tax settings in memory
     const defaultTaxSettings: SimpleTaxSetting[] = [
