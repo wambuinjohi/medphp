@@ -21,10 +21,10 @@ function initDb() {
     try {
       return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
     } catch {
-      return { users: [], nextId: 1 };
+      return { users: [], profiles: [], nextId: 1 };
     }
   }
-  return { users: [], nextId: 1 };
+  return { users: [], profiles: [], nextId: 1 };
 }
 
 function saveDb(db) {
