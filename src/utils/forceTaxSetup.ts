@@ -125,20 +125,21 @@ export async function getTaxSettings(companyId?: string): Promise<SimpleTaxSetti
 
 export async function createTaxSetting(taxSetting: Omit<SimpleTaxSetting, 'id' | 'created_at' | 'updated_at'>): Promise<SimpleTaxSetting> {
   try {
-    // Try database first
-    const { data, error } = await supabase
-      .from('tax_settings')
-      .insert([{
+    // Try database first via external API
+    const result = await apiClient.insert('tax_settings', {
+      ...taxSetting,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+
+    if (!result.error) {
+      console.log('✅ Tax setting created in database');
+      return {
         ...taxSetting,
+        id: result.data || crypto.randomUUID(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      }])
-      .select()
-      .single();
-    
-    if (!error && data) {
-      console.log('✅ Tax setting created in database');
-      return data as SimpleTaxSetting;
+      } as SimpleTaxSetting;
     }
     
     // Fallback to memory storage
