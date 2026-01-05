@@ -71,7 +71,13 @@ export class ExternalAPIAdapter implements IDatabase {
         body: data ? JSON.stringify(data) : undefined,
       });
 
-      const result = await response.json();
+      // Defensively parse JSON - handle cases where server returns non-JSON (e.g., 500 error)
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok) {
         return {
@@ -101,7 +107,13 @@ export class ExternalAPIAdapter implements IDatabase {
         body: JSON.stringify({ email, password }),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
       console.log('📝 Login response status:', response.status, 'Result:', result);
 
       if (!response.ok || result.status === 'error') {
@@ -149,7 +161,8 @@ export class ExternalAPIAdapter implements IDatabase {
       });
 
       if (!response.ok) {
-        const result = await response.json();
+        // Defensively parse JSON
+        const result = await response.json().catch(() => ({}));
         return { error: new Error(result.message || 'Logout failed') };
       }
 
@@ -178,7 +191,13 @@ export class ExternalAPIAdapter implements IDatabase {
         body: JSON.stringify({ token: this.authToken }),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. Authentication check failed.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok) {
         this.clearAuthToken();
@@ -340,7 +359,13 @@ export class ExternalAPIAdapter implements IDatabase {
         body: JSON.stringify({ sql, params }),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. Query execution failed.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok) {
         return {

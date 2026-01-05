@@ -37,6 +37,7 @@ import DatabaseDebug from "./pages/DatabaseDebug";
 import AdminInit from "./pages/AdminInit";
 import AdminInitExternal from "./pages/AdminInitExternal";
 import DatabaseManagementAdmin from "./pages/DatabaseManagementAdmin";
+import { APIDiagnosticsPage } from "./pages/APIDiagnosticsPage";
 
 const App = () => {
 
@@ -58,6 +59,7 @@ const App = () => {
 
         {/* Debug routes - Accessible without authentication */}
         <Route path="/debug/database" element={<DatabaseDebug />} />
+        <Route path="/debug/api" element={<APIDiagnosticsPage />} />
 
         {/* All other routes wrapped in Layout */}
         <Route

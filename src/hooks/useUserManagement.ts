@@ -230,7 +230,13 @@ export const useUserManagement = () => {
             }),
           });
 
-          const result = await response.json();
+          // Defensively parse JSON
+          const result = await response.json().catch(() => {
+            if (!response.ok) {
+              throw new Error(`Server error: HTTP ${response.status}. Failed to create user.`);
+            }
+            throw new Error('Invalid response from server: Expected valid JSON');
+          });
 
           if (!response.ok) {
             console.error('API error:', result);
@@ -918,7 +924,13 @@ export const useUserManagement = () => {
         })
       });
 
-      const data = await response.json();
+      // Defensively parse JSON
+      const data = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. Failed to send password reset email.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok) {
         const errorMessage = parseErrorMessageWithCodes(data.error, 'password reset');

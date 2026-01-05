@@ -96,7 +96,7 @@ export function analyzeAuthError(error: Error | any): AuthErrorInfo {
     return {
       type: 'server_error',
       message: 'Server error occurred',
-      action: 'Please try again in a few moments',
+      action: 'The API server is experiencing issues. Try again or check diagnostics at /debug/api',
       retry: true
     };
   }

@@ -70,7 +70,10 @@ export async function uploadFile(
       };
     }
 
-    const data = await response.json();
+    // Defensively parse JSON for successful response
+    const data = await response.json().catch(() => {
+      throw new Error('Invalid response from server: Expected valid JSON');
+    });
 
     if (data.status === 'success') {
       return {

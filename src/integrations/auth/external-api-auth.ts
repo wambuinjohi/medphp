@@ -33,7 +33,15 @@ class ExternalAPIAuthHandler {
         body: JSON.stringify({ email, password }),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON - if response is not ok or invalid JSON, handle gracefully
+      const result = await response.json().catch(() => {
+        // If JSON parsing fails and response is not ok, server likely returned error page
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+        }
+        // If response is ok but JSON parsing failed, that's also an error
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok || result.status === 'error') {
         return { error: new Error(result.message || 'Login failed') };
@@ -151,7 +159,13 @@ class ExternalAPIAuthHandler {
         body: JSON.stringify({ token }),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. Token verification failed.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok || result.status === 'error') {
         // Token is invalid, clear it
@@ -192,7 +206,13 @@ class ExternalAPIAuthHandler {
         body: JSON.stringify(userData),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. User creation failed.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok || result.status === 'error') {
         return { error: new Error(result.message || 'User creation failed') };
@@ -226,7 +246,13 @@ class ExternalAPIAuthHandler {
         }),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. Password reset failed.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok || result.status === 'error') {
         return { error: new Error(result.message || 'Password reset failed') };
@@ -249,7 +275,13 @@ class ExternalAPIAuthHandler {
         body: JSON.stringify({ email, password }),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. Admin setup failed.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok || result.status === 'error') {
         return { error: new Error(result.message || 'Admin setup failed') };

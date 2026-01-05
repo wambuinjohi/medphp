@@ -75,7 +75,13 @@ async function testSetupEndpoint(apiUrl: string): Promise<DiagnosticResult> {
       }),
     });
 
-    const data = await response.json();
+    // Defensively parse JSON
+    const data = await response.json().catch(() => {
+      if (!response.ok) {
+        throw new Error(`Server error: HTTP ${response.status}. Setup endpoint failed.`);
+      }
+      throw new Error('Invalid response from server: Expected valid JSON');
+    });
 
     if (response.ok && data.status === 'success') {
       return {
@@ -113,7 +119,13 @@ async function testLoginEndpoint(apiUrl: string): Promise<DiagnosticResult> {
       }),
     });
 
-    const data = await response.json();
+    // Defensively parse JSON
+    const data = await response.json().catch(() => {
+      if (!response.ok) {
+        throw new Error(`Server error: HTTP ${response.status}. Login endpoint failed.`);
+      }
+      throw new Error('Invalid response from server: Expected valid JSON');
+    });
 
     if (response.ok && data.token) {
       return {
@@ -199,7 +211,13 @@ async function testDatabaseConnection(apiUrl: string): Promise<DiagnosticResult>
       headers: { 'Content-Type': 'application/json' },
     });
 
-    const data = await response.json();
+    // Defensively parse JSON
+    const data = await response.json().catch(() => {
+      if (!response.ok) {
+        throw new Error(`Server error: HTTP ${response.status}. Database connection check failed.`);
+      }
+      throw new Error('Invalid response from server: Expected valid JSON');
+    });
 
     if (response.ok) {
       const userCount = Array.isArray(data.data) ? data.data.length : 0;
