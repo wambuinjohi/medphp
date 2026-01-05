@@ -379,13 +379,15 @@ export const supabaseCompat = {
         localStorage.setItem('med_api_user_email', credentials.email);
       }
 
+      const userData = result.user || { id: '', email: credentials.email };
+
       return {
         data: {
           session: {
-            user: result.user || { id: result.user?.id || '', email: credentials.email },
+            user: userData,
             access_token: result.token,
           },
-          user: result.user || { id: result.user?.id || '', email: credentials.email },
+          user: userData,
         },
         error: null,
       };
