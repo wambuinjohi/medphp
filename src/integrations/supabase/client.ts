@@ -209,8 +209,8 @@ function createCompatibilityClient() {
 
         match: async (filters: any) => {
           try {
-            const result = await adapter.list(table, filters);
-            return { data: result, error: null };
+            const result = await adapter.selectBy(table, filters);
+            return { data: result.data, error: result.error };
           } catch (error) {
             return { error: error as Error };
           }
@@ -228,9 +228,9 @@ function createCompatibilityClient() {
         single: async () => {
           try {
             queryState.isSingle = true;
-            const result = await adapter.list(table, queryState.filters);
-            const data = Array.isArray(result) ? result[0] : result;
-            return { data, error: null };
+            const result = await adapter.selectBy(table, queryState.filters);
+            const data = Array.isArray(result.data) ? result.data[0] : result.data;
+            return { data, error: result.error };
           } catch (error) {
             return { error: error as Error };
           }
@@ -238,9 +238,9 @@ function createCompatibilityClient() {
         maybeSingle: async () => {
           try {
             queryState.isSingle = true;
-            const result = await adapter.list(table, queryState.filters);
-            const data = Array.isArray(result) ? result[0] || null : result;
-            return { data, error: null };
+            const result = await adapter.selectBy(table, queryState.filters);
+            const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
+            return { data, error: result.error };
           } catch (error) {
             return { error: error as Error };
           }
