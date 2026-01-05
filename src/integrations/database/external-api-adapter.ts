@@ -47,7 +47,13 @@ export class ExternalAPIAdapter implements IDatabase {
       const params = new URLSearchParams();
       params.append('action', action);
       if (table) params.append('table', table);
-      if (where) params.append('where', JSON.stringify(where));
+
+      // Add where clause parameters individually instead of stringifying
+      if (where && typeof where === 'object') {
+        Object.entries(where).forEach(([key, value]) => {
+          params.append(key, String(value));
+        });
+      }
 
       const url = `${this.apiBase}?${params.toString()}`;
 
