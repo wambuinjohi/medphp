@@ -212,7 +212,13 @@ export async function createDefaultRoles(apiUrl: string = EXTERNAL_API_URL): Pro
           })
         });
 
-        const data = await response.json();
+        // Defensively parse JSON
+        const data = await response.json().catch(() => {
+          if (!response.ok) {
+            throw new Error(`Server error: HTTP ${response.status}. Failed to create role.`);
+          }
+          throw new Error('Invalid response from server: Expected valid JSON');
+        });
 
         if (data.status === 'ok' || data.success) {
           rolesCreated.push(role.name);
