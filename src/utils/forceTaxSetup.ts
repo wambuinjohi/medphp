@@ -84,15 +84,15 @@ export async function forceCreateTaxSettings(): Promise<void> {
 
 export async function getTaxSettings(companyId?: string): Promise<SimpleTaxSetting[]> {
   try {
-    // First try to get from database
-    const { data: dbTaxSettings, error } = await supabase
-      .from('tax_settings')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (!error && dbTaxSettings && dbTaxSettings.length > 0) {
+    // First try to get from database via external API
+    const result = await apiClient.select('tax_settings', {});
+
+    if (!result.error && result.data && Array.isArray(result.data) && result.data.length > 0) {
       console.log('📊 Using database tax settings');
-      return dbTaxSettings as SimpleTaxSetting[];
+      const taxSettings = result.data as SimpleTaxSetting[];
+      return companyId
+        ? taxSettings.filter(tax => tax.company_id === companyId)
+        : taxSettings;
     }
     
     // Fallback to memory
