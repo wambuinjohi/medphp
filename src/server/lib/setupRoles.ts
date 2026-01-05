@@ -115,7 +115,13 @@ export async function checkRolesStatus(apiUrl: string = EXTERNAL_API_URL): Promi
       })
     });
 
-    const data = await response.json();
+    // Defensively parse JSON
+    const data = await response.json().catch(() => {
+      if (!response.ok) {
+        throw new Error(`Server error: HTTP ${response.status}. Failed to check roles.`);
+      }
+      throw new Error('Invalid response from server: Expected valid JSON');
+    });
 
     if (data.status === 'ok' && data.roles) {
       const rolesExist = data.roles
