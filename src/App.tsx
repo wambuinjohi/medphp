@@ -294,6 +294,14 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/app/settings/database-roles"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <DatabaseRolesSettings />
+                    </ProtectedRoute>
+                  }
+                />
 
                 <Route
                   path="/app/setup-test"
