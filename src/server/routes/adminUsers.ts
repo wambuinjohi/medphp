@@ -221,6 +221,121 @@ export async function handleGetDatabaseStats() {
 }
 
 /**
+ * API Route Handler for checking roles status
+ * Returns which default roles exist and which are missing
+ *
+ * Usage:
+ * POST /api/admin/roles/check-status
+ * Content-Type: application/json
+ */
+export async function handleCheckRolesStatus() {
+  try {
+    const result = await checkRolesStatus();
+    return {
+      status: result.success ? 200 : 500,
+      body: result
+    };
+  } catch (error) {
+    console.error('Error checking roles status:', error);
+    return {
+      status: 500,
+      body: {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error checking roles status'
+      }
+    };
+  }
+}
+
+/**
+ * API Route Handler for creating default roles
+ *
+ * Usage:
+ * POST /api/admin/roles/create-default
+ * Content-Type: application/json
+ */
+export async function handleCreateDefaultRoles() {
+  try {
+    const result = await createDefaultRoles();
+    return {
+      status: result.success ? 200 : 500,
+      body: result
+    };
+  } catch (error) {
+    console.error('Error creating default roles:', error);
+    return {
+      status: 500,
+      body: {
+        success: false,
+        message: 'Error creating default roles',
+        rolesCreated: [],
+        rolesFailed: [],
+        errors: [error instanceof Error ? error.message : 'Unknown error']
+      }
+    };
+  }
+}
+
+/**
+ * API Route Handler for setting up role permissions
+ *
+ * Usage:
+ * POST /api/admin/roles/setup-permissions
+ * Content-Type: application/json
+ */
+export async function handleSetupRolePermissions() {
+  try {
+    const result = await setupRolePermissions();
+    return {
+      status: result.success ? 200 : 500,
+      body: result
+    };
+  } catch (error) {
+    console.error('Error setting up role permissions:', error);
+    return {
+      status: 500,
+      body: {
+        success: false,
+        message: 'Error setting up role permissions',
+        rolesCreated: [],
+        rolesFailed: [],
+        errors: [error instanceof Error ? error.message : 'Unknown error']
+      }
+    };
+  }
+}
+
+/**
+ * API Route Handler for complete role setup (create roles + setup permissions)
+ *
+ * Usage:
+ * POST /api/admin/roles/setup-complete
+ * Content-Type: application/json
+ */
+export async function handleCompleteRoleSetup() {
+  try {
+    const result = await completeRoleSetup();
+    return {
+      status: result.success ? 200 : 500,
+      body: result
+    };
+  } catch (error) {
+    console.error('Error completing role setup:', error);
+    return {
+      status: 500,
+      body: {
+        success: false,
+        message: 'Error completing role setup',
+        rolesCreated: [],
+        rolesFailed: [],
+        permissionsSetup: false,
+        errors: [error instanceof Error ? error.message : 'Unknown error']
+      }
+    };
+  }
+}
+
+/**
  * Express-style route handler (if using Express/Node backend)
  * Import and use this if you have an Express server
  */
