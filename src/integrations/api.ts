@@ -351,6 +351,12 @@ export const supabaseCompat = {
 
     signOut: async () => {
       const result = await apiAdapter.logout();
+
+      // Clear localStorage
+      localStorage.removeItem('med_api_token');
+      localStorage.removeItem('med_api_user_id');
+      localStorage.removeItem('med_api_user_email');
+
       return { error: result.error };
     },
 
