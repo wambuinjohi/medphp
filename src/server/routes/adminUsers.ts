@@ -314,5 +314,41 @@ export const adminUserAPI = {
       body: '{}'
     });
     return response.json();
+  },
+
+  /**
+   * Check database status
+   */
+  async checkDatabaseStatus() {
+    const response = await fetch('/api/admin/database/check-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    return response.json();
+  },
+
+  /**
+   * Initialize database by creating missing tables
+   */
+  async initializeDatabase() {
+    const response = await fetch('/api/admin/database/initialize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    return response.json();
+  },
+
+  /**
+   * Get database statistics
+   */
+  async getDatabaseStats() {
+    const response = await fetch('/api/admin/database/stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    return response.json();
   }
 };
