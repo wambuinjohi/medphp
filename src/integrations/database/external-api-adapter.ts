@@ -105,6 +105,12 @@ export class ExternalAPIAdapter implements IDatabase {
 
       if (result.token) {
         this.setAuthToken(result.token);
+
+        // Store user info in localStorage for consistent access
+        if (result.user && result.user.id) {
+          localStorage.setItem('med_api_user_id', result.user.id);
+          localStorage.setItem('med_api_user_email', email);
+        }
       }
 
       return {
