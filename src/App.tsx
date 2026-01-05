@@ -179,6 +179,15 @@ const App = () => {
                   }
                 />
 
+                <Route
+                  path="/app/admin/database"
+                  element={
+                    <ProtectedRoute>
+                      <DatabaseManagementAdmin />
+                    </ProtectedRoute>
+                  }
+                />
+
                 {/* Procurement & Inventory */}
                 <Route
                   path="/app/lpos"
