@@ -1,6 +1,7 @@
 import { adminCreateUser } from '../lib/adminCreateUser';
 import { adminResetPassword } from '../lib/adminResetPassword';
 import { fixProfileRls } from '../lib/fixProfileRls';
+import { checkDatabaseStatus, initializeDatabase, getDatabaseStats } from '../lib/dbInitialize';
 
 const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
 const API_AUTH_TOKEN = process.env.API_AUTH_TOKEN || '';
@@ -139,6 +140,86 @@ export async function handleFixProfileRls() {
 }
 
 /**
+ * API Route Handler for checking database status
+ * Returns which tables exist and which are missing
+ *
+ * Usage:
+ * POST /api/admin/database/check-status
+ * Content-Type: application/json
+ */
+export async function handleCheckDatabaseStatus() {
+  try {
+    const result = await checkDatabaseStatus();
+    return {
+      status: result.connected ? 200 : 500,
+      body: result
+    };
+  } catch (error) {
+    console.error('Error checking database status:', error);
+    return {
+      status: 500,
+      body: {
+        error: error instanceof Error ? error.message : 'Error checking database status'
+      }
+    };
+  }
+}
+
+/**
+ * API Route Handler for initializing database
+ * Creates all missing tables
+ *
+ * Usage:
+ * POST /api/admin/database/initialize
+ * Content-Type: application/json
+ */
+export async function handleInitializeDatabase() {
+  try {
+    const result = await initializeDatabase();
+    return {
+      status: result.success ? 200 : 500,
+      body: result
+    };
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    return {
+      status: 500,
+      body: {
+        success: false,
+        message: 'Error initializing database',
+        errors: [error instanceof Error ? error.message : 'Unknown error']
+      }
+    };
+  }
+}
+
+/**
+ * API Route Handler for getting database statistics
+ *
+ * Usage:
+ * POST /api/admin/database/stats
+ * Content-Type: application/json
+ */
+export async function handleGetDatabaseStats() {
+  try {
+    const result = await getDatabaseStats();
+    return {
+      status: result.success ? 200 : 500,
+      body: result
+    };
+  } catch (error) {
+    console.error('Error getting database stats:', error);
+    return {
+      status: 500,
+      body: {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error getting database stats'
+      }
+    };
+  }
+}
+
+/**
  * Express-style route handler (if using Express/Node backend)
  * Import and use this if you have an Express server
  */
@@ -158,6 +239,24 @@ export function setupAdminUserRoutes(app: any) {
   // Fix RLS endpoint
   app.post('/api/admin/database/fix-rls', async (req: any, res: any) => {
     const { status, body } = await handleFixProfileRls();
+    res.status(status).json(body);
+  });
+
+  // Database status endpoint
+  app.post('/api/admin/database/check-status', async (req: any, res: any) => {
+    const { status, body } = await handleCheckDatabaseStatus();
+    res.status(status).json(body);
+  });
+
+  // Database initialization endpoint
+  app.post('/api/admin/database/initialize', async (req: any, res: any) => {
+    const { status, body } = await handleInitializeDatabase();
+    res.status(status).json(body);
+  });
+
+  // Database stats endpoint
+  app.post('/api/admin/database/stats', async (req: any, res: any) => {
+    const { status, body } = await handleGetDatabaseStats();
     res.status(status).json(body);
   });
 }
@@ -210,6 +309,42 @@ export const adminUserAPI = {
    */
   async fixProfileRls() {
     const response = await fetch('/api/admin/database/fix-rls', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    return response.json();
+  },
+
+  /**
+   * Check database status
+   */
+  async checkDatabaseStatus() {
+    const response = await fetch('/api/admin/database/check-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    return response.json();
+  },
+
+  /**
+   * Initialize database by creating missing tables
+   */
+  async initializeDatabase() {
+    const response = await fetch('/api/admin/database/initialize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    return response.json();
+  },
+
+  /**
+   * Get database statistics
+   */
+  async getDatabaseStats() {
+    const response = await fetch('/api/admin/database/stats', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: '{}'

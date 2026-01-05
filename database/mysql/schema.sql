@@ -249,6 +249,95 @@ CREATE TABLE invoice_items (
     INDEX idx_invoice_items_product_id (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Payment methods table
+CREATE TABLE payment_methods (
+    id CHAR(36) PRIMARY KEY COMMENT 'UUID identifier',
+    company_id CHAR(36) NOT NULL COMMENT 'Foreign key to companies',
+    name VARCHAR(100) NOT NULL COMMENT 'Payment method name',
+    code VARCHAR(50) NOT NULL COMMENT 'Payment method code',
+    description TEXT COMMENT 'Payment method description',
+    icon_name VARCHAR(50) COMMENT 'Icon name or identifier',
+    is_active BOOLEAN DEFAULT TRUE COMMENT 'Whether payment method is active',
+    sort_order INT DEFAULT 0 COMMENT 'Display order',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_payment_method (company_id, name),
+    INDEX idx_payment_methods_company_id (company_id),
+    INDEX idx_payment_methods_is_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Credit notes table
+CREATE TABLE credit_notes (
+    id CHAR(36) PRIMARY KEY COMMENT 'UUID identifier',
+    company_id CHAR(36) NOT NULL COMMENT 'Foreign key to companies',
+    customer_id CHAR(36) NOT NULL COMMENT 'Foreign key to customers',
+    invoice_id CHAR(36) COMMENT 'Associated invoice if any',
+    credit_note_number VARCHAR(100) NOT NULL COMMENT 'Credit note reference number',
+    credit_note_date DATE DEFAULT CURDATE() COMMENT 'Date of credit note',
+    status VARCHAR(50) DEFAULT 'draft' COMMENT 'draft, sent, applied, cancelled',
+    reason TEXT COMMENT 'Reason for credit note',
+    subtotal DECIMAL(15,2) DEFAULT 0 COMMENT 'Subtotal before tax',
+    tax_amount DECIMAL(15,2) DEFAULT 0 COMMENT 'Total tax amount',
+    total_amount DECIMAL(15,2) DEFAULT 0 COMMENT 'Total after tax',
+    applied_amount DECIMAL(15,2) DEFAULT 0 COMMENT 'Amount applied to invoices',
+    balance DECIMAL(15,2) DEFAULT 0 COMMENT 'Remaining balance',
+    affects_inventory BOOLEAN DEFAULT FALSE COMMENT 'Whether this affects inventory',
+    notes TEXT COMMENT 'Internal notes',
+    terms_and_conditions TEXT COMMENT 'Terms and conditions',
+    created_by CHAR(36) COMMENT 'User who created this',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+    FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE SET NULL,
+    UNIQUE KEY unique_credit_note_number (company_id, credit_note_number),
+    INDEX idx_credit_notes_company_id (company_id),
+    INDEX idx_credit_notes_customer_id (customer_id),
+    INDEX idx_credit_notes_invoice_id (invoice_id),
+    INDEX idx_credit_notes_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Credit note items
+CREATE TABLE credit_note_items (
+    id CHAR(36) PRIMARY KEY COMMENT 'UUID identifier',
+    credit_note_id CHAR(36) NOT NULL COMMENT 'Foreign key to credit_notes',
+    product_id CHAR(36) COMMENT 'Foreign key to products',
+    description TEXT NOT NULL COMMENT 'Line item description',
+    quantity DECIMAL(10,3) DEFAULT 1 COMMENT 'Quantity',
+    unit_price DECIMAL(15,2) DEFAULT 0 COMMENT 'Unit price',
+    tax_percentage DECIMAL(5,2) DEFAULT 0 COMMENT 'Tax percentage',
+    tax_amount DECIMAL(15,2) DEFAULT 0 COMMENT 'Calculated tax amount',
+    tax_inclusive BOOLEAN DEFAULT FALSE COMMENT 'Whether unit_price includes tax',
+    tax_setting_id CHAR(36) COMMENT 'Foreign key to tax_settings',
+    line_total DECIMAL(15,2) DEFAULT 0 COMMENT 'Line total',
+    sort_order INT DEFAULT 0 COMMENT 'Display order',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (credit_note_id) REFERENCES credit_notes(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
+    FOREIGN KEY (tax_setting_id) REFERENCES tax_settings(id),
+    INDEX idx_credit_note_items_credit_note_id (credit_note_id),
+    INDEX idx_credit_note_items_product_id (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Credit note allocations (linking credit notes to invoices)
+CREATE TABLE credit_note_allocations (
+    id CHAR(36) PRIMARY KEY COMMENT 'UUID identifier',
+    credit_note_id CHAR(36) NOT NULL COMMENT 'Foreign key to credit_notes',
+    invoice_id CHAR(36) NOT NULL COMMENT 'Foreign key to invoices',
+    allocated_amount DECIMAL(15,2) DEFAULT 0 COMMENT 'Amount allocated to this invoice',
+    allocation_date DATE DEFAULT CURDATE() COMMENT 'Date of allocation',
+    notes TEXT COMMENT 'Allocation notes',
+    created_by CHAR(36) COMMENT 'User who created this',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (credit_note_id) REFERENCES credit_notes(id) ON DELETE CASCADE,
+    FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_credit_note_invoice (credit_note_id, invoice_id),
+    INDEX idx_credit_note_allocations_credit_note_id (credit_note_id),
+    INDEX idx_credit_note_allocations_invoice_id (invoice_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Proforma invoices table
 CREATE TABLE proforma_invoices (
     id CHAR(36) PRIMARY KEY COMMENT 'UUID identifier',
@@ -748,6 +837,27 @@ END$$
 
 CREATE TRIGGER update_audit_logs_updated_at
 BEFORE UPDATE ON audit_logs
+FOR EACH ROW
+BEGIN
+    SET NEW.updated_at = NOW();
+END$$
+
+CREATE TRIGGER update_payment_methods_updated_at
+BEFORE UPDATE ON payment_methods
+FOR EACH ROW
+BEGIN
+    SET NEW.updated_at = NOW();
+END$$
+
+CREATE TRIGGER update_credit_notes_updated_at
+BEFORE UPDATE ON credit_notes
+FOR EACH ROW
+BEGIN
+    SET NEW.updated_at = NOW();
+END$$
+
+CREATE TRIGGER update_credit_note_items_updated_at
+BEFORE UPDATE ON credit_note_items
 FOR EACH ROW
 BEGIN
     SET NEW.updated_at = NOW();
