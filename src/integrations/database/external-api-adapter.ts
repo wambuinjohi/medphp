@@ -359,7 +359,13 @@ export class ExternalAPIAdapter implements IDatabase {
         body: JSON.stringify({ sql, params }),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. Query execution failed.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok) {
         return {
