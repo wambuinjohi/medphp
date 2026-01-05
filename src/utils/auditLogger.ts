@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { executeSQL } from '@/utils/execSQL';
 
 export type AuditedEntity = 'quotation' | 'proforma' | 'invoice' | 'credit_note' | 'user_invitation' | 'user_creation' | 'role' | 'permission';
@@ -15,9 +15,8 @@ interface AuditLogEntry {
 
 async function tableExists(table: string): Promise<boolean> {
   try {
-    const { error } = await supabase.from(table).select('*').limit(0);
-    if (error && (error.message?.includes('does not exist') || error.code === 'PGRST116')) return false;
-    return true;
+    const result = await apiClient.select(table);
+    return !result.error;
   } catch {
     return false;
   }
@@ -52,9 +51,8 @@ async function getActorInfo(): Promise<{ user_id: string | null; email: string |
   let actor_email: string | null = null;
 
   try {
-    const { data } = await supabase.auth.getUser();
-    actor_user_id = data?.user?.id ?? null;
-    actor_email = (data?.user?.email as string) ?? null;
+    actor_user_id = localStorage.getItem('med_api_user_id') ?? null;
+    actor_email = localStorage.getItem('med_api_user_email') ?? null;
   } catch {
     // ignore
   }
@@ -63,13 +61,13 @@ async function getActorInfo(): Promise<{ user_id: string | null; email: string |
 }
 
 async function insertAuditLog(entry: AuditLogEntry): Promise<void> {
-  const insertAttempt = await supabase.from('audit_logs' as any).insert([entry]);
+  const insertAttempt = await apiClient.insert('audit_logs', entry);
 
   if (insertAttempt.error) {
     // Try once more after ensuring schema
     try {
       await ensureAuditLogSchema();
-      const retry = await supabase.from('audit_logs' as any).insert([entry]);
+      const retry = await apiClient.insert('audit_logs', entry);
       if (retry.error) {
         // Swallow to not block operations; surface in console for diagnostics
         // eslint-disable-next-line no-console

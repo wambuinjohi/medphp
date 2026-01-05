@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { logError, logWarning } from './errorLogger';
 
 /**
@@ -159,26 +159,17 @@ export const initializeAuth = async () => {
       }
 
       // Get current session with abort signal
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const sessionResult = await apiClient.auth.getSession();
       clearTimeout(timeoutId);
 
       // Handle invalid token errors by clearing them
-      if (sessionError?.message?.includes('Invalid Refresh Token') ||
-          sessionError?.message?.includes('Refresh Token Not Found') ||
-          sessionError?.message?.includes('invalid_token') ||
-          sessionError?.message?.includes('Not authenticated')) {
-        logWarning('Invalid tokens detected, clearing...', sessionError, { context: 'initializeAuth' });
-        clearAuthTokens();
+      if (sessionResult.session === null) {
+        console.log('No active session found');
         return { session: null, error: null };
       }
 
-      if (sessionError) {
-        logWarning('Session error:', sessionError, { context: 'initializeAuth' });
-        return { session: null, error: sessionError };
-      }
-
       console.log('✅ Ultra-fast auth completed successfully');
-      return { session: sessionData.session, error: null };
+      return { session: sessionResult.session, error: null };
 
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
