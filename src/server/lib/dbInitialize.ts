@@ -215,7 +215,13 @@ export async function getTableStructures(): Promise<{
       })
     });
 
-    const data = await response.json();
+    // Defensively parse JSON
+    const data = await response.json().catch(() => {
+      if (!response.ok) {
+        throw new Error(`Server error: HTTP ${response.status}. Failed to get table structures.`);
+      }
+      throw new Error('Invalid response from server: Expected valid JSON');
+    });
 
     if (data.status === 'ok') {
       return {
