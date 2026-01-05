@@ -19,6 +19,7 @@ import InventoryReports from "./pages/reports/InventoryReports";
 import StatementOfAccounts from "./pages/reports/StatementOfAccounts";
 import CompanySettings from "./pages/settings/CompanySettings";
 import UserManagement from "./pages/settings/UserManagement";
+import DatabaseRolesSettings from "./pages/settings/DatabaseRolesSettings";
 import RemittanceAdvice from "./pages/RemittanceAdvice";
 import AuditLogs from "./pages/AuditLogs";
 import LPOs from "./pages/LPOs";
