@@ -842,6 +842,27 @@ BEGIN
     SET NEW.updated_at = NOW();
 END$$
 
+CREATE TRIGGER update_payment_methods_updated_at
+BEFORE UPDATE ON payment_methods
+FOR EACH ROW
+BEGIN
+    SET NEW.updated_at = NOW();
+END$$
+
+CREATE TRIGGER update_credit_notes_updated_at
+BEFORE UPDATE ON credit_notes
+FOR EACH ROW
+BEGIN
+    SET NEW.updated_at = NOW();
+END$$
+
+CREATE TRIGGER update_credit_note_items_updated_at
+BEFORE UPDATE ON credit_note_items
+FOR EACH ROW
+BEGIN
+    SET NEW.updated_at = NOW();
+END$$
+
 DELIMITER ;
 
 -- ============================================================================
