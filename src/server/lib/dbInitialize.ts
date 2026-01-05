@@ -84,7 +84,10 @@ export async function checkDatabaseStatus(): Promise<DatabaseStatus> {
       };
     }
 
-    const data = await response.json();
+    // Defensively parse JSON
+    const data = await response.json().catch(() => {
+      throw new Error('Invalid response from server: Expected valid JSON');
+    });
 
     // If API supports returning table status
     if (data.status === 'ok' && data.tables) {
