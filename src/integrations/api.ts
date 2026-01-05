@@ -323,13 +323,20 @@ export const supabaseCompat = {
       if (result.error) {
         return { error: result.error, data: null };
       }
+
+      // Ensure user data is stored in localStorage
+      if (result.user && result.user.id) {
+        localStorage.setItem('med_api_user_id', result.user.id);
+        localStorage.setItem('med_api_user_email', credentials.email);
+      }
+
       return {
         data: {
           session: {
-            user: result.user,
+            user: result.user || { id: result.user?.id || '', email: credentials.email },
             access_token: result.token,
           },
-          user: result.user,
+          user: result.user || { id: result.user?.id || '', email: credentials.email },
         },
         error: null,
       };
