@@ -426,48 +426,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [fetchProfile, updateLastLogin, handleAuthStateChange, user, initialized]);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { data, error } = await safeAuthOperation(async () => {
+    try {
       setLoading(true);
-      return await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-    }, 'signIn');
+      const { token, user, error } = await apiClient.auth.login(email, password);
 
-    if (error) {
+      if (error) {
+        setLoading(false);
+        return { error: error as AuthError };
+      }
+
+      // Enforce profiles table approval: only active users may proceed
+      const userProfile = await fetchProfile(user.id);
+      if (!userProfile || (userProfile.status && userProfile.status !== 'active')) {
+        try { await apiClient.auth.logout(); } catch {}
+        setUser(null);
+        setSession(null);
+        setProfile(null);
+        setLoading(false);
+        return { error: { name: 'AuthError', message: 'Account pending approval' } as unknown as AuthError };
+      }
+
+      const session: Session = {
+        user: user as User,
+        access_token: token,
+      };
+
+      setSession(session);
+      setUser(user as User);
+      setProfile(userProfile);
       setLoading(false);
+      setTimeout(() => toast.success('Signed in successfully'), 0);
+      return { error: null };
+    } catch (err) {
+      setLoading(false);
+      const error = err instanceof Error ? err : new Error('Sign in failed');
       return { error: error as AuthError };
     }
-
-    if (data?.error) {
-      setLoading(false);
-      return { error: data.error };
-    }
-
-    // Enforce profiles table approval: only active users may proceed
-    try {
-      const session = (data as any)?.data?.session;
-      const signedInUser = session?.user;
-      if (signedInUser) {
-        const userProfile = await fetchProfile(signedInUser.id);
-        if (!userProfile || (userProfile.status && userProfile.status !== 'active')) {
-          try { await supabase.auth.signOut(); } catch {}
-          setUser(null);
-          setSession(null);
-          setProfile(null);
-          setLoading(false);
-          return { error: { name: 'AuthError', message: 'Account pending approval' } as unknown as AuthError };
-        }
-        setSession(session);
-        setUser(signedInUser);
-        setProfile(userProfile);
-      }
-    } catch {}
-
-    setLoading(false);
-    setTimeout(() => toast.success('Signed in successfully'), 0);
-    return { error: null };
-  }, []);
+  }, [fetchProfile]);
 
   const signUp = useCallback(async (email: string, password: string, fullName?: string) => {
     const { data, error } = await safeAuthOperation(async () => {
