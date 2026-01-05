@@ -258,6 +258,67 @@ function ensureTables($conn) {
 
 ensureTables($conn);
 
+// Include comprehensive table definitions
+require_once __DIR__ . '/lib/tableDefinitions.php';
+
+// Handle check_tables action - check which tables exist
+if ($action === "check_tables") {
+    try {
+        $tableStatus = checkTableStatus($conn);
+        echo json_encode([
+            'status' => 'ok',
+            'data' => $tableStatus
+        ]);
+        exit();
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Error checking table status: ' . $e->getMessage()
+        ]);
+        exit();
+    }
+}
+
+// Handle create_missing_tables action - create all missing tables
+if ($action === "create_missing_tables") {
+    try {
+        $result = createMissingTables($conn);
+        echo json_encode([
+            'status' => $result['success'] ? 'ok' : 'error',
+            'data' => $result
+        ]);
+        exit();
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Error creating missing tables: ' . $e->getMessage()
+        ]);
+        exit();
+    }
+}
+
+// Handle init_database action - initialize database with all required tables
+if ($action === "init_database") {
+    try {
+        $requestedTables = $json_body['tables'] ?? [];
+        $result = createMissingTables($conn, !empty($requestedTables) ? $requestedTables : null);
+        echo json_encode([
+            'status' => $result['success'] ? 'ok' : 'error',
+            'data' => $result
+        ]);
+        exit();
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Error initializing database: ' . $e->getMessage()
+        ]);
+        exit();
+    }
+}
+
 try {
     // Setup endpoint - create admin user
     if ($action === "setup") {
