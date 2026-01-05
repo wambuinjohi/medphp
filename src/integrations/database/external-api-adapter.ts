@@ -161,7 +161,8 @@ export class ExternalAPIAdapter implements IDatabase {
       });
 
       if (!response.ok) {
-        const result = await response.json();
+        // Defensively parse JSON
+        const result = await response.json().catch(() => ({}));
         return { error: new Error(result.message || 'Logout failed') };
       }
 
