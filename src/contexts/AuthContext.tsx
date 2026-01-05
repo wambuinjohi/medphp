@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { apiClient } from '@/integrations/api';
 import { toast } from 'sonner';
-import { initializeAuth, clearAuthTokens, safeAuthOperation } from '@/utils/authHelpers';
+import { initializeAuth, clearAuthTokens } from '@/utils/authHelpers';
 import { logError, getUserFriendlyErrorMessage, isErrorType } from '@/utils/errorLogger';
 
 // Type definitions for authentication
