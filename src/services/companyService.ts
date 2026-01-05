@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 
 export interface CompanyData {
   id: string;
@@ -10,22 +10,33 @@ export interface CompanyData {
 
 /**
  * Fetch company information for public pages (login)
- * This uses a direct Supabase query with public read access
+ * This uses the external PHP API instead of Supabase
  */
 export async function fetchPublicCompanyData(): Promise<CompanyData | null> {
   try {
-    const { data, error } = await supabase
-      .from('companies')
-      .select('id, name, logo_url, primary_color')
-      .limit(1)
-      .single();
+    const result = await apiClient.select('companies', {});
 
-    if (error) {
-      console.warn('Failed to fetch company data:', error.message);
+    if (!result.data || result.error) {
+      console.warn('Failed to fetch company data:', result.error?.message);
       return null;
     }
 
-    return data as CompanyData;
+    // Get first company from the list
+    const companies = Array.isArray(result.data) ? result.data : [result.data];
+    const company = companies[0];
+
+    if (!company) {
+      console.warn('No companies found');
+      return null;
+    }
+
+    return {
+      id: company.id,
+      name: company.name,
+      logo_url: company.logo_url,
+      primary_color: company.primary_color,
+      ...company
+    } as CompanyData;
   } catch (error) {
     console.error('Error fetching company data:', error);
     return null;

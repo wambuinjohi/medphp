@@ -93,6 +93,8 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async login(email: string, password: string): Promise<{ token: string; user: any; error: Error | null }> {
     try {
+      console.log(`🔐 Attempting login with external API: ${this.apiBase}?action=login`);
+
       const response = await fetch(`${this.apiBase}?action=login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,22 +102,27 @@ export class ExternalAPIAdapter implements IDatabase {
       });
 
       const result = await response.json();
+      console.log('📝 Login response status:', response.status, 'Result:', result);
 
-      if (!response.ok) {
+      if (!response.ok || result.status === 'error') {
+        const errorMsg = result.message || result.error || `Login failed with status ${response.status}`;
+        console.error('❌ Login error:', errorMsg);
         return {
           token: '',
           user: null,
-          error: new Error(result.message || 'Login failed'),
+          error: new Error(errorMsg),
         };
       }
 
       if (result.token) {
         this.setAuthToken(result.token);
+        console.log('✅ Token stored successfully');
 
         // Store user info in localStorage for consistent access
         if (result.user && result.user.id) {
           localStorage.setItem('med_api_user_id', result.user.id);
           localStorage.setItem('med_api_user_email', email);
+          console.log('✅ User info stored:', { id: result.user.id, email });
         }
       }
 
@@ -125,6 +132,7 @@ export class ExternalAPIAdapter implements IDatabase {
         error: null,
       };
     } catch (error) {
+      console.error('❌ Login exception:', error);
       return {
         token: '',
         user: null,

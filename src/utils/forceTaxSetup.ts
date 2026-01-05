@@ -1,4 +1,6 @@
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
+
+import { apiClient } from '@/integrations/api';
 
 export interface SimpleTaxSetting {
   id: string;
@@ -16,22 +18,23 @@ let memoryTaxSettings: SimpleTaxSetting[] = [];
 
 export async function forceCreateTaxSettings(): Promise<void> {
   console.log('🚀 Force creating tax settings...');
-  
+
   try {
-    // Get company ID
-    const { data: companies, error: companiesError } = await supabase
-      .from('companies')
-      .select('id')
-      .limit(1);
-    
-    if (companiesError) {
-      throw new Error(`Cannot access companies: ${companiesError.message}`);
+    // Get company ID from external API
+    const result = await apiClient.select('companies', {});
+
+    if (result.error || !result.data) {
+      console.warn('⚠️ Cannot access companies from API:', result.error?.message);
+      throw new Error(`Cannot access companies: ${result.error?.message || 'Unknown error'}`);
     }
-    
+
+    const companies = Array.isArray(result.data) ? result.data : [result.data];
     const companyId = companies?.[0]?.id;
     if (!companyId) {
       throw new Error('No company found');
     }
+
+    console.log('✅ Found company:', companyId);
     
     // Create default tax settings in memory
     const defaultTaxSettings: SimpleTaxSetting[] = [
@@ -83,15 +86,15 @@ export async function forceCreateTaxSettings(): Promise<void> {
 
 export async function getTaxSettings(companyId?: string): Promise<SimpleTaxSetting[]> {
   try {
-    // First try to get from database
-    const { data: dbTaxSettings, error } = await supabase
-      .from('tax_settings')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (!error && dbTaxSettings && dbTaxSettings.length > 0) {
+    // First try to get from database via external API
+    const result = await apiClient.select('tax_settings', {});
+
+    if (!result.error && result.data && Array.isArray(result.data) && result.data.length > 0) {
       console.log('📊 Using database tax settings');
-      return dbTaxSettings as SimpleTaxSetting[];
+      const taxSettings = result.data as SimpleTaxSetting[];
+      return companyId
+        ? taxSettings.filter(tax => tax.company_id === companyId)
+        : taxSettings;
     }
     
     // Fallback to memory
@@ -124,20 +127,21 @@ export async function getTaxSettings(companyId?: string): Promise<SimpleTaxSetti
 
 export async function createTaxSetting(taxSetting: Omit<SimpleTaxSetting, 'id' | 'created_at' | 'updated_at'>): Promise<SimpleTaxSetting> {
   try {
-    // Try database first
-    const { data, error } = await supabase
-      .from('tax_settings')
-      .insert([{
+    // Try database first via external API
+    const result = await apiClient.insert('tax_settings', {
+      ...taxSetting,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+
+    if (!result.error) {
+      console.log('✅ Tax setting created in database');
+      return {
         ...taxSetting,
+        id: result.data || crypto.randomUUID(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      }])
-      .select()
-      .single();
-    
-    if (!error && data) {
-      console.log('✅ Tax setting created in database');
-      return data as SimpleTaxSetting;
+      } as SimpleTaxSetting;
     }
     
     // Fallback to memory storage
@@ -171,20 +175,19 @@ export async function createTaxSetting(taxSetting: Omit<SimpleTaxSetting, 'id' |
 
 export async function updateTaxSetting(id: string, updates: Partial<SimpleTaxSetting>): Promise<SimpleTaxSetting> {
   try {
-    // Try database first
-    const { data, error } = await supabase
-      .from('tax_settings')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (!error && data) {
+    // Try database first via external API
+    const result = await apiClient.update('tax_settings', id, {
+      ...updates,
+      updated_at: new Date().toISOString()
+    });
+
+    if (!result.error) {
       console.log('✅ Tax setting updated in database');
-      return data as SimpleTaxSetting;
+      // Find and return the updated setting from memory
+      const index = memoryTaxSettings.findIndex(tax => tax.id === id);
+      if (index !== -1) {
+        return memoryTaxSettings[index];
+      }
     }
     
     // Fallback to memory storage
@@ -222,13 +225,10 @@ export async function updateTaxSetting(id: string, updates: Partial<SimpleTaxSet
 
 export async function deleteTaxSetting(id: string): Promise<void> {
   try {
-    // Try database first
-    const { error } = await supabase
-      .from('tax_settings')
-      .delete()
-      .eq('id', id);
-    
-    if (!error) {
+    // Try database first via external API
+    const result = await apiClient.delete('tax_settings', id);
+
+    if (!result.error) {
       console.log('✅ Tax setting deleted from database');
       return;
     }

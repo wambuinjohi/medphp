@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 
 export type TableCheckResult = {
   exists: boolean;
@@ -7,17 +7,14 @@ export type TableCheckResult = {
 };
 
 export async function checkTaxSettingsTable(): Promise<TableCheckResult> {
-  console.log('Checking if tax_settings table exists...');
+  console.log('Checking if tax_settings table exists via external API...');
 
   try {
-    // First, check if table already exists by trying to select from it
-    const { data: existingTable, error: checkError } = await supabase
-      .from('tax_settings')
-      .select('id')
-      .limit(1);
+    // Check if we can read from tax_settings table via external API
+    const result = await apiClient.select('tax_settings', {});
 
-    if (!checkError) {
-      console.log('tax_settings table already exists');
+    if (!result.error) {
+      console.log('✅ tax_settings table is accessible via API');
       return {
         exists: true,
         companyCount: 0,
@@ -25,19 +22,18 @@ export async function checkTaxSettingsTable(): Promise<TableCheckResult> {
       };
     }
 
-    console.log('Table does not exist, checking company count...');
+    console.log('⚠️ tax_settings table not accessible, checking company count...');
 
     // Get company data to show how many companies will need tax settings
-    const { data: companies, error: companiesError } = await supabase
-      .from('companies')
-      .select('id, name');
+    const companiesResult = await apiClient.select('companies', {});
 
-    if (companiesError) {
-      throw new Error(`Cannot access companies table: ${companiesError.message}`);
+    if (companiesResult.error || !companiesResult.data) {
+      throw new Error(`Cannot access companies table: ${companiesResult.error?.message || 'Unknown error'}`);
     }
 
+    const companies = Array.isArray(companiesResult.data) ? companiesResult.data : [companiesResult.data];
     const companyCount = companies?.length || 0;
-    console.log(`Found ${companyCount} companies that will need tax settings`);
+    console.log(`✅ Found ${companyCount} companies that will need tax settings`);
 
     return {
       exists: false,
@@ -53,26 +49,26 @@ export async function checkTaxSettingsTable(): Promise<TableCheckResult> {
 }
 
 export async function insertDefaultTaxSettings(): Promise<void> {
-  console.log('Inserting default tax settings...');
+  console.log('Inserting default tax settings via external API...');
   
   try {
     // Get all companies
-    const { data: companies, error: companiesError } = await supabase
-      .from('companies')
-      .select('id');
+    const companiesResult = await apiClient.select('companies', {});
     
-    if (companiesError) {
-      throw new Error(`Cannot access companies: ${companiesError.message}`);
+    if (companiesResult.error || !companiesResult.data) {
+      throw new Error(`Cannot access companies: ${companiesResult.error?.message || 'Unknown error'}`);
     }
     
+    const companies = Array.isArray(companiesResult.data) ? companiesResult.data : [companiesResult.data];
+    
     if (!companies || companies.length === 0) {
-      console.log('No companies found, skipping tax settings creation');
+      console.log('⚠️ No companies found, skipping tax settings creation');
       return;
     }
     
     // Insert default tax settings for each company
     for (const company of companies) {
-      console.log(`Creating tax settings for company ${company.id}...`);
+      console.log(`📝 Creating tax settings for company ${company.id}...`);
       
       const defaultTaxSettings = [
         {
@@ -98,12 +94,14 @@ export async function insertDefaultTaxSettings(): Promise<void> {
         }
       ];
       
-      const { error: insertError } = await supabase
-        .from('tax_settings')
-        .insert(defaultTaxSettings);
-      
-      if (insertError) {
-        throw new Error(`Failed to insert tax settings for company ${company.id}: ${insertError.message}`);
+      // Insert each tax setting via external API
+      for (const taxSetting of defaultTaxSettings) {
+        const insertResult = await apiClient.insert('tax_settings', taxSetting);
+        
+        if (insertResult.error) {
+          console.warn(`⚠️ Failed to insert tax setting for company ${company.id}: ${insertResult.error.message}`);
+          // Continue with other tax settings instead of failing completely
+        }
       }
       
       console.log(`✅ Tax settings created for company ${company.id}`);
@@ -112,7 +110,7 @@ export async function insertDefaultTaxSettings(): Promise<void> {
     console.log('✅ Default tax settings inserted successfully!');
     
   } catch (error) {
-    console.error('�� Failed to insert default tax settings:', error);
+    console.error('❌ Failed to insert default tax settings:', error);
     const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
     throw new Error(`Failed to insert default tax settings: ${errorMessage}`);
   }

@@ -8,7 +8,7 @@ import { Loader2, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { toast } from 'sonner';
 import { handleAuthError } from '@/utils/authErrorHandler';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 
 export function SimpleLogin() {
   const { signIn, loading } = useAuth();
@@ -18,18 +18,16 @@ export function SimpleLogin() {
     password: '',
   });
 
-  // Fetch company name from database
+  // Fetch company name from database using external API
   useEffect(() => {
     const fetchCompanyName = async () => {
       try {
-        const { data, error } = await supabase
-          .from('companies')
-          .select('name')
-          .limit(1)
-          .single();
+        const result = await apiClient.select('companies', {});
+        const companies = Array.isArray(result.data) ? result.data : [result.data];
+        const company = companies?.[0];
 
-        if (!error && data?.name) {
-          setCompanyName(data.name);
+        if (company?.name) {
+          setCompanyName(company.name);
         }
       } catch (error) {
         console.warn('Failed to fetch company name:', error);
