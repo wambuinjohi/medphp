@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseCompat } from '@/integrations/api';
+import { apiClient } from '@/integrations/api';
 import { toast } from 'sonner';
 import { initializeAuth, clearAuthTokens, safeAuthOperation } from '@/utils/authHelpers';
 import { logError, getUserFriendlyErrorMessage, isErrorType } from '@/utils/errorLogger';
@@ -93,7 +94,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Fetch user profile from database with error handling and retry logic
   const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
     try {
-      const { data: profileData, error } = await supabase
+      const { data: profileData, error } = await supabaseCompat
         .from('profiles')
         .select('id, email, full_name, avatar_url, phone, company_id, department, position, role, status, last_login, created_at, updated_at')
         .eq('id', userId)
@@ -168,10 +169,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Update last login timestamp silently
   const updateLastLogin = useCallback(async (userId: string) => {
     try {
-      await supabase
+      await supabaseCompat
         .from('profiles')
         .update({ last_login: new Date().toISOString(), is_active: true })
-        .eq('id', userId);
+        .eq('id', userId)
+        .execute();
     } catch (error) {
       logError('Error updating last login:', error, { userId, context: 'updateLastLogin' });
     }

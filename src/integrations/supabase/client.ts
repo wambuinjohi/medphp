@@ -4,10 +4,11 @@
  * All Supabase-style calls map to the external API
  */
 
-import { supabaseCompat, apiClient as externalAPIAdapter } from '../api';
+import { supabaseCompat, apiClient } from '../api';
 
 // Export the backward-compatible interface as "supabase"
 export const supabase = supabaseCompat;
 
 // Also export the direct API client for components that want to use it
-export { apiClient, apiClient as externalAPIAdapter };
+export { apiClient };
+export const externalAPIAdapter = apiClient;

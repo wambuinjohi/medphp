@@ -13,30 +13,29 @@ import './index.css'
 // Suppress ResizeObserver errors before any components render
 enableResizeObserverErrorSuppression();
 
-// Initialize database with external API provider only
-const initApp = async () => {
+// Initialize database in background (non-blocking)
+const initializeAppBackground = () => {
   try {
-    const provider = 'external-api'; // Force external-api provider - Supabase support removed
     const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
     console.log(`🔧 Initializing app with external API provider`);
     console.log(`📍 Using external API: ${apiUrl}`);
 
-    await initializeDatabase({ provider: 'external-api' as any });
-    console.log('✅ Database initialization complete');
+    // Call without awaiting to make it non-blocking
+    initializeDatabase({ provider: 'external-api' as any }).catch((error) => {
+      console.error('❌ Database initialization failed:', error);
+    });
   } catch (error) {
-    console.error('❌ Database initialization failed:', error);
-    // Continue app startup even if database fails
+    console.error('❌ Database initialization error:', error);
   }
 };
-
-// Initialize before rendering
-initApp();
 
 // Removed auto-migration imports for production safety
 
 const queryClient = new QueryClient();
 
-createRoot(document.getElementById("root")!).render(
+// Render immediately
+const root = createRoot(document.getElementById("root")!);
+root.render(
   <QueryClientProvider client={queryClient}>
     <AuthErrorBoundary>
       <AuthProvider>
@@ -50,3 +49,7 @@ createRoot(document.getElementById("root")!).render(
     </AuthErrorBoundary>
   </QueryClientProvider>
 );
+
+// Initialize database in background after rendering
+initializeAppBackground();
+console.log('✅ App rendered successfully');

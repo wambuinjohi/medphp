@@ -47,7 +47,13 @@ export class ExternalAPIAdapter implements IDatabase {
       const params = new URLSearchParams();
       params.append('action', action);
       if (table) params.append('table', table);
-      if (where) params.append('where', JSON.stringify(where));
+
+      // Add where clause parameters individually instead of stringifying
+      if (where && typeof where === 'object') {
+        Object.entries(where).forEach(([key, value]) => {
+          params.append(key, String(value));
+        });
+      }
 
       const url = `${this.apiBase}?${params.toString()}`;
 
@@ -105,6 +111,12 @@ export class ExternalAPIAdapter implements IDatabase {
 
       if (result.token) {
         this.setAuthToken(result.token);
+
+        // Store user info in localStorage for consistent access
+        if (result.user && result.user.id) {
+          localStorage.setItem('med_api_user_id', result.user.id);
+          localStorage.setItem('med_api_user_email', email);
+        }
       }
 
       return {
@@ -134,8 +146,18 @@ export class ExternalAPIAdapter implements IDatabase {
       }
 
       this.clearAuthToken();
+
+      // Also clear user info from localStorage
+      localStorage.removeItem('med_api_user_id');
+      localStorage.removeItem('med_api_user_email');
+
       return { error: null };
     } catch (error) {
+      // Clear tokens even if logout fails
+      this.clearAuthToken();
+      localStorage.removeItem('med_api_user_id');
+      localStorage.removeItem('med_api_user_email');
+
       return { error: error as Error };
     }
   }
