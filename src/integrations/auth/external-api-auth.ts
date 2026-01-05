@@ -159,7 +159,13 @@ class ExternalAPIAuthHandler {
         body: JSON.stringify({ token }),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. Token verification failed.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok || result.status === 'error') {
         // Token is invalid, clear it
