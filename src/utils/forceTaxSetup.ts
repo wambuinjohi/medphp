@@ -173,20 +173,19 @@ export async function createTaxSetting(taxSetting: Omit<SimpleTaxSetting, 'id' |
 
 export async function updateTaxSetting(id: string, updates: Partial<SimpleTaxSetting>): Promise<SimpleTaxSetting> {
   try {
-    // Try database first
-    const { data, error } = await supabase
-      .from('tax_settings')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (!error && data) {
+    // Try database first via external API
+    const result = await apiClient.update('tax_settings', id, {
+      ...updates,
+      updated_at: new Date().toISOString()
+    });
+
+    if (!result.error) {
       console.log('✅ Tax setting updated in database');
-      return data as SimpleTaxSetting;
+      // Find and return the updated setting from memory
+      const index = memoryTaxSettings.findIndex(tax => tax.id === id);
+      if (index !== -1) {
+        return memoryTaxSettings[index];
+      }
     }
     
     // Fallback to memory storage
