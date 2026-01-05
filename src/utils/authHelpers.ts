@@ -6,18 +6,11 @@ import { logError, logWarning } from './errorLogger';
  */
 export const clearAuthTokens = () => {
   try {
-    // Get the storage key for this Supabase instance
-    const projectRef = supabase.supabaseUrl.split('//')[1].split('.')[0];
-    const storageKey = `sb-${projectRef}-auth-token`;
-    
-    // Clear the main auth token
-    localStorage.removeItem(storageKey);
-    
-    // Clear any other potential auth-related keys
+    // Clear external API tokens
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && (key.includes('supabase') || key.includes('auth') || key.includes(projectRef))) {
+      if (key && (key.includes('med_api') || key.includes('auth') || key.includes('token'))) {
         keysToRemove.push(key);
       }
     }
@@ -39,7 +32,7 @@ export const clearAuthTokens = () => {
  * Check if we're currently rate limited
  */
 export const isRateLimited = (): boolean => {
-  const rateLimitKey = 'supabase_rate_limit';
+  const rateLimitKey = 'api_rate_limit';
   const lastRateLimit = localStorage.getItem(rateLimitKey);
   
   if (!lastRateLimit) return false;
@@ -55,7 +48,7 @@ export const isRateLimited = (): boolean => {
  * Mark that we've hit a rate limit
  */
 export const markRateLimited = () => {
-  const rateLimitKey = 'supabase_rate_limit';
+  const rateLimitKey = 'api_rate_limit';
   localStorage.setItem(rateLimitKey, Date.now().toString());
 };
 
@@ -63,7 +56,7 @@ export const markRateLimited = () => {
  * Get time remaining for rate limit in seconds
  */
 export const getRateLimitTimeRemaining = (): number => {
-  const rateLimitKey = 'supabase_rate_limit';
+  const rateLimitKey = 'api_rate_limit';
   const lastRateLimit = localStorage.getItem(rateLimitKey);
   
   if (!lastRateLimit) return 0;
@@ -106,7 +99,8 @@ export const safeAuthOperation = async <T>(
     // Check if this is an invalid token error
     if (error?.message?.includes('Invalid Refresh Token') || 
         error?.message?.includes('Refresh Token Not Found') ||
-        error?.message?.includes('invalid_token')) {
+        error?.message?.includes('invalid_token') ||
+        error?.message?.includes('Not authenticated')) {
       console.warn('Clearing invalid auth tokens');
       clearAuthTokens();
       const tokenError = new Error('Authentication tokens were invalid and have been cleared. Please sign in again.');
@@ -118,7 +112,7 @@ export const safeAuthOperation = async <T>(
       return { data: null, error };
     }
 
-    // If it's a Supabase error or other object with message, wrap it
+    // If it's an error object with message, wrap it
     const errorMessage = (error && typeof error === 'object' && 'message' in error)
       ? (error as any).message
       : String(error);
@@ -141,9 +135,10 @@ export const initializeAuth = async () => {
     try {
       // Quick connectivity test first
       const connectivityCheck = new Promise((resolve) => {
-        // Simple fetch to test basic connectivity
-        fetch(supabase.supabaseUrl + '/rest/v1/', {
-          method: 'HEAD',
+        // Simple fetch to test basic connectivity to the API
+        const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+        fetch(apiUrl + '?action=health', {
+          method: 'GET',
           signal: controller.signal
         })
           .then(() => resolve(true))
@@ -158,7 +153,7 @@ export const initializeAuth = async () => {
       const hasConnectivity = await Promise.race([connectivityCheck, connectivityTimeout]);
 
       if (!hasConnectivity) {
-        logWarning('🌐 No connectivity to Supabase, skipping auth', 'No connectivity', { context: 'initializeAuth' });
+        logWarning('🌐 No connectivity to API, skipping auth', 'No connectivity', { context: 'initializeAuth' });
         clearTimeout(timeoutId);
         return { session: null, error: new Error('No connectivity') };
       }
@@ -170,7 +165,8 @@ export const initializeAuth = async () => {
       // Handle invalid token errors by clearing them
       if (sessionError?.message?.includes('Invalid Refresh Token') ||
           sessionError?.message?.includes('Refresh Token Not Found') ||
-          sessionError?.message?.includes('invalid_token')) {
+          sessionError?.message?.includes('invalid_token') ||
+          sessionError?.message?.includes('Not authenticated')) {
         logWarning('Invalid tokens detected, clearing...', sessionError, { context: 'initializeAuth' });
         clearAuthTokens();
         return { session: null, error: null };
