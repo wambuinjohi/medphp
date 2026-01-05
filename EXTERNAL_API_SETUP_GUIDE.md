@@ -1,506 +1,306 @@
-# External API Database Setup Guide
-
-This guide explains how to initialize the MySQL database and create user accounts for the Medical Supplies application using the external API.
+# External API Setup Guide - Complete Configuration
 
 ## Overview
 
-The application supports three methods to initialize the database and create users:
+This system is configured to use **ONLY** the remote API at `https://med.wayrus.co.ke/api.php` for all database operations. This guide will help you complete the full setup including database tables and roles configuration.
 
-1. **Web UI** - Interactive setup page (recommended)
-2. **Command Line** - Automated setup scripts
-3. **Manual API Calls** - Direct HTTP requests
+## Quick Start
 
----
+### 1. Access the System Configuration Page
 
-## Method 1: Web UI (Recommended)
+After logging in as an admin user:
 
-### Access the Setup Page
+1. Go to **Settings** → **Database & Roles**
+2. You'll see a complete overview of the system status
 
-1. Open your browser and navigate to:
-   ```
-   https://your-app-url/admin-init-external
-   ```
+### 2. Check System Status
 
-2. The page will:
-   - Check if the database is already initialized
-   - Display the current API configuration
-   - Show setup status and credentials
+The configuration page displays:
+- **API Status**: Whether the remote API is reachable
+- **Database Status**: How many tables are created vs required
+- **Roles Status**: Which user roles are configured
 
-### Initialize Database
+## Step-by-Step Setup
 
-1. **Review Configuration**
-   - Verify the API URL is correct
-   - Update if needed (e.g., for local development)
+### Step 1: Verify API Connection
 
-2. **Click "Initialize Database & Create Admin User"**
-   - The system will automatically:
-     - Create all database tables
-     - Create the admin user
-     - Set up JWT authentication
-     - Display a progress log
+Before proceeding, ensure your API is accessible:
 
-3. **Save Your Credentials**
-   - Default email: `admin@biolegend.local`
-   - Default password: `Biolegend2024!Admin`
-   - Store these safely!
-
-### Manual Setup (If Automated Fails)
-
-If the automated setup fails, use the curl command provided on the page:
-
-```bash
-curl -X POST "https://med.wayrus.co.ke/api.php?action=setup" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@biolegend.local","password":"Biolegend2024!Admin"}'
+```
+API Endpoint: https://med.wayrus.co.ke/api.php
 ```
 
----
+**Check using the settings page:**
+- Navigate to Settings → Database & Roles
+- Look for "API Status" indicator at the top
+- It should show ✓ if connected
 
-## Method 2: Command Line Setup
+### Step 2: Create Missing Database Tables
 
-### Prerequisites
+If your system shows missing tables:
 
-- Node.js installed (for Node.js script)
-- Or curl installed (for shell script)
+1. Go to Settings → Database & Roles
+2. Click on the **"Database Tables"** tab
+3. You'll see:
+   - Tables Found: X
+   - Total Expected: Y
+   - Missing: Z
 
-### Option A: Node.js Script (Recommended)
+**To create missing tables:**
+1. Click **"Create Missing Tables"** button
+2. Wait for the operation to complete
+3. Click **"Refresh Status"** to verify
 
-Run the Node.js setup script:
+### Step 3: Setup Default Roles and Permissions
 
-```bash
-npm run setup:external-api
+If your system shows missing roles:
+
+1. Go to Settings → Database & Roles
+2. Click on the **"Roles & Permissions"** tab
+3. You'll see configured roles and missing roles
+4. Click **"Setup Default Roles"** button
+
+The system will automatically create and configure these default roles:
+- **super_admin** - Full system access
+- **admin** - Full application access
+- **accountant** - Financial management access
+- **stock_manager** - Inventory management access
+- **user** - Basic user access
+
+### Step 4: Verify Complete Setup
+
+Once all steps are done:
+
+1. All indicators in the configuration page should show ✓
+2. Database should show "All Tables Present"
+3. Roles should show "All Roles Configured"
+4. API Status should show ✓
+
+## Environment Configuration
+
+The system uses these environment variables:
+
+```env
+# Database Provider - Set to 'external-api' to use ONLY the remote API
+VITE_DATABASE_PROVIDER=external-api
+
+# External API URL - The remote API endpoint
+VITE_EXTERNAL_API_URL=https://med.wayrus.co.ke/api.php
+
+# API Authentication Token (optional)
+API_AUTH_TOKEN=your-api-token-if-required
 ```
 
-Or with custom options:
+**Current Configuration**: The system is already set to use `external-api` provider with the default URL.
 
-```bash
-npm run setup:external-api -- --api-url https://your-api.com/api.php \
-  --email admin@yourcompany.com \
-  --password YourSecurePassword123!
-```
+## Required Database Tables
 
-**Dry run** (preview without making changes):
+The system requires these tables to be created:
 
-```bash
-npm run setup:external-api:dry
-```
+### Core Tables
+- `companies` - Company information
+- `profiles` - User profiles
+- `customers` - Customer information
+- `suppliers` - Supplier information
 
-### Option B: Shell Script
+### Product & Inventory
+- `product_categories` - Product categories
+- `products` - Product information
+- `tax_settings` - Tax configuration
+- `stock_movements` - Inventory movements
 
-Make the script executable:
+### Sales & Invoicing
+- `quotations` - Sales quotations
+- `quotation_items` - Quotation line items
+- `invoices` - Customer invoices
+- `invoice_items` - Invoice line items
+- `proforma_invoices` - Proforma invoices
+- `proforma_items` - Proforma line items
+- `credit_notes` - Credit notes
+- `credit_note_items` - Credit note items
+- `credit_note_allocations` - Credit note allocations
 
-```bash
-chmod +x setup-external-api.sh
-```
+### Delivery & Logistics
+- `delivery_notes` - Delivery documentation
+- `delivery_note_items` - Delivery items
 
-Run the script:
+### Payments
+- `payments` - Payment records
+- `payment_allocations` - Payment allocations
+- `payment_audit_log` - Payment audit trail
+- `payment_methods` - Payment methods
+- `remittance_advice` - Remittance advices
+- `remittance_advice_items` - Remittance items
 
-```bash
-./setup-external-api.sh
-```
+### Purchasing
+- `lpos` - Local purchase orders
+- `lpo_items` - LPO line items
 
-Or with custom options:
+### Web Manager
+- `web_categories` - Website product categories
+- `web_variants` - Product variants
 
-```bash
-./setup-external-api.sh \
-  --api-url https://your-api.com/api.php \
-  --email admin@yourcompany.com \
-  --password YourSecurePassword123!
-```
+### User & Permissions
+- `user_permissions` - User permission assignments
+- `user_invitations` - User invitation records
 
-**Dry run**:
+### Audit & Logging
+- `audit_logs` - System audit logs
+- `migration_logs` - Data migration logs
 
-```bash
-./setup-external-api.sh --dry-run
-```
+## Default Roles and Permissions
 
-### Script Features
+### 1. Super Admin
+**Level**: 1 (Highest)
+**Permissions**: `all:*` (Full system access)
+**Use Case**: System administrator with complete control
 
-- **Automatic API testing** - Verifies connectivity before setup
-- **Database initialization** - Creates all required tables
-- **User creation** - Creates admin user with secure password hashing
-- **Login verification** - Tests authentication to confirm setup success
-- **Progress logging** - Detailed output of each step
-- **Error handling** - Clear error messages if something fails
-- **Dry run mode** - Preview changes without executing them
+### 2. Admin
+**Level**: 2
+**Permissions**:
+- User management (create, read, update, delete)
+- Role management
+- Settings management
+- View reports and audit logs
 
-### Environment Variables
+### 3. Accountant
+**Level**: 3
+**Permissions**:
+- Create and manage invoices
+- Create and manage payments
+- View quotations
+- View reports
+- View customers
 
-You can also use environment variables:
+### 4. Stock Manager
+**Level**: 4
+**Permissions**:
+- Create and manage inventory
+- Create and manage stock movements
+- Delete stock records
+- View products
+- View reports
 
-```bash
-export API_URL="https://your-api.com/api.php"
-export ADMIN_EMAIL="admin@yourcompany.com"
-export ADMIN_PASSWORD="YourSecurePassword123!"
-
-npm run setup:external-api
-```
-
----
-
-## Method 3: Manual API Calls
-
-### Step 1: Initialize Database & Create Admin
-
-```bash
-curl -X POST "https://med.wayrus.co.ke/api.php?action=setup" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@biolegend.local",
-    "password": "Biolegend2024!Admin"
-  }'
-```
-
-**Expected Response:**
-```json
-{
-  "status": "success",
-  "message": "Admin user created",
-  "id": 1,
-  "email": "admin@biolegend.local"
-}
-```
-
-### Step 2: Test Login
-
-```bash
-curl -X POST "https://med.wayrus.co.ke/api.php?action=login" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@biolegend.local",
-    "password": "Biolegend2024!Admin"
-  }'
-```
-
-**Expected Response:**
-```json
-{
-  "status": "success",
-  "message": "Login successful",
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "user": {
-    "id": 1,
-    "email": "admin@biolegend.local",
-    "role": "admin"
-  }
-}
-```
-
-Save the `token` from the response for authenticated API calls.
-
----
-
-## Default Credentials
-
-### Admin User
-
-| Property | Value |
-|----------|-------|
-| **Email** | `admin@biolegend.local` |
-| **Password** | `Biolegend2024!Admin` |
-| **Role** | `admin` |
-
-> ⚠️ **Important**: Change the default password after first login!
-
----
-
-## What Gets Created
-
-When you run the setup, the following database tables are created:
-
-### Users Table
-
-```sql
-CREATE TABLE users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  email VARCHAR(255) UNIQUE,
-  password TEXT,
-  role VARCHAR(50),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
-```
-
-### Additional Tables
-
-The API automatically creates these tables:
-
-- **contacts** - Contact form submissions
-- **newsletter** - Newsletter subscribers
-- **leads** - CRM leads
-- **quotations** - Sales quotations
-- **portfolios** - Portfolio items
-- **opportunities** - Sales opportunities
-- **discovery_leads** - Discovery leads
-- **logs** - Application logs
-
----
+### 5. User
+**Level**: 5 (Lowest)
+**Permissions**:
+- Create quotations
+- View basic information
+- View invoices and delivery notes
+- Read-only access to most features
 
 ## Troubleshooting
 
-### Issue: "API is not responding"
+### Issue: "API is not reachable"
 
 **Solution:**
-1. Check the API URL is correct
-2. Verify the server is running
-3. Test with curl manually:
-   ```bash
-   curl -I https://med.wayrus.co.ke/api.php
-   ```
+1. Verify the API URL is correct: `https://med.wayrus.co.ke/api.php`
+2. Check your internet connection
+3. Verify the remote API server is running
+4. Check if there's a firewall blocking the connection
 
-### Issue: "Database connection failed"
-
-**Solution (On Server):**
-1. Check MySQL is running
-2. Verify environment variables:
-   ```bash
-   echo $DB_HOST $DB_USER $DB_NAME
-   ```
-3. Test connection:
-   ```bash
-   mysql -h $DB_HOST -u $DB_USER -p$DB_PASS $DB_NAME
-   ```
-
-### Issue: "Admin user creation failed"
+### Issue: "Some tables failed to create"
 
 **Solution:**
-1. Check if user already exists:
-   ```bash
-   mysql -h $DB_HOST -u $DB_USER -p$DB_PASS $DB_NAME
-   SELECT * FROM users WHERE email = 'admin@biolegend.local';
-   ```
-2. If user exists, just use the login method
-3. If permission error, check database user permissions
+1. Check the error messages for specific table failures
+2. Verify the remote API has proper permissions
+3. Ensure the database has sufficient space
+4. Retry the operation
 
-### Issue: "Login token not received"
+### Issue: "Role setup failed"
 
 **Solution:**
-1. Verify user was created
-2. Check password is correct
-3. Ensure JWT_SECRET is set:
-   ```bash
-   echo $JWT_SECRET
-   ```
+1. Ensure at least one admin user exists
+2. Verify API authentication token is correct (if required)
+3. Check the API logs for detailed error messages
+4. Retry the operation
 
-### Issue: CORS Error
+## API Endpoints
 
-**Solution:**
-1. Verify API CORS headers are enabled
-2. Check request origin
-3. Test with curl (no CORS restrictions)
+The system uses these API endpoints:
 
----
-
-## Security Best Practices
-
-### 1. Change Default Password
-
-After successful setup, immediately change the admin password:
-
-```bash
-curl -X POST "https://med.wayrus.co.ke/api.php?action=update&table=users" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{
-    "id": 1,
-    "password": "YourNewSecurePassword123!"
-  }'
+### Database Operations
+```
+POST /api.php?action=check_tables
+POST /api.php?action=create_missing_tables
+POST /api.php?action=get_db_stats
+POST /api.php?action=health
 ```
 
-### 2. Secure JWT Secret
-
-Set a strong JWT_SECRET on the server:
-
-```bash
-export JWT_SECRET=$(openssl rand -base64 32)
+### Roles Management
+```
+POST /api.php?action=check_roles
+POST /api.php?action=create_role
+POST /api.php?action=setup_role_permissions
 ```
 
-### 3. Use HTTPS
-
-Always use HTTPS in production:
-
+### Authentication
 ```
-https://your-domain.com/api.php (production)
-https://med.wayrus.co.ke/api.php (external)
-```
-
-### 4. Database Credentials
-
-Store database credentials in environment variables:
-
-```bash
-export DB_HOST="your-mysql-host"
-export DB_USER="your-mysql-user"
-export DB_PASS="your-mysql-password"
-export DB_NAME="your-database"
+POST /api.php?action=login
+POST /api.php?action=logout
+POST /api.php?action=check_auth
+POST /api.php?action=create_user
+POST /api.php?action=admin_create_user
 ```
 
-### 5. Regular Backups
+## Frontend Endpoints
 
-Create regular backups of your database:
+The system exposes these local endpoints for configuration:
 
-```bash
-mysqldump -h $DB_HOST -u $DB_USER -p$DB_PASS $DB_NAME > backup.sql
+```
+POST /api/admin/database/check-status
+POST /api/admin/database/initialize
+POST /api/admin/database/stats
+POST /api/admin/database/fix-rls
+
+POST /api/admin/roles/check-status
+POST /api/admin/roles/create-default
+POST /api/admin/roles/setup-permissions
+POST /api/admin/roles/setup-complete
 ```
 
----
+## Important Notes
 
-## Creating Additional Users
+### Security
+- All API calls are made over HTTPS
+- Sensitive credentials should be kept in environment variables
+- The API token should never be committed to version control
+- Use strong passwords for all user accounts
 
-After the database is initialized, you can create additional users via the app or API:
+### Performance
+- Database operations may take time for large datasets
+- Refresh the page if operations appear stuck
+- Check browser console for detailed error messages
 
-### Via API
-
-```bash
-curl -X POST "https://med.wayrus.co.ke/api.php?action=create&table=users" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
-  -d '{
-    "email": "user@company.com",
-    "password": "SecurePassword123!",
-    "role": "user"
-  }'
-```
-
-### Via Web UI
-
-1. Login to the application
-2. Go to Settings → User Management
-3. Click "Add New User"
-4. Enter email and password
-5. Assign role (admin, user, etc.)
-6. Click "Create"
-
----
-
-## Verifying Setup Success
-
-### Check Database Connection
-
-```bash
-curl -X POST "https://med.wayrus.co.ke/api.php?action=read&table=users" \
-  -H "Content-Type: application/json" \
-  -d '{"where": {}}'
-```
-
-**Expected Response:**
-```json
-{
-  "status": "success",
-  "data": [
-    {
-      "id": 1,
-      "email": "admin@biolegend.local",
-      "role": "admin",
-      "created_at": "2025-01-04 12:34:56"
-    }
-  ]
-}
-```
-
-### Test Login
-
-Try logging in with the admin credentials:
-
-1. Open the app in your browser
-2. Navigate to the login page
-3. Enter:
-   - Email: `admin@biolegend.local`
-   - Password: `Biolegend2024!Admin`
-4. Click Sign In
-
----
-
-## Next Steps
-
-After successful initialization:
-
-1. ✅ Access the application dashboard
-2. ✅ Configure company settings
-3. ✅ Set up payment methods
-4. ✅ Create team members
-5. ✅ Customize tax settings
-6. ✅ Begin managing your business
-
----
+### Production Deployment
+1. Ensure the remote API is properly secured
+2. Set up proper database backups
+3. Configure API rate limiting if needed
+4. Monitor API logs for any issues
+5. Set up proper error logging and monitoring
 
 ## Support
 
 For issues or questions:
 
-1. Check the **Troubleshooting** section above
-2. Review **EXTERNAL_API_SETUP.md** for detailed API documentation
-3. Check server logs for error messages
-4. Test API endpoints with curl directly
-5. Review environment variables configuration
+1. Check the troubleshooting section above
+2. Review API logs for detailed error messages
+3. Verify all environment variables are correctly set
+4. Contact the API provider for infrastructure issues
+
+## Next Steps
+
+After completing the setup:
+
+1. **Create Users**: Go to Settings → User Management to add team members
+2. **Configure Company Settings**: Set up your company information
+3. **Add Customers & Suppliers**: Populate your customer and supplier databases
+4. **Configure Products**: Add your product catalog
+5. **Start Using the System**: Begin creating quotations, invoices, etc.
 
 ---
 
-## Files Reference
-
-| File | Purpose |
-|------|---------|
-| `/admin-init-external` | Web UI setup page |
-| `scripts/setup-external-api.js` | Node.js setup script |
-| `setup-external-api.sh` | Shell setup script |
-| `src/utils/externalApiSetup.ts` | Setup utility functions |
-| `backend/api.php` | PHP API server (reference) |
-| `EXTERNAL_API_SETUP.md` | API documentation |
-| `EXTERNAL_API_QUICK_START.md` | Quick start guide |
-
----
-
-## Common Commands
-
-```bash
-# Initialize database interactively
-npm run setup:external-api
-
-# Dry run (preview)
-npm run setup:external-api:dry
-
-# With custom email
-npm run setup:external-api -- --email admin@yourcompany.com
-
-# With custom password
-npm run setup:external-api -- --password YourPassword123!
-
-# Custom API URL
-npm run setup:external-api -- --api-url https://your-api.com/api.php
-
-# All options
-npm run setup:external-api -- \
-  --api-url https://api.example.com/api.php \
-  --email admin@example.com \
-  --password SecurePass123!
-```
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────┐
-│  Web UI                         │
-│  /admin-init-external          │
-└──────────────┬──────────────────┘
-               │ (HTTP)
-┌──────────────▼──────────────────┐
-│  Application                    │
-│  src/utils/externalApiSetup.ts │
-└──────────────┬──────────────────┘
-               │ (HTTPS)
-┌──────────────▼──────────────────┐
-│  External API                   │
-│  med.wayrus.co.ke/api.php      │
-└──────────────┬──────────────────┘
-               │ (MYSQLI)
-┌──────────────▼──────────────────┐
-│  MySQL Database                 │
-│  wayrusc1_med                   │
-└─────────────────────────────────┘
-```
-
----
-
-**Last Updated:** January 2025  
-**Version:** 1.0
+**System Status**: Configured to use external API only
+**API URL**: https://med.wayrus.co.ke/api.php
+**Provider**: external-api
+**Last Updated**: 2024
