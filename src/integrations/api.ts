@@ -219,87 +219,136 @@ export const apiClient = {
  * Backward-compatible Supabase-like interface
  * This allows existing code to work with minimal changes
  */
+
+// Helper class for building queries
+class QueryChain {
+  private table: string;
+  private filters: Record<string, any> = {};
+  private selectedFields: string = '*';
+
+  constructor(table: string) {
+    this.table = table;
+  }
+
+  select(fields?: string) {
+    if (fields) {
+      this.selectedFields = fields;
+    }
+    return this;
+  }
+
+  eq(column: string, value: any) {
+    this.filters[column] = value;
+    return this;
+  }
+
+  order(column: string, opts?: any) {
+    this.filters._order = { column, direction: opts?.ascending === false ? 'desc' : 'asc' };
+    return this;
+  }
+
+  limit(count: number) {
+    this.filters._limit = count;
+    return this;
+  }
+
+  async maybeSingle() {
+    try {
+      const result = await apiAdapter.selectBy(this.table, this.filters);
+      const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
+      return { data, error: result.error };
+    } catch (error) {
+      return { data: null, error: error as Error };
+    }
+  }
+
+  async single() {
+    try {
+      const result = await apiAdapter.selectBy(this.table, this.filters);
+      const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
+      return { data, error: result.error };
+    } catch (error) {
+      return { data: null, error: error as Error };
+    }
+  }
+
+  async execute() {
+    try {
+      const result = await apiAdapter.selectBy(this.table, this.filters);
+      return { data: result.data, error: result.error };
+    } catch (error) {
+      return { data: null, error: error as Error };
+    }
+  }
+}
+
 export const supabaseCompat = {
-  from: (table: string) => ({
-    select: (fields?: string) => ({
-      eq: (column: string, value: any) => ({
-        maybeSingle: async () => {
-          try {
-            const result = await apiAdapter.selectBy(table, { [column]: value });
-            const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
-            return { data, error: result.error };
-          } catch (error) {
-            return { data: null, error: error as Error };
-          }
-        },
-        single: async () => {
-          try {
-            const result = await apiAdapter.selectBy(table, { [column]: value });
-            const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
-            return { data, error: result.error };
-          } catch (error) {
-            return { data: null, error: error as Error };
-          }
-        },
-        execute: async () => {
-          try {
-            const result = await apiAdapter.selectBy(table, { [column]: value });
-            return { data: result.data, error: result.error };
-          } catch (error) {
-            return { data: null, error: error as Error };
-          }
-        },
-      }),
-      order: (column: string, opts?: any) => ({
-        limit: (count: number) => ({
-          maybeSingle: async () => {
-            const result = await apiAdapter.selectBy(table, {});
-            const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
-            return { data, error: result.error };
+  from: (table: string) => {
+    const chain = new QueryChain(table);
+
+    return {
+      select: (fields?: string) => {
+        chain.select(fields);
+        return {
+          eq: (column: string, value: any) => {
+            chain.eq(column, value);
+            return {
+              maybeSingle: () => chain.maybeSingle(),
+              single: () => chain.single(),
+              execute: () => chain.execute(),
+            };
           },
-          execute: async () => {
-            const result = await apiAdapter.selectBy(table, {});
-            return { data: result.data, error: result.error };
+          order: (column: string, opts?: any) => {
+            chain.order(column, opts);
+            return {
+              limit: (count: number) => {
+                chain.limit(count);
+                return {
+                  maybeSingle: () => chain.maybeSingle(),
+                  execute: () => chain.execute(),
+                };
+              },
+            };
+          },
+          limit: (count: number) => {
+            chain.limit(count);
+            return {
+              maybeSingle: () => chain.maybeSingle(),
+              execute: () => chain.execute(),
+            };
+          },
+        };
+      },
+      insert: (data: any) => ({
+        select: () => ({
+          single: async () => {
+            const result = await apiAdapter.insert(table, data);
+            return { data: result.id, error: result.error };
           },
         }),
       }),
-      limit: (count: number) => ({
-        maybeSingle: async () => {
-          const result = await apiAdapter.selectBy(table, {});
-          const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
-          return { data, error: result.error };
-        },
+      update: (data: any) => ({
+        eq: (column: string, value: any) => ({
+          select: async () => {
+            const result = await apiAdapter.update(table, String(value), data);
+            return { data: null, error: result.error };
+          },
+          execute: async () => {
+            const result = await apiAdapter.update(table, String(value), data);
+            return { data: null, error: result.error };
+          },
+        }),
       }),
-    }),
-    insert: (data: any) => ({
-      select: () => ({
-        single: async () => {
-          const result = await apiAdapter.insert(table, data);
-          return { data: result.id, error: result.error };
-        },
+      delete: () => ({
+        eq: (column: string, value: any) => ({
+          execute: async () => {
+            const result = await apiAdapter.delete(table, String(value));
+            return { data: null, error: result.error };
+          },
+        }),
       }),
-    }),
-    update: (data: any) => ({
-      eq: (column: string, value: any) => ({
-        select: async () => {
-          const result = await apiAdapter.update(table, String(value), data);
-          return { data: null, error: result.error };
-        },
-        execute: async () => {
-          const result = await apiAdapter.update(table, String(value), data);
-          return { data: null, error: result.error };
-        },
-      }),
-    }),
-    delete: () => ({
-      eq: (column: string, value: any) => ({
-        execute: async () => {
-          const result = await apiAdapter.delete(table, String(value));
-          return { data: null, error: result.error };
-        },
-      }),
-    }),
-  }),
+    };
+  },
 
   auth: {
     getSession: async () => {
