@@ -33,7 +33,15 @@ class ExternalAPIAuthHandler {
         body: JSON.stringify({ email, password }),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON - if response is not ok or invalid JSON, handle gracefully
+      const result = await response.json().catch(() => {
+        // If JSON parsing fails and response is not ok, server likely returned error page
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+        }
+        // If response is ok but JSON parsing failed, that's also an error
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok || result.status === 'error') {
         return { error: new Error(result.message || 'Login failed') };
