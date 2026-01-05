@@ -375,6 +375,30 @@ export function setupAdminUserRoutes(app: any) {
     const { status, body } = await handleGetDatabaseStats();
     res.status(status).json(body);
   });
+
+  // Roles check status endpoint
+  app.post('/api/admin/roles/check-status', async (req: any, res: any) => {
+    const { status, body } = await handleCheckRolesStatus();
+    res.status(status).json(body);
+  });
+
+  // Create default roles endpoint
+  app.post('/api/admin/roles/create-default', async (req: any, res: any) => {
+    const { status, body } = await handleCreateDefaultRoles();
+    res.status(status).json(body);
+  });
+
+  // Setup role permissions endpoint
+  app.post('/api/admin/roles/setup-permissions', async (req: any, res: any) => {
+    const { status, body } = await handleSetupRolePermissions();
+    res.status(status).json(body);
+  });
+
+  // Complete role setup endpoint
+  app.post('/api/admin/roles/setup-complete', async (req: any, res: any) => {
+    const { status, body } = await handleCompleteRoleSetup();
+    res.status(status).json(body);
+  });
 }
 
 /**
