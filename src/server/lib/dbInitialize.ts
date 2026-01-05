@@ -265,7 +265,13 @@ export async function getDatabaseStats(): Promise<{
       }
     });
 
-    const data = await response.json();
+    // Defensively parse JSON
+    const data = await response.json().catch(() => {
+      if (!response.ok) {
+        throw new Error(`Server error: HTTP ${response.status}. Failed to get database stats.`);
+      }
+      throw new Error('Invalid response from server: Expected valid JSON');
+    });
 
     if (data.status === 'ok') {
       return {
