@@ -224,18 +224,30 @@ export const supabaseCompat = {
     select: (fields?: string) => ({
       eq: (column: string, value: any) => ({
         maybeSingle: async () => {
-          const result = await apiAdapter.selectBy(table, { [column]: value });
-          const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
-          return { data, error: result.error };
+          try {
+            const result = await apiAdapter.selectBy(table, { [column]: value });
+            const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
+            return { data, error: result.error };
+          } catch (error) {
+            return { data: null, error: error as Error };
+          }
         },
         single: async () => {
-          const result = await apiAdapter.selectBy(table, { [column]: value });
-          const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
-          return { data, error: result.error };
+          try {
+            const result = await apiAdapter.selectBy(table, { [column]: value });
+            const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
+            return { data, error: result.error };
+          } catch (error) {
+            return { data: null, error: error as Error };
+          }
         },
         execute: async () => {
-          const result = await apiAdapter.selectBy(table, { [column]: value });
-          return { data: result.data, error: result.error };
+          try {
+            const result = await apiAdapter.selectBy(table, { [column]: value });
+            return { data: result.data, error: result.error };
+          } catch (error) {
+            return { data: null, error: error as Error };
+          }
         },
       }),
       order: (column: string, opts?: any) => ({
