@@ -113,42 +113,60 @@ export async function forceCreateTaxSettings(): Promise<void> {
 
 export async function getTaxSettings(companyId?: string): Promise<SimpleTaxSetting[]> {
   try {
-    // First try to get from database via external API
-    const result = await apiClient.select('tax_settings', {});
-
-    if (!result.error && result.data && Array.isArray(result.data) && result.data.length > 0) {
-      console.log('📊 Using database tax settings');
-      const taxSettings = result.data as SimpleTaxSetting[];
-      return companyId
-        ? taxSettings.filter(tax => tax.company_id === companyId)
-        : taxSettings;
+    // First try to get from localStorage (fastest)
+    const storedSettings = localStorage.getItem('tax_settings');
+    if (storedSettings) {
+      try {
+        const parsed = JSON.parse(storedSettings) as SimpleTaxSetting[];
+        if (parsed.length > 0) {
+          console.log('💾 Using localStorage tax settings');
+          memoryTaxSettings = parsed;
+          return parsed.filter(tax => !companyId || tax.company_id === companyId);
+        }
+      } catch (parseError) {
+        console.warn('⚠️ Failed to parse localStorage tax settings:', parseError);
+      }
     }
-    
+
     // Fallback to memory
     if (memoryTaxSettings.length > 0) {
       console.log('📦 Using memory tax settings');
       return memoryTaxSettings.filter(tax => !companyId || tax.company_id === companyId);
     }
-    
-    // Fallback to localStorage
-    const storedSettings = localStorage.getItem('tax_settings');
-    if (storedSettings) {
-      const parsed = JSON.parse(storedSettings) as SimpleTaxSetting[];
-      console.log('💾 Using localStorage tax settings');
-      memoryTaxSettings = parsed;
-      return parsed.filter(tax => !companyId || tax.company_id === companyId);
+
+    // Try to get from database via external API (may fail if tables don't exist)
+    try {
+      const result = await apiClient.select('tax_settings', {});
+
+      if (!result.error && result.data && Array.isArray(result.data) && result.data.length > 0) {
+        console.log('📊 Using database tax settings');
+        const taxSettings = result.data as SimpleTaxSetting[];
+        memoryTaxSettings = taxSettings;
+        localStorage.setItem('tax_settings', JSON.stringify(taxSettings));
+        return companyId
+          ? taxSettings.filter(tax => tax.company_id === companyId)
+          : taxSettings;
+      }
+    } catch (apiError) {
+      console.warn('⚠️ Failed to get tax settings from API:', apiError);
     }
-    
-    // If nothing exists, force create
+
+    // If nothing exists, force create defaults
     console.log('🔧 No tax settings found, force creating...');
     await forceCreateTaxSettings();
     return memoryTaxSettings.filter(tax => !companyId || tax.company_id === companyId);
-    
+
   } catch (error) {
-    console.error('Error getting tax settings:', error);
-    
+    console.error('❌ Error getting tax settings:', error);
+
     // Return memory settings as absolute fallback
-    return memoryTaxSettings.filter(tax => !companyId || tax.company_id === companyId);
+    if (memoryTaxSettings.length > 0) {
+      return memoryTaxSettings.filter(tax => !companyId || tax.company_id === companyId);
+    }
+
+    // Last resort - return empty array instead of throwing
+    console.warn('⚠️ No tax settings available, returning empty array');
+    return [];
   }
 }
 
