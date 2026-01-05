@@ -75,7 +75,13 @@ async function testSetupEndpoint(apiUrl: string): Promise<DiagnosticResult> {
       }),
     });
 
-    const data = await response.json();
+    // Defensively parse JSON
+    const data = await response.json().catch(() => {
+      if (!response.ok) {
+        throw new Error(`Server error: HTTP ${response.status}. Setup endpoint failed.`);
+      }
+      throw new Error('Invalid response from server: Expected valid JSON');
+    });
 
     if (response.ok && data.status === 'success') {
       return {
