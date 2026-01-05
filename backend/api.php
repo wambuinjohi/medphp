@@ -259,7 +259,7 @@ function ensureTables($conn) {
 ensureTables($conn);
 
 // Include comprehensive table definitions
-require_once __DIR__ . '/lib/tableDefinitions.php';
+require_once __DIR__ . '/tableDefinitions.php';
 
 // Handle check_tables action - check which tables exist
 if ($action === "check_tables") {
