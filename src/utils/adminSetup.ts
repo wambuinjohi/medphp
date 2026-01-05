@@ -96,7 +96,13 @@ export async function createAdminUser(options: CreateAdminOptions) {
       })
     });
 
-    const userResult = await createUserResponse.json();
+    // Defensively parse JSON
+    const userResult = await createUserResponse.json().catch(() => {
+      if (!createUserResponse.ok) {
+        throw new Error(`Server error: HTTP ${createUserResponse.status}. Failed to create admin user.`);
+      }
+      throw new Error('Invalid response from server: Expected valid JSON');
+    });
 
     if (!createUserResponse.ok || userResult.status === 'error') {
       throw new Error(`Failed to create admin user: ${userResult.message || 'Unknown error'}`);
