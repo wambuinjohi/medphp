@@ -275,7 +275,13 @@ class ExternalAPIAuthHandler {
         body: JSON.stringify({ email, password }),
       });
 
-      const result = await response.json();
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. Admin setup failed.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
 
       if (!response.ok || result.status === 'error') {
         return { error: new Error(result.message || 'Admin setup failed') };
