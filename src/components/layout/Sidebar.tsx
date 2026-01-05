@@ -19,7 +19,8 @@ import {
   FileSpreadsheet,
   ShoppingCart,
   RotateCcw,
-  Globe
+  Globe,
+  Database
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
