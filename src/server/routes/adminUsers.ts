@@ -241,6 +241,24 @@ export function setupAdminUserRoutes(app: any) {
     const { status, body } = await handleFixProfileRls();
     res.status(status).json(body);
   });
+
+  // Database status endpoint
+  app.post('/api/admin/database/check-status', async (req: any, res: any) => {
+    const { status, body } = await handleCheckDatabaseStatus();
+    res.status(status).json(body);
+  });
+
+  // Database initialization endpoint
+  app.post('/api/admin/database/initialize', async (req: any, res: any) => {
+    const { status, body } = await handleInitializeDatabase();
+    res.status(status).json(body);
+  });
+
+  // Database stats endpoint
+  app.post('/api/admin/database/stats', async (req: any, res: any) => {
+    const { status, body } = await handleGetDatabaseStats();
+    res.status(status).json(body);
+  });
 }
 
 /**
