@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 
 export type TableCheckResult = {
   exists: boolean;
@@ -7,17 +7,14 @@ export type TableCheckResult = {
 };
 
 export async function checkTaxSettingsTable(): Promise<TableCheckResult> {
-  console.log('Checking if tax_settings table exists...');
+  console.log('Checking if tax_settings table exists via external API...');
 
   try {
-    // First, check if table already exists by trying to select from it
-    const { data: existingTable, error: checkError } = await supabase
-      .from('tax_settings')
-      .select('id')
-      .limit(1);
+    // Check if we can read from tax_settings table via external API
+    const result = await apiClient.select('tax_settings', {});
 
-    if (!checkError) {
-      console.log('tax_settings table already exists');
+    if (!result.error) {
+      console.log('✅ tax_settings table is accessible via API');
       return {
         exists: true,
         companyCount: 0,
@@ -25,19 +22,18 @@ export async function checkTaxSettingsTable(): Promise<TableCheckResult> {
       };
     }
 
-    console.log('Table does not exist, checking company count...');
+    console.log('⚠️ tax_settings table not accessible, checking company count...');
 
     // Get company data to show how many companies will need tax settings
-    const { data: companies, error: companiesError } = await supabase
-      .from('companies')
-      .select('id, name');
+    const companiesResult = await apiClient.select('companies', {});
 
-    if (companiesError) {
-      throw new Error(`Cannot access companies table: ${companiesError.message}`);
+    if (companiesResult.error || !companiesResult.data) {
+      throw new Error(`Cannot access companies table: ${companiesResult.error?.message || 'Unknown error'}`);
     }
 
+    const companies = Array.isArray(companiesResult.data) ? companiesResult.data : [companiesResult.data];
     const companyCount = companies?.length || 0;
-    console.log(`Found ${companyCount} companies that will need tax settings`);
+    console.log(`✅ Found ${companyCount} companies that will need tax settings`);
 
     return {
       exists: false,
