@@ -1,7 +1,5 @@
 import { apiClient } from '@/integrations/api';
 
-import { apiClient } from '@/integrations/api';
-
 export interface SimpleTaxSetting {
   id: string;
   company_id: string;
@@ -20,22 +18,25 @@ export async function forceCreateTaxSettings(): Promise<void> {
   console.log('🚀 Force creating tax settings...');
 
   try {
-    // Get company ID from external API
-    const result = await apiClient.select('companies', {});
+    // Try to get company ID from external API
+    let companyId = 'default-company';
 
-    if (result.error || !result.data) {
-      console.warn('⚠️ Cannot access companies from API:', result.error?.message);
-      throw new Error(`Cannot access companies: ${result.error?.message || 'Unknown error'}`);
+    try {
+      const result = await apiClient.select('companies', {});
+
+      if (!result.error && result.data) {
+        const companies = Array.isArray(result.data) ? result.data : [result.data];
+        companyId = companies?.[0]?.id || 'default-company';
+        console.log('✅ Found company:', companyId);
+      } else {
+        console.warn('⚠️ Cannot access companies from API:', result.error?.message);
+        console.log('📦 Using default company ID for tax settings');
+      }
+    } catch (apiError) {
+      console.warn('⚠️ API error accessing companies:', apiError);
+      console.log('📦 Using default company ID for tax settings');
     }
 
-    const companies = Array.isArray(result.data) ? result.data : [result.data];
-    const companyId = companies?.[0]?.id;
-    if (!companyId) {
-      throw new Error('No company found');
-    }
-
-    console.log('✅ Found company:', companyId);
-    
     // Create default tax settings in memory
     const defaultTaxSettings: SimpleTaxSetting[] = [
       {
@@ -69,59 +70,103 @@ export async function forceCreateTaxSettings(): Promise<void> {
         updated_at: new Date().toISOString()
       }
     ];
-    
+
     // Store in memory
     memoryTaxSettings = defaultTaxSettings;
-    
+
     // Also store in localStorage for persistence
     localStorage.setItem('tax_settings', JSON.stringify(defaultTaxSettings));
-    
+
     console.log('✅ Tax settings created in memory storage');
-    
+
   } catch (error) {
     console.error('❌ Force tax setup failed:', error);
-    throw error;
+    // Don't rethrow - create minimal tax settings with default company ID
+    const defaultCompanyId = 'default-company';
+    const fallbackTaxSettings: SimpleTaxSetting[] = [
+      {
+        id: crypto.randomUUID(),
+        company_id: defaultCompanyId,
+        name: 'Zero Rate',
+        rate: 0.0,
+        is_active: true,
+        is_default: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: crypto.randomUUID(),
+        company_id: defaultCompanyId,
+        name: 'VAT',
+        rate: 16.0,
+        is_active: true,
+        is_default: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+    ];
+    memoryTaxSettings = fallbackTaxSettings;
+    localStorage.setItem('tax_settings', JSON.stringify(fallbackTaxSettings));
+    console.log('✅ Fallback tax settings created');
   }
 }
 
 export async function getTaxSettings(companyId?: string): Promise<SimpleTaxSetting[]> {
   try {
-    // First try to get from database via external API
-    const result = await apiClient.select('tax_settings', {});
-
-    if (!result.error && result.data && Array.isArray(result.data) && result.data.length > 0) {
-      console.log('📊 Using database tax settings');
-      const taxSettings = result.data as SimpleTaxSetting[];
-      return companyId
-        ? taxSettings.filter(tax => tax.company_id === companyId)
-        : taxSettings;
+    // First try to get from localStorage (fastest)
+    const storedSettings = localStorage.getItem('tax_settings');
+    if (storedSettings) {
+      try {
+        const parsed = JSON.parse(storedSettings) as SimpleTaxSetting[];
+        if (parsed.length > 0) {
+          console.log('💾 Using localStorage tax settings');
+          memoryTaxSettings = parsed;
+          return parsed.filter(tax => !companyId || tax.company_id === companyId);
+        }
+      } catch (parseError) {
+        console.warn('⚠️ Failed to parse localStorage tax settings:', parseError);
+      }
     }
-    
+
     // Fallback to memory
     if (memoryTaxSettings.length > 0) {
       console.log('📦 Using memory tax settings');
       return memoryTaxSettings.filter(tax => !companyId || tax.company_id === companyId);
     }
-    
-    // Fallback to localStorage
-    const storedSettings = localStorage.getItem('tax_settings');
-    if (storedSettings) {
-      const parsed = JSON.parse(storedSettings) as SimpleTaxSetting[];
-      console.log('💾 Using localStorage tax settings');
-      memoryTaxSettings = parsed;
-      return parsed.filter(tax => !companyId || tax.company_id === companyId);
+
+    // Try to get from database via external API (may fail if tables don't exist)
+    try {
+      const result = await apiClient.select('tax_settings', {});
+
+      if (!result.error && result.data && Array.isArray(result.data) && result.data.length > 0) {
+        console.log('📊 Using database tax settings');
+        const taxSettings = result.data as SimpleTaxSetting[];
+        memoryTaxSettings = taxSettings;
+        localStorage.setItem('tax_settings', JSON.stringify(taxSettings));
+        return companyId
+          ? taxSettings.filter(tax => tax.company_id === companyId)
+          : taxSettings;
+      }
+    } catch (apiError) {
+      console.warn('⚠️ Failed to get tax settings from API:', apiError);
     }
-    
-    // If nothing exists, force create
+
+    // If nothing exists, force create defaults
     console.log('🔧 No tax settings found, force creating...');
     await forceCreateTaxSettings();
     return memoryTaxSettings.filter(tax => !companyId || tax.company_id === companyId);
-    
+
   } catch (error) {
-    console.error('Error getting tax settings:', error);
-    
+    console.error('❌ Error getting tax settings:', error);
+
     // Return memory settings as absolute fallback
-    return memoryTaxSettings.filter(tax => !companyId || tax.company_id === companyId);
+    if (memoryTaxSettings.length > 0) {
+      return memoryTaxSettings.filter(tax => !companyId || tax.company_id === companyId);
+    }
+
+    // Last resort - return empty array instead of throwing
+    console.warn('⚠️ No tax settings available, returning empty array');
+    return [];
   }
 }
 
