@@ -29,24 +29,34 @@ const initApp = async () => {
   }
 };
 
-// Initialize before rendering
-initApp();
-
 // Removed auto-migration imports for production safety
 
 const queryClient = new QueryClient();
 
-createRoot(document.getElementById("root")!).render(
-  <QueryClientProvider client={queryClient}>
-    <AuthErrorBoundary>
-      <AuthProvider>
-        <AuthStatusIndicator />
-        <CompanyProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </CompanyProvider>
-      </AuthProvider>
-    </AuthErrorBoundary>
-  </QueryClientProvider>
-);
+// Initialize and render
+const renderApp = () => {
+  createRoot(document.getElementById("root")!).render(
+    <QueryClientProvider client={queryClient}>
+      <AuthErrorBoundary>
+        <AuthProvider>
+          <AuthStatusIndicator />
+          <CompanyProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </CompanyProvider>
+        </AuthProvider>
+      </AuthErrorBoundary>
+    </QueryClientProvider>
+  );
+};
+
+// Start app initialization and render
+initApp().then(() => {
+  console.log('App initialization complete, rendering...');
+  renderApp();
+}).catch((error) => {
+  console.error('Fatal error during app initialization:', error);
+  // Still try to render the app even if initialization fails
+  renderApp();
+});
