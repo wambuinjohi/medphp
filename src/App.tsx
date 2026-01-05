@@ -59,6 +59,7 @@ const App = () => {
 
         {/* Debug routes - Accessible without authentication */}
         <Route path="/debug/database" element={<DatabaseDebug />} />
+        <Route path="/debug/api" element={<APIDiagnosticsPage />} />
 
         {/* All other routes wrapped in Layout */}
         <Route
