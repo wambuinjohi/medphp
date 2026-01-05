@@ -140,6 +140,86 @@ export async function handleFixProfileRls() {
 }
 
 /**
+ * API Route Handler for checking database status
+ * Returns which tables exist and which are missing
+ *
+ * Usage:
+ * POST /api/admin/database/check-status
+ * Content-Type: application/json
+ */
+export async function handleCheckDatabaseStatus() {
+  try {
+    const result = await checkDatabaseStatus();
+    return {
+      status: result.connected ? 200 : 500,
+      body: result
+    };
+  } catch (error) {
+    console.error('Error checking database status:', error);
+    return {
+      status: 500,
+      body: {
+        error: error instanceof Error ? error.message : 'Error checking database status'
+      }
+    };
+  }
+}
+
+/**
+ * API Route Handler for initializing database
+ * Creates all missing tables
+ *
+ * Usage:
+ * POST /api/admin/database/initialize
+ * Content-Type: application/json
+ */
+export async function handleInitializeDatabase() {
+  try {
+    const result = await initializeDatabase();
+    return {
+      status: result.success ? 200 : 500,
+      body: result
+    };
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    return {
+      status: 500,
+      body: {
+        success: false,
+        message: 'Error initializing database',
+        errors: [error instanceof Error ? error.message : 'Unknown error']
+      }
+    };
+  }
+}
+
+/**
+ * API Route Handler for getting database statistics
+ *
+ * Usage:
+ * POST /api/admin/database/stats
+ * Content-Type: application/json
+ */
+export async function handleGetDatabaseStats() {
+  try {
+    const result = await getDatabaseStats();
+    return {
+      status: result.success ? 200 : 500,
+      body: result
+    };
+  } catch (error) {
+    console.error('Error getting database stats:', error);
+    return {
+      status: 500,
+      body: {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error getting database stats'
+      }
+    };
+  }
+}
+
+/**
  * Express-style route handler (if using Express/Node backend)
  * Import and use this if you have an Express server
  */
