@@ -5,6 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:local": "VITE_USE_LOCAL_AUTH=true vite",
+    "auth-server": "node scripts/local-auth-server.js",
+    "auth-server:dev": "VITE_USE_LOCAL_AUTH=true node scripts/local-auth-server.js",
+    "dev-full": "concurrently \"npm run auth-server\" \"npm run dev:local\"",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
