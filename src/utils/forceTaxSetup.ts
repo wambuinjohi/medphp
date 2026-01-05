@@ -223,13 +223,10 @@ export async function updateTaxSetting(id: string, updates: Partial<SimpleTaxSet
 
 export async function deleteTaxSetting(id: string): Promise<void> {
   try {
-    // Try database first
-    const { error } = await supabase
-      .from('tax_settings')
-      .delete()
-      .eq('id', id);
-    
-    if (!error) {
+    // Try database first via external API
+    const result = await apiClient.delete('tax_settings', id);
+
+    if (!result.error) {
       console.log('✅ Tax setting deleted from database');
       return;
     }
