@@ -222,22 +222,58 @@ export function EnhancedLogin() {
             </form>
 
             {/* Setup Instructions Section */}
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border-2 border-purple-200">
-              <p className="text-xs sm:text-sm font-bold text-purple-900 mb-3 flex items-center gap-2">
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border-2 border-purple-200 space-y-3">
+              <p className="text-xs sm:text-sm font-bold text-purple-900 flex items-center gap-2">
                 <span className="text-base">⚙️</span> First Time Setup
               </p>
-              <p className="text-xs sm:text-sm text-purple-800 mb-4">
-                If this is your first time, you need to initialize the system and create an admin account.
+              <p className="text-xs sm:text-sm text-purple-800">
+                Choose your authentication method:
               </p>
+
               <Button
                 onClick={() => {
                   navigate('/admin-init-external');
                 }}
                 className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-2 rounded-lg transition-all"
               >
-                <span className="text-base">🚀</span>
-                <span className="ml-2">Initialize System & Create Admin</span>
+                <span className="text-base">🌐</span>
+                <span className="ml-2">Use Remote API</span>
               </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-purple-300"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="px-2 bg-purple-50 text-purple-600">OR</span>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => {
+                  const authServerUrl = 'http://localhost:3001';
+                  // Check if auth server is running
+                  fetch(`${authServerUrl}/health`)
+                    .then(() => {
+                      navigate('/admin-init-external');
+                      setTimeout(() => {
+                        window.location.href = 'http://localhost:8080/admin-init-external?useLocal=true';
+                      }, 100);
+                    })
+                    .catch(() => {
+                      alert(`Local auth server not running at ${authServerUrl}\n\nTo use local auth:\n1. Open terminal\n2. Run: npm run auth-server\n3. Then try again`);
+                    });
+                }}
+                variant="outline"
+                className="w-full border-2 border-purple-300 text-purple-700 hover:bg-purple-100 font-semibold py-2 rounded-lg transition-all"
+              >
+                <span className="text-base">💻</span>
+                <span className="ml-2">Use Local Dev Server</span>
+              </Button>
+
+              <p className="text-xs text-purple-700 bg-white rounded p-2 border border-purple-200">
+                <span className="font-semibold">💡 Tip:</span> Local dev server works offline and doesn't require external API configuration. Perfect for testing!
+              </p>
             </div>
 
             {/* Footer Message */}
