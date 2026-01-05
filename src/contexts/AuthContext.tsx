@@ -93,7 +93,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Fetch user profile from database with error handling and retry logic
   const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
     try {
-      const { data: profileData, error } = await apiClient.query('profiles')
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, avatar_url, phone, company_id, department, position, role, status, last_login, created_at, updated_at')
         .eq('id', userId)
         .maybeSingle();
 
