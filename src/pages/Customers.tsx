@@ -88,7 +88,10 @@ export default function Customers() {
   const [creditLimitFilter, setCreditLimitFilter] = useState('all');
 
   const { currentCompany, isLoading: isCompanyLoading } = useCurrentCompany();
-  const { data: customers, isLoading: isCustomersLoading, error } = useCustomers(currentCompany?.id);
+  const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
+  const activeCompanyId = currentCompany?.id || DEFAULT_COMPANY_ID;
+
+  const { data: customers, isLoading: isCustomersLoading, error } = useCustomers(activeCompanyId);
   const deleteCustomer = useDeleteCustomer();
 
   const isLoading = isCompanyLoading || isCustomersLoading;
