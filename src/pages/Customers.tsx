@@ -40,7 +40,8 @@ import {
   MapPin,
   Trash2
 } from 'lucide-react';
-import { useCustomers, useCreateCustomer, useCompanies, useCustomerInvoices, useCustomerPayments, useDeleteCustomer } from '@/hooks/useDatabase';
+import { useCustomers, useCreateCustomer, useCustomerInvoices, useCustomerPayments, useDeleteCustomer } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { EditCustomerModal } from '@/components/customers/EditCustomerModal';
