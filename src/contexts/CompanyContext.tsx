@@ -1,6 +1,5 @@
 import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
 import { useCompanies } from '@/hooks/useDatabase';
-import { toast } from 'sonner';
 
 interface CompanyContextType {
   currentCompany: any | null;
@@ -14,6 +13,8 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const { data: companies, isLoading, error } = useCompanies();
   const [isReady, setIsReady] = useState(false);
+  const [loadTimeout, setLoadTimeout] = useState(false);
+
   const currentCompany = companies?.[0] || null;
 
   // Set isReady when loading is complete and we have company data or error
@@ -32,8 +33,20 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     }
   }, [isLoading, currentCompany, error]);
 
+  // After 5 seconds, assume loading has timed out and mark as ready
+  useEffect(() => {
+    if (isLoading) {
+      const timeout = setTimeout(() => {
+        setLoadTimeout(true);
+        setIsReady(true);
+      }, 5000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [isLoading]);
+
   return (
-    <CompanyContext.Provider value={{ currentCompany, isLoading, error, isReady }}>
+    <CompanyContext.Provider value={{ currentCompany, isLoading: isLoading && !loadTimeout, error, isReady }}>
       {children}
     </CompanyContext.Provider>
   );
