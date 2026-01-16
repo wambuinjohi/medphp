@@ -53,8 +53,7 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
   const { data: customers } = useCustomers(currentCompany?.id);
   const createCustomer = useCreateCustomer();
 
