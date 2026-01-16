@@ -396,9 +396,9 @@ export default function CompanySettings() {
 
     try {
       // Sanitize and prepare company data to match database schema
+      // Only include fields that exist in the database
       const sanitizedData: any = {
         name: companyData.name?.trim() || '',
-        tax_number: companyData.tax_number?.trim() || null,
         email: companyData.email?.trim() || null,
         phone: companyData.phone?.trim() || null,
         address: companyData.address?.trim() || null,
@@ -410,8 +410,8 @@ export default function CompanySettings() {
         primary_color: companyData.primary_color?.trim() || '#FF8C42'
       };
 
-      // Only include optional columns if they might exist in the database
-      // This prevents errors when the schema hasn't been fully migrated
+      // Only include optional columns if they exist in the database
+      // Skip tax_number as it doesn't exist in the schema
       if (companyData.registration_number?.trim()) {
         sanitizedData.registration_number = companyData.registration_number.trim();
       }
@@ -424,13 +424,12 @@ export default function CompanySettings() {
 
       // Remove empty strings and convert to null for optional fields
       Object.keys(sanitizedData).forEach(key => {
-        if (key !== 'name' && key !== 'country' && key !== 'currency' && key !== 'fiscal_year_start') {
+        if (key !== 'name' && key !== 'country') {
           if (sanitizedData[key] === '' || sanitizedData[key] === undefined) {
             sanitizedData[key] = null;
           }
         }
       });
-
 
       if (!currentCompany) {
         // Create a new company if none exists
