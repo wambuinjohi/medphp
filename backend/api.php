@@ -259,19 +259,8 @@ function ensureTables($conn) {
 ensureTables($conn);
 
 // Include comprehensive table definitions
-// First try the same directory, then fallback to parent directory for local dev
-$tableDefsPath = __DIR__ . '/tableDefinitions.php';
-if (!file_exists($tableDefsPath)) {
-    $tableDefsPath = dirname(__DIR__) . '/tableDefinitions.php';
-}
-if (file_exists($tableDefsPath)) {
-    require_once $tableDefsPath;
-} else {
-    // Provide minimal table definitions if file not found
-    function getTableDefinitions() { return []; }
-    function checkTableStatus($conn) { return []; }
-    function createMissingTables($conn) { return ['success' => false, 'message' => 'Table definitions not found']; }
-}
+// The file should be in the same directory as this API file
+require_once __DIR__ . '/tableDefinitions.php';
 
 // Handle check_tables action - check which tables exist
 if ($action === "check_tables") {
