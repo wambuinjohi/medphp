@@ -37,6 +37,7 @@ interface CreateCustomerModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  companyId?: string;
 }
 
 export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCustomerModalProps) {
