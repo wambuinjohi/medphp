@@ -56,8 +56,9 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess, companyId: 
 
   const { currentCompany, isLoading: isCompanyLoading, error: companyError } = useCurrentCompany();
 
-  // Use prop company ID as fallback if context company is not available
-  const activeCompanyId = currentCompany?.id || propCompanyId;
+  // Use prop company ID as fallback, then default company UUID if nothing else available
+  const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
+  const activeCompanyId = currentCompany?.id || propCompanyId || DEFAULT_COMPANY_ID;
 
   const { data: customers } = useCustomers(activeCompanyId);
   const createCustomer = useCreateCustomer();
