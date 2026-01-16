@@ -40,7 +40,7 @@ interface CreateCustomerModalProps {
   companyId?: string;
 }
 
-export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCustomerModalProps) {
+export function CreateCustomerModal({ open, onOpenChange, onSuccess, companyId: propCompanyId }: CreateCustomerModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -55,7 +55,11 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { currentCompany, isLoading: isCompanyLoading, error: companyError } = useCurrentCompany();
-  const { data: customers } = useCustomers(currentCompany?.id);
+
+  // Use prop company ID as fallback if context company is not available
+  const activeCompanyId = currentCompany?.id || propCompanyId;
+
+  const { data: customers } = useCustomers(activeCompanyId);
   const createCustomer = useCreateCustomer();
 
   const generateCustomerCode = () => {
