@@ -327,14 +327,9 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess, companyId: 
         </div>
 
         <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:gap-3">
-          {companyError && !propCompanyId && (
-            <div className="w-full sm:col-span-2 p-3 bg-destructive/10 border border-destructive/30 rounded-md text-sm text-destructive">
-              ⚠️ Failed to load company information. Please refresh the page and try again.
-            </div>
-          )}
-          {isCompanyLoading && !activeCompanyId && (
-            <div className="w-full sm:col-span-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
-              ⏳ Loading company information...
+          {companyError && (
+            <div className="w-full sm:col-span-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+              ℹ️ Using default company. Ensure your account is properly configured.
             </div>
           )}
           <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
@@ -342,7 +337,7 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess, companyId: 
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !formData.name.trim() || (isCompanyLoading && !activeCompanyId)}
+            disabled={isSubmitting || !formData.name.trim()}
           >
             <Plus className="h-4 w-4 mr-2" />
             {isSubmitting ? 'Creating...' : 'Create Customer'}
