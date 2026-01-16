@@ -241,7 +241,7 @@ export default function Inventory() {
     );
   }
 
-  if (!canViewInventory('view_inventory')) {
+  if (!canView('inventory')) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
