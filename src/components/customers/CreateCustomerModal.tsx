@@ -69,7 +69,8 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
     }
 
     if (!currentCompany?.id) {
-      toast.error('Company not found. Please refresh and try again.');
+      console.error('Company context:', { currentCompany });
+      toast.error('Company information is still loading or not available. Please wait a moment and try again.');
       return;
     }
 
