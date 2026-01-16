@@ -92,13 +92,21 @@ export default function Inventory() {
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
   const { data: products, isLoading: loadingProducts, error: productsError } = useProducts(currentCompany?.id);
-  const { canView, canCreate, canEdit, loading: permissionsLoading } = usePermissions();
+  const { canView, canCreate, canEdit, loading: permissionsLoading, role } = usePermissions();
 
   useEffect(() => {
-    if (!permissionsLoading && !canView('inventory')) {
-      toast.error('You do not have permission to view inventory');
+    if (!permissionsLoading) {
+      const hasAccess = canView('inventory');
+      console.log('🔐 Inventory access check:', {
+        hasAccess,
+        userRole: role?.name,
+        permissions: role?.permissions,
+      });
+      if (!hasAccess) {
+        toast.error('You do not have permission to view inventory');
+      }
     }
-  }, [permissionsLoading, canView]);
+  }, [permissionsLoading, canView, role]);
 
   const handleAddItem = () => {
     if (!canCreate('inventory')) {
