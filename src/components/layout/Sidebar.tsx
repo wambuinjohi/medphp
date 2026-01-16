@@ -85,20 +85,18 @@ const sidebarItems: SidebarItem[] = [
     icon: BarChart3,
     children: [
       { title: 'Sales Reports', icon: BarChart3, href: '/app/reports/sales' },
-      { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory', allowedRoles: ['admin', 'stock_manager'] },
+      { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory' },
       { title: 'Customer Statements', icon: FileSpreadsheet, href: '/app/reports/statements' }
     ]
   },
   {
     title: 'Web Manager',
     icon: Globe,
-    allowedRoles: ['admin'],
     href: '/app/web-manager'
   },
   {
     title: 'Settings',
     icon: Settings,
-    allowedRoles: ['admin'],
     children: [
       { title: 'Company Settings', icon: Building2, href: '/app/settings/company' },
       { title: 'User Management', icon: Users, href: '/app/settings/users' },
