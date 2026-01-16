@@ -92,16 +92,24 @@ export default function Inventory() {
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
   const { data: products, isLoading: loadingProducts, error: productsError } = useProducts(currentCompany?.id);
-  const { can: canCreateInventory, can: canEditInventory, can: canViewInventory, can: canManageInventory, loading: permissionsLoading } = usePermissions();
+  const { canView, canCreate, canEdit, loading: permissionsLoading, role } = usePermissions();
 
   useEffect(() => {
-    if (!permissionsLoading && !canViewInventory('view_inventory')) {
-      toast.error('You do not have permission to view inventory');
+    if (!permissionsLoading) {
+      const hasAccess = canView('inventory');
+      console.log('🔐 Inventory access check:', {
+        hasAccess,
+        userRole: role?.name,
+        permissions: role?.permissions,
+      });
+      if (!hasAccess) {
+        toast.error('You do not have permission to view inventory');
+      }
     }
-  }, [permissionsLoading, canViewInventory]);
+  }, [permissionsLoading, canView, role]);
 
   const handleAddItem = () => {
-    if (!canCreateInventory('create_inventory')) {
+    if (!canCreate('inventory')) {
       toast.error('You do not have permission to create inventory items');
       return;
     }
@@ -109,7 +117,7 @@ export default function Inventory() {
   };
 
   const handleStockAdjustment = (item?: InventoryItem) => {
-    if (!canManageInventory('manage_inventory')) {
+    if (!canEdit('inventory')) {
       toast.error('You do not have permission to adjust inventory');
       return;
     }
@@ -127,7 +135,7 @@ export default function Inventory() {
   };
 
   const handleEditItem = (item: InventoryItem) => {
-    if (!canEditInventory('edit_inventory')) {
+    if (!canEdit('inventory')) {
       toast.error('You do not have permission to edit inventory items');
       return;
     }
@@ -136,7 +144,7 @@ export default function Inventory() {
   };
 
   const handleRestockItem = (item: InventoryItem) => {
-    if (!canManageInventory('manage_inventory')) {
+    if (!canEdit('inventory')) {
       toast.error('You do not have permission to restock items');
       return;
     }
@@ -241,7 +249,7 @@ export default function Inventory() {
     );
   }
 
-  if (!canViewInventory('view_inventory')) {
+  if (!canView('inventory')) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -277,11 +285,11 @@ export default function Inventory() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="outline" onClick={handleStockAdjustment} disabled={!canManageInventory('manage_inventory')}>
+          <Button variant="outline" onClick={handleStockAdjustment} disabled={!canEdit('inventory')}>
             <Package className="h-4 w-4 mr-2" />
             Stock Adjustment
           </Button>
-          <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleAddItem} disabled={!canCreateInventory('create_inventory')}>
+          <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleAddItem} disabled={!canCreate('inventory')}>
             <Plus className="h-4 w-4 mr-2" />
             Add Item
           </Button>
@@ -430,7 +438,7 @@ export default function Inventory() {
                           size="icon"
                           onClick={() => handleEditItem(item)}
                           title="Edit item"
-                          disabled={!canEditInventory('edit_inventory')}
+                          disabled={!canEdit('inventory')}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -439,7 +447,7 @@ export default function Inventory() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleRestockItem(item)}
-                            disabled={!canManageInventory('manage_inventory')}
+                            disabled={!canEdit('inventory')}
                             className="bg-warning-light text-warning border-warning/20 hover:bg-warning hover:text-warning-foreground ml-2"
                           >
                             <Package className="h-4 w-4 mr-1" />
