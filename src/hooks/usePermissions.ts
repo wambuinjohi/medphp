@@ -54,18 +54,72 @@ export const usePermissions = () => {
         const errorMessage = fetchError instanceof Error ? fetchError.message : JSON.stringify(fetchError);
         console.error('Error fetching user role:', errorMessage);
         setError(errorMessage);
-        setRole(null);
+
+        // Fallback: Use default permissions based on role type if available
+        if (userRole in DEFAULT_ROLE_PERMISSIONS) {
+          const roleType = userRole as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+          const fallbackRole: RoleDefinition = {
+            id: `fallback-${userRole}`,
+            name: userRole,
+            role_type: roleType,
+            description: `Fallback ${userRole} role`,
+            permissions: DEFAULT_ROLE_PERMISSIONS[roleType],
+            company_id: currentUser.company_id || '',
+            is_default: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          setRole(fallbackRole);
+        } else {
+          setRole(null);
+        }
       } else if (data) {
         setRole(data);
       } else {
-        // Role not found in roles table, might be a legacy role
-        console.warn(`Role ${userRole} not found in roles table`);
-        setRole(null);
+        // Role not found in roles table, use default permissions as fallback
+        console.warn(`Role ${userRole} not found in roles table, using default fallback`);
+
+        if (userRole in DEFAULT_ROLE_PERMISSIONS) {
+          const roleType = userRole as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+          const fallbackRole: RoleDefinition = {
+            id: `fallback-${userRole}`,
+            name: userRole,
+            role_type: roleType,
+            description: `Fallback ${userRole} role`,
+            permissions: DEFAULT_ROLE_PERMISSIONS[roleType],
+            company_id: currentUser.company_id || '',
+            is_default: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          setRole(fallbackRole);
+        } else {
+          setRole(null);
+        }
       }
     } catch (err) {
       console.error('Error fetching user role:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
-      setRole(null);
+
+      // Fallback: Use default permissions if user role type is recognized
+      const userRole = currentUser?.role;
+      if (userRole && userRole in DEFAULT_ROLE_PERMISSIONS) {
+        const roleType = userRole as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+        const fallbackRole: RoleDefinition = {
+          id: `fallback-${userRole}`,
+          name: userRole,
+          role_type: roleType,
+          description: `Fallback ${userRole} role`,
+          permissions: DEFAULT_ROLE_PERMISSIONS[roleType],
+          company_id: currentUser?.company_id || '',
+          is_default: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        setRole(fallbackRole);
+      } else {
+        setRole(null);
+      }
     } finally {
       setLoading(false);
     }
