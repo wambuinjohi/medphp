@@ -40,7 +40,8 @@ import {
   MapPin,
   Trash2
 } from 'lucide-react';
-import { useCustomers, useCreateCustomer, useCompanies, useCustomerInvoices, useCustomerPayments, useDeleteCustomer } from '@/hooks/useDatabase';
+import { useCustomers, useCreateCustomer, useCustomerInvoices, useCustomerPayments, useDeleteCustomer } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { EditCustomerModal } from '@/components/customers/EditCustomerModal';
@@ -85,11 +86,15 @@ export default function Customers() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [cityFilter, setCityFilter] = useState('all');
   const [creditLimitFilter, setCreditLimitFilter] = useState('all');
-  
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
-  const { data: customers, isLoading, error } = useCustomers(currentCompany?.id);
+
+  const { currentCompany, isLoading: isCompanyLoading } = useCurrentCompany();
+  const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
+  const activeCompanyId = currentCompany?.id || DEFAULT_COMPANY_ID;
+
+  const { data: customers, isLoading: isCustomersLoading, error } = useCustomers(activeCompanyId);
   const deleteCustomer = useDeleteCustomer();
+
+  const isLoading = isCompanyLoading || isCustomersLoading;
 
   // Filter and search logic
   const filteredCustomers = customers?.filter(customer => {
@@ -153,13 +158,13 @@ export default function Customers() {
           .from('invoices')
           .select('invoice_date, invoice_number, total_amount, due_date, status')
           .eq('customer_id', customer.id)
-          .eq('company_id', currentCompany?.id || '550e8400-e29b-41d4-a716-446655440000')
+          .eq('company_id', activeCompanyId)
           .order('invoice_date', { ascending: true }),
         supabase
           .from('payments')
           .select('payment_date, payment_number, amount, payment_method')
           .eq('customer_id', customer.id)
-          .eq('company_id', currentCompany?.id || '550e8400-e29b-41d4-a716-446655440000')
+          .eq('company_id', activeCompanyId)
           .order('payment_date', { ascending: true })
       ]);
 
@@ -559,6 +564,7 @@ export default function Customers() {
         open={showCreateModal}
         onOpenChange={setShowCreateModal}
         onSuccess={handleCreateSuccess}
+        companyId={activeCompanyId}
       />
 
       <ViewCustomerModal

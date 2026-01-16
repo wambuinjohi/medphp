@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { 
+import {
   User,
   Mail,
   Phone,
@@ -30,15 +30,17 @@ import {
   Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCreateCustomer, useCustomers, useCompanies } from '@/hooks/useDatabase';
+import { useCreateCustomer, useCustomers } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 
 interface CreateCustomerModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  companyId?: string;
 }
 
-export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCustomerModalProps) {
+export function CreateCustomerModal({ open, onOpenChange, onSuccess, companyId: propCompanyId }: CreateCustomerModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -52,9 +54,13 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
-  const { data: customers } = useCustomers(currentCompany?.id);
+  const { currentCompany, isLoading: isCompanyLoading, error: companyError } = useCurrentCompany();
+
+  // Use prop company ID as fallback, then default company UUID if nothing else available
+  const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
+  const activeCompanyId = currentCompany?.id || propCompanyId || DEFAULT_COMPANY_ID;
+
+  const { data: customers } = useCustomers(activeCompanyId);
   const createCustomer = useCreateCustomer();
 
   const generateCustomerCode = () => {
@@ -68,8 +74,10 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
       return;
     }
 
-    if (!currentCompany?.id) {
-      toast.error('Company not found. Please refresh and try again.');
+    // activeCompanyId should always have a value (fallback to DEFAULT_COMPANY_ID)
+    if (!activeCompanyId) {
+      console.error('Critical: No company ID available', { currentCompany, propCompanyId, activeCompanyId });
+      toast.error('System error: Unable to determine company. Please refresh and try again.');
       return;
     }
 
@@ -77,7 +85,7 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
     try {
       // Send only the form data; customer_code and customer_number will be generated server-side by DB triggers/sequences.
       const payload = {
-        company_id: currentCompany.id,
+        company_id: activeCompanyId,
         ...formData,
       };
 
@@ -318,11 +326,19 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
           </Card>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+          {companyError && (
+            <div className="w-full sm:col-span-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+              ℹ️ Using default company. Ensure your account is properly configured.
+            </div>
+          )}
           <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || !formData.name.trim()}>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting || !formData.name.trim()}
+          >
             <Plus className="h-4 w-4 mr-2" />
             {isSubmitting ? 'Creating...' : 'Create Customer'}
           </Button>

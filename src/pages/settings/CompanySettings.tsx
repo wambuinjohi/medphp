@@ -9,7 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Building2, Save, Upload, Plus, Trash2, Edit, Check, X, Image, AlertTriangle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { useCompanies, useUpdateCompany, useCreateCompany, useTaxSettings, useCreateTaxSetting, useUpdateTaxSetting, useDeleteTaxSetting } from '@/hooks/useDatabase';
+import { useUpdateCompany, useCreateCompany, useTaxSettings, useCreateTaxSetting, useUpdateTaxSetting, useDeleteTaxSetting } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 import { ForceTaxSettings } from '@/components/ForceTaxSettings';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,8 +46,7 @@ export default function CompanySettings() {
     primary_color: '#FF8C42'
   });
 
-  const { data: companies, isLoading: companiesLoading, error: companiesError } = useCompanies();
-  const currentCompany = companies?.[0]; // Assuming single company for now
+  const { currentCompany, isLoading: companiesLoading, error: companiesError } = useCurrentCompany();
   const { data: taxSettings, isLoading: taxSettingsLoading, error: taxSettingsError } = useTaxSettings(currentCompany?.id);
   const updateCompany = useUpdateCompany();
   const createCompany = useCreateCompany();
@@ -56,10 +56,9 @@ export default function CompanySettings() {
 
   // Debug logging and schema check
   useEffect(() => {
-    console.log('Companies data:', companies);
+    console.log('Current company:', currentCompany);
     console.log('Companies loading:', companiesLoading);
     console.log('Companies error:', companiesError);
-    console.log('Current company:', currentCompany);
     console.log('Tax settings:', taxSettings);
     console.log('Tax settings loading:', taxSettingsLoading);
     console.log('Tax settings error:', taxSettingsError);
@@ -75,7 +74,7 @@ export default function CompanySettings() {
         setSchemaError('registration_number column missing');
       }
     }
-  }, [companies, companiesLoading, companiesError, currentCompany, taxSettings, taxSettingsLoading, taxSettingsError]);
+  }, [companiesLoading, companiesError, currentCompany, taxSettings, taxSettingsLoading, taxSettingsError]);
 
   useEffect(() => {
     if (currentCompany) {
@@ -396,9 +395,9 @@ export default function CompanySettings() {
 
     try {
       // Sanitize and prepare company data to match database schema
+      // Only include fields that exist in the database
       const sanitizedData: any = {
         name: companyData.name?.trim() || '',
-        tax_number: companyData.tax_number?.trim() || null,
         email: companyData.email?.trim() || null,
         phone: companyData.phone?.trim() || null,
         address: companyData.address?.trim() || null,
@@ -410,8 +409,8 @@ export default function CompanySettings() {
         primary_color: companyData.primary_color?.trim() || '#FF8C42'
       };
 
-      // Only include optional columns if they might exist in the database
-      // This prevents errors when the schema hasn't been fully migrated
+      // Only include optional columns if they exist in the database
+      // Skip tax_number as it doesn't exist in the schema
       if (companyData.registration_number?.trim()) {
         sanitizedData.registration_number = companyData.registration_number.trim();
       }
@@ -424,13 +423,12 @@ export default function CompanySettings() {
 
       // Remove empty strings and convert to null for optional fields
       Object.keys(sanitizedData).forEach(key => {
-        if (key !== 'name' && key !== 'country' && key !== 'currency' && key !== 'fiscal_year_start') {
+        if (key !== 'name' && key !== 'country') {
           if (sanitizedData[key] === '' || sanitizedData[key] === undefined) {
             sanitizedData[key] = null;
           }
         }
       });
-
 
       if (!currentCompany) {
         // Create a new company if none exists
@@ -587,7 +585,7 @@ export default function CompanySettings() {
   };
 
   // Show loading state while companies are loading
-  if (companiesLoading) {
+  if (companiesLoading && !currentCompany) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -596,6 +594,45 @@ export default function CompanySettings() {
             <p className="text-muted-foreground">Loading company information...</p>
           </div>
         </div>
+        <Card className="shadow-card">
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="h-6 bg-muted rounded animate-pulse"></div>
+              <div className="h-6 bg-muted rounded animate-pulse"></div>
+              <div className="h-6 bg-muted rounded animate-pulse"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error if company loading failed
+  if (companiesError && !currentCompany) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Company Settings</h1>
+            <p className="text-muted-foreground">Unable to load company information</p>
+          </div>
+        </div>
+        <Card className="shadow-card">
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
+                <p className="text-destructive font-medium">Failed to load company information:</p>
+                <p className="text-destructive/80 text-sm mt-2">{companiesError?.message || 'Unknown error'}</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -700,12 +737,16 @@ export default function CompanySettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tax-number">PIN/Tax Number</Label>
+                <Label htmlFor="tax-number">PIN/Tax Number (Reference Only)</Label>
                 <Input
                   id="tax-number"
                   value={companyData.tax_number || ''}
                   onChange={(e) => setCompanyData(prev => ({ ...prev, tax_number: e.target.value }))}
+                  placeholder="For reference - not saved to database"
                 />
+                <p className="text-xs text-muted-foreground">
+                  This field is for display purposes only and is not saved to the database. Tax numbers are managed through Tax Settings below.
+                </p>
               </div>
             </div>
           </CardContent>
