@@ -23,35 +23,35 @@ const quickActions: QuickAction[] = [
     description: 'Create a new quotation for a customer',
     icon: FileText,
     variant: 'primary-gradient',
-    href: '/quotations/new'
+    href: '/quotations'
   },
   {
     title: 'New Invoice',
     description: 'Generate an invoice from quotation',
     icon: Receipt,
     variant: 'success',
-    href: '/invoices/new'
+    href: '/invoices'
   },
   {
     title: 'Add Customer',
     description: 'Register a new customer',
     icon: Users,
     variant: 'default',
-    href: '/customers/new'
+    href: '/customers'
   },
   {
     title: 'Stock Entry',
     description: 'Add new inventory items',
     icon: Package,
     variant: 'warning',
-    href: '/inventory/new'
+    href: '/inventory'
   },
   {
     title: 'Record Payment',
     description: 'Log customer payment',
     icon: DollarSign,
     variant: 'success',
-    href: '/payments/new'
+    href: '/payments'
   }
 ];
 
