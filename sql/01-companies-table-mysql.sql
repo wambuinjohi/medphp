@@ -43,10 +43,14 @@ CREATE TABLE IF NOT EXISTS companies (
 );
 
 -- Create indexes for common queries
-CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);
-CREATE INDEX IF NOT EXISTS idx_companies_is_active ON companies(is_active);
-CREATE INDEX IF NOT EXISTS idx_companies_created_at ON companies(created_at);
-CREATE INDEX IF NOT EXISTS idx_companies_country ON companies(country);
+DROP INDEX IF EXISTS idx_companies_name ON companies;
+CREATE INDEX idx_companies_name ON companies(name);
+DROP INDEX IF EXISTS idx_companies_is_active ON companies;
+CREATE INDEX idx_companies_is_active ON companies(is_active);
+DROP INDEX IF EXISTS idx_companies_created_at ON companies;
+CREATE INDEX idx_companies_created_at ON companies(created_at);
+DROP INDEX IF EXISTS idx_companies_country ON companies;
+CREATE INDEX idx_companies_country ON companies(country);
 
 -- Create trigger to automatically update updated_at timestamp
 DELIMITER $$
@@ -88,9 +92,12 @@ CREATE TABLE IF NOT EXISTS tax_settings (
 );
 
 -- Create indexes for tax_settings
-CREATE INDEX IF NOT EXISTS idx_tax_settings_company_id ON tax_settings(company_id);
-CREATE INDEX IF NOT EXISTS idx_tax_settings_is_active ON tax_settings(is_active);
-CREATE INDEX IF NOT EXISTS idx_tax_settings_is_default ON tax_settings(is_default);
+DROP INDEX IF EXISTS idx_tax_settings_company_id ON tax_settings;
+CREATE INDEX idx_tax_settings_company_id ON tax_settings(company_id);
+DROP INDEX IF EXISTS idx_tax_settings_is_active ON tax_settings;
+CREATE INDEX idx_tax_settings_is_active ON tax_settings(is_active);
+DROP INDEX IF EXISTS idx_tax_settings_is_default ON tax_settings;
+CREATE INDEX idx_tax_settings_is_default ON tax_settings(is_default);
 
 -- Create trigger for tax_settings updated_at
 DELIMITER $$
