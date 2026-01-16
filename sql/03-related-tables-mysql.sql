@@ -160,9 +160,12 @@ CREATE TABLE IF NOT EXISTS products (
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_products_company_id ON products(company_id);
-CREATE INDEX IF NOT EXISTS idx_products_product_code ON products(product_code);
-CREATE INDEX IF NOT EXISTS idx_products_is_active ON products(is_active);
+DROP INDEX IF EXISTS idx_products_company_id ON products;
+CREATE INDEX idx_products_company_id ON products(company_id);
+DROP INDEX IF EXISTS idx_products_product_code ON products;
+CREATE INDEX idx_products_product_code ON products(product_code);
+DROP INDEX IF EXISTS idx_products_is_active ON products;
+CREATE INDEX idx_products_is_active ON products(is_active);
 
 -- =====================================================
 -- QUOTATIONS TABLE
@@ -195,9 +198,12 @@ CREATE TABLE IF NOT EXISTS quotations (
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_quotations_company_id ON quotations(company_id);
-CREATE INDEX IF NOT EXISTS idx_quotations_customer_id ON quotations(customer_id);
-CREATE INDEX IF NOT EXISTS idx_quotations_status ON quotations(status);
+DROP INDEX IF EXISTS idx_quotations_company_id ON quotations;
+CREATE INDEX idx_quotations_company_id ON quotations(company_id);
+DROP INDEX IF EXISTS idx_quotations_customer_id ON quotations;
+CREATE INDEX idx_quotations_customer_id ON quotations(customer_id);
+DROP INDEX IF EXISTS idx_quotations_status ON quotations;
+CREATE INDEX idx_quotations_status ON quotations(status);
 
 -- =====================================================
 -- PAYMENT METHODS TABLE
@@ -220,8 +226,10 @@ CREATE TABLE IF NOT EXISTS payment_methods (
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_payment_methods_company_id ON payment_methods(company_id);
-CREATE INDEX IF NOT EXISTS idx_payment_methods_is_active ON payment_methods(is_active);
+DROP INDEX IF EXISTS idx_payment_methods_company_id ON payment_methods;
+CREATE INDEX idx_payment_methods_company_id ON payment_methods(company_id);
+DROP INDEX IF EXISTS idx_payment_methods_is_active ON payment_methods;
+CREATE INDEX idx_payment_methods_is_active ON payment_methods(is_active);
 
 -- =====================================================
 -- UNITS OF MEASURE TABLE
@@ -229,21 +237,22 @@ CREATE INDEX IF NOT EXISTS idx_payment_methods_is_active ON payment_methods(is_a
 CREATE TABLE IF NOT EXISTS units_of_measure (
   id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
   company_id CHAR(36) NOT NULL,
-  
+
   code VARCHAR(50) NOT NULL,
   name VARCHAR(100) NOT NULL,
   description LONGTEXT,
-  
+
   is_active BOOLEAN DEFAULT true,
-  
+
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  
+
   UNIQUE(company_id, code),
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_units_of_measure_company_id ON units_of_measure(company_id);
+DROP INDEX IF EXISTS idx_units_of_measure_company_id ON units_of_measure;
+CREATE INDEX idx_units_of_measure_company_id ON units_of_measure(company_id);
 
 -- =====================================================
 -- INSERT DEFAULT PAYMENT METHODS
