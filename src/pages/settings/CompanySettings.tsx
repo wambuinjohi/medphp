@@ -585,7 +585,7 @@ export default function CompanySettings() {
   };
 
   // Show loading state while companies are loading
-  if (companiesLoading) {
+  if (companiesLoading && !currentCompany) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -594,6 +594,45 @@ export default function CompanySettings() {
             <p className="text-muted-foreground">Loading company information...</p>
           </div>
         </div>
+        <Card className="shadow-card">
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="h-6 bg-muted rounded animate-pulse"></div>
+              <div className="h-6 bg-muted rounded animate-pulse"></div>
+              <div className="h-6 bg-muted rounded animate-pulse"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error if company loading failed
+  if (companiesError && !currentCompany) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Company Settings</h1>
+            <p className="text-muted-foreground">Unable to load company information</p>
+          </div>
+        </div>
+        <Card className="shadow-card">
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
+                <p className="text-destructive font-medium">Failed to load company information:</p>
+                <p className="text-destructive/80 text-sm mt-2">{companiesError?.message || 'Unknown error'}</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
