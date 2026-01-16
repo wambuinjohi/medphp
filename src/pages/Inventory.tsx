@@ -101,7 +101,7 @@ export default function Inventory() {
   }, [permissionsLoading, canView]);
 
   const handleAddItem = () => {
-    if (!canCreateInventory('create_inventory')) {
+    if (!canCreate('inventory')) {
       toast.error('You do not have permission to create inventory items');
       return;
     }
@@ -109,7 +109,7 @@ export default function Inventory() {
   };
 
   const handleStockAdjustment = (item?: InventoryItem) => {
-    if (!canManageInventory('manage_inventory')) {
+    if (!canEdit('inventory')) {
       toast.error('You do not have permission to adjust inventory');
       return;
     }
@@ -127,7 +127,7 @@ export default function Inventory() {
   };
 
   const handleEditItem = (item: InventoryItem) => {
-    if (!canEditInventory('edit_inventory')) {
+    if (!canEdit('inventory')) {
       toast.error('You do not have permission to edit inventory items');
       return;
     }
@@ -136,7 +136,7 @@ export default function Inventory() {
   };
 
   const handleRestockItem = (item: InventoryItem) => {
-    if (!canManageInventory('manage_inventory')) {
+    if (!canEdit('inventory')) {
       toast.error('You do not have permission to restock items');
       return;
     }
