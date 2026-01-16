@@ -73,9 +73,9 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess, companyId: 
       return;
     }
 
-    if (!currentCompany?.id) {
-      console.error('Company context:', { currentCompany });
-      toast.error('Company information is still loading or not available. Please wait a moment and try again.');
+    if (!activeCompanyId) {
+      console.error('Company not available:', { currentCompany, propCompanyId, activeCompanyId });
+      toast.error('Company information is not available. Please refresh the page and try again.');
       return;
     }
 
@@ -83,7 +83,7 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess, companyId: 
     try {
       // Send only the form data; customer_code and customer_number will be generated server-side by DB triggers/sequences.
       const payload = {
-        company_id: currentCompany.id,
+        company_id: activeCompanyId,
         ...formData,
       };
 
