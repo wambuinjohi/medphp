@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { useAuth } from '@/contexts/AuthContext';
-import { CompanyProvider } from '@/contexts/CompanyContext';
 import { EnhancedLogin } from '@/components/auth/EnhancedLogin';
 import { ensureAuditLogSchema } from '@/utils/auditLogger';
 import { useCompanyBranding } from '@/hooks/useCompanyBranding';
