@@ -158,13 +158,13 @@ export default function Customers() {
           .from('invoices')
           .select('invoice_date, invoice_number, total_amount, due_date, status')
           .eq('customer_id', customer.id)
-          .eq('company_id', currentCompany?.id || '550e8400-e29b-41d4-a716-446655440000')
+          .eq('company_id', activeCompanyId)
           .order('invoice_date', { ascending: true }),
         supabase
           .from('payments')
           .select('payment_date, payment_number, amount, payment_method')
           .eq('customer_id', customer.id)
-          .eq('company_id', currentCompany?.id || '550e8400-e29b-41d4-a716-446655440000')
+          .eq('company_id', activeCompanyId)
           .order('payment_date', { ascending: true })
       ]);
 
