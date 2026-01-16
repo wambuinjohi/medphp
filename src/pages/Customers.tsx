@@ -561,6 +561,7 @@ export default function Customers() {
         open={showCreateModal}
         onOpenChange={setShowCreateModal}
         onSuccess={handleCreateSuccess}
+        companyId={currentCompany?.id}
       />
 
       <ViewCustomerModal
