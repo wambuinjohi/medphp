@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { 
+import {
   User,
   Mail,
   Phone,
@@ -30,7 +30,8 @@ import {
   Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCreateCustomer, useCustomers, useCompanies } from '@/hooks/useDatabase';
+import { useCreateCustomer, useCustomers } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 
 interface CreateCustomerModalProps {
   open: boolean;
