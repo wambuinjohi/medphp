@@ -86,11 +86,12 @@ export default function Customers() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [cityFilter, setCityFilter] = useState('all');
   const [creditLimitFilter, setCreditLimitFilter] = useState('all');
-  
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
-  const { data: customers, isLoading, error } = useCustomers(currentCompany?.id);
+
+  const { currentCompany, isLoading: isCompanyLoading } = useCurrentCompany();
+  const { data: customers, isLoading: isCustomersLoading, error } = useCustomers(currentCompany?.id);
   const deleteCustomer = useDeleteCustomer();
+
+  const isLoading = isCompanyLoading || isCustomersLoading;
 
   // Filter and search logic
   const filteredCustomers = customers?.filter(customer => {
