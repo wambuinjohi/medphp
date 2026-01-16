@@ -46,8 +46,7 @@ export default function CompanySettings() {
     primary_color: '#FF8C42'
   });
 
-  const { data: companies, isLoading: companiesLoading, error: companiesError } = useCompanies();
-  const currentCompany = companies?.[0]; // Assuming single company for now
+  const { currentCompany, isLoading: companiesLoading, error: companiesError } = useCurrentCompany();
   const { data: taxSettings, isLoading: taxSettingsLoading, error: taxSettingsError } = useTaxSettings(currentCompany?.id);
   const updateCompany = useUpdateCompany();
   const createCompany = useCreateCompany();
