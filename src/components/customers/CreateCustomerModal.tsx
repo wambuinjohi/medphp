@@ -74,9 +74,10 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess, companyId: 
       return;
     }
 
+    // activeCompanyId should always have a value (fallback to DEFAULT_COMPANY_ID)
     if (!activeCompanyId) {
-      console.error('Company not available:', { currentCompany, propCompanyId, activeCompanyId });
-      toast.error('Company information is not available. Please refresh the page and try again.');
+      console.error('Critical: No company ID available', { currentCompany, propCompanyId, activeCompanyId });
+      toast.error('System error: Unable to determine company. Please refresh and try again.');
       return;
     }
 
