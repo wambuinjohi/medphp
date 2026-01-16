@@ -56,10 +56,9 @@ export default function CompanySettings() {
 
   // Debug logging and schema check
   useEffect(() => {
-    console.log('Companies data:', companies);
+    console.log('Current company:', currentCompany);
     console.log('Companies loading:', companiesLoading);
     console.log('Companies error:', companiesError);
-    console.log('Current company:', currentCompany);
     console.log('Tax settings:', taxSettings);
     console.log('Tax settings loading:', taxSettingsLoading);
     console.log('Tax settings error:', taxSettingsError);
@@ -75,7 +74,7 @@ export default function CompanySettings() {
         setSchemaError('registration_number column missing');
       }
     }
-  }, [companies, companiesLoading, companiesError, currentCompany, taxSettings, taxSettingsLoading, taxSettingsError]);
+  }, [companiesLoading, companiesError, currentCompany, taxSettings, taxSettingsLoading, taxSettingsError]);
 
   useEffect(() => {
     if (currentCompany) {
