@@ -319,13 +319,26 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess }: CreateCus
           </Card>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:gap-3">
+          {companyError && (
+            <div className="w-full sm:col-span-2 p-3 bg-destructive/10 border border-destructive/30 rounded-md text-sm text-destructive">
+              ⚠️ Failed to load company information. Please refresh the page and try again.
+            </div>
+          )}
+          {isCompanyLoading && (
+            <div className="w-full sm:col-span-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
+              ⏳ Loading company information...
+            </div>
+          )}
+          <Button variant="outline" onClick={handleCancel} disabled={isSubmitting || isCompanyLoading}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || !formData.name.trim()}>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting || !formData.name.trim() || isCompanyLoading || !currentCompany}
+          >
             <Plus className="h-4 w-4 mr-2" />
-            {isSubmitting ? 'Creating...' : 'Create Customer'}
+            {isSubmitting ? 'Creating...' : isCompanyLoading ? 'Loading...' : 'Create Customer'}
           </Button>
         </DialogFooter>
       </DialogContent>
