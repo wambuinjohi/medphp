@@ -76,11 +76,16 @@ CREATE TABLE IF NOT EXISTS invoices (
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_invoices_company_id ON invoices(company_id);
-CREATE INDEX IF NOT EXISTS idx_invoices_customer_id ON invoices(customer_id);
-CREATE INDEX IF NOT EXISTS idx_invoices_invoice_number ON invoices(invoice_number);
-CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
-CREATE INDEX IF NOT EXISTS idx_invoices_invoice_date ON invoices(invoice_date);
+DROP INDEX IF EXISTS idx_invoices_company_id ON invoices;
+CREATE INDEX idx_invoices_company_id ON invoices(company_id);
+DROP INDEX IF EXISTS idx_invoices_customer_id ON invoices;
+CREATE INDEX idx_invoices_customer_id ON invoices(customer_id);
+DROP INDEX IF EXISTS idx_invoices_invoice_number ON invoices;
+CREATE INDEX idx_invoices_invoice_number ON invoices(invoice_number);
+DROP INDEX IF EXISTS idx_invoices_status ON invoices;
+CREATE INDEX idx_invoices_status ON invoices(status);
+DROP INDEX IF EXISTS idx_invoices_invoice_date ON invoices;
+CREATE INDEX idx_invoices_invoice_date ON invoices(invoice_date);
 
 -- =====================================================
 -- PAYMENTS TABLE
@@ -112,11 +117,16 @@ CREATE TABLE IF NOT EXISTS payments (
   FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_payments_company_id ON payments(company_id);
-CREATE INDEX IF NOT EXISTS idx_payments_customer_id ON payments(customer_id);
-CREATE INDEX IF NOT EXISTS idx_payments_invoice_id ON payments(invoice_id);
-CREATE INDEX IF NOT EXISTS idx_payments_payment_date ON payments(payment_date);
-CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
+DROP INDEX IF EXISTS idx_payments_company_id ON payments;
+CREATE INDEX idx_payments_company_id ON payments(company_id);
+DROP INDEX IF EXISTS idx_payments_customer_id ON payments;
+CREATE INDEX idx_payments_customer_id ON payments(customer_id);
+DROP INDEX IF EXISTS idx_payments_invoice_id ON payments;
+CREATE INDEX idx_payments_invoice_id ON payments(invoice_id);
+DROP INDEX IF EXISTS idx_payments_payment_date ON payments;
+CREATE INDEX idx_payments_payment_date ON payments(payment_date);
+DROP INDEX IF EXISTS idx_payments_status ON payments;
+CREATE INDEX idx_payments_status ON payments(status);
 
 -- =====================================================
 -- PRODUCTS/INVENTORY TABLE
