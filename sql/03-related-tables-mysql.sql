@@ -36,9 +36,12 @@ CREATE TABLE IF NOT EXISTS customers (
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_customers_company_id ON customers(company_id);
-CREATE INDEX IF NOT EXISTS idx_customers_customer_code ON customers(customer_code);
-CREATE INDEX IF NOT EXISTS idx_customers_is_active ON customers(is_active);
+DROP INDEX IF EXISTS idx_customers_company_id ON customers;
+CREATE INDEX idx_customers_company_id ON customers(company_id);
+DROP INDEX IF EXISTS idx_customers_customer_code ON customers;
+CREATE INDEX idx_customers_customer_code ON customers(customer_code);
+DROP INDEX IF EXISTS idx_customers_is_active ON customers;
+CREATE INDEX idx_customers_is_active ON customers(is_active);
 
 -- =====================================================
 -- INVOICES TABLE

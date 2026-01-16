@@ -41,10 +41,14 @@ ALTER TABLE companies ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'activ
 -- ALTER TABLE companies ADD CONSTRAINT fiscal_year_check CHECK (fiscal_year_start >= 1 AND fiscal_year_start <= 12);
 
 -- Add indexes for better query performance
-CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);
-CREATE INDEX IF NOT EXISTS idx_companies_is_active ON companies(is_active);
-CREATE INDEX IF NOT EXISTS idx_companies_created_at ON companies(created_at);
-CREATE INDEX IF NOT EXISTS idx_companies_country ON companies(country);
+DROP INDEX IF EXISTS idx_companies_name ON companies;
+CREATE INDEX idx_companies_name ON companies(name);
+DROP INDEX IF EXISTS idx_companies_is_active ON companies;
+CREATE INDEX idx_companies_is_active ON companies(is_active);
+DROP INDEX IF EXISTS idx_companies_created_at ON companies;
+CREATE INDEX idx_companies_created_at ON companies(created_at);
+DROP INDEX IF EXISTS idx_companies_country ON companies;
+CREATE INDEX idx_companies_country ON companies(country);
 
 -- =====================================================
 -- Create or recreate triggers
