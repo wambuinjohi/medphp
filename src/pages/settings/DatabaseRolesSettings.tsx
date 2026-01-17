@@ -539,7 +539,7 @@ export default function DatabaseRolesSettings() {
                     <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                       <div
                         className="bg-green-600 h-2 rounded-full transition-all"
-                        style={{ width: `${(rolesStatus.rolesExist.length / rolesStatus.totalRoles) * 100}%` }}
+                        style={{ width: `${rolesStatus && rolesStatus.totalRoles ? (rolesStatus.rolesExist?.length || 0) / rolesStatus.totalRoles * 100 : 0}%` }}
                       />
                     </div>
 
