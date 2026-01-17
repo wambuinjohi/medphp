@@ -300,9 +300,9 @@ class QueryChain {
   }
 }
 
-// Helper to create a chainable query builder that supports all methods
+// Helper to create a chainable query builder that supports all methods and can be awaited
 const createChainableQuery = (chain: QueryChain) => {
-  return {
+  const queryObject: any = {
     select: (fields?: string) => {
       chain.select(fields);
       return createChainableQuery(chain);
@@ -330,7 +330,15 @@ const createChainableQuery = (chain: QueryChain) => {
     maybeSingle: () => chain.maybeSingle(),
     single: () => chain.single(),
     execute: () => chain.execute(),
+    // Make the query object thenable so it can be awaited directly
+    then: (onfulfilled?: any, onrejected?: any) => {
+      return chain.execute().then(onfulfilled, onrejected);
+    },
+    catch: (onrejected?: any) => {
+      return chain.execute().catch(onrejected);
+    },
   };
+  return queryObject;
 };
 
 export const supabaseCompat = {
