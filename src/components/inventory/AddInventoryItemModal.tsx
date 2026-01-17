@@ -265,7 +265,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                       Create New
                     </Button>
                   </div>
-                  <Select value={formData.category_id} onValueChange={(value) => handleInputChange('category_id', value)}>
+                  <Select value={formData.category_id || ''} onValueChange={(value) => handleInputChange('category_id', value || null)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category (optional)" />
                     </SelectTrigger>
