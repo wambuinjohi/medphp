@@ -270,7 +270,10 @@ export function useDelete(table: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useCompanies(companyId?: string) {
-  const filter = companyId ? { id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('companies', filter);
 }
 
@@ -279,7 +282,10 @@ export function useCompanies(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useCustomers(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('customers', filter);
 }
 
@@ -288,7 +294,10 @@ export function useCustomers(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useProducts(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('products', filter);
 }
 
