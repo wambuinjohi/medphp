@@ -48,11 +48,11 @@ export class ExternalAPIAdapter implements IDatabase {
       params.append('action', action);
       if (table) params.append('table', table);
 
-      // For update and delete operations, include where clause in URL parameters
+      // For update and delete operations, backend expects 'where' parameter
+      // For read operations, pass where as query parameters or in body
       if ((action === 'update' || action === 'delete') && where && typeof where === 'object') {
-        Object.entries(where).forEach(([key, value]) => {
-          params.append(key, String(value));
-        });
+        // Pass where clause as JSON string parameter for backend parsing
+        params.append('where', JSON.stringify(where));
       }
 
       const url = `${this.apiBase}?${params.toString()}`;
