@@ -396,7 +396,10 @@ export function useCreateUnitOfMeasure() {
  * @param companyId - Optional company ID for filtering
  */
 export function useQuotations(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('quotations', filter);
 }
 
