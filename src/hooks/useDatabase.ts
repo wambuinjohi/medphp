@@ -39,17 +39,44 @@ export function useDatabase(): UseDatabaseReturn {
         setIsLoading(true);
         const healthy = await db.health();
         setIsHealthy(healthy);
-        setError(null);
+
+        if (!healthy) {
+          setError(new Error(`Database service is temporarily unavailable. Using backup connection.`));
+
+          // Show helpful error toast only once
+          if (!errorToastShown) {
+            errorToastShown = true;
+            setTimeout(() => {
+              toast.warning('Database Connection Issue', {
+                description: 'The primary database is unavailable, but the application is using a backup connection.',
+              });
+            }, 500);
+          }
+        } else {
+          setError(null);
+          errorToastShown = false;
+        }
       } catch (err) {
-        setError(err as Error);
+        const error = err as Error;
+        setError(error);
         setIsHealthy(false);
+
+        // Show helpful error toast only once
+        if (!errorToastShown && error.message.includes('Failed to fetch')) {
+          errorToastShown = true;
+          setTimeout(() => {
+            toast.error('Connection Error', {
+              description: 'Unable to connect to the database. Please check your internet connection.',
+            });
+          }, 500);
+        }
       } finally {
         setIsLoading(false);
       }
     }
 
     checkHealth();
-  }, [db]);
+  }, [db, provider]);
 
   return {
     db,
