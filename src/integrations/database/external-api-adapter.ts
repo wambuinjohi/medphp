@@ -50,7 +50,7 @@ export class ExternalAPIAdapter implements IDatabase {
 
       // Log the API call attempt
       const logPrefix = `📡 [${method.toUpperCase()}] ${action}${table ? ` on ${table}` : ''}`;
-      console.log(`${logPrefix} - Starting request...`);
+      console.log(`${logPrefix} - Starting request to ${this.apiBase}...`);
 
       // For update and delete operations, backend expects 'where' parameter
       if ((action === 'update' || action === 'delete') && where && typeof where === 'object') {
