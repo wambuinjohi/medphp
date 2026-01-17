@@ -29,6 +29,7 @@ export function useDatabase(): UseDatabaseReturn {
   const [isHealthy, setIsHealthy] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [lastHealthCheckTime, setLastHealthCheckTime] = useState(0);
 
   const db = getDatabase();
   const provider = getDatabaseProvider();
@@ -39,6 +40,7 @@ export function useDatabase(): UseDatabaseReturn {
         setIsLoading(true);
         const healthy = await db.health();
         setIsHealthy(healthy);
+        setLastHealthCheckTime(Date.now());
 
         if (!healthy) {
           setError(new Error(`Database service is temporarily unavailable. Using backup connection.`));
@@ -76,6 +78,11 @@ export function useDatabase(): UseDatabaseReturn {
     }
 
     checkHealth();
+
+    // Set up periodic health checks every 10 seconds if database is unhealthy
+    const healthCheckInterval = setInterval(checkHealth, 10000);
+
+    return () => clearInterval(healthCheckInterval);
   }, [db, provider]);
 
   return {
