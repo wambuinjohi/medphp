@@ -332,11 +332,20 @@ export const useDeleteInvoice = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.id) throw new Error('Not authenticated');
 
+      // Get invoice company_id
+      const invoiceResult = await supabase.from('invoices').select('company_id').eq('id', invoiceId).single();
+      const companyIdForRole = invoiceResult.data?.company_id;
+
+      // Get user role
+      const profileResult = await supabase.from('profiles').select('role').eq('id', user.id).single();
+      const userRole = profileResult.data?.role || '';
+
+      // Check if user has permission
       const { data: roleData } = await supabase
         .from('roles')
         .select('permissions')
-        .eq('company_id', (await supabase.from('invoices').select('company_id').eq('id', invoiceId).single()).data?.company_id)
-        .in('name', [(await supabase.from('profiles').select('role').eq('id', user.id).single()).data?.role || ''])
+        .eq('company_id', companyIdForRole)
+        .in('name', [userRole])
         .single();
 
       if (!roleData?.permissions?.includes('delete_invoice')) {
