@@ -609,7 +609,7 @@ export default function DatabaseRolesSettings() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-2 grid-cols-2 md:grid-cols-3">
-                        {rolesStatus.rolesMissing.map((role) => (
+                        {rolesStatus?.rolesMissing?.map((role) => (
                           <Badge key={role} variant="secondary" className="justify-center py-2">
                             <Lock className="h-3 w-3 mr-1" />
                             {role}
