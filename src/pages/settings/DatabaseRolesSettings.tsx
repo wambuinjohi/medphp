@@ -321,11 +321,11 @@ export default function DatabaseRolesSettings() {
               </div>
               <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border">
                 <p className="text-xs text-muted-foreground uppercase font-semibold">Database</p>
-                <p className="text-lg font-bold mt-1">{databaseStatus ? `${databaseStatus.tablesFound}/${databaseStatus.totalTables}` : '...'}</p>
+                <p className="text-lg font-bold mt-1">{databaseStatus ? `${databaseStatus.tablesFound || 0}/${databaseStatus.totalTables || 0}` : '...'}</p>
               </div>
               <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border">
                 <p className="text-xs text-muted-foreground uppercase font-semibold">Roles</p>
-                <p className="text-lg font-bold mt-1">{rolesStatus ? `${rolesStatus.rolesExist.length}/${rolesStatus.totalRoles}` : '...'}</p>
+                <p className="text-lg font-bold mt-1">{rolesStatus ? `${rolesStatus.rolesExist?.length || 0}/${rolesStatus.totalRoles || 0}` : '...'}</p>
               </div>
             </div>
           </CardContent>
