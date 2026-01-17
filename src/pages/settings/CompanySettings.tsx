@@ -18,6 +18,7 @@ import { getUserFriendlyMessage, logError } from '@/utils/errorParser';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { QuickSchemaFix } from '@/components/QuickSchemaFix';
 import { addCurrencyColumn, ADD_CURRENCY_COLUMN_SQL } from '@/utils/addCurrencyColumn';
+import { getDatabaseProvider } from '@/integrations/database';
 
 export default function CompanySettings() {
   const [editingTax, setEditingTax] = useState<string | null>(null);
