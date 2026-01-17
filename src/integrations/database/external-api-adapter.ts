@@ -84,6 +84,42 @@ export class ExternalAPIAdapter implements IDatabase {
         body = where;
       }
 
+      // Add timeout for fetch requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      try {
+        const response = await fetch(url, {
+          method,
+          headers,
+          body: body ? JSON.stringify(body) : undefined,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        // Defensively parse JSON - handle cases where server returns non-JSON (e.g., 500 error)
+        const result = await response.json().catch(() => {
+          if (!response.ok) {
+            throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+          }
+          throw new Error('Invalid response from server: Expected valid JSON');
+        });
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+
+        if (fetchError.name === 'AbortError') {
+          throw new Error(`API request timeout (${this.apiBase}). The server may be unresponsive.`);
+        }
+
+        // Network errors
+        if (fetchError instanceof TypeError && fetchError.message === 'Failed to fetch') {
+          throw new Error(`Unable to reach API endpoint: ${this.apiBase}. This could be a CORS issue, network problem, or the server may be down. Please check your internet connection and ensure the API endpoint is accessible.`);
+        }
+
+        throw fetchError;
+      }
+
       const response = await fetch(url, {
         method,
         headers,
