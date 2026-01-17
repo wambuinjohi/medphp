@@ -200,12 +200,17 @@ export default function Inventory() {
             <p className="text-muted-foreground">Loading inventory items...</p>
           </div>
         </div>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading products...</p>
-          </div>
-        </div>
+        <Card className="shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center min-h-[300px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading products...</p>
+                <p className="text-muted-foreground text-sm mt-2">Connecting to database...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
