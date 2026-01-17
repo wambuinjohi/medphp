@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 
 interface Slide {
   id: number;
@@ -11,27 +11,8 @@ interface Slide {
 
 export default function HeroSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [companyName, setCompanyName] = useState('>> Medical Supplies');
-
-  useEffect(() => {
-    const fetchCompanyName = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('companies')
-          .select('name')
-          .limit(1)
-          .single();
-
-        if (!error && data?.name) {
-          setCompanyName(data.name);
-        }
-      } catch (error) {
-        console.warn('Failed to fetch company name:', error);
-      }
-    };
-
-    fetchCompanyName();
-  }, []);
+  const { currentCompany } = useCurrentCompany();
+  const companyName = currentCompany?.name || '>> Medical Supplies';
 
   const slides: Slide[] = [
     {
