@@ -384,10 +384,9 @@ export default function OptimizedInventory() {
             
             <Select value={selectedCategory} onValueChange={handleCategoryFilter}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="All Categories" />
+                <SelectValue placeholder="All categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
                 {categories?.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
