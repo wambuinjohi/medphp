@@ -238,18 +238,29 @@ export default function DatabaseRolesSettings() {
         body: '{}'
       });
 
+      // Check if response is valid JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const errorMsg = 'Role setup API endpoint not available';
+        setSetupProgress(prev => [...prev, `❌ ${errorMsg}`]);
+        toast.error(errorMsg);
+        return;
+      }
+
       const data = await response.json();
 
-      if (data.success) {
+      if (data && data.success) {
         setSetupProgress(prev => [...prev, '✅ Roles setup completed successfully']);
         toast.success('Roles and permissions configured successfully');
         await new Promise(resolve => setTimeout(resolve, 1000));
         await checkRolesStatus();
       } else {
         setSetupProgress(prev => [...prev, '❌ Role setup failed']);
-        data.errors?.forEach((error: string) => {
-          setSetupProgress(prev => [...prev, `⚠️ ${error}`]);
-        });
+        if (data && data.errors && Array.isArray(data.errors)) {
+          data.errors.forEach((error: string) => {
+            setSetupProgress(prev => [...prev, `⚠️ ${error}`]);
+          });
+        }
         toast.error('Role setup failed');
       }
     } catch (error) {
