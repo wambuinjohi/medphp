@@ -295,6 +295,35 @@ class QueryChain {
   }
 }
 
+// Helper to create a chainable query builder that supports all methods
+const createChainableQuery = (chain: QueryChain) => {
+  return {
+    select: (fields?: string) => {
+      chain.select(fields);
+      return createChainableQuery(chain);
+    },
+    eq: (column: string, value: any) => {
+      chain.eq(column, value);
+      return createChainableQuery(chain);
+    },
+    in: (column: string, values: any[]) => {
+      chain.in(column, values);
+      return createChainableQuery(chain);
+    },
+    order: (column: string, opts?: any) => {
+      chain.order(column, opts);
+      return createChainableQuery(chain);
+    },
+    limit: (count: number) => {
+      chain.limit(count);
+      return createChainableQuery(chain);
+    },
+    maybeSingle: () => chain.maybeSingle(),
+    single: () => chain.single(),
+    execute: () => chain.execute(),
+  };
+};
+
 export const supabaseCompat = {
   from: (table: string) => {
     const chain = new QueryChain(table);
@@ -302,35 +331,7 @@ export const supabaseCompat = {
     return {
       select: (fields?: string) => {
         chain.select(fields);
-        return {
-          eq: (column: string, value: any) => {
-            chain.eq(column, value);
-            return {
-              maybeSingle: () => chain.maybeSingle(),
-              single: () => chain.single(),
-              execute: () => chain.execute(),
-            };
-          },
-          order: (column: string, opts?: any) => {
-            chain.order(column, opts);
-            return {
-              limit: (count: number) => {
-                chain.limit(count);
-                return {
-                  maybeSingle: () => chain.maybeSingle(),
-                  execute: () => chain.execute(),
-                };
-              },
-            };
-          },
-          limit: (count: number) => {
-            chain.limit(count);
-            return {
-              maybeSingle: () => chain.maybeSingle(),
-              execute: () => chain.execute(),
-            };
-          },
-        };
+        return createChainableQuery(chain);
       },
       insert: (data: any) => ({
         select: () => ({
