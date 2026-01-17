@@ -276,11 +276,12 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
                   Create New
                 </Button>
               </div>
-              <Select value={formData.category_id || ''} onValueChange={(value) => handleInputChange('category_id', value || null)}>
+              <Select value={formData.category_id} onValueChange={(value) => handleInputChange('category_id', value === '__none__' ? null : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category (optional)" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__none__">No Category</SelectItem>
                   {categoriesLoading ? (
                     <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading categories...</div>
                   ) : categories && categories.length > 0 ? (
@@ -290,7 +291,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
                       </SelectItem>
                     ))
                   ) : (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">No categories available</div>
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">No other categories available</div>
                   )}
                 </SelectContent>
               </Select>
