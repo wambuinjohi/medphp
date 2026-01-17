@@ -258,6 +258,11 @@ class QueryChain {
     return this;
   }
 
+  range(from: number, to: number) {
+    this.filters._range = { from, to };
+    return this;
+  }
+
   private buildFinalFilters() {
     return { ...this.filters, ...this.inFilters };
   }
