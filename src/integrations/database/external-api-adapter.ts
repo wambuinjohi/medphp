@@ -48,6 +48,10 @@ export class ExternalAPIAdapter implements IDatabase {
       params.append('action', action);
       if (table) params.append('table', table);
 
+      // Log the API call attempt
+      const logPrefix = `📡 [${method.toUpperCase()}] ${action}${table ? ` on ${table}` : ''}`;
+      console.log(`${logPrefix} - Starting request...`);
+
       // For update and delete operations, backend expects 'where' parameter
       if ((action === 'update' || action === 'delete') && where && typeof where === 'object') {
         // Convert where object to SQL WHERE clause format for the backend
