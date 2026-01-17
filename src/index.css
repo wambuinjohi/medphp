@@ -257,10 +257,6 @@
   /* Performance optimization for smooth animations */
   main {
     will-change: contents;
-  }
-
-  /* Reduce jank on page transitions */
-  * {
-    @apply transition-gpu;
+    transform: translateZ(0);
   }
 }
