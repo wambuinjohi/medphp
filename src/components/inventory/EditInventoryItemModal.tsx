@@ -278,10 +278,9 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
               </div>
               <Select value={formData.category_id || ''} onValueChange={(value) => handleInputChange('category_id', value || null)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder="Select category (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No Category</SelectItem>
                   {categoriesLoading ? (
                     <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading categories...</div>
                   ) : categories && categories.length > 0 ? (
