@@ -134,21 +134,51 @@ export default function DatabaseRolesSettings() {
         body: '{}'
       });
 
+      // Check if response is valid JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('API returned non-JSON response. Endpoint may not be available.');
+        setRolesStatus({
+          success: false,
+          rolesExist: [],
+          rolesMissing: [],
+          totalRoles: 0,
+          error: 'Roles API endpoint not available'
+        });
+        setRolesLoading(false);
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success) {
         setRolesStatus(data);
-        if (data.rolesMissing.length === 0) {
+        if (data.rolesMissing && data.rolesMissing.length === 0) {
           toast.success('All default roles are configured');
-        } else {
+        } else if (data.rolesMissing) {
           toast.info(`${data.rolesMissing.length} default roles need to be created`);
         }
       } else {
-        toast.error(data.error || 'Failed to check roles status');
+        const errorMessage = data.error || 'Failed to check roles status';
+        setRolesStatus({
+          success: false,
+          rolesExist: [],
+          rolesMissing: [],
+          totalRoles: 0,
+          error: errorMessage
+        });
+        toast.error(errorMessage);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to check roles status';
       console.error('Error checking roles:', error);
+      setRolesStatus({
+        success: false,
+        rolesExist: [],
+        rolesMissing: [],
+        totalRoles: 0,
+        error: message
+      });
       toast.error(message);
     } finally {
       setRolesLoading(false);
