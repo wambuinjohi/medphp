@@ -86,7 +86,13 @@ export class ExternalAPIAdapter implements IDatabase {
 
       // Add timeout for fetch requests
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      let timeoutId: NodeJS.Timeout | null = null;
+      let isTimedOut = false;
+
+      timeoutId = setTimeout(() => {
+        isTimedOut = true;
+        controller.abort();
+      }, 10000); // 10 second timeout
 
       let response: Response;
       let result: any;
@@ -99,7 +105,7 @@ export class ExternalAPIAdapter implements IDatabase {
           signal: controller.signal,
         });
 
-        clearTimeout(timeoutId);
+        if (timeoutId) clearTimeout(timeoutId);
 
         // Defensively parse JSON - handle cases where server returns non-JSON (e.g., 500 error)
         result = await response.json().catch(() => {
@@ -109,10 +115,15 @@ export class ExternalAPIAdapter implements IDatabase {
           throw new Error('Invalid response from server: Expected valid JSON');
         });
       } catch (fetchError: any) {
-        clearTimeout(timeoutId);
+        if (timeoutId) clearTimeout(timeoutId);
 
         if (fetchError.name === 'AbortError') {
-          throw new Error(`API request timeout (${this.apiBase}). The server may be unresponsive.`);
+          if (isTimedOut) {
+            throw new Error(`API request timeout (${this.apiBase}). The server may be unresponsive.`);
+          } else {
+            // Signal was aborted for another reason (e.g., component unmount)
+            throw new Error(`API request was cancelled. Please try again.`);
+          }
         }
 
         // Network errors
