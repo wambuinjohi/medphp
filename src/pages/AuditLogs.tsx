@@ -192,6 +192,7 @@ export default function AuditLogsPage() {
                   <SelectValue placeholder="All entity types" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="__all__">All Entity Types</SelectItem>
                   {entityTypes.map((type) => (
                     <SelectItem key={type} value={type}>
                       {type}
