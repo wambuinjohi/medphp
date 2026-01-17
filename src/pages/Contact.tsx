@@ -76,10 +76,12 @@ export default function Contact() {
     }
   };
 
+  const { currentCompany } = useCurrentCompany();
+
   const handleEmailSubmit = async () => {
     try {
       const templateParams = {
-        to_email: 'sales@medplusafrica.com',
+        to_email: currentCompany?.email || 'sales@medplusafrica.com',
         from_name: formData.name,
         from_email: formData.email,
         phone: formData.phone,
