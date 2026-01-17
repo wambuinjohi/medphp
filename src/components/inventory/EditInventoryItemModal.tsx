@@ -155,7 +155,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
         name: formData.name,
         product_code: formData.product_code,
         description: formData.description,
-        category_id: formData.category_id || null,
+        category_id: formData.category_id === '__none__' ? null : formData.category_id,
         unit_of_measure: formData.unit_of_measure,
         cost_price: Number(formData.cost_price),
         selling_price: Number(formData.selling_price),
