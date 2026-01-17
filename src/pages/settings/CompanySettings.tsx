@@ -418,7 +418,11 @@ export default function CompanySettings() {
       if (companyData.currency?.trim()) {
         sanitizedData.currency = companyData.currency.trim();
       }
-      if (companyData.fiscal_year_start) {
+
+      // Only include fiscal_year_start for non-external API providers
+      // External API doesn't have this column yet
+      const provider = getDatabaseProvider();
+      if (companyData.fiscal_year_start && provider !== 'external-api') {
         sanitizedData.fiscal_year_start = companyData.fiscal_year_start;
       }
 
