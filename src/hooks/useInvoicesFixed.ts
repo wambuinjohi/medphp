@@ -39,7 +39,8 @@ export const useInvoicesFixed = (companyId?: string) => {
             created_by
           `)
           .eq('company_id', companyId)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .execute();
 
         if (invoicesError) {
           console.error('Error fetching invoices:', invoicesError);
