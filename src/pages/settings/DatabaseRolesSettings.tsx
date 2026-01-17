@@ -679,7 +679,7 @@ export default function DatabaseRolesSettings() {
             </DialogHeader>
             <ScrollArea className="h-96 w-full rounded-md border p-4">
               <div className="space-y-2">
-                {databaseStatus?.tables.map((table) => (
+                {databaseStatus?.tables?.map((table) => (
                   <div
                     key={table.name}
                     className="flex items-center justify-between p-2 hover:bg-accent rounded"
