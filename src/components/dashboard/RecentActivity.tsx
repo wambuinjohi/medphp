@@ -119,6 +119,24 @@ export function RecentActivity() {
   // Sort by timestamp (most recent first)
   activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
+  if (hasError && !isLoading) {
+    return (
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert className="border-destructive bg-destructive/10">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <AlertDescription className="text-destructive">
+              Unable to load recent activity. Please try refreshing the page.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (isLoading) {
     return (
       <Card className="shadow-card">
