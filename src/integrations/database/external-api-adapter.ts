@@ -518,7 +518,13 @@ export class ExternalAPIAdapter implements IDatabase {
   async health(): Promise<boolean> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for health check
+      let timeoutId: NodeJS.Timeout | null = null;
+      let isTimedOut = false;
+
+      timeoutId = setTimeout(() => {
+        isTimedOut = true;
+        controller.abort();
+      }, 5000); // 5 second timeout for health check
 
       try {
         const response = await fetch(`${this.apiBase}?action=health`, {
@@ -526,13 +532,17 @@ export class ExternalAPIAdapter implements IDatabase {
           signal: controller.signal,
         });
 
-        clearTimeout(timeoutId);
+        if (timeoutId) clearTimeout(timeoutId);
         return response.ok;
       } catch (fetchError: any) {
-        clearTimeout(timeoutId);
+        if (timeoutId) clearTimeout(timeoutId);
 
         if (fetchError.name === 'AbortError') {
-          console.warn('External API health check timeout:', this.apiBase);
+          if (isTimedOut) {
+            console.warn('External API health check timeout:', this.apiBase);
+          } else {
+            console.warn('External API health check was cancelled:', this.apiBase);
+          }
           return false;
         }
 
