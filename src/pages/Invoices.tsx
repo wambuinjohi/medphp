@@ -283,8 +283,9 @@ export default function Invoices() {
     }
 
     try {
-      // Create email content
-      const subject = `Invoice ${invoiceData.invoice_number} from &gt;&gt; Medical Supplies`;
+      // Create email content using dynamic company name
+      const companyName = currentCompany?.name || '>> Medical Supplies';
+      const subject = `Invoice ${invoiceData.invoice_number} from ${companyName}`;
       const body = `Dear ${invoiceData.customers.name},
 
 Please find attached your invoice ${invoiceData.invoice_number} dated ${new Date(invoiceData.invoice_date).toLocaleDateString()}.
