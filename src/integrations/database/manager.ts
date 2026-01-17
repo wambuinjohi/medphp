@@ -34,24 +34,46 @@ class DatabaseManager {
 
     console.log(`🔧 Initializing database with provider: ${provider}`);
 
+    let adapterToTry: IDatabase | null = null;
+    let shouldFallback = false;
+
     if (provider === 'external-api') {
       const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-      this.adapter = new ExternalAPIAdapter(apiUrl);
+      adapterToTry = new ExternalAPIAdapter(apiUrl);
+      shouldFallback = true; // Fallback to Supabase if external API fails
     } else if (provider === 'mysql') {
-      this.adapter = new MySQLAdapter();
-
-      // Initialize MySQL connection pool if needed
-      // This would typically be done on the server side
-      // For client-side, MySQL operations would go through an API
+      adapterToTry = new MySQLAdapter();
+      shouldFallback = true; // Fallback to Supabase if MySQL fails
     } else {
       // Default to Supabase
-      this.adapter = new SupabaseAdapter();
+      adapterToTry = new SupabaseAdapter();
     }
 
-    await this.adapter.initialize();
-    this.initialized = true;
+    try {
+      await adapterToTry.initialize();
+      this.adapter = adapterToTry;
+      this.initialized = true;
+      console.log(`✅ Database manager initialized with ${provider} adapter`);
+    } catch (error) {
+      if (shouldFallback && provider !== 'supabase') {
+        console.warn(`⚠️  Failed to initialize ${provider} adapter:`, error);
+        console.log(`🔄 Falling back to Supabase adapter...`);
 
-    console.log(`✅ Database manager initialized with ${provider} adapter`);
+        try {
+          const supabaseAdapter = new SupabaseAdapter();
+          await supabaseAdapter.initialize();
+          this.adapter = supabaseAdapter;
+          this.initialized = true;
+          console.log(`✅ Successfully initialized Supabase adapter as fallback`);
+        } catch (fallbackError) {
+          console.error(`❌ Failed to initialize fallback Supabase adapter:`, fallbackError);
+          throw fallbackError;
+        }
+      } else {
+        console.error(`❌ Failed to initialize ${provider} adapter:`, error);
+        throw error;
+      }
+    }
   }
 
   /**

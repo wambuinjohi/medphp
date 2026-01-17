@@ -11,6 +11,8 @@ import { getDatabase, getDatabaseProvider } from '@/integrations/database';
 import type { IDatabase, DatabaseProvider } from '@/integrations/database';
 import { useForceTaxSettings } from '@/hooks/useForceTaxSettings';
 
+let errorToastShown = false;
+
 interface UseDatabaseReturn {
   db: IDatabase;
   provider: DatabaseProvider;
@@ -37,17 +39,44 @@ export function useDatabase(): UseDatabaseReturn {
         setIsLoading(true);
         const healthy = await db.health();
         setIsHealthy(healthy);
-        setError(null);
+
+        if (!healthy) {
+          setError(new Error(`Database service is temporarily unavailable. Using backup connection.`));
+
+          // Show helpful error toast only once
+          if (!errorToastShown) {
+            errorToastShown = true;
+            setTimeout(() => {
+              toast.warning('Database Connection Issue', {
+                description: 'The primary database is unavailable, but the application is using a backup connection.',
+              });
+            }, 500);
+          }
+        } else {
+          setError(null);
+          errorToastShown = false;
+        }
       } catch (err) {
-        setError(err as Error);
+        const error = err as Error;
+        setError(error);
         setIsHealthy(false);
+
+        // Show helpful error toast only once
+        if (!errorToastShown && error.message.includes('Failed to fetch')) {
+          errorToastShown = true;
+          setTimeout(() => {
+            toast.error('Connection Error', {
+              description: 'Unable to connect to the database. Please check your internet connection.',
+            });
+          }, 500);
+        }
       } finally {
         setIsLoading(false);
       }
     }
 
     checkHealth();
-  }, [db]);
+  }, [db, provider]);
 
   return {
     db,
@@ -69,17 +98,27 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const { db } = useDatabase();
+  const { db, error: dbError } = useDatabase();
 
   useEffect(() => {
     async function fetchData() {
       try {
+        // If database itself has an error, don't try to fetch
+        if (dbError) {
+          setError(dbError);
+          setData([]);
+          setIsLoading(false);
+          return;
+        }
+
         setIsLoading(true);
         const result = await db.select<T>(table, filter);
         setData(result.data);
         setError(result.error);
       } catch (err) {
-        setError(err as Error);
+        const error = err as Error;
+        console.error(`Error fetching from ${table}:`, error);
+        setError(error);
         setData([]);
       } finally {
         setIsLoading(false);
@@ -87,7 +126,7 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
     }
 
     fetchData();
-  }, [db, table, filter]);
+  }, [db, table, filter, dbError]);
 
   return { data, isLoading, error };
 }

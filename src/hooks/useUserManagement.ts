@@ -620,19 +620,35 @@ export const useUserManagement = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let totalUpdated = 0;
+
+      // Update users with null role
+      const { data: data1, error: error1 } = await supabase
         .from('profiles')
         .update({ role: 'admin' })
-        .or('role.is.null,role.neq.admin');
+        .is('role', null);
 
-      if (error) {
-        throw error;
+      if (error1) {
+        throw error1;
       }
 
-      const updatedCount = Array.isArray(data) ? data.length : 0;
-      toast.success(`Promoted ${updatedCount} users to admin`);
+      // Update users with non-admin role
+      const { data: data2, error: error2 } = await supabase
+        .from('profiles')
+        .update({ role: 'admin' })
+        .neq('role', 'admin');
+
+      if (error2) {
+        throw error2;
+      }
+
+      const count1 = Array.isArray(data1) ? data1.length : 0;
+      const count2 = Array.isArray(data2) ? data2.length : 0;
+      totalUpdated = count1 + count2;
+
+      toast.success(`Promoted ${totalUpdated} users to admin`);
       await fetchUsers();
-      return { success: true, count: updatedCount };
+      return { success: true, count: totalUpdated };
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'promote all');
       console.error('Error promoting users:', err);

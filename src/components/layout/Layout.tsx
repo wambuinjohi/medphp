@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, memo, Suspense } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -84,9 +84,13 @@ export function Layout({ children }: LayoutProps) {
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         <Header onMenuToggle={toggleMobileMenu} isMobileMenuOpen={isMobileMenuOpen} />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
-          {children}
+          <Suspense fallback={null}>
+            {children}
+          </Suspense>
         </main>
       </div>
     </div>
   );
 }
+
+export default memo(Layout);

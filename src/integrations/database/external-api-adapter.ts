@@ -84,19 +84,44 @@ export class ExternalAPIAdapter implements IDatabase {
         body = where;
       }
 
-      const response = await fetch(url, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-      });
+      // Add timeout for fetch requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      // Defensively parse JSON - handle cases where server returns non-JSON (e.g., 500 error)
-      const result = await response.json().catch(() => {
-        if (!response.ok) {
-          throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+      let response: Response;
+      let result: any;
+
+      try {
+        response = await fetch(url, {
+          method,
+          headers,
+          body: body ? JSON.stringify(body) : undefined,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        // Defensively parse JSON - handle cases where server returns non-JSON (e.g., 500 error)
+        result = await response.json().catch(() => {
+          if (!response.ok) {
+            throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+          }
+          throw new Error('Invalid response from server: Expected valid JSON');
+        });
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+
+        if (fetchError.name === 'AbortError') {
+          throw new Error(`API request timeout (${this.apiBase}). The server may be unresponsive.`);
         }
-        throw new Error('Invalid response from server: Expected valid JSON');
-      });
+
+        // Network errors
+        if (fetchError instanceof TypeError && fetchError.message === 'Failed to fetch') {
+          throw new Error(`Unable to reach API endpoint: ${this.apiBase}. This could be a CORS issue, network problem, or the server may be down. Please check your internet connection and ensure the API endpoint is accessible.`);
+        }
+
+        throw fetchError;
+      }
 
       if (!response.ok) {
         return {
@@ -204,29 +229,55 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async checkAuth(): Promise<{ user: any; error: Error | null }> {
     try {
-      const response = await fetch(`${this.apiBase}?action=check_auth`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: this.authToken }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      // Defensively parse JSON
-      const result = await response.json().catch(() => {
+      try {
+        const response = await fetch(`${this.apiBase}?action=check_auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: this.authToken }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        // Defensively parse JSON
+        const result = await response.json().catch(() => {
+          if (!response.ok) {
+            throw new Error(`Server error: HTTP ${response.status}. Authentication check failed.`);
+          }
+          throw new Error('Invalid response from server: Expected valid JSON');
+        });
+
         if (!response.ok) {
-          throw new Error(`Server error: HTTP ${response.status}. Authentication check failed.`);
+          this.clearAuthToken();
+          return {
+            user: null,
+            error: new Error(result.message || 'Not authenticated'),
+          };
         }
-        throw new Error('Invalid response from server: Expected valid JSON');
-      });
 
-      if (!response.ok) {
-        this.clearAuthToken();
-        return {
-          user: null,
-          error: new Error(result.message || 'Not authenticated'),
-        };
+        return { user: result, error: null };
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+
+        if (fetchError.name === 'AbortError') {
+          return {
+            user: null,
+            error: new Error(`Authentication check timeout. The server may be unresponsive.`),
+          };
+        }
+
+        if (fetchError instanceof TypeError && fetchError.message === 'Failed to fetch') {
+          return {
+            user: null,
+            error: new Error(`Unable to reach authentication endpoint: ${this.apiBase}. Check your connection.`),
+          };
+        }
+
+        throw fetchError;
       }
-
-      return { user: result, error: null };
     } catch (error) {
       return { user: null, error: error as Error };
     }
@@ -442,8 +493,32 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async health(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.apiBase}?action=health`);
-      return response.ok;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for health check
+
+      try {
+        const response = await fetch(`${this.apiBase}?action=health`, {
+          method: 'GET',
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+        return response.ok;
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+
+        if (fetchError.name === 'AbortError') {
+          console.warn('External API health check timeout:', this.apiBase);
+          return false;
+        }
+
+        if (fetchError instanceof TypeError && fetchError.message === 'Failed to fetch') {
+          console.warn('External API unreachable:', this.apiBase);
+          return false;
+        }
+
+        throw fetchError;
+      }
     } catch (error) {
       console.error('External API health check failed:', error);
       return false;
