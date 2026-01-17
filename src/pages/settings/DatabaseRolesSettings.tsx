@@ -387,8 +387,8 @@ export default function DatabaseRolesSettings() {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Missing</p>
-                        <p className={`text-2xl font-bold ${databaseStatus.missingTables.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {databaseStatus.missingTables.length}
+                        <p className={`text-2xl font-bold ${databaseStatus?.missingTables?.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {databaseStatus?.missingTables?.length || 0}
                         </p>
                       </div>
                     </div>
