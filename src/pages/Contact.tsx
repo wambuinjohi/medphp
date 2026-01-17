@@ -10,6 +10,7 @@ import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { useSEO } from '@/hooks/useSEO';
 import { generateContactPageSchema, useBreadcrumbSchema } from '@/utils/seoHelpers';
 import { useWebCategories } from '@/hooks/useWebCategories';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import emailjs from 'emailjs-com';
 import { Mail, MessageCircle } from 'lucide-react';
 
