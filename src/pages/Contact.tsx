@@ -118,7 +118,8 @@ export default function Contact() {
 
   const handleWhatsAppSubmit = () => {
     try {
-      const message = `*Inquiry from &gt;&gt; Medical Supplies Contact Form*
+      const companyName = currentCompany?.name || '>> Medical Supplies';
+      const message = `*Inquiry from ${companyName} Contact Form*
 ━━━━━━━━━━━━━━━━━━━━━━
 
 *From:*
@@ -135,7 +136,7 @@ ${formData.message}
 
 ━━━━━━━━━━━━━━━━━━━━━━`;
 
-      const whatsappPhone = '254713416022';
+      const whatsappPhone = currentCompany?.phone?.replace(/\D/g, '').slice(-12) || '254713416022';
       const encodedMessage = encodeURIComponent(message);
       const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappPhone}&text=${encodedMessage}`;
 
