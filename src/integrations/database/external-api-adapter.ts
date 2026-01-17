@@ -229,29 +229,55 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async checkAuth(): Promise<{ user: any; error: Error | null }> {
     try {
-      const response = await fetch(`${this.apiBase}?action=check_auth`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: this.authToken }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-      // Defensively parse JSON
-      const result = await response.json().catch(() => {
+      try {
+        const response = await fetch(`${this.apiBase}?action=check_auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: this.authToken }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        // Defensively parse JSON
+        const result = await response.json().catch(() => {
+          if (!response.ok) {
+            throw new Error(`Server error: HTTP ${response.status}. Authentication check failed.`);
+          }
+          throw new Error('Invalid response from server: Expected valid JSON');
+        });
+
         if (!response.ok) {
-          throw new Error(`Server error: HTTP ${response.status}. Authentication check failed.`);
+          this.clearAuthToken();
+          return {
+            user: null,
+            error: new Error(result.message || 'Not authenticated'),
+          };
         }
-        throw new Error('Invalid response from server: Expected valid JSON');
-      });
 
-      if (!response.ok) {
-        this.clearAuthToken();
-        return {
-          user: null,
-          error: new Error(result.message || 'Not authenticated'),
-        };
+        return { user: result, error: null };
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+
+        if (fetchError.name === 'AbortError') {
+          return {
+            user: null,
+            error: new Error(`Authentication check timeout. The server may be unresponsive.`),
+          };
+        }
+
+        if (fetchError instanceof TypeError && fetchError.message === 'Failed to fetch') {
+          return {
+            user: null,
+            error: new Error(`Unable to reach authentication endpoint: ${this.apiBase}. Check your connection.`),
+          };
+        }
+
+        throw fetchError;
       }
-
-      return { user: result, error: null };
     } catch (error) {
       return { user: null, error: error as Error };
     }
