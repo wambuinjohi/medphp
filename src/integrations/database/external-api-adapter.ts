@@ -241,7 +241,13 @@ export class ExternalAPIAdapter implements IDatabase {
   async checkAuth(): Promise<{ user: any; error: Error | null }> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      let timeoutId: NodeJS.Timeout | null = null;
+      let isTimedOut = false;
+
+      timeoutId = setTimeout(() => {
+        isTimedOut = true;
+        controller.abort();
+      }, 10000); // 10 second timeout
 
       try {
         const response = await fetch(`${this.apiBase}?action=check_auth`, {
@@ -251,7 +257,7 @@ export class ExternalAPIAdapter implements IDatabase {
           signal: controller.signal,
         });
 
-        clearTimeout(timeoutId);
+        if (timeoutId) clearTimeout(timeoutId);
 
         // Defensively parse JSON
         const result = await response.json().catch(() => {
@@ -271,13 +277,20 @@ export class ExternalAPIAdapter implements IDatabase {
 
         return { user: result, error: null };
       } catch (fetchError: any) {
-        clearTimeout(timeoutId);
+        if (timeoutId) clearTimeout(timeoutId);
 
         if (fetchError.name === 'AbortError') {
-          return {
-            user: null,
-            error: new Error(`Authentication check timeout. The server may be unresponsive.`),
-          };
+          if (isTimedOut) {
+            return {
+              user: null,
+              error: new Error(`Authentication check timeout. The server may be unresponsive.`),
+            };
+          } else {
+            return {
+              user: null,
+              error: new Error(`Authentication check was cancelled.`),
+            };
+          }
         }
 
         if (fetchError instanceof TypeError && fetchError.message === 'Failed to fetch') {
