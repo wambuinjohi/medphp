@@ -134,21 +134,51 @@ export default function DatabaseRolesSettings() {
         body: '{}'
       });
 
+      // Check if response is valid JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.warn('API returned non-JSON response. Endpoint may not be available.');
+        setRolesStatus({
+          success: false,
+          rolesExist: [],
+          rolesMissing: [],
+          totalRoles: 0,
+          error: 'Roles API endpoint not available'
+        });
+        setRolesLoading(false);
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success) {
         setRolesStatus(data);
-        if (data.rolesMissing.length === 0) {
+        if (data.rolesMissing && data.rolesMissing.length === 0) {
           toast.success('All default roles are configured');
-        } else {
+        } else if (data.rolesMissing) {
           toast.info(`${data.rolesMissing.length} default roles need to be created`);
         }
       } else {
-        toast.error(data.error || 'Failed to check roles status');
+        const errorMessage = data.error || 'Failed to check roles status';
+        setRolesStatus({
+          success: false,
+          rolesExist: [],
+          rolesMissing: [],
+          totalRoles: 0,
+          error: errorMessage
+        });
+        toast.error(errorMessage);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to check roles status';
       console.error('Error checking roles:', error);
+      setRolesStatus({
+        success: false,
+        rolesExist: [],
+        rolesMissing: [],
+        totalRoles: 0,
+        error: message
+      });
       toast.error(message);
     } finally {
       setRolesLoading(false);
@@ -208,18 +238,29 @@ export default function DatabaseRolesSettings() {
         body: '{}'
       });
 
+      // Check if response is valid JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const errorMsg = 'Role setup API endpoint not available';
+        setSetupProgress(prev => [...prev, `❌ ${errorMsg}`]);
+        toast.error(errorMsg);
+        return;
+      }
+
       const data = await response.json();
 
-      if (data.success) {
+      if (data && data.success) {
         setSetupProgress(prev => [...prev, '✅ Roles setup completed successfully']);
         toast.success('Roles and permissions configured successfully');
         await new Promise(resolve => setTimeout(resolve, 1000));
         await checkRolesStatus();
       } else {
         setSetupProgress(prev => [...prev, '❌ Role setup failed']);
-        data.errors?.forEach((error: string) => {
-          setSetupProgress(prev => [...prev, `⚠️ ${error}`]);
-        });
+        if (data && data.errors && Array.isArray(data.errors)) {
+          data.errors.forEach((error: string) => {
+            setSetupProgress(prev => [...prev, `⚠️ ${error}`]);
+          });
+        }
         toast.error('Role setup failed');
       }
     } catch (error) {
@@ -233,7 +274,7 @@ export default function DatabaseRolesSettings() {
   }
 
   const databaseHealthy = databaseStatus?.tablesFound === databaseStatus?.totalTables;
-  const rolesHealthy = rolesStatus?.rolesMissing.length === 0;
+  const rolesHealthy = rolesStatus?.rolesMissing?.length === 0;
   const overallHealthy = apiHealthy && databaseHealthy && rolesHealthy;
 
   return (
@@ -280,11 +321,11 @@ export default function DatabaseRolesSettings() {
               </div>
               <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border">
                 <p className="text-xs text-muted-foreground uppercase font-semibold">Database</p>
-                <p className="text-lg font-bold mt-1">{databaseStatus ? `${databaseStatus.tablesFound}/${databaseStatus.totalTables}` : '...'}</p>
+                <p className="text-lg font-bold mt-1">{databaseStatus ? `${databaseStatus.tablesFound || 0}/${databaseStatus.totalTables || 0}` : '...'}</p>
               </div>
               <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border">
                 <p className="text-xs text-muted-foreground uppercase font-semibold">Roles</p>
-                <p className="text-lg font-bold mt-1">{rolesStatus ? `${rolesStatus.rolesExist.length}/${rolesStatus.totalRoles}` : '...'}</p>
+                <p className="text-lg font-bold mt-1">{rolesStatus ? `${rolesStatus.rolesExist?.length || 0}/${rolesStatus.totalRoles || 0}` : '...'}</p>
               </div>
             </div>
           </CardContent>
@@ -346,8 +387,8 @@ export default function DatabaseRolesSettings() {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Missing</p>
-                        <p className={`text-2xl font-bold ${databaseStatus.missingTables.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {databaseStatus.missingTables.length}
+                        <p className={`text-2xl font-bold ${databaseStatus?.missingTables?.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {databaseStatus?.missingTables?.length || 0}
                         </p>
                       </div>
                     </div>
@@ -414,12 +455,12 @@ export default function DatabaseRolesSettings() {
                     <CardHeader>
                       <CardTitle className="text-yellow-700 dark:text-yellow-500 flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5" />
-                        Missing Tables ({databaseStatus.missingTables.length})
+                        Missing Tables ({databaseStatus?.missingTables?.length || 0})
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                        {databaseStatus.missingTables.map((table) => (
+                        {databaseStatus?.missingTables?.map((table) => (
                           <Badge key={table} variant="secondary" className="justify-center py-2">
                             <Table2 className="h-3 w-3 mr-1" />
                             {table}
@@ -485,12 +526,12 @@ export default function DatabaseRolesSettings() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Roles Configured</p>
-                        <p className="text-2xl font-bold text-green-600">{rolesStatus.rolesExist.length}</p>
+                        <p className="text-2xl font-bold text-green-600">{rolesStatus?.rolesExist?.length || 0}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Missing Roles</p>
-                        <p className={`text-2xl font-bold ${rolesStatus.rolesMissing.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {rolesStatus.rolesMissing.length}
+                        <p className={`text-2xl font-bold ${rolesStatus?.rolesMissing?.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {rolesStatus?.rolesMissing?.length || 0}
                         </p>
                       </div>
                     </div>
@@ -498,7 +539,7 @@ export default function DatabaseRolesSettings() {
                     <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                       <div
                         className="bg-green-600 h-2 rounded-full transition-all"
-                        style={{ width: `${(rolesStatus.rolesExist.length / rolesStatus.totalRoles) * 100}%` }}
+                        style={{ width: `${rolesStatus && rolesStatus.totalRoles ? (rolesStatus.rolesExist?.length || 0) / rolesStatus.totalRoles * 100 : 0}%` }}
                       />
                     </div>
 
@@ -534,17 +575,17 @@ export default function DatabaseRolesSettings() {
                   </CardContent>
                 </Card>
 
-                {rolesStatus.rolesExist.length > 0 && (
+                {rolesStatus && rolesStatus.rolesExist && rolesStatus.rolesExist.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
                         <CheckCircle2 className="h-5 w-5" />
-                        Configured Roles ({rolesStatus.rolesExist.length})
+                        Configured Roles ({rolesStatus?.rolesExist?.length || 0})
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-2 grid-cols-2 md:grid-cols-3">
-                        {rolesStatus.rolesExist.map((role) => (
+                        {rolesStatus?.rolesExist?.map((role) => (
                           <Badge key={role} variant="default" className="justify-center py-2">
                             <CheckCircle2 className="h-3 w-3 mr-1" />
                             {role}
@@ -555,12 +596,12 @@ export default function DatabaseRolesSettings() {
                   </Card>
                 )}
 
-                {rolesStatus.rolesMissing.length > 0 && (
+                {rolesStatus && rolesStatus.rolesMissing && rolesStatus.rolesMissing.length > 0 && (
                   <Card className="border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-950/20">
                     <CardHeader>
                       <CardTitle className="text-yellow-700 dark:text-yellow-500 flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5" />
-                        Missing Roles ({rolesStatus.rolesMissing.length})
+                        Missing Roles ({rolesStatus?.rolesMissing?.length || 0})
                       </CardTitle>
                       <CardDescription>
                         The following roles need to be configured for full functionality
@@ -568,7 +609,7 @@ export default function DatabaseRolesSettings() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-2 grid-cols-2 md:grid-cols-3">
-                        {rolesStatus.rolesMissing.map((role) => (
+                        {rolesStatus?.rolesMissing?.map((role) => (
                           <Badge key={role} variant="secondary" className="justify-center py-2">
                             <Lock className="h-3 w-3 mr-1" />
                             {role}
@@ -638,7 +679,7 @@ export default function DatabaseRolesSettings() {
             </DialogHeader>
             <ScrollArea className="h-96 w-full rounded-md border p-4">
               <div className="space-y-2">
-                {databaseStatus?.tables.map((table) => (
+                {databaseStatus?.tables?.map((table) => (
                   <div
                     key={table.name}
                     className="flex items-center justify-between p-2 hover:bg-accent rounded"

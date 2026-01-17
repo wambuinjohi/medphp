@@ -53,6 +53,7 @@ import { InviteUserModal } from '@/components/users/InviteUserModal';
 import { CompleteInvitationModal } from '@/components/users/CompleteInvitationModal';
 import { UserAuditLog } from '@/components/users/UserAuditLog';
 import { RoleManagement } from '@/components/settings/RoleManagement';
+import { PromoteCurrentUserToAdmin } from '@/components/auth/PromoteCurrentUserToAdmin';
 import { toast } from 'sonner';
 
 function getRoleColor(role: string) {
@@ -148,6 +149,16 @@ export default function UserManagement() {
               <p className="text-muted-foreground mb-4">
                 You need administrator privileges to access user management.
               </p>
+              {currentUser && (
+                <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-900 rounded text-left text-sm space-y-3">
+                  <div>
+                    <p className="font-mono text-xs text-muted-foreground mb-2">Current User Info:</p>
+                    <p className="text-xs"><span className="font-semibold">Email:</span> {currentUser.email}</p>
+                    <p className="text-xs"><span className="font-semibold">Role:</span> {currentUser.role || 'Not set'}</p>
+                  </div>
+                  <PromoteCurrentUserToAdmin />
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

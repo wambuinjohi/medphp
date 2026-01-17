@@ -48,11 +48,19 @@ export class ExternalAPIAdapter implements IDatabase {
       params.append('action', action);
       if (table) params.append('table', table);
 
-      // Add where clause parameters individually instead of stringifying
-      if (where && typeof where === 'object') {
+      // For update and delete operations, backend expects 'where' parameter
+      if ((action === 'update' || action === 'delete') && where && typeof where === 'object') {
+        // Convert where object to SQL WHERE clause format for the backend
+        // e.g., {id: 123} becomes id=123
+        const whereParts: string[] = [];
         Object.entries(where).forEach(([key, value]) => {
-          params.append(key, String(value));
+          if (typeof value === 'string') {
+            whereParts.push(`${key}='${String(value).replace(/'/g, "''")}'`);
+          } else {
+            whereParts.push(`${key}=${value}`);
+          }
         });
+        params.append('where', whereParts.join(' AND '));
       }
 
       const url = `${this.apiBase}?${params.toString()}`;
@@ -65,10 +73,21 @@ export class ExternalAPIAdapter implements IDatabase {
         headers['Authorization'] = `Bearer ${this.authToken}`;
       }
 
+      // Build request body
+      let body: any = null;
+
+      if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+        body = data;
+      }
+      // For read operations, include where clause in body if not in URL
+      else if ((action === 'read') && where && typeof where === 'object') {
+        body = where;
+      }
+
       const response = await fetch(url, {
         method,
         headers,
-        body: data ? JSON.stringify(data) : undefined,
+        body: body ? JSON.stringify(body) : undefined,
       });
 
       // Defensively parse JSON - handle cases where server returns non-JSON (e.g., 500 error)

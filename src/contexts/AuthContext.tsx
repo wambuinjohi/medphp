@@ -137,8 +137,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateLastLogin = useCallback(async (userId: string) => {
     try {
       await apiClient.update('profiles', userId, {
-        last_login: new Date().toISOString(),
-        is_active: true
+        last_login: new Date().toISOString()
       });
     } catch (error) {
       logError('Error updating last login:', error, { userId, context: 'updateLastLogin' });
