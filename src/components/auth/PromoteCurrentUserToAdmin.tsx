@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function PromoteCurrentUserToAdmin() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handlePromoteToAdmin = async () => {
@@ -17,23 +17,28 @@ export function PromoteCurrentUserToAdmin() {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: 'admin' })
-        .eq('id', user.id);
+      console.log('🔄 Promoting user', user.id, 'to admin...');
+
+      const { error } = await apiClient.update('profiles', user.id, { role: 'admin' });
 
       if (error) {
+        console.error('API Error:', error);
         throw error;
       }
 
       toast.success('Successfully promoted to admin! Refreshing...');
-      
+
       // Wait a moment for the database to update, then refresh
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Force refresh the profile data
       await refreshProfile();
-      
+
       // Force a page reload to reflect the changes
-      window.location.reload();
+      console.log('🔄 Reloading page...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       console.error('Error promoting user:', error);
       toast.error(`Failed to promote user: ${error instanceof Error ? error.message : 'Unknown error'}`);
