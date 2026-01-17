@@ -69,17 +69,27 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const { db } = useDatabase();
+  const { db, error: dbError } = useDatabase();
 
   useEffect(() => {
     async function fetchData() {
       try {
+        // If database itself has an error, don't try to fetch
+        if (dbError) {
+          setError(dbError);
+          setData([]);
+          setIsLoading(false);
+          return;
+        }
+
         setIsLoading(true);
         const result = await db.select<T>(table, filter);
         setData(result.data);
         setError(result.error);
       } catch (err) {
-        setError(err as Error);
+        const error = err as Error;
+        console.error(`Error fetching from ${table}:`, error);
+        setError(error);
         setData([]);
       } finally {
         setIsLoading(false);
@@ -87,7 +97,7 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
     }
 
     fetchData();
-  }, [db, table, filter]);
+  }, [db, table, filter, dbError]);
 
   return { data, isLoading, error };
 }
