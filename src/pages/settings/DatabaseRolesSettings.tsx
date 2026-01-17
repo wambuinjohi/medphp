@@ -526,12 +526,12 @@ export default function DatabaseRolesSettings() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">Roles Configured</p>
-                        <p className="text-2xl font-bold text-green-600">{rolesStatus.rolesExist.length}</p>
+                        <p className="text-2xl font-bold text-green-600">{rolesStatus?.rolesExist?.length || 0}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Missing Roles</p>
-                        <p className={`text-2xl font-bold ${rolesStatus.rolesMissing.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          {rolesStatus.rolesMissing.length}
+                        <p className={`text-2xl font-bold ${rolesStatus?.rolesMissing?.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {rolesStatus?.rolesMissing?.length || 0}
                         </p>
                       </div>
                     </div>
