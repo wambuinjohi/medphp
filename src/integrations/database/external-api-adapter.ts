@@ -139,13 +139,16 @@ export class ExternalAPIAdapter implements IDatabase {
       }
 
       if (!response.ok) {
+        const errorMsg = result.message || `HTTP ${response.status}`;
+        console.warn(`${logPrefix} - HTTP Error ${response.status}: ${errorMsg}`);
         return {
           data: null as any,
-          error: new Error(result.message || `HTTP ${response.status}`),
+          error: new Error(errorMsg),
           status: response.status,
         };
       }
 
+      console.log(`${logPrefix} - Success (${response.status})`);
       return { data: result.data || result, error: null, status: response.status };
     } catch (error) {
       return {
