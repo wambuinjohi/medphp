@@ -490,7 +490,10 @@ export function useGenerateLPONumber() {
  * Hook to get all suppliers and customers
  */
 export function useAllSuppliersAndCustomers(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('customers', filter);
 }
 
