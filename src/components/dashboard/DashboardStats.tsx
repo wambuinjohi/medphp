@@ -59,9 +59,21 @@ function StatCard({ title, value, change, changeType, icon: Icon, alert }: StatC
 }
 
 export function DashboardStats() {
-  const { data: companies } = useCompanies();
+  const { data: companies, error: companiesError } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: stats, isLoading } = useDashboardStats(currentCompany?.id);
+  const { data: stats, isLoading, error } = useDashboardStats(currentCompany?.id);
+
+  // Show error message if there's an error fetching data
+  if (error && !isLoading) {
+    return (
+      <Alert className="border-destructive bg-destructive/10 mb-4">
+        <AlertCircle className="h-4 w-4 text-destructive" />
+        <AlertDescription className="text-destructive">
+          <strong>Error loading dashboard data:</strong> {error.message || 'Unable to fetch dashboard statistics. Please try refreshing the page.'}
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   if (isLoading) {
     return (
