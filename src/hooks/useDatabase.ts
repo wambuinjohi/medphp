@@ -1045,22 +1045,63 @@ export function useCreateOverpaymentCreditNote() {
 
 /**
  * Hook for dashboard statistics
- * Returns aggregated dashboard data
+ * Returns aggregated dashboard data based on company
+ * @param companyId - Optional company ID to filter stats by
  */
-export function useDashboardStats() {
+export function useDashboardStats(companyId?: string) {
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  // Fetch all required data
+  const { data: invoices } = useInvoices(companyId);
+  const { data: payments } = usePayments(companyId);
+  const { data: customers } = useCustomers(companyId);
+  const { data: products } = useProducts(companyId);
 
   useEffect(() => {
     async function fetchStats() {
       try {
         setIsLoading(true);
-        // Dashboard stats aggregation would typically be done server-side
-        // For now, we'll just return null as it should be implemented based on business logic
-        setStats({});
+
+        // Calculate aggregated statistics from the fetched data
+        const totalRevenue = (invoices || [])
+          .filter((inv: any) => inv.status !== 'cancelled')
+          .reduce((sum: number, inv: any) => sum + (inv.total_amount || 0), 0);
+
+        const totalInvoices = (invoices || [])
+          .filter((inv: any) => inv.status !== 'cancelled')
+          .length;
+
+        const pendingInvoices = (invoices || [])
+          .filter((inv: any) => inv.status === 'pending' || inv.status === 'draft')
+          .length;
+
+        const customerCount = (customers || []).length;
+
+        const productCount = (products || []).length;
+
+        const lowStockProducts = (products || [])
+          .filter((prod: any) => (prod.stock_quantity || 0) < (prod.reorder_level || 10))
+          .length;
+
+        const totalPayments = (payments || [])
+          .reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0);
+
+        const calculatedStats = {
+          totalRevenue,
+          totalInvoices,
+          customerCount,
+          productCount,
+          lowStockProducts,
+          totalPayments,
+          pendingInvoices,
+        };
+
+        setStats(calculatedStats);
         setError(null);
       } catch (err) {
+        console.error('Error calculating dashboard stats:', err);
         setError(err as Error);
         setStats(null);
       } finally {
@@ -1069,7 +1110,7 @@ export function useDashboardStats() {
     }
 
     fetchStats();
-  }, []);
+  }, [invoices, payments, customers, products]);
 
   return { data: stats, isLoading, error };
 }
