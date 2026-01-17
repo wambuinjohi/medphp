@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,33 +10,14 @@ import { PublicFooter } from '@/components/PublicFooter';
 import { useWebCategories } from '@/hooks/useWebCategories';
 import { useSEO } from '@/hooks/useSEO';
 import { generateOrganizationSchema } from '@/utils/seoHelpers';
-import { supabase } from '@/integrations/supabase/client';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 
 export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [productsDropdownOpen, setProductsDropdownOpen] = useState(false);
-  const [companyName, setCompanyName] = useState('>> Medical Supplies');
+  const { currentCompany } = useCurrentCompany();
+  const companyName = currentCompany?.name || '>> Medical Supplies';
   const { categories } = useWebCategories();
-
-  useEffect(() => {
-    const fetchCompanyName = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('companies')
-          .select('name')
-          .limit(1)
-          .single();
-
-        if (!error && data?.name) {
-          setCompanyName(data.name);
-        }
-      } catch (error) {
-        console.warn('Failed to fetch company name:', error);
-      }
-    };
-
-    fetchCompanyName();
-  }, []);
 
   useSEO(
     {

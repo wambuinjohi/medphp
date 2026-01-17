@@ -283,8 +283,9 @@ export default function Invoices() {
     }
 
     try {
-      // Create email content
-      const subject = `Invoice ${invoiceData.invoice_number} from &gt;&gt; Medical Supplies`;
+      // Create email content using dynamic company name
+      const companyName = currentCompany?.name || '>> Medical Supplies';
+      const subject = `Invoice ${invoiceData.invoice_number} from ${companyName}`;
       const body = `Dear ${invoiceData.customers.name},
 
 Please find attached your invoice ${invoiceData.invoice_number} dated ${new Date(invoiceData.invoice_date).toLocaleDateString()}.
@@ -302,10 +303,9 @@ Payment can be made via:
 If you have any questions about this invoice, please don't hesitate to contact us.
 
 Best regards,
-Biolegend Scientific Ltd Team
-Tel: 0741 207 690/0780 165 490
-Email: biolegend@biolegendscientific.co.ke/info@biolegendscientific.co.ke
-Website: www.biolegendscientific.co.ke`;
+${companyName}
+Tel: ${currentCompany?.phone || '0741 207 690/0780 165 490'}
+Email: ${currentCompany?.email || 'info@medplusafrica.com'}`;
 
       // Open email client with pre-filled content
       const emailUrl = `mailto:${invoiceData.customers.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

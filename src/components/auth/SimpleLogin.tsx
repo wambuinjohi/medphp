@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,35 +9,16 @@ import { Loader2, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { toast } from 'sonner';
 import { handleAuthError } from '@/utils/authErrorHandler';
-import { apiClient } from '@/integrations/api';
 
 export function SimpleLogin() {
   const { signIn, loading } = useAuth();
-  const [companyName, setCompanyName] = useState('>> Medical Supplies');
+  const { currentCompany } = useCurrentCompany();
+  const companyName = currentCompany?.name || '>> Medical Supplies';
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
-
-  // Fetch company name from database using external API
-  useEffect(() => {
-    const fetchCompanyName = async () => {
-      try {
-        const result = await apiClient.select('companies', {});
-        const companies = Array.isArray(result.data) ? result.data : [result.data];
-        const company = companies?.[0];
-
-        if (company?.name) {
-          setCompanyName(company.name);
-        }
-      } catch (error) {
-        console.warn('Failed to fetch company name:', error);
-        // Keep the default company name
-      }
-    };
-
-    fetchCompanyName();
-  }, []);
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 

@@ -18,6 +18,7 @@ import { getUserFriendlyMessage, logError } from '@/utils/errorParser';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { QuickSchemaFix } from '@/components/QuickSchemaFix';
 import { addCurrencyColumn, ADD_CURRENCY_COLUMN_SQL } from '@/utils/addCurrencyColumn';
+import { getDatabaseProvider } from '@/integrations/database';
 
 export default function CompanySettings() {
   const [editingTax, setEditingTax] = useState<string | null>(null);
@@ -30,15 +31,15 @@ export default function CompanySettings() {
   const [storageStatus, setStorageStatus] = useState<'unknown' | 'available' | 'unavailable'>('unknown');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [companyData, setCompanyData] = useState({
-    name: '&gt;&gt; MEDICAL SUPPLIES',
+    name: '',
     registration_number: '',
-    tax_number: 'P051658002D',
-    email: 'info@medplusafrica.com',
-    phone: 'Tel: 0741 207 690/0780 165 490',
-    address: 'P.O Box 85988-00200\nNairobi, Kenya',
-    city: 'Nairobi',
+    tax_number: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
     state: '',
-    postal_code: '00200',
+    postal_code: '',
     country: 'Kenya',
     currency: 'KES',
     fiscal_year_start: 1,
@@ -417,7 +418,11 @@ export default function CompanySettings() {
       if (companyData.currency?.trim()) {
         sanitizedData.currency = companyData.currency.trim();
       }
-      if (companyData.fiscal_year_start) {
+
+      // Only include fiscal_year_start for non-external API providers
+      // External API doesn't have this column yet
+      const provider = getDatabaseProvider();
+      if (companyData.fiscal_year_start && provider !== 'external-api') {
         sanitizedData.fiscal_year_start = companyData.fiscal_year_start;
       }
 

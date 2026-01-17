@@ -157,8 +157,12 @@ export default function Quotations() {
     }
 
     try {
-      // Create email content
-      const subject = `Quotation ${quotation.quotation_number} from &gt;&gt; Medical Supplies`;
+      // Create email content using dynamic company details
+      const companyName = currentCompany?.name || '>> Medical Supplies';
+      const companyPhone = currentCompany?.phone || '0741 207 690/0780 165 490';
+      const companyEmail = currentCompany?.email || 'info@medplusafrica.com';
+
+      const subject = `Quotation ${quotation.quotation_number} from ${companyName}`;
       const body = `Dear ${quotation.customers.name},
 
 Please find attached your quotation ${quotation.quotation_number} dated ${new Date(quotation.quotation_date).toLocaleDateString()}.
@@ -170,10 +174,9 @@ Quotation Summary:
 If you have any questions about this quotation, please don't hesitate to contact us.
 
 Best regards,
-Biolegend Scientific Ltd Team
-Tel: 0741 207 690/0780 165 490
-Email: biolegend@biolegendscientific.co.ke/info@biolegendscientific.co.ke
-Website: www.biolegendscientific.co.ke`;
+${companyName}
+Tel: ${companyPhone}
+Email: ${companyEmail}`;
 
       // Open email client with pre-filled content
       const emailUrl = `mailto:${quotation.customers.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

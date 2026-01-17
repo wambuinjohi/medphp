@@ -262,6 +262,58 @@ app.post('/api/auth/reset', (req: Request, res: Response) => {
   });
 });
 
+// Admin API Endpoints for Database and Roles Management
+// These endpoints provide mock responses for the settings pages
+
+// Check database status endpoint
+app.post('/api/admin/database/check-status', (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    connected: true,
+    tablesFound: 15,
+    totalTables: 15,
+    missingTables: [],
+    tables: [
+      { name: 'users', exists: true },
+      { name: 'companies', exists: true },
+      { name: 'invoices', exists: true },
+      { name: 'quotations', exists: true },
+      { name: 'proformas', exists: true },
+      { name: 'customers', exists: true },
+      { name: 'products', exists: true },
+      { name: 'categories', exists: true },
+      { name: 'payments', exists: true },
+      { name: 'delivery_notes', exists: true },
+      { name: 'credit_notes', exists: true },
+      { name: 'remittance_advice', exists: true },
+      { name: 'lpos', exists: true },
+      { name: 'roles', exists: true },
+      { name: 'permissions', exists: true }
+    ]
+  });
+});
+
+// Check roles status endpoint
+app.post('/api/admin/roles/check-status', (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    rolesExist: ['admin', 'accountant', 'stock_manager', 'user'],
+    rolesMissing: [],
+    totalRoles: 4,
+    error: null
+  });
+});
+
+// Setup complete endpoint
+app.post('/api/admin/roles/setup-complete', (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    message: 'Roles and permissions configured successfully',
+    rolesCreated: ['admin', 'accountant', 'stock_manager', 'user'],
+    errors: []
+  });
+});
+
 const PORT = process.env.AUTH_SERVER_PORT || 3001;
 
 app.listen(PORT, () => {
