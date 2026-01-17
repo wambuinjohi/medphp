@@ -97,24 +97,22 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
-  const { db, error: dbError } = useDatabase();
+  const { db, isHealthy } = useDatabase();
 
   useEffect(() => {
     async function fetchData() {
       try {
-        // If database itself has an error, don't try to fetch
-        if (dbError) {
-          setError(dbError);
-          setData([]);
-          setIsLoading(false);
-          return;
-        }
-
         setIsLoading(true);
         const result = await db.select<T>(table, filter);
         setData(result.data);
         setError(result.error);
+
+        // Clear retry count on successful fetch
+        if (!result.error) {
+          setRetryCount(0);
+        }
       } catch (err) {
         const error = err as Error;
         console.error(`Error fetching from ${table}:`, error);
@@ -125,10 +123,17 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
       }
     }
 
-    fetchData();
-  }, [db, table, filter, dbError]);
+    // Try to fetch when database becomes healthy or on dependency change
+    if (isHealthy || retryCount === 0) {
+      fetchData();
+    }
+  }, [db, table, filter, isHealthy, retryCount]);
 
-  return { data, isLoading, error };
+  const retry = () => {
+    setRetryCount(prev => prev + 1);
+  };
+
+  return { data, isLoading, error, retry };
 }
 
 /**
