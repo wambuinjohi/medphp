@@ -5,6 +5,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { usePayments, useRemittanceAdvice, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface Activity {
   id: string;
