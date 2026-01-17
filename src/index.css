@@ -222,6 +222,15 @@
     }
   }
 
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
   .animate-fadeInUp {
     animation: fadeInUp 0.6s ease-out forwards;
   }
@@ -239,5 +248,19 @@
   .animate-fadeInUp-delay-3 {
     animation: fadeInUp 0.6s ease-out 0.3s forwards;
     opacity: 0;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+
+  /* Performance optimization for smooth animations */
+  main {
+    will-change: contents;
+  }
+
+  /* Reduce jank on page transitions */
+  * {
+    @apply transition-gpu;
   }
 }
