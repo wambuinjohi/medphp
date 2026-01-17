@@ -142,7 +142,8 @@ export const useInvoicesFixed = (companyId?: string) => {
         const { data: creators } = creatorIds.length > 0 ? await supabase
           .from('profiles')
           .select('id, full_name')
-          .in('id', creatorIds) : { data: [] };
+          .in('id', creatorIds)
+          .execute() : { data: [] };
 
         const creatorMap = new Map();
         (creators || []).forEach(c => creatorMap.set(c.id, c));
