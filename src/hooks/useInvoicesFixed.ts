@@ -205,14 +205,15 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
             created_at,
             updated_at
           `)
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: false });
+          .eq('customer_id', customerId);
 
         if (companyId) {
           query = query.eq('company_id', companyId);
         }
 
-        const { data: invoices, error: invoicesError } = await query;
+        query = query.order('created_at', { ascending: false });
+
+        const { data: invoices, error: invoicesError } = await query.execute();
 
         if (invoicesError) {
           console.error('Error fetching customer invoices:', invoicesError);
