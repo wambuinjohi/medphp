@@ -493,8 +493,32 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async health(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.apiBase}?action=health`);
-      return response.ok;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for health check
+
+      try {
+        const response = await fetch(`${this.apiBase}?action=health`, {
+          method: 'GET',
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+        return response.ok;
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+
+        if (fetchError.name === 'AbortError') {
+          console.warn('External API health check timeout:', this.apiBase);
+          return false;
+        }
+
+        if (fetchError instanceof TypeError && fetchError.message === 'Failed to fetch') {
+          console.warn('External API unreachable:', this.apiBase);
+          return false;
+        }
+
+        throw fetchError;
+      }
     } catch (error) {
       console.error('External API health check failed:', error);
       return false;
