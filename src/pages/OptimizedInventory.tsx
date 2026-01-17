@@ -151,17 +151,17 @@ export default function OptimizedInventory() {
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
   
-  const { 
-    data: productsData, 
-    isLoading: loadingProducts, 
+  const {
+    data: productsData,
+    isLoading: loadingProducts,
     error: productsError,
-    refetch: refetchProducts 
+    refetch: refetchProducts
   } = useOptimizedProducts(currentCompany?.id, {
     page: currentPage,
     pageSize,
     searchTerm,
     lowStockOnly: showLowStockOnly,
-    categoryId: selectedCategory || undefined
+    categoryId: selectedCategory === '__all__' ? undefined : selectedCategory
   });
 
   const { 
