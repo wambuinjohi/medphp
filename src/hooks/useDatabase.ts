@@ -396,7 +396,10 @@ export function useQuotations(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useInvoices(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('invoices', filter);
 }
 
@@ -405,7 +408,10 @@ export function useInvoices(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function usePayments(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('payments', filter);
 }
 
@@ -414,7 +420,10 @@ export function usePayments(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useDeliveryNotes(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('delivery_notes', filter);
 }
 
@@ -423,7 +432,10 @@ export function useDeliveryNotes(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useLPOs(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('lpos', filter);
 }
 
