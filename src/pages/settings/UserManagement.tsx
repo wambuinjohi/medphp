@@ -148,6 +148,16 @@ export default function UserManagement() {
               <p className="text-muted-foreground mb-4">
                 You need administrator privileges to access user management.
               </p>
+              {currentUser && (
+                <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-900 rounded text-left text-sm">
+                  <p className="font-mono text-xs text-muted-foreground mb-2">Current User Info:</p>
+                  <p className="text-xs"><span className="font-semibold">Email:</span> {currentUser.email}</p>
+                  <p className="text-xs"><span className="font-semibold">Role:</span> {currentUser.role || 'Not set'}</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Contact your system administrator to update your role to 'admin' or 'super_admin'.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
