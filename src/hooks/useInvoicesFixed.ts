@@ -273,7 +273,8 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
             const { data: products, error: productsError } = await supabase
               .from('products')
               .select('id, name, product_code, unit_of_measure')
-              .in('id', productIds);
+              .in('id', productIds)
+              .execute();
 
             if (!productsError && products) {
               products.forEach(product => {
