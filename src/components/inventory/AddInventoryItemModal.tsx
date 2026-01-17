@@ -265,12 +265,11 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                       Create New
                     </Button>
                   </div>
-                  <Select value={formData.category_id || ''} onValueChange={(value) => handleInputChange('category_id', value || null)}>
+                  <Select value={formData.category_id} onValueChange={(value) => handleInputChange('category_id', value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder="Select category (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No Category</SelectItem>
                       {categoriesLoading ? (
                         <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading categories...</div>
                       ) : categories && categories.length > 0 ? (
