@@ -3,11 +3,12 @@ import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { AuthPerformanceTest } from '@/components/auth/AuthPerformanceTest';
 import { Button } from '@/components/ui/button';
-import { FileText, BarChart3 } from 'lucide-react';
+import { FileText, BarChart3, AlertCircle } from 'lucide-react';
 import { downloadQuotationPDF } from '@/utils/pdfGenerator';
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Index = () => {
   const { data: companies } = useCompanies();
