@@ -460,7 +460,7 @@ export default function DatabaseRolesSettings() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                        {databaseStatus.missingTables.map((table) => (
+                        {databaseStatus?.missingTables?.map((table) => (
                           <Badge key={table} variant="secondary" className="justify-center py-2">
                             <Table2 className="h-3 w-3 mr-1" />
                             {table}
