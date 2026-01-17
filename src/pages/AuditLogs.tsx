@@ -73,8 +73,8 @@ function getActionColor(action: string) {
 
 export default function AuditLogsPage() {
   const [filter, setFilter] = React.useState('');
-  const [entityTypeFilter, setEntityTypeFilter] = React.useState<string>('');
-  const [actionFilter, setActionFilter] = React.useState<string>('');
+  const [entityTypeFilter, setEntityTypeFilter] = React.useState<string>('__all__');
+  const [actionFilter, setActionFilter] = React.useState<string>('__all__');
   const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set());
 
   const { data: logs = [], isLoading, refetch } = useQuery({
