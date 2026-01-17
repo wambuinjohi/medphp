@@ -1,30 +1,10 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Heart, Globe, Users } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 
 export default function IntroSection() {
-  const [companyName, setCompanyName] = useState('>> Medical Supplies');
-
-  useEffect(() => {
-    const fetchCompanyName = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('companies')
-          .select('name')
-          .limit(1)
-          .single();
-
-        if (!error && data?.name) {
-          setCompanyName(data.name);
-        }
-      } catch (error) {
-        console.warn('Failed to fetch company name:', error);
-      }
-    };
-
-    fetchCompanyName();
-  }, []);
+  const { currentCompany } = useCurrentCompany();
+  const companyName = currentCompany?.name || '>> Medical Supplies';
 
   return (
     <section className="py-12 sm:py-24 bg-gradient-to-b from-white via-blue-50/20 to-white">
