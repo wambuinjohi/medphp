@@ -274,7 +274,7 @@ export default function DatabaseRolesSettings() {
   }
 
   const databaseHealthy = databaseStatus?.tablesFound === databaseStatus?.totalTables;
-  const rolesHealthy = rolesStatus?.rolesMissing.length === 0;
+  const rolesHealthy = rolesStatus?.rolesMissing?.length === 0;
   const overallHealthy = apiHealthy && databaseHealthy && rolesHealthy;
 
   return (
