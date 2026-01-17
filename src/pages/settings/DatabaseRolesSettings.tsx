@@ -601,7 +601,7 @@ export default function DatabaseRolesSettings() {
                     <CardHeader>
                       <CardTitle className="text-yellow-700 dark:text-yellow-500 flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5" />
-                        Missing Roles ({rolesStatus.rolesMissing.length})
+                        Missing Roles ({rolesStatus?.rolesMissing?.length || 0})
                       </CardTitle>
                       <CardDescription>
                         The following roles need to be configured for full functionality
