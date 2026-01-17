@@ -52,11 +52,12 @@ function getTypeIcon(type: Activity['type']) {
 export function RecentActivity() {
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: invoices, isLoading: invoicesLoading } = useInvoices(currentCompany?.id);
-  const { data: payments, isLoading: paymentsLoading } = usePayments(currentCompany?.id);
-  const { data: remittances, isLoading: remittancesLoading } = useRemittanceAdvice(currentCompany?.id);
+  const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useInvoices(currentCompany?.id);
+  const { data: payments, isLoading: paymentsLoading, error: paymentsError } = usePayments(currentCompany?.id);
+  const { data: remittances, isLoading: remittancesLoading, error: remittancesError } = useRemittanceAdvice(currentCompany?.id);
 
   const isLoading = invoicesLoading || paymentsLoading || remittancesLoading;
+  const hasError = invoicesError || paymentsError || remittancesError;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
