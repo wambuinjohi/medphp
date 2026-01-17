@@ -585,7 +585,7 @@ export default function DatabaseRolesSettings() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-2 grid-cols-2 md:grid-cols-3">
-                        {rolesStatus.rolesExist.map((role) => (
+                        {rolesStatus?.rolesExist?.map((role) => (
                           <Badge key={role} variant="default" className="justify-center py-2">
                             <CheckCircle2 className="h-3 w-3 mr-1" />
                             {role}
