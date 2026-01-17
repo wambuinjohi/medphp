@@ -48,13 +48,6 @@ export class ExternalAPIAdapter implements IDatabase {
       params.append('action', action);
       if (table) params.append('table', table);
 
-      // Add where clause parameters individually instead of stringifying
-      if (where && typeof where === 'object') {
-        Object.entries(where).forEach(([key, value]) => {
-          params.append(key, String(value));
-        });
-      }
-
       const url = `${this.apiBase}?${params.toString()}`;
 
       const headers: HeadersInit = {
@@ -65,10 +58,16 @@ export class ExternalAPIAdapter implements IDatabase {
         headers['Authorization'] = `Bearer ${this.authToken}`;
       }
 
+      // Combine data and where clause for POST body
+      let body: any = data || {};
+      if (where && typeof where === 'object') {
+        body = { ...body, ...where };
+      }
+
       const response = await fetch(url, {
         method,
         headers,
-        body: data ? JSON.stringify(data) : undefined,
+        body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
       });
 
       // Defensively parse JSON - handle cases where server returns non-JSON (e.g., 500 error)
