@@ -147,61 +147,63 @@ const Index = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Welcome back! Here's what's happening with your business today.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          <Button
-            onClick={handleTestPDF}
-            variant="outline"
-            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground flex-1 sm:flex-none min-w-[120px] text-sm sm:text-base"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">{quotations?.length ? 'Download Sample PDF' : 'Test PDF Generation'}</span>
-            <span className="sm:hidden">PDF</span>
-          </Button>
+    <DashboardErrorBoundary>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Welcome back! Here's what's happening with your business today.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <Button
+              onClick={handleTestPDF}
+              variant="outline"
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground flex-1 sm:flex-none min-w-[120px] text-sm sm:text-base"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">{quotations?.length ? 'Download Sample PDF' : 'Test PDF Generation'}</span>
+              <span className="sm:hidden">PDF</span>
+            </Button>
 
-          <Button
-            variant="outline"
-            onClick={() => setShowAuthPerformance(!showAuthPerformance)}
-            className="border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white flex-1 sm:flex-none min-w-[120px] text-sm sm:text-base"
-          >
-            <BarChart3 className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">{showAuthPerformance ? 'Hide' : 'Show'} Performance</span>
-            <span className="sm:hidden">{showAuthPerformance ? 'Hide' : 'Show'}</span>
-          </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowAuthPerformance(!showAuthPerformance)}
+              className="border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white flex-1 sm:flex-none min-w-[120px] text-sm sm:text-base"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">{showAuthPerformance ? 'Hide' : 'Show'} Performance</span>
+              <span className="sm:hidden">{showAuthPerformance ? 'Hide' : 'Show'}</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Dashboard Stats */}
+        <DashboardStats />
+
+        {/* Main Content Grid */}
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+          {/* Left Column - Takes 2/3 of the space on lg screens */}
+          <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
+            <RecentActivity />
+          </div>
+
+          {/* Right Column - Takes 1/3 of the space on lg screens */}
+          <div className="space-y-6 order-1 lg:order-2">
+            <QuickActions />
+
+            {/* Auth Performance Monitor - Toggle visibility */}
+            {showAuthPerformance && (
+              <div className="transition-all duration-300 ease-in-out">
+                <AuthPerformanceTest />
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Dashboard Stats */}
-      <DashboardStats />
-
-      {/* Main Content Grid */}
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-        {/* Left Column - Takes 2/3 of the space on lg screens */}
-        <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
-          <RecentActivity />
-        </div>
-
-        {/* Right Column - Takes 1/3 of the space on lg screens */}
-        <div className="space-y-6 order-1 lg:order-2">
-          <QuickActions />
-
-          {/* Auth Performance Monitor - Toggle visibility */}
-          {showAuthPerformance && (
-            <div className="transition-all duration-300 ease-in-out">
-              <AuthPerformanceTest />
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    </DashboardErrorBoundary>
   );
 };
 
