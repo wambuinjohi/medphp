@@ -353,8 +353,8 @@ export const useProductCategories = (companyId?: string) => {
 
 // Optimized products hook (alias for useOptimizedProductSearch)
 export const useOptimizedProducts = (companyId?: string, options?: any) => {
-  const { data: searchResults } = useOptimizedProductSearch(companyId, true);
-  const { data: popularProducts } = usePopularProducts(companyId, 50);
+  const { data: searchResults, isLoading: searchLoading, error: searchError } = useOptimizedProductSearch(companyId, true);
+  const { data: popularProducts, isLoading: popularLoading, error: popularError } = usePopularProducts(companyId, 50);
 
   // Return all products (search + popular) for the inventory page
   const allProducts = useMemo(() => {
@@ -369,8 +369,8 @@ export const useOptimizedProducts = (companyId?: string, options?: any) => {
 
   return {
     data: allProducts,
-    isLoading: false,
-    error: null,
+    isLoading: searchLoading || popularLoading,
+    error: searchError || popularError,
     refetch: () => {}
   };
 };

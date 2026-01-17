@@ -104,7 +104,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
         name: item.name || '',
         product_code: item.product_code || '',
         description: item.description || '',
-        category_id: item.category_id || '',
+        category_id: item.category_id || '__none__',
         unit_of_measure: item.unit_of_measure || 'pieces',
         cost_price: Number(item.cost_price) || 0,
         selling_price: Number(item.selling_price) || 0,
@@ -155,7 +155,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
         name: formData.name,
         product_code: formData.product_code,
         description: formData.description,
-        category_id: formData.category_id || null,
+        category_id: formData.category_id === '__none__' ? null : formData.category_id,
         unit_of_measure: formData.unit_of_measure,
         cost_price: Number(formData.cost_price),
         selling_price: Number(formData.selling_price),
@@ -276,12 +276,12 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
                   Create New
                 </Button>
               </div>
-              <Select value={formData.category_id || ''} onValueChange={(value) => handleInputChange('category_id', value || null)}>
+              <Select value={formData.category_id} onValueChange={(value) => handleInputChange('category_id', value === '__none__' ? null : value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder="Select category (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No Category</SelectItem>
+                  <SelectItem value="__none__">No Category</SelectItem>
                   {categoriesLoading ? (
                     <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading categories...</div>
                   ) : categories && categories.length > 0 ? (
@@ -291,7 +291,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
                       </SelectItem>
                     ))
                   ) : (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">No categories available</div>
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">No other categories available</div>
                   )}
                 </SelectContent>
               </Select>

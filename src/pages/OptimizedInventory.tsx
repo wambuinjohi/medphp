@@ -134,7 +134,7 @@ ProductRow.displayName = 'ProductRow';
 
 export default function OptimizedInventory() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('__all__');
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20); // Fixed page size for better performance
@@ -151,17 +151,17 @@ export default function OptimizedInventory() {
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
   
-  const { 
-    data: productsData, 
-    isLoading: loadingProducts, 
+  const {
+    data: productsData,
+    isLoading: loadingProducts,
     error: productsError,
-    refetch: refetchProducts 
+    refetch: refetchProducts
   } = useOptimizedProducts(currentCompany?.id, {
     page: currentPage,
     pageSize,
     searchTerm,
     lowStockOnly: showLowStockOnly,
-    categoryId: selectedCategory || undefined
+    categoryId: selectedCategory === '__all__' ? undefined : selectedCategory
   });
 
   const { 
@@ -384,10 +384,10 @@ export default function OptimizedInventory() {
             
             <Select value={selectedCategory} onValueChange={handleCategoryFilter}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="All Categories" />
+                <SelectValue placeholder="All categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="__all__">All Categories</SelectItem>
                 {categories?.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}

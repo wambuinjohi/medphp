@@ -73,8 +73,8 @@ function getActionColor(action: string) {
 
 export default function AuditLogsPage() {
   const [filter, setFilter] = React.useState('');
-  const [entityTypeFilter, setEntityTypeFilter] = React.useState<string>('');
-  const [actionFilter, setActionFilter] = React.useState<string>('');
+  const [entityTypeFilter, setEntityTypeFilter] = React.useState<string>('__all__');
+  const [actionFilter, setActionFilter] = React.useState<string>('__all__');
   const [expandedRows, setExpandedRows] = React.useState<Set<string>>(new Set());
 
   const { data: logs = [], isLoading, refetch } = useQuery({
@@ -94,7 +94,7 @@ export default function AuditLogsPage() {
   );
 
   const filtered = useMemo(() => {
-    if (!filter && !entityTypeFilter && !actionFilter) return logs;
+    if (!filter && entityTypeFilter === '__all__' && actionFilter === '__all__') return logs;
 
     return logs.filter((l: AuditLog) => {
       const q = filter.toLowerCase();
@@ -106,8 +106,8 @@ export default function AuditLogsPage() {
         String(l.actor_email || '').toLowerCase().includes(q) ||
         JSON.stringify(l.details || {}).toLowerCase().includes(q);
 
-      const matchesEntityType = !entityTypeFilter || l.entity_type === entityTypeFilter;
-      const matchesAction = !actionFilter || l.action === actionFilter;
+      const matchesEntityType = entityTypeFilter === '__all__' || l.entity_type === entityTypeFilter;
+      const matchesAction = actionFilter === '__all__' || l.action === actionFilter;
 
       return matchesSearch && matchesEntityType && matchesAction;
     });
@@ -189,10 +189,10 @@ export default function AuditLogsPage() {
               </label>
               <Select value={entityTypeFilter} onValueChange={setEntityTypeFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All types" />
+                  <SelectValue placeholder="All entity types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Entity Types</SelectItem>
+                  <SelectItem value="__all__">All Entity Types</SelectItem>
                   {entityTypes.map((type) => (
                     <SelectItem key={type} value={type}>
                       {type}
@@ -211,7 +211,7 @@ export default function AuditLogsPage() {
                   <SelectValue placeholder="All actions" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Actions</SelectItem>
+                  <SelectItem value="__all__">All Actions</SelectItem>
                   {actions.map((action) => (
                     <SelectItem key={action} value={action}>
                       {action}
