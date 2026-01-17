@@ -5,6 +5,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { usePayments, useRemittanceAdvice, useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 interface Activity {
   id: string;
@@ -50,11 +52,12 @@ function getTypeIcon(type: Activity['type']) {
 export function RecentActivity() {
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: invoices, isLoading: invoicesLoading } = useInvoices(currentCompany?.id);
-  const { data: payments, isLoading: paymentsLoading } = usePayments(currentCompany?.id);
-  const { data: remittances, isLoading: remittancesLoading } = useRemittanceAdvice(currentCompany?.id);
+  const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useInvoices(currentCompany?.id);
+  const { data: payments, isLoading: paymentsLoading, error: paymentsError } = usePayments(currentCompany?.id);
+  const { data: remittances, isLoading: remittancesLoading, error: remittancesError } = useRemittanceAdvice(currentCompany?.id);
 
   const isLoading = invoicesLoading || paymentsLoading || remittancesLoading;
+  const hasError = invoicesError || paymentsError || remittancesError;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -115,6 +118,24 @@ export function RecentActivity() {
 
   // Sort by timestamp (most recent first)
   activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+  if (hasError && !isLoading) {
+    return (
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert className="border-destructive bg-destructive/10">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <AlertDescription className="text-destructive">
+              Unable to load recent activity. Please try refreshing the page.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (isLoading) {
     return (

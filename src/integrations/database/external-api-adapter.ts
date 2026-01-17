@@ -48,6 +48,10 @@ export class ExternalAPIAdapter implements IDatabase {
       params.append('action', action);
       if (table) params.append('table', table);
 
+      // Log the API call attempt
+      const logPrefix = `📡 [${method.toUpperCase()}] ${action}${table ? ` on ${table}` : ''}`;
+      console.log(`${logPrefix} - Starting request to ${this.apiBase}...`);
+
       // For update and delete operations, backend expects 'where' parameter
       if ((action === 'update' || action === 'delete') && where && typeof where === 'object') {
         // Convert where object to SQL WHERE clause format for the backend
@@ -135,13 +139,16 @@ export class ExternalAPIAdapter implements IDatabase {
       }
 
       if (!response.ok) {
+        const errorMsg = result.message || `HTTP ${response.status}`;
+        console.warn(`${logPrefix} - HTTP Error ${response.status}: ${errorMsg}`);
         return {
           data: null as any,
-          error: new Error(result.message || `HTTP ${response.status}`),
+          error: new Error(errorMsg),
           status: response.status,
         };
       }
 
+      console.log(`${logPrefix} - Success (${response.status})`);
       return { data: result.data || result, error: null, status: response.status };
     } catch (error) {
       return {

@@ -1045,22 +1045,72 @@ export function useCreateOverpaymentCreditNote() {
 
 /**
  * Hook for dashboard statistics
- * Returns aggregated dashboard data
+ * Returns aggregated dashboard data based on company
+ * @param companyId - Optional company ID to filter stats by
  */
-export function useDashboardStats() {
+export function useDashboardStats(companyId?: string) {
   const [stats, setStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  // Fetch all required data
+  const { data: invoices, error: invoicesError } = useInvoices(companyId);
+  const { data: payments, error: paymentsError } = usePayments(companyId);
+  const { data: customers, error: customersError } = useCustomers(companyId);
+  const { data: products, error: productsError } = useProducts(companyId);
 
   useEffect(() => {
     async function fetchStats() {
       try {
         setIsLoading(true);
-        // Dashboard stats aggregation would typically be done server-side
-        // For now, we'll just return null as it should be implemented based on business logic
-        setStats({});
-        setError(null);
+
+        // If any data fetch has an error, we'll still try to calculate stats from what we have
+        // but we'll also track that there was an error
+        const anyError = invoicesError || paymentsError || customersError || productsError;
+
+        // Calculate aggregated statistics from the fetched data
+        const totalRevenue = (invoices || [])
+          .filter((inv: any) => inv.status !== 'cancelled')
+          .reduce((sum: number, inv: any) => sum + (inv.total_amount || 0), 0);
+
+        const totalInvoices = (invoices || [])
+          .filter((inv: any) => inv.status !== 'cancelled')
+          .length;
+
+        const pendingInvoices = (invoices || [])
+          .filter((inv: any) => inv.status === 'pending' || inv.status === 'draft')
+          .length;
+
+        const customerCount = (customers || []).length;
+
+        const productCount = (products || []).length;
+
+        const lowStockProducts = (products || [])
+          .filter((prod: any) => (prod.stock_quantity || 0) < (prod.reorder_level || 10))
+          .length;
+
+        const totalPayments = (payments || [])
+          .reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0);
+
+        const calculatedStats = {
+          totalRevenue,
+          totalInvoices,
+          customerCount,
+          productCount,
+          lowStockProducts,
+          totalPayments,
+          pendingInvoices,
+        };
+
+        setStats(calculatedStats);
+        // Only set error if we have one AND we have no data to display
+        if (anyError && !invoices && !payments && !customers && !products) {
+          setError(anyError as Error);
+        } else {
+          setError(null);
+        }
       } catch (err) {
+        console.error('Error calculating dashboard stats:', err);
         setError(err as Error);
         setStats(null);
       } finally {
@@ -1069,7 +1119,7 @@ export function useDashboardStats() {
     }
 
     fetchStats();
-  }, []);
+  }, [invoices, payments, customers, products, invoicesError, paymentsError, customersError, productsError]);
 
   return { data: stats, isLoading, error };
 }

@@ -3,11 +3,62 @@ import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { AuthPerformanceTest } from '@/components/auth/AuthPerformanceTest';
 import { Button } from '@/components/ui/button';
-import { FileText, BarChart3 } from 'lucide-react';
+import { FileText, BarChart3, AlertCircle } from 'lucide-react';
 import { downloadQuotationPDF } from '@/utils/pdfGenerator';
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
-import { useState } from 'react';
+import { useState, ReactNode, Component, ErrorInfo } from 'react';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+// Error Boundary for Dashboard
+interface DashboardErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface DashboardErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProps, DashboardErrorBoundaryState> {
+  constructor(props: DashboardErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): DashboardErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Dashboard error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Welcome back! Here's what's happening with your business today.
+              </p>
+            </div>
+          </div>
+          <Alert className="border-destructive bg-destructive/10">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <AlertDescription className="text-destructive">
+              <strong>Dashboard Error:</strong> {this.state.error?.message || 'An unexpected error occurred loading the dashboard. Please refresh the page.'}
+            </AlertDescription>
+          </Alert>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const Index = () => {
   const { data: companies } = useCompanies();
@@ -96,61 +147,63 @@ const Index = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Welcome back! Here's what's happening with your business today.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          <Button
-            onClick={handleTestPDF}
-            variant="outline"
-            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground flex-1 sm:flex-none min-w-[120px] text-sm sm:text-base"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">{quotations?.length ? 'Download Sample PDF' : 'Test PDF Generation'}</span>
-            <span className="sm:hidden">PDF</span>
-          </Button>
+    <DashboardErrorBoundary>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Welcome back! Here's what's happening with your business today.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <Button
+              onClick={handleTestPDF}
+              variant="outline"
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground flex-1 sm:flex-none min-w-[120px] text-sm sm:text-base"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">{quotations?.length ? 'Download Sample PDF' : 'Test PDF Generation'}</span>
+              <span className="sm:hidden">PDF</span>
+            </Button>
 
-          <Button
-            variant="outline"
-            onClick={() => setShowAuthPerformance(!showAuthPerformance)}
-            className="border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white flex-1 sm:flex-none min-w-[120px] text-sm sm:text-base"
-          >
-            <BarChart3 className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">{showAuthPerformance ? 'Hide' : 'Show'} Performance</span>
-            <span className="sm:hidden">{showAuthPerformance ? 'Hide' : 'Show'}</span>
-          </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowAuthPerformance(!showAuthPerformance)}
+              className="border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white flex-1 sm:flex-none min-w-[120px] text-sm sm:text-base"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">{showAuthPerformance ? 'Hide' : 'Show'} Performance</span>
+              <span className="sm:hidden">{showAuthPerformance ? 'Hide' : 'Show'}</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Dashboard Stats */}
+        <DashboardStats />
+
+        {/* Main Content Grid */}
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+          {/* Left Column - Takes 2/3 of the space on lg screens */}
+          <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
+            <RecentActivity />
+          </div>
+
+          {/* Right Column - Takes 1/3 of the space on lg screens */}
+          <div className="space-y-6 order-1 lg:order-2">
+            <QuickActions />
+
+            {/* Auth Performance Monitor - Toggle visibility */}
+            {showAuthPerformance && (
+              <div className="transition-all duration-300 ease-in-out">
+                <AuthPerformanceTest />
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Dashboard Stats */}
-      <DashboardStats />
-
-      {/* Main Content Grid */}
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-        {/* Left Column - Takes 2/3 of the space on lg screens */}
-        <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
-          <RecentActivity />
-        </div>
-
-        {/* Right Column - Takes 1/3 of the space on lg screens */}
-        <div className="space-y-6 order-1 lg:order-2">
-          <QuickActions />
-
-          {/* Auth Performance Monitor - Toggle visibility */}
-          {showAuthPerformance && (
-            <div className="transition-all duration-300 ease-in-out">
-              <AuthPerformanceTest />
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    </DashboardErrorBoundary>
   );
 };
 

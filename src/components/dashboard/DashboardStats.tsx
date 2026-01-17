@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, DollarSign, FileText, Package, Users, AlertTriangle, CheckCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, FileText, Package, Users, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDashboardStats, useCompanies } from '@/hooks/useDatabase';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface StatCardProps {
   title: string;
@@ -58,9 +59,38 @@ function StatCard({ title, value, change, changeType, icon: Icon, alert }: StatC
 }
 
 export function DashboardStats() {
-  const { data: companies } = useCompanies();
+  const { data: companies, error: companiesError } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: stats, isLoading } = useDashboardStats(currentCompany?.id);
+  const { data: stats, isLoading, error } = useDashboardStats(currentCompany?.id);
+
+  // Show error message if there's an error fetching data
+  if (error && !isLoading) {
+    const errorMsg = error.message || 'Unable to fetch dashboard statistics';
+    const isCorsError = errorMsg.includes('Failed to fetch') || errorMsg.includes('CORS');
+    const isNetworkError = errorMsg.includes('Network') || errorMsg.includes('unreachable') || errorMsg.includes('timeout');
+
+    return (
+      <Alert className="border-destructive bg-destructive/10 mb-4">
+        <AlertCircle className="h-4 w-4 text-destructive" />
+        <AlertDescription className="text-destructive">
+          <strong>Error loading dashboard data:</strong> {errorMsg}
+          {isCorsError && (
+            <div className="mt-2 text-xs">
+              This might be a CORS issue. Check that your API server allows requests from this domain.
+            </div>
+          )}
+          {isNetworkError && (
+            <div className="mt-2 text-xs">
+              This appears to be a network connectivity issue. Please check your internet connection and that the API server is accessible.
+            </div>
+          )}
+          <div className="mt-2 text-xs">
+            Try refreshing the page or contact your administrator if the problem persists.
+          </div>
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   if (isLoading) {
     return (
