@@ -1054,15 +1054,19 @@ export function useDashboardStats(companyId?: string) {
   const [error, setError] = useState<Error | null>(null);
 
   // Fetch all required data
-  const { data: invoices } = useInvoices(companyId);
-  const { data: payments } = usePayments(companyId);
-  const { data: customers } = useCustomers(companyId);
-  const { data: products } = useProducts(companyId);
+  const { data: invoices, error: invoicesError } = useInvoices(companyId);
+  const { data: payments, error: paymentsError } = usePayments(companyId);
+  const { data: customers, error: customersError } = useCustomers(companyId);
+  const { data: products, error: productsError } = useProducts(companyId);
 
   useEffect(() => {
     async function fetchStats() {
       try {
         setIsLoading(true);
+
+        // If any data fetch has an error, we'll still try to calculate stats from what we have
+        // but we'll also track that there was an error
+        const anyError = invoicesError || paymentsError || customersError || productsError;
 
         // Calculate aggregated statistics from the fetched data
         const totalRevenue = (invoices || [])
@@ -1099,7 +1103,12 @@ export function useDashboardStats(companyId?: string) {
         };
 
         setStats(calculatedStats);
-        setError(null);
+        // Only set error if we have one AND we have no data to display
+        if (anyError && !invoices && !payments && !customers && !products) {
+          setError(anyError as Error);
+        } else {
+          setError(null);
+        }
       } catch (err) {
         console.error('Error calculating dashboard stats:', err);
         setError(err as Error);
@@ -1110,7 +1119,7 @@ export function useDashboardStats(companyId?: string) {
     }
 
     fetchStats();
-  }, [invoices, payments, customers, products]);
+  }, [invoices, payments, customers, products, invoicesError, paymentsError, customersError, productsError]);
 
   return { data: stats, isLoading, error };
 }
