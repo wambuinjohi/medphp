@@ -258,7 +258,8 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
             line_total,
             sort_order
           `)
-          .in('invoice_id', invoiceIds) : { data: [], error: null };
+          .in('invoice_id', invoiceIds)
+          .execute() : { data: [], error: null };
 
         if (itemsError) {
           console.error('Error fetching invoice items:', (itemsError as any)?.message || itemsError);
