@@ -91,7 +91,7 @@ export default function Inventory() {
   // Fetch products from database
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: products, isLoading: loadingProducts, error: productsError } = useProducts(currentCompany?.id);
+  const { data: products, isLoading: loadingProducts, error: productsError, retry: retryProducts } = useProducts(currentCompany?.id);
   const { canView, canCreate, canEdit, loading: permissionsLoading, role } = usePermissions();
 
   useEffect(() => {
