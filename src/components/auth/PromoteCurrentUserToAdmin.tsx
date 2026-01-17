@@ -18,7 +18,7 @@ export function PromoteCurrentUserToAdmin() {
     setLoading(true);
     try {
       console.log('🔄 Promoting user', user.id, 'to admin...');
-
+      
       const { error } = await apiClient.update('profiles', user.id, { role: 'admin' });
 
       if (error) {
@@ -27,13 +27,13 @@ export function PromoteCurrentUserToAdmin() {
       }
 
       toast.success('Successfully promoted to admin! Refreshing...');
-
+      
       // Wait a moment for the database to update, then refresh
       await new Promise(resolve => setTimeout(resolve, 1500));
-
+      
       // Force refresh the profile data
       await refreshProfile();
-
+      
       // Force a page reload to reflect the changes
       console.log('🔄 Reloading page...');
       setTimeout(() => {
