@@ -104,7 +104,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
         name: item.name || '',
         product_code: item.product_code || '',
         description: item.description || '',
-        category_id: item.category_id || '',
+        category_id: item.category_id || '__none__',
         unit_of_measure: item.unit_of_measure || 'pieces',
         cost_price: Number(item.cost_price) || 0,
         selling_price: Number(item.selling_price) || 0,
