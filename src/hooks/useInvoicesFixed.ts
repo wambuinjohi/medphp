@@ -365,7 +365,7 @@ export const useDeleteInvoice = () => {
 
       // Delete child items first (best-effort)
       try {
-        await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId);
+        await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId).execute();
       } catch (e) {
         console.warn('Invoice items delete skipped/failed:', (e as any)?.message || e);
       }
@@ -374,7 +374,8 @@ export const useDeleteInvoice = () => {
       const { error } = await supabase
         .from('invoices')
         .delete()
-        .eq('id', invoiceId);
+        .eq('id', invoiceId)
+        .execute();
 
       if (error) {
         console.error('Error deleting invoice:', error);
