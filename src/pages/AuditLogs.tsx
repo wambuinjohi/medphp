@@ -189,10 +189,9 @@ export default function AuditLogsPage() {
               </label>
               <Select value={entityTypeFilter} onValueChange={setEntityTypeFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All types" />
+                  <SelectValue placeholder="All entity types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Entity Types</SelectItem>
                   {entityTypes.map((type) => (
                     <SelectItem key={type} value={type}>
                       {type}
