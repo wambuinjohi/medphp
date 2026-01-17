@@ -39,7 +39,8 @@ export const useInvoicesFixed = (companyId?: string) => {
             created_by
           `)
           .eq('company_id', companyId)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .execute();
 
         if (invoicesError) {
           console.error('Error fetching invoices:', invoicesError);
@@ -60,7 +61,8 @@ export const useInvoicesFixed = (companyId?: string) => {
         const { data: customers, error: customersError } = customerIds.length > 0 ? await supabase
           .from('customers')
           .select('id, name, email, phone, address, city, country')
-          .in('id', customerIds) : { data: [], error: null };
+          .in('id', customerIds)
+          .execute() : { data: [], error: null };
 
         if (customersError) {
           console.error('Error fetching customers (non-fatal):', customersError);
@@ -109,7 +111,8 @@ export const useInvoicesFixed = (companyId?: string) => {
             const { data: products, error: productsError } = await supabase
               .from('products')
               .select('id, name, product_code, unit_of_measure')
-              .in('id', productIds);
+              .in('id', productIds)
+              .execute();
 
             if (!productsError && products) {
               products.forEach(product => {
@@ -139,7 +142,8 @@ export const useInvoicesFixed = (companyId?: string) => {
         const { data: creators } = creatorIds.length > 0 ? await supabase
           .from('profiles')
           .select('id, full_name')
-          .in('id', creatorIds) : { data: [] };
+          .in('id', creatorIds)
+          .execute() : { data: [] };
 
         const creatorMap = new Map();
         (creators || []).forEach(c => creatorMap.set(c.id, c));
@@ -205,14 +209,15 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
             created_at,
             updated_at
           `)
-          .eq('customer_id', customerId)
-          .order('created_at', { ascending: false });
+          .eq('customer_id', customerId);
 
         if (companyId) {
           query = query.eq('company_id', companyId);
         }
 
-        const { data: invoices, error: invoicesError } = await query;
+        query = query.order('created_at', { ascending: false });
+
+        const { data: invoices, error: invoicesError } = await query.execute();
 
         if (invoicesError) {
           console.error('Error fetching customer invoices:', invoicesError);
@@ -253,7 +258,8 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
             line_total,
             sort_order
           `)
-          .in('invoice_id', invoiceIds) : { data: [], error: null };
+          .in('invoice_id', invoiceIds)
+          .execute() : { data: [], error: null };
 
         if (itemsError) {
           console.error('Error fetching invoice items:', (itemsError as any)?.message || itemsError);
@@ -267,7 +273,8 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
             const { data: products, error: productsError } = await supabase
               .from('products')
               .select('id, name, product_code, unit_of_measure')
-              .in('id', productIds);
+              .in('id', productIds)
+              .execute();
 
             if (!productsError && products) {
               products.forEach(product => {
@@ -325,11 +332,20 @@ export const useDeleteInvoice = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.id) throw new Error('Not authenticated');
 
+      // Get invoice company_id
+      const invoiceResult = await supabase.from('invoices').select('company_id').eq('id', invoiceId).single();
+      const companyIdForRole = invoiceResult.data?.company_id;
+
+      // Get user role
+      const profileResult = await supabase.from('profiles').select('role').eq('id', user.id).single();
+      const userRole = profileResult.data?.role || '';
+
+      // Check if user has permission
       const { data: roleData } = await supabase
         .from('roles')
         .select('permissions')
-        .eq('company_id', (await supabase.from('invoices').select('company_id').eq('id', invoiceId).single()).data?.company_id)
-        .in('name', [(await supabase.from('profiles').select('role').eq('id', user.id).single()).data?.role || ''])
+        .eq('company_id', companyIdForRole)
+        .in('name', [userRole])
         .single();
 
       if (!roleData?.permissions?.includes('delete_invoice')) {
@@ -358,7 +374,7 @@ export const useDeleteInvoice = () => {
 
       // Delete child items first (best-effort)
       try {
-        await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId);
+        await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId).execute();
       } catch (e) {
         console.warn('Invoice items delete skipped/failed:', (e as any)?.message || e);
       }
@@ -367,7 +383,8 @@ export const useDeleteInvoice = () => {
       const { error } = await supabase
         .from('invoices')
         .delete()
-        .eq('id', invoiceId);
+        .eq('id', invoiceId)
+        .execute();
 
       if (error) {
         console.error('Error deleting invoice:', error);

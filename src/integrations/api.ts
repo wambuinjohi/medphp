@@ -225,6 +225,7 @@ class QueryChain {
   private table: string;
   private filters: Record<string, any> = {};
   private selectedFields: string = '*';
+  private inFilters: Record<string, any[]> = {};
 
   constructor(table: string) {
     this.table = table;
@@ -242,6 +243,11 @@ class QueryChain {
     return this;
   }
 
+  in(column: string, values: any[]) {
+    this.inFilters[column] = values;
+    return this;
+  }
+
   order(column: string, opts?: any) {
     this.filters._order = { column, direction: opts?.ascending === false ? 'desc' : 'asc' };
     return this;
@@ -252,9 +258,19 @@ class QueryChain {
     return this;
   }
 
+  range(from: number, to: number) {
+    this.filters._range = { from, to };
+    return this;
+  }
+
+  private buildFinalFilters() {
+    return { ...this.filters, ...this.inFilters };
+  }
+
   async maybeSingle() {
     try {
-      const result = await apiAdapter.selectBy(this.table, this.filters);
+      const finalFilters = this.buildFinalFilters();
+      const result = await apiAdapter.selectBy(this.table, finalFilters);
       const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
       return { data, error: result.error };
     } catch (error) {
@@ -264,7 +280,8 @@ class QueryChain {
 
   async single() {
     try {
-      const result = await apiAdapter.selectBy(this.table, this.filters);
+      const finalFilters = this.buildFinalFilters();
+      const result = await apiAdapter.selectBy(this.table, finalFilters);
       const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
       return { data, error: result.error };
     } catch (error) {
@@ -274,13 +291,55 @@ class QueryChain {
 
   async execute() {
     try {
-      const result = await apiAdapter.selectBy(this.table, this.filters);
+      const finalFilters = this.buildFinalFilters();
+      const result = await apiAdapter.selectBy(this.table, finalFilters);
       return { data: result.data, error: result.error };
     } catch (error) {
       return { data: null, error: error as Error };
     }
   }
 }
+
+// Helper to create a chainable query builder that supports all methods and can be awaited
+const createChainableQuery = (chain: QueryChain) => {
+  const queryObject: any = {
+    select: (fields?: string) => {
+      chain.select(fields);
+      return createChainableQuery(chain);
+    },
+    eq: (column: string, value: any) => {
+      chain.eq(column, value);
+      return createChainableQuery(chain);
+    },
+    in: (column: string, values: any[]) => {
+      chain.in(column, values);
+      return createChainableQuery(chain);
+    },
+    order: (column: string, opts?: any) => {
+      chain.order(column, opts);
+      return createChainableQuery(chain);
+    },
+    limit: (count: number) => {
+      chain.limit(count);
+      return createChainableQuery(chain);
+    },
+    range: (from: number, to: number) => {
+      chain.range(from, to);
+      return createChainableQuery(chain);
+    },
+    maybeSingle: () => chain.maybeSingle(),
+    single: () => chain.single(),
+    execute: () => chain.execute(),
+    // Make the query object thenable so it can be awaited directly
+    then: (onfulfilled?: any, onrejected?: any) => {
+      return chain.execute().then(onfulfilled, onrejected);
+    },
+    catch: (onrejected?: any) => {
+      return chain.execute().catch(onrejected);
+    },
+  };
+  return queryObject;
+};
 
 export const supabaseCompat = {
   from: (table: string) => {
@@ -289,35 +348,7 @@ export const supabaseCompat = {
     return {
       select: (fields?: string) => {
         chain.select(fields);
-        return {
-          eq: (column: string, value: any) => {
-            chain.eq(column, value);
-            return {
-              maybeSingle: () => chain.maybeSingle(),
-              single: () => chain.single(),
-              execute: () => chain.execute(),
-            };
-          },
-          order: (column: string, opts?: any) => {
-            chain.order(column, opts);
-            return {
-              limit: (count: number) => {
-                chain.limit(count);
-                return {
-                  maybeSingle: () => chain.maybeSingle(),
-                  execute: () => chain.execute(),
-                };
-              },
-            };
-          },
-          limit: (count: number) => {
-            chain.limit(count);
-            return {
-              maybeSingle: () => chain.maybeSingle(),
-              execute: () => chain.execute(),
-            };
-          },
-        };
+        return createChainableQuery(chain);
       },
       insert: (data: any) => ({
         select: () => ({
