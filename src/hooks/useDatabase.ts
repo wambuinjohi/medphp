@@ -11,6 +11,8 @@ import { getDatabase, getDatabaseProvider } from '@/integrations/database';
 import type { IDatabase, DatabaseProvider } from '@/integrations/database';
 import { useForceTaxSettings } from '@/hooks/useForceTaxSettings';
 
+let errorToastShown = false;
+
 interface UseDatabaseReturn {
   db: IDatabase;
   provider: DatabaseProvider;
