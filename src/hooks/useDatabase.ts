@@ -130,11 +130,9 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
       }
     }
 
-    // Try to fetch when database becomes healthy or on dependency change
-    if (isHealthy || retryCount === 0) {
-      fetchData();
-    }
-  }, [db, table, filter, isHealthy, retryCount]);
+    // Try to fetch on initial load or when explicitly retried
+    fetchData();
+  }, [db, table, filter, retryCount]);
 
   const retry = () => {
     setRetryCount(prev => prev + 1);
