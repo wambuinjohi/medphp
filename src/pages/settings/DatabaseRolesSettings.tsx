@@ -564,7 +564,7 @@ export default function DatabaseRolesSettings() {
                   </CardContent>
                 </Card>
 
-                {rolesStatus.rolesExist.length > 0 && (
+                {rolesStatus && rolesStatus.rolesExist && rolesStatus.rolesExist.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
@@ -585,7 +585,7 @@ export default function DatabaseRolesSettings() {
                   </Card>
                 )}
 
-                {rolesStatus.rolesMissing.length > 0 && (
+                {rolesStatus && rolesStatus.rolesMissing && rolesStatus.rolesMissing.length > 0 && (
                   <Card className="border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-950/20">
                     <CardHeader>
                       <CardTitle className="text-yellow-700 dark:text-yellow-500 flex items-center gap-2">
