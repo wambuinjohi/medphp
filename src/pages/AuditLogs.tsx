@@ -94,7 +94,7 @@ export default function AuditLogsPage() {
   );
 
   const filtered = useMemo(() => {
-    if (!filter && !entityTypeFilter && !actionFilter) return logs;
+    if (!filter && entityTypeFilter === '__all__' && actionFilter === '__all__') return logs;
 
     return logs.filter((l: AuditLog) => {
       const q = filter.toLowerCase();
@@ -106,8 +106,8 @@ export default function AuditLogsPage() {
         String(l.actor_email || '').toLowerCase().includes(q) ||
         JSON.stringify(l.details || {}).toLowerCase().includes(q);
 
-      const matchesEntityType = !entityTypeFilter || l.entity_type === entityTypeFilter;
-      const matchesAction = !actionFilter || l.action === actionFilter;
+      const matchesEntityType = entityTypeFilter === '__all__' || l.entity_type === entityTypeFilter;
+      const matchesAction = actionFilter === '__all__' || l.action === actionFilter;
 
       return matchesSearch && matchesEntityType && matchesAction;
     });
