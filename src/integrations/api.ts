@@ -323,6 +323,10 @@ const createChainableQuery = (chain: QueryChain) => {
       chain.limit(count);
       return createChainableQuery(chain);
     },
+    range: (from: number, to: number) => {
+      chain.range(from, to);
+      return createChainableQuery(chain);
+    },
     maybeSingle: () => chain.maybeSingle(),
     single: () => chain.single(),
     execute: () => chain.execute(),
