@@ -88,8 +88,11 @@ export class ExternalAPIAdapter implements IDatabase {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
+      let response: Response;
+      let result: any;
+
       try {
-        const response = await fetch(url, {
+        response = await fetch(url, {
           method,
           headers,
           body: body ? JSON.stringify(body) : undefined,
@@ -99,7 +102,7 @@ export class ExternalAPIAdapter implements IDatabase {
         clearTimeout(timeoutId);
 
         // Defensively parse JSON - handle cases where server returns non-JSON (e.g., 500 error)
-        const result = await response.json().catch(() => {
+        result = await response.json().catch(() => {
           if (!response.ok) {
             throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
           }
@@ -119,20 +122,6 @@ export class ExternalAPIAdapter implements IDatabase {
 
         throw fetchError;
       }
-
-      const response = await fetch(url, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-      });
-
-      // Defensively parse JSON - handle cases where server returns non-JSON (e.g., 500 error)
-      const result = await response.json().catch(() => {
-        if (!response.ok) {
-          throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
-        }
-        throw new Error('Invalid response from server: Expected valid JSON');
-      });
 
       if (!response.ok) {
         return {
