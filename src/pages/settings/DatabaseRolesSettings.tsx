@@ -580,7 +580,7 @@ export default function DatabaseRolesSettings() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
                         <CheckCircle2 className="h-5 w-5" />
-                        Configured Roles ({rolesStatus.rolesExist.length})
+                        Configured Roles ({rolesStatus?.rolesExist?.length || 0})
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
