@@ -303,10 +303,9 @@ Payment can be made via:
 If you have any questions about this invoice, please don't hesitate to contact us.
 
 Best regards,
-Biolegend Scientific Ltd Team
-Tel: 0741 207 690/0780 165 490
-Email: biolegend@biolegendscientific.co.ke/info@biolegendscientific.co.ke
-Website: www.biolegendscientific.co.ke`;
+${companyName}
+Tel: ${currentCompany?.phone || '0741 207 690/0780 165 490'}
+Email: ${currentCompany?.email || 'info@medplusafrica.com'}`;
 
       // Open email client with pre-filled content
       const emailUrl = `mailto:${invoiceData.customers.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
