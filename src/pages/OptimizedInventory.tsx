@@ -134,7 +134,7 @@ ProductRow.displayName = 'ProductRow';
 
 export default function OptimizedInventory() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('__all__');
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20); // Fixed page size for better performance
