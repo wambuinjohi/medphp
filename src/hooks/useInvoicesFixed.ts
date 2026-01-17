@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { toast } from 'sonner';
 
 /**
  * Fixed hook for fetching invoices with customer data
- * Uses separate queries to avoid relationship ambiguity
+ * Uses the external API adapter for database operations
  */
 export const useInvoicesFixed = (companyId?: string) => {
   return useQuery({
@@ -15,149 +15,80 @@ export const useInvoicesFixed = (companyId?: string) => {
       try {
         console.log('Fetching invoices for company:', companyId);
 
-        // Step 1: Get invoices without embedded relationships
-        const { data: invoices, error: invoicesError } = await supabase
-          .from('invoices')
-          .select(`
-            id,
-            company_id,
-            customer_id,
-            invoice_number,
-            invoice_date,
-            due_date,
-            status,
-            subtotal,
-            tax_amount,
-            total_amount,
-            paid_amount,
-            balance_due,
-            notes,
-            terms_and_conditions,
-            lpo_number,
-            created_at,
-            updated_at,
-            created_by
-          `)
-          .eq('company_id', companyId)
-          .order('created_at', { ascending: false })
-          .execute();
+        // Fetch invoices using the external API adapter
+        const { data: invoices, error: invoicesError } = await apiClient.select('invoices', {
+          company_id: companyId
+        });
 
         if (invoicesError) {
           console.error('Error fetching invoices:', invoicesError);
           throw new Error(`Failed to fetch invoices: ${invoicesError.message}`);
         }
 
-        console.log('Invoices fetched successfully:', invoices?.length || 0);
+        if (!Array.isArray(invoices)) {
+          console.log('Invoices fetched successfully (no data)');
+          return [];
+        }
 
         if (!invoices || invoices.length === 0) {
           return [];
         }
 
-        // Step 2: Get unique customer IDs (filter out invalid UUIDs)
-        const customerIds = [...new Set(invoices.map(invoice => invoice.customer_id).filter(id => id && typeof id === 'string' && id.length === 36))];
-        console.log('Fetching customer data for IDs:', customerIds.length);
+        console.log('Invoices fetched successfully:', invoices?.length || 0);
 
-        // Step 3: Get customers separately
-        const { data: customers, error: customersError } = customerIds.length > 0 ? await supabase
-          .from('customers')
-          .select('id, name, email, phone, address, city, country')
-          .in('id', customerIds)
-          .execute() : { data: [], error: null };
-
-        if (customersError) {
-          console.error('Error fetching customers (non-fatal):', customersError);
-          // Don't throw here, just continue without customer data
-        }
-
-        console.log('Customers fetched:', customers?.length || 0);
-
-        // Step 4: Create customer lookup map
-        const customerMap = new Map();
-        (customers || []).forEach(customer => {
-          customerMap.set(customer.id, customer);
-        });
-
-        // Step 5: Get invoice items for each invoice
-        const invoiceIds = invoices.map(inv => inv.id);
-        const { data: invoiceItems, error: itemsError } = invoiceIds.length > 0 ? await supabase
-          .from('invoice_items')
-          .select(`
-            id,
-            invoice_id,
-            product_id,
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            discount_before_vat,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total,
-            sort_order
-          `)
-          .in('invoice_id', invoiceIds) : { data: [], error: null };
-
-        if (itemsError) {
-          console.error('Error fetching invoice items (non-fatal):', (itemsError as any)?.message || itemsError);
-          // Don't throw here, invoices can exist without items
-        }
-
-        // Step 5b: Get product details separately if items exist
-        let productsMap = new Map();
-        if (invoiceItems && invoiceItems.length > 0) {
-          const productIds = [...new Set(invoiceItems.map(item => item.product_id).filter(id => id))];
-          if (productIds.length > 0) {
-            const { data: products, error: productsError } = await supabase
-              .from('products')
-              .select('id, name, product_code, unit_of_measure')
-              .in('id', productIds)
-              .execute();
-
-            if (!productsError && products) {
-              products.forEach(product => {
-                productsMap.set(product.id, product);
-              });
-            } else if (productsError) {
-              console.warn('Could not fetch product details (non-fatal):', productsError);
+        // Try to fetch customer data
+        const customerIds = [...new Set(invoices.map((invoice: any) => invoice.customer_id).filter(id => id && typeof id === 'string'))];
+        let customerMap = new Map();
+        
+        if (customerIds.length > 0) {
+          try {
+            // Fetch customers
+            for (const customerId of customerIds) {
+              const { data: customer, error: customerError } = await apiClient.selectOne('customers', customerId);
+              if (!customerError && customer) {
+                customerMap.set(customerId, customer);
+              }
             }
+          } catch (e) {
+            console.warn('Could not fetch customer details (non-fatal):', e);
           }
         }
 
-        // Step 6: Group invoice items by invoice_id and attach product data
-        const itemsMap = new Map();
-        (invoiceItems || []).forEach(item => {
-          if (!itemsMap.has(item.invoice_id)) {
-            itemsMap.set(item.invoice_id, []);
+        // Try to fetch invoice items
+        let itemsMap = new Map();
+        let invoiceIds = invoices.map((inv: any) => inv.id);
+        
+        if (invoiceIds.length > 0) {
+          try {
+            // Fetch invoice items for all invoices
+            const { data: allItems, error: itemsError } = await apiClient.select('invoice_items', {});
+            
+            if (!itemsError && Array.isArray(allItems)) {
+              // Filter items for our invoices
+              const relevantItems = allItems.filter((item: any) => invoiceIds.includes(item.invoice_id));
+              
+              // Group by invoice_id
+              relevantItems.forEach((item: any) => {
+                if (!itemsMap.has(item.invoice_id)) {
+                  itemsMap.set(item.invoice_id, []);
+                }
+                itemsMap.get(item.invoice_id).push(item);
+              });
+            }
+          } catch (e) {
+            console.warn('Could not fetch invoice items (non-fatal):', e);
           }
-          const itemWithProduct = {
-            ...item,
-            products: productsMap.get(item.product_id) || null
-          };
-          itemsMap.get(item.invoice_id).push(itemWithProduct);
-        });
+        }
 
-        // Step 7: Fetch creators (profiles) for created_by mapping
-        const creatorIds = [...new Set(invoices.map(inv => inv.created_by).filter(id => id && typeof id === 'string'))];
-        const { data: creators } = creatorIds.length > 0 ? await supabase
-          .from('profiles')
-          .select('id, full_name')
-          .in('id', creatorIds)
-          .execute() : { data: [] };
-
-        const creatorMap = new Map();
-        (creators || []).forEach(c => creatorMap.set(c.id, c));
-
-        // Step 8: Combine data
-        const enrichedInvoices = invoices.map(invoice => ({
+        // Combine data
+        const enrichedInvoices = invoices.map((invoice: any) => ({
           ...invoice,
           customers: customerMap.get(invoice.customer_id) || {
             name: 'Unknown Customer',
             email: null,
             phone: null
           },
-          invoice_items: itemsMap.get(invoice.id) || [],
-          created_by_profile: creatorMap.get(invoice.created_by) || null
+          invoice_items: itemsMap.get(invoice.id) || []
         }));
 
         console.log('Invoices enriched successfully:', enrichedInvoices.length);
@@ -170,7 +101,7 @@ export const useInvoicesFixed = (companyId?: string) => {
     },
     enabled: !!companyId,
     staleTime: 30000, // Cache for 30 seconds
-    retry: 3,
+    retry: 1,
     retryDelay: 1000,
   });
 };
@@ -187,120 +118,53 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
       try {
         console.log('Fetching invoices for customer:', customerId);
 
-        // Get invoices for specific customer
-        let query = supabase
-          .from('invoices')
-          .select(`
-            id,
-            company_id,
-            customer_id,
-            invoice_number,
-            invoice_date,
-            due_date,
-            status,
-            subtotal,
-            tax_amount,
-            total_amount,
-            paid_amount,
-            balance_due,
-            notes,
-            terms_and_conditions,
-            lpo_number,
-            created_at,
-            updated_at
-          `)
-          .eq('customer_id', customerId);
-
-        if (companyId) {
-          query = query.eq('company_id', companyId);
-        }
-
-        query = query.order('created_at', { ascending: false });
-
-        const { data: invoices, error: invoicesError } = await query.execute();
+        // Fetch invoices for the customer using the external API adapter
+        const { data: invoices, error: invoicesError } = await apiClient.select('invoices', {
+          customer_id: customerId,
+          ...(companyId && { company_id: companyId })
+        });
 
         if (invoicesError) {
           console.error('Error fetching customer invoices:', invoicesError);
           throw new Error(`Failed to fetch customer invoices: ${invoicesError.message}`);
         }
 
-        if (!invoices || invoices.length === 0) {
+        if (!Array.isArray(invoices) || !invoices || invoices.length === 0) {
           return [];
         }
 
-        // Get customer data
-        const { data: customer, error: customerError } = await supabase
-          .from('customers')
-          .select('id, name, email, phone, address, city, country')
-          .eq('id', customerId)
-          .single();
-
-        if (customerError) {
-          console.error('Error fetching customer:', customerError);
-        }
-
-        // Get invoice items
-        const invoiceIds = invoices.map(inv => inv.id);
-        const { data: invoiceItems, error: itemsError } = invoiceIds.length > 0 ? await supabase
-          .from('invoice_items')
-          .select(`
-            id,
-            invoice_id,
-            product_id,
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            discount_before_vat,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total,
-            sort_order
-          `)
-          .in('invoice_id', invoiceIds)
-          .execute() : { data: [], error: null };
-
-        if (itemsError) {
-          console.error('Error fetching invoice items:', (itemsError as any)?.message || itemsError);
-        }
-
-        // Get product details separately if items exist
-        let productsMap = new Map();
-        if (invoiceItems && invoiceItems.length > 0) {
-          const productIds = [...new Set(invoiceItems.map(item => item.product_id).filter(id => id))];
-          if (productIds.length > 0) {
-            const { data: products, error: productsError } = await supabase
-              .from('products')
-              .select('id, name, product_code, unit_of_measure')
-              .in('id', productIds)
-              .execute();
-
-            if (!productsError && products) {
-              products.forEach(product => {
-                productsMap.set(product.id, product);
-              });
-            } else if (productsError) {
-              console.warn('Could not fetch product details (non-fatal):', productsError);
-            }
+        // Fetch customer data
+        let customer = null;
+        try {
+          const { data: customerData, error: customerError } = await apiClient.selectOne('customers', customerId);
+          if (!customerError && customerData) {
+            customer = customerData;
           }
+        } catch (e) {
+          console.warn('Could not fetch customer data (non-fatal):', e);
         }
 
-        // Group items by invoice and attach product data
-        const itemsMap = new Map();
-        (invoiceItems || []).forEach(item => {
-          if (!itemsMap.has(item.invoice_id)) {
-            itemsMap.set(item.invoice_id, []);
+        // Fetch invoice items
+        let itemsMap = new Map();
+        try {
+          const invoiceIds = invoices.map((inv: any) => inv.id);
+          const { data: allItems, error: itemsError } = await apiClient.select('invoice_items', {});
+          
+          if (!itemsError && Array.isArray(allItems)) {
+            const relevantItems = allItems.filter((item: any) => invoiceIds.includes(item.invoice_id));
+            relevantItems.forEach((item: any) => {
+              if (!itemsMap.has(item.invoice_id)) {
+                itemsMap.set(item.invoice_id, []);
+              }
+              itemsMap.get(item.invoice_id).push(item);
+            });
           }
-          const itemWithProduct = {
-            ...item,
-            products: productsMap.get(item.product_id) || null
-          };
-          itemsMap.get(item.invoice_id).push(itemWithProduct);
-        });
+        } catch (e) {
+          console.warn('Could not fetch invoice items (non-fatal):', e);
+        }
 
         // Combine data
-        const enrichedInvoices = invoices.map(invoice => ({
+        const enrichedInvoices = invoices.map((invoice: any) => ({
           ...invoice,
           customers: customer || {
             name: 'Unknown Customer',
@@ -319,6 +183,7 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
     },
     enabled: !!customerId,
     staleTime: 30000,
+    retry: 1,
   });
 };
 
@@ -328,67 +193,29 @@ export const useDeleteInvoice = () => {
 
   return useMutation({
     mutationFn: async (invoiceId: string) => {
-      // Check permission before deletion
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.id) throw new Error('Not authenticated');
-
-      // Get invoice company_id
-      const invoiceResult = await supabase.from('invoices').select('company_id').eq('id', invoiceId).single();
-      const companyIdForRole = invoiceResult.data?.company_id;
-
-      // Get user role
-      const profileResult = await supabase.from('profiles').select('role').eq('id', user.id).single();
-      const userRole = profileResult.data?.role || '';
-
-      // Check if user has permission
-      const { data: roleData } = await supabase
-        .from('roles')
-        .select('permissions')
-        .eq('company_id', companyIdForRole)
-        .in('name', [userRole])
-        .single();
-
-      if (!roleData?.permissions?.includes('delete_invoice')) {
-        throw new Error('You do not have permission to delete invoices');
-      }
-
-      // Snapshot for audit
-      let snapshot: any = null;
-      let companyId: string | null = null;
       try {
-        const { data } = await supabase
-          .from('invoices')
-          .select(`*, invoice_items(*)`)
-          .eq('id', invoiceId)
-          .single();
-        snapshot = data;
-        companyId = (data as any)?.company_id ?? null;
-      } catch {}
+        // Delete child items first
+        try {
+          // Fetch invoice items first
+          const { data: items, error: itemsError } = await apiClient.select('invoice_items', {});
+          if (!itemsError && Array.isArray(items)) {
+            const invoiceItems = items.filter((item: any) => item.invoice_id === invoiceId);
+            for (const item of invoiceItems) {
+              await apiClient.delete('invoice_items', item.id);
+            }
+          }
+        } catch (e) {
+          console.warn('Invoice items delete skipped/failed:', (e as any)?.message || e);
+        }
 
-      try {
-        const { logDeletion } = await import('@/utils/auditLogger');
-        await logDeletion('invoice', invoiceId, snapshot, companyId);
-      } catch (e) {
-        console.warn('Invoice delete audit failed:', (e as any)?.message || e);
-      }
-
-      // Delete child items first (best-effort)
-      try {
-        await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId).execute();
-      } catch (e) {
-        console.warn('Invoice items delete skipped/failed:', (e as any)?.message || e);
-      }
-
-      // Delete parent record
-      const { error } = await supabase
-        .from('invoices')
-        .delete()
-        .eq('id', invoiceId)
-        .execute();
-
-      if (error) {
+        // Delete parent record
+        const result = await apiClient.delete('invoices', invoiceId);
+        if (result.error) {
+          throw new Error(`Failed to delete invoice: ${result.error.message}`);
+        }
+      } catch (error) {
         console.error('Error deleting invoice:', error);
-        throw new Error(`Failed to delete invoice: ${error.message}`);
+        throw error;
       }
     },
     onSuccess: () => {
