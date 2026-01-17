@@ -53,6 +53,7 @@ import { InviteUserModal } from '@/components/users/InviteUserModal';
 import { CompleteInvitationModal } from '@/components/users/CompleteInvitationModal';
 import { UserAuditLog } from '@/components/users/UserAuditLog';
 import { RoleManagement } from '@/components/settings/RoleManagement';
+import { PromoteCurrentUserToAdmin } from '@/components/auth/PromoteCurrentUserToAdmin';
 import { toast } from 'sonner';
 
 function getRoleColor(role: string) {
