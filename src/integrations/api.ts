@@ -225,6 +225,7 @@ class QueryChain {
   private table: string;
   private filters: Record<string, any> = {};
   private selectedFields: string = '*';
+  private inFilters: Record<string, any[]> = {};
 
   constructor(table: string) {
     this.table = table;
@@ -242,6 +243,11 @@ class QueryChain {
     return this;
   }
 
+  in(column: string, values: any[]) {
+    this.inFilters[column] = values;
+    return this;
+  }
+
   order(column: string, opts?: any) {
     this.filters._order = { column, direction: opts?.ascending === false ? 'desc' : 'asc' };
     return this;
@@ -252,9 +258,14 @@ class QueryChain {
     return this;
   }
 
+  private buildFinalFilters() {
+    return { ...this.filters, ...this.inFilters };
+  }
+
   async maybeSingle() {
     try {
-      const result = await apiAdapter.selectBy(this.table, this.filters);
+      const finalFilters = this.buildFinalFilters();
+      const result = await apiAdapter.selectBy(this.table, finalFilters);
       const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
       return { data, error: result.error };
     } catch (error) {
@@ -264,7 +275,8 @@ class QueryChain {
 
   async single() {
     try {
-      const result = await apiAdapter.selectBy(this.table, this.filters);
+      const finalFilters = this.buildFinalFilters();
+      const result = await apiAdapter.selectBy(this.table, finalFilters);
       const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
       return { data, error: result.error };
     } catch (error) {
@@ -274,7 +286,8 @@ class QueryChain {
 
   async execute() {
     try {
-      const result = await apiAdapter.selectBy(this.table, this.filters);
+      const finalFilters = this.buildFinalFilters();
+      const result = await apiAdapter.selectBy(this.table, finalFilters);
       return { data: result.data, error: result.error };
     } catch (error) {
       return { data: null, error: error as Error };
