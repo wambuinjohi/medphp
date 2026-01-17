@@ -91,7 +91,7 @@ export default function Inventory() {
   // Fetch products from database
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: products, isLoading: loadingProducts, error: productsError } = useProducts(currentCompany?.id);
+  const { data: products, isLoading: loadingProducts, error: productsError, retry: retryProducts } = useProducts(currentCompany?.id);
   const { canView, canCreate, canEdit, loading: permissionsLoading, role } = usePermissions();
 
   useEffect(() => {
@@ -200,12 +200,17 @@ export default function Inventory() {
             <p className="text-muted-foreground">Loading inventory items...</p>
           </div>
         </div>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading products...</p>
-          </div>
-        </div>
+        <Card className="shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center min-h-[300px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading products...</p>
+                <p className="text-muted-foreground text-sm mt-2">Connecting to database...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -219,13 +224,24 @@ export default function Inventory() {
             <p className="text-muted-foreground">Error loading inventory</p>
           </div>
         </div>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <p className="text-destructive">Failed to load products</p>
-            <p className="text-muted-foreground text-sm">{productsError.message}</p>
-          </div>
-        </div>
+        <Card className="shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center min-h-[300px]">
+              <div className="text-center max-w-md">
+                <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                <h2 className="text-lg font-semibold text-destructive mb-2">Failed to Load Inventory</h2>
+                <p className="text-muted-foreground text-sm mb-6">{productsError.message}</p>
+                <Button
+                  onClick={() => retryProducts()}
+                  className="bg-primary text-primary-foreground hover:opacity-90"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

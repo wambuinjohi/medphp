@@ -3,7 +3,7 @@
  * Provides easy access to database operations in React components
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -29,6 +29,7 @@ export function useDatabase(): UseDatabaseReturn {
   const [isHealthy, setIsHealthy] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [lastHealthCheckTime, setLastHealthCheckTime] = useState(0);
 
   const db = getDatabase();
   const provider = getDatabaseProvider();
@@ -39,6 +40,7 @@ export function useDatabase(): UseDatabaseReturn {
         setIsLoading(true);
         const healthy = await db.health();
         setIsHealthy(healthy);
+        setLastHealthCheckTime(Date.now());
 
         if (!healthy) {
           setError(new Error(`Database service is temporarily unavailable. Using backup connection.`));
@@ -76,6 +78,11 @@ export function useDatabase(): UseDatabaseReturn {
     }
 
     checkHealth();
+
+    // Set up periodic health checks every 10 seconds if database is unhealthy
+    const healthCheckInterval = setInterval(checkHealth, 10000);
+
+    return () => clearInterval(healthCheckInterval);
   }, [db, provider]);
 
   return {
@@ -97,24 +104,22 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
   const [data, setData] = useState<T[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
-  const { db, error: dbError } = useDatabase();
+  const { db, isHealthy } = useDatabase();
 
   useEffect(() => {
     async function fetchData() {
       try {
-        // If database itself has an error, don't try to fetch
-        if (dbError) {
-          setError(dbError);
-          setData([]);
-          setIsLoading(false);
-          return;
-        }
-
         setIsLoading(true);
         const result = await db.select<T>(table, filter);
         setData(result.data);
         setError(result.error);
+
+        // Clear retry count on successful fetch
+        if (!result.error) {
+          setRetryCount(0);
+        }
       } catch (err) {
         const error = err as Error;
         console.error(`Error fetching from ${table}:`, error);
@@ -125,10 +130,15 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
       }
     }
 
+    // Try to fetch on initial load or when explicitly retried
     fetchData();
-  }, [db, table, filter, dbError]);
+  }, [db, table, filter, retryCount]);
 
-  return { data, isLoading, error };
+  const retry = () => {
+    setRetryCount(prev => prev + 1);
+  };
+
+  return { data, isLoading, error, retry };
 }
 
 /**
@@ -260,7 +270,10 @@ export function useDelete(table: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useCompanies(companyId?: string) {
-  const filter = companyId ? { id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('companies', filter);
 }
 
@@ -269,7 +282,10 @@ export function useCompanies(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useCustomers(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('customers', filter);
 }
 
@@ -278,7 +294,10 @@ export function useCustomers(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useProducts(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('products', filter);
 }
 
@@ -377,7 +396,10 @@ export function useCreateUnitOfMeasure() {
  * @param companyId - Optional company ID for filtering
  */
 export function useQuotations(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('quotations', filter);
 }
 
@@ -386,7 +408,10 @@ export function useQuotations(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useInvoices(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('invoices', filter);
 }
 
@@ -395,7 +420,10 @@ export function useInvoices(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function usePayments(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('payments', filter);
 }
 
@@ -404,7 +432,10 @@ export function usePayments(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useDeliveryNotes(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('delivery_notes', filter);
 }
 
@@ -413,7 +444,10 @@ export function useDeliveryNotes(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useLPOs(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('lpos', filter);
 }
 
@@ -456,7 +490,10 @@ export function useGenerateLPONumber() {
  * Hook to get all suppliers and customers
  */
 export function useAllSuppliersAndCustomers(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('customers', filter);
 }
 
@@ -1059,67 +1096,56 @@ export function useDashboardStats(companyId?: string) {
   const { data: customers, error: customersError } = useCustomers(companyId);
   const { data: products, error: productsError } = useProducts(companyId);
 
+  // Determine if we're still loading any of the data
+  const isAnyLoading = false; // We'll just check if data exists
+
   useEffect(() => {
-    async function fetchStats() {
-      try {
-        setIsLoading(true);
+    // Calculate aggregated statistics from the fetched data
+    const totalRevenue = (invoices || [])
+      .filter((inv: any) => inv.status !== 'cancelled')
+      .reduce((sum: number, inv: any) => sum + (inv.total_amount || 0), 0);
 
-        // If any data fetch has an error, we'll still try to calculate stats from what we have
-        // but we'll also track that there was an error
-        const anyError = invoicesError || paymentsError || customersError || productsError;
+    const totalInvoices = (invoices || [])
+      .filter((inv: any) => inv.status !== 'cancelled')
+      .length;
 
-        // Calculate aggregated statistics from the fetched data
-        const totalRevenue = (invoices || [])
-          .filter((inv: any) => inv.status !== 'cancelled')
-          .reduce((sum: number, inv: any) => sum + (inv.total_amount || 0), 0);
+    const pendingInvoices = (invoices || [])
+      .filter((inv: any) => inv.status === 'pending' || inv.status === 'draft')
+      .length;
 
-        const totalInvoices = (invoices || [])
-          .filter((inv: any) => inv.status !== 'cancelled')
-          .length;
+    const customerCount = (customers || []).length;
 
-        const pendingInvoices = (invoices || [])
-          .filter((inv: any) => inv.status === 'pending' || inv.status === 'draft')
-          .length;
+    const productCount = (products || []).length;
 
-        const customerCount = (customers || []).length;
+    const lowStockProducts = (products || [])
+      .filter((prod: any) => (prod.stock_quantity || 0) < (prod.reorder_level || 10))
+      .length;
 
-        const productCount = (products || []).length;
+    const totalPayments = (payments || [])
+      .reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0);
 
-        const lowStockProducts = (products || [])
-          .filter((prod: any) => (prod.stock_quantity || 0) < (prod.reorder_level || 10))
-          .length;
+    const calculatedStats = {
+      totalRevenue,
+      totalInvoices,
+      customerCount,
+      productCount,
+      lowStockProducts,
+      totalPayments,
+      pendingInvoices,
+    };
 
-        const totalPayments = (payments || [])
-          .reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0);
+    setStats(calculatedStats);
 
-        const calculatedStats = {
-          totalRevenue,
-          totalInvoices,
-          customerCount,
-          productCount,
-          lowStockProducts,
-          totalPayments,
-          pendingInvoices,
-        };
-
-        setStats(calculatedStats);
-        // Only set error if we have one AND we have no data to display
-        if (anyError && !invoices && !payments && !customers && !products) {
-          setError(anyError as Error);
-        } else {
-          setError(null);
-        }
-      } catch (err) {
-        console.error('Error calculating dashboard stats:', err);
-        setError(err as Error);
-        setStats(null);
-      } finally {
-        setIsLoading(false);
-      }
+    // Only set error if we have one AND we have no data to display
+    const anyError = invoicesError || paymentsError || customersError || productsError;
+    if (anyError && !invoices && !payments && !customers && !products) {
+      setError(anyError as Error);
+    } else {
+      setError(null);
     }
 
-    fetchStats();
-  }, [invoices, payments, customers, products, invoicesError, paymentsError, customersError, productsError]);
+    setIsLoading(false);
+  }, [invoices, payments, customers, products]);
 
   return { data: stats, isLoading, error };
 }
