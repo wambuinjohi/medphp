@@ -76,15 +76,14 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
   const [productId, setProductId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    product_code: '',
+    sku: '',
     description: '',
     category_id: '__none__', // Always use string, never null
     unit_of_measure: 'pieces',
     cost_price: 0,
-    selling_price: 0,
+    unit_price: 0,
     stock_quantity: 0,
-    min_stock_level: 10,
-    max_stock_level: 100
+    reorder_level: 10
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
@@ -112,15 +111,14 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
       setProductId(item.id);
       setFormData({
         name: item.name || '',
-        product_code: item.sku || item.product_code || '',
+        sku: item.sku || item.product_code || '',
         description: item.description || '',
         category_id: item.category_id || '__none__',
         unit_of_measure: item.unit_of_measure || 'pieces',
         cost_price: Number(item.cost_price || 0),
-        selling_price: Number(item.selling_price || item.unit_price || 0),
+        unit_price: Number(item.unit_price || item.selling_price || 0),
         stock_quantity: Number(item.stock_quantity || 0),
-        min_stock_level: Number(item.minimum_stock_level || item.min_stock_level || 10),
-        max_stock_level: Number(item.maximum_stock_level || item.max_stock_level || 100)
+        reorder_level: Number(item.reorder_level || item.minimum_stock_level || item.min_stock_level || 10)
       });
     }
   }, [item, open]);
@@ -138,18 +136,18 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
       return;
     }
 
-    if (!formData.product_code.trim()) {
-      toast.error('Product code is required');
+    if (!formData.sku.trim()) {
+      toast.error('SKU is required');
       return;
     }
 
-    if (formData.selling_price <= 0) {
+    if (formData.unit_price <= 0) {
       toast.error('Selling price must be greater than 0');
       return;
     }
 
-    if (formData.min_stock_level < 0) {
-      toast.error('Minimum stock level cannot be negative');
+    if (formData.reorder_level < 0) {
+      toast.error('Reorder level cannot be negative');
       return;
     }
 
@@ -173,31 +171,13 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
         stock_quantity: Number(formData.stock_quantity)
       };
 
-      const updatedData = provider === 'external-api'
-        ? {
-            // External API field names - only reference unit_price when communicating with the backend
-            ...baseData,
-            sku: formData.product_code,
-            unit_price: Number(formData.selling_price),
-            reorder_level: Number(formData.min_stock_level),
-            status: 'active'
-          }
-        : {
-            // Supabase field names
-            ...baseData,
-            product_code: formData.product_code,
-            selling_price: Number(formData.selling_price),
-            minimum_stock_level: Number(formData.min_stock_level),
-            maximum_stock_level: Number(formData.max_stock_level)
-          };
-
-      console.log('EditInventoryItemModal - Sending update:', {
-        productId,
-        provider,
-        updatedData,
-        cost_price: formData.cost_price,
-        selling_price: formData.selling_price
-      });
+      const updatedData = {
+        ...baseData,
+        sku: formData.sku,
+        unit_price: Number(formData.unit_price),
+        reorder_level: Number(formData.reorder_level),
+        status: 'active'
+      };
 
       await updateProduct.mutateAsync({ id: productId, data: updatedData });
       toast.success(`${formData.name} updated successfully!`);
@@ -281,12 +261,12 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="product_code">Product Code *</Label>
+              <Label htmlFor="sku">SKU (Product Code) *</Label>
               <Input
-                id="product_code"
-                value={formData.product_code}
-                onChange={(e) => handleInputChange('product_code', e.target.value)}
-                placeholder="Enter product code"
+                id="sku"
+                value={formData.sku}
+                onChange={(e) => handleInputChange('sku', e.target.value)}
+                placeholder="Enter SKU"
               />
             </div>
 
@@ -369,12 +349,12 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="selling_price">Selling Price *</Label>
+                <Label htmlFor="unit_price">Selling Price *</Label>
                 <Input
-                  id="selling_price"
+                  id="unit_price"
                   type="number"
-                  value={formData.selling_price}
-                  onChange={(e) => handleInputChange('selling_price', parseFloat(e.target.value) || 0)}
+                  value={formData.unit_price}
+                  onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
                   placeholder="0.00"
                   min="0"
                   step="0.01"
@@ -396,27 +376,18 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="min_stock_level">Min Stock Level</Label>
+                <Label htmlFor="reorder_level">Reorder Level (Minimum Stock)</Label>
                 <Input
-                  id="min_stock_level"
+                  id="reorder_level"
                   type="number"
-                  value={formData.min_stock_level}
-                  onChange={(e) => handleInputChange('min_stock_level', parseInt(e.target.value) || 0)}
+                  value={formData.reorder_level}
+                  onChange={(e) => handleInputChange('reorder_level', parseInt(e.target.value) || 0)}
                   placeholder="10"
                   min="0"
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="max_stock_level">Max Stock Level</Label>
-                <Input
-                  id="max_stock_level"
-                  type="number"
-                  value={formData.max_stock_level}
-                  onChange={(e) => handleInputChange('max_stock_level', parseInt(e.target.value) || 0)}
-                  placeholder="100"
-                  min="0"
-                />
+                <p className="text-xs text-muted-foreground">
+                  You'll be notified when stock falls below this level
+                </p>
               </div>
             </div>
           </div>

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -36,12 +35,11 @@ interface EditPaymentModalProps {
   onSuccess: () => void;
   payment?: {
     id: string;
-    payment_number: string;
+    payment_number?: string;
     payment_date: string;
     amount: number;
     payment_method: string;
     reference_number?: string;
-    notes?: string;
     customers?: {
       name: string;
       email?: string;
@@ -63,8 +61,7 @@ export function EditPaymentModal({
     amount: 0,
     payment_date: '',
     payment_method: '',
-    reference_number: '',
-    notes: ''
+    reference_number: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [amountChanged, setAmountChanged] = useState(false);
@@ -80,8 +77,7 @@ export function EditPaymentModal({
         amount: payment.amount,
         payment_date: payment.payment_date,
         payment_method: payment.payment_method,
-        reference_number: payment.reference_number || '',
-        notes: payment.notes || ''
+        reference_number: payment.reference_number || ''
       });
       setAmountChanged(false);
     }
@@ -130,8 +126,7 @@ export function EditPaymentModal({
           amount: formData.amount,
           payment_date: formData.payment_date,
           payment_method: formData.payment_method,
-          reference_number: formData.reference_number,
-          notes: formData.notes
+          reference_number: formData.reference_number
         },
         oldAmount: payment.amount
       });
@@ -255,18 +250,6 @@ export function EditPaymentModal({
                   onChange={(e) => handleInputChange('reference_number', e.target.value)}
                   placeholder="e.g., Cheque number, transaction ID"
                   className="mt-2"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange('notes', e.target.value)}
-                  placeholder="Additional notes about the payment"
-                  className="mt-2"
-                  rows={3}
                 />
               </div>
             </CardContent>

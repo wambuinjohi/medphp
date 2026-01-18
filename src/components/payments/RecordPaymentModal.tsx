@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -49,17 +48,14 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
     amount: invoice?.balance_due || 0,
     payment_date: new Date().toISOString().split('T')[0],
     payment_method: '',
-    reference_number: '',
-    notes: '',
-    customer_name: invoice?.customers?.name || ''
+    reference_number: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allocationFailed, setAllocationFailed] = useState(false);
   const [showCreateMethodDialog, setShowCreateMethodDialog] = useState(false);
   const [newMethodData, setNewMethodData] = useState({
     name: '',
-    code: '',
-    description: ''
+    code: ''
   });
   const [isCreatingMethod, setIsCreatingMethod] = useState(false);
   const [createdCreditNoteNumber, setCreatedCreditNoteNumber] = useState<string | null>(null);
@@ -169,14 +165,11 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
 
       const paymentRecord = {
         company_id: selectedInvoice?.company_id || currentCompany.id,
-        customer_id: selectedInvoice?.customer_id || null,
         invoice_id: paymentData.invoice_id,
-        payment_number: paymentNumber,
         payment_date: paymentData.payment_date,
         amount: paymentData.amount,
         payment_method: paymentData.payment_method,
-        reference_number: paymentData.reference_number || paymentNumber,
-        notes: paymentData.notes
+        reference_number: paymentData.reference_number || paymentNumber
       };
 
       const result = await createPaymentMutation.mutateAsync(paymentRecord);
@@ -204,12 +197,6 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
               setCreatedCreditNoteNumber(creditNoteNumber);
             }
           } catch (creditNoteError: any) {
-            console.error('Failed to create overpayment credit note:', {
-              message: creditNoteError?.message,
-              code: creditNoteError?.code,
-              details: creditNoteError?.details,
-              hint: creditNoteError?.hint
-            });
             // Log warning to user but don't fail the payment
             toast.warning('Credit note creation failed', {
               description: creditNoteError?.message || 'Overpayment was recorded but credit note could not be created'
@@ -257,13 +244,11 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
       resetForm();
     } catch (error) {
       console.error('Error recording payment:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
 
       const errorMessage = parseErrorMessageWithCodes(error, 'payment');
 
       toast.error(errorMessage, {
-        duration: 6000,
-        description: 'Check the console for technical details'
+        duration: 6000
       });
     } finally {
       setIsSubmitting(false);
@@ -290,9 +275,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
       amount: invoice?.balance_due || 0,
       payment_date: new Date().toISOString().split('T')[0],
       payment_method: paymentMethods.length > 0 ? paymentMethods[0].code : '',
-      reference_number: '',
-      notes: '',
-      customer_name: invoice?.customers?.name || ''
+      reference_number: ''
     });
     setAllocationFailed(false);
   };
@@ -332,13 +315,11 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
         company_id: currentCompany.id,
         name: newMethodData.name,
         code: newMethodData.code,
-        description: newMethodData.description || '',
-        is_active: true,
-        sort_order: (paymentMethods?.length || 0) + 1
+        is_active: true
       });
 
       handleInputChange('payment_method', newMethod.code);
-      setNewMethodData({ name: '', code: '', description: '' });
+      setNewMethodData({ name: '', code: '' });
       setShowCreateMethodDialog(false);
       toast.success(`Payment method "${newMethod.name}" created successfully!`);
     } catch (error) {
@@ -597,18 +578,6 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                 />
               </div>
 
-              {/* Notes */}
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={paymentData.notes}
-                  onChange={(e) => handleInputChange('notes', e.target.value)}
-                  rows={3}
-                  placeholder="Additional notes about this payment..."
-                />
-              </div>
-
               {/* Payment Summary */}
               {paymentData.invoice_id && (() => {
                 const selectedInv = invoice || availableInvoices.find(inv => inv.id === paymentData.invoice_id);
@@ -708,17 +677,6 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
               <p className="text-xs text-muted-foreground">
                 Unique identifier for this payment method (lowercase, no spaces)
               </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="method_description">Description</Label>
-              <Textarea
-                id="method_description"
-                placeholder="Optional description of this payment method..."
-                value={newMethodData.description}
-                onChange={(e) => setNewMethodData(prev => ({ ...prev, description: e.target.value }))}
-                rows={2}
-              />
             </div>
           </div>
 
