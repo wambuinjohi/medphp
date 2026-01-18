@@ -23,22 +23,32 @@ import {
 
 interface InventoryItem {
   id: string;
-  sku: string;
+  product_code?: string;
+  sku?: string;
   name: string;
   category?: {
     name: string;
   } | null;
+  product_categories?: {
+    name: string;
+  } | null;
   category_id?: string;
-  currentStock: number;
-  minStock: number;
+  stock_quantity?: number;
+  currentStock?: number;
+  minimum_stock_level?: number;
+  minStock?: number;
+  maximum_stock_level?: number;
   maxStock?: number;
-  unitPrice: string;
+  selling_price?: number;
+  unit_price?: number;
+  unitPrice?: string;
+  cost_price?: number;
   costPrice?: string;
-  totalValue: string;
   description?: string;
+  unit_of_measure?: string;
   unitOfMeasure?: string;
   lastRestocked?: string;
-  status: 'in_stock' | 'low_stock' | 'out_of_stock';
+  status?: 'in_stock' | 'low_stock' | 'out_of_stock';
 }
 
 interface ViewInventoryItemModalProps {
@@ -51,6 +61,28 @@ interface ViewInventoryItemModalProps {
 
 export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRestock }: ViewInventoryItemModalProps) {
   if (!item) return null;
+
+  // Normalize field names from different sources
+  const normalizedItem = {
+    id: item.id,
+    name: item.name,
+    sku: item.sku || item.product_code || '',
+    category: item.category || item.product_categories,
+    category_id: item.category_id,
+    currentStock: item.stock_quantity ?? item.currentStock ?? 0,
+    minStock: item.minimum_stock_level ?? item.minStock ?? 10,
+    maxStock: item.maximum_stock_level ?? item.maxStock,
+    unitPrice: String(item.selling_price ?? item.unit_price ?? item.unitPrice ?? 0),
+    costPrice: String(item.cost_price ?? item.costPrice ?? 0),
+    description: item.description,
+    unitOfMeasure: item.unit_of_measure || item.unitOfMeasure || 'pieces',
+    lastRestocked: item.lastRestocked,
+    status: (item.status || 'in_stock') as 'in_stock' | 'low_stock' | 'out_of_stock'
+  };
+
+  // Calculate total value
+  const unitPrice = parseFloat(normalizedItem.unitPrice) || 0;
+  const totalValue = String((normalizedItem.currentStock || 0) * unitPrice);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -67,6 +99,7 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
 
   const formatCurrency = (amount: string | number) => {
     const num = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.-]+/g, '')) : amount;
+    if (isNaN(num)) return 'Ksh 0.00';
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
       currency: 'KES',
@@ -75,7 +108,7 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
     }).format(num);
   };
 
-  const stockPercentage = item.maxStock ? (item.currentStock / item.maxStock) * 100 : 0;
+  const stockPercentage = normalizedItem.maxStock ? (normalizedItem.currentStock / normalizedItem.maxStock) * 100 : 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -86,23 +119,23 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
               <Package className="h-6 w-6 text-primary" />
               <div>
                 <div className="flex items-center space-x-2">
-                  <span>{item.name}</span>
-                  <Badge variant="outline" className={getStatusColor(item.status)}>
-                    {item.status.replace('_', ' ').toUpperCase()}
+                  <span>{normalizedItem.name}</span>
+                  <Badge variant="outline" className={getStatusColor(normalizedItem.status)}>
+                    {normalizedItem.status.replace('_', ' ').toUpperCase()}
                   </Badge>
                 </div>
                 <div className="text-sm text-muted-foreground font-normal">
-                  {item.sku} • {item.category?.name || 'No category'}
+                  {normalizedItem.sku} • {normalizedItem.category?.name || 'No category'}
                 </div>
               </div>
             </div>
-            
+
             <div className="flex space-x-2">
               <Button variant="outline" size="sm" onClick={onEdit}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
               </Button>
-              {item.status === 'low_stock' && (
+              {normalizedItem.status === 'low_stock' && (
                 <Button size="sm" onClick={onRestock} className="bg-warning hover:bg-warning/90">
                   <Package className="h-4 w-4 mr-2" />
                   Restock
@@ -130,44 +163,34 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
                   <span className="text-muted-foreground">Product Code:</span>
                   <div className="font-medium flex items-center space-x-2">
                     <Barcode className="h-4 w-4" />
-                    <span>{item.sku}</span>
+                    <span>{normalizedItem.sku}</span>
                   </div>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Category:</span>
-                  <div className="font-medium">{item.category?.name || 'No category'}</div>
+                  <div className="font-medium">{normalizedItem.category?.name || 'No category'}</div>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Unit of Measure:</span>
-                  <div className="font-medium">{item.unitOfMeasure || 'pieces'}</div>
+                  <div className="font-medium">{normalizedItem.unitOfMeasure || 'pieces'}</div>
                 </div>
               </div>
 
-              {item.description && (
+              {normalizedItem.description && (
                 <div>
                   <span className="text-muted-foreground text-sm">Description:</span>
                   <div className="text-sm mt-1 p-2 bg-muted/50 rounded">
-                    {item.description}
+                    {normalizedItem.description}
                   </div>
                 </div>
               )}
 
-              {item.location && (
-                <div className="flex items-center space-x-2">
-                  <Warehouse className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <span className="text-muted-foreground text-sm">Location: </span>
-                    <span className="font-medium">{item.location}</span>
-                  </div>
-                </div>
-              )}
-
-              {item.lastRestocked && (
+              {normalizedItem.lastRestocked && (
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <span className="text-muted-foreground text-sm">Last Restocked: </span>
-                    <span className="font-medium">{new Date(item.lastRestocked).toLocaleDateString()}</span>
+                    <span className="font-medium">{new Date(normalizedItem.lastRestocked).toLocaleDateString()}</span>
                   </div>
                 </div>
               )}
@@ -187,14 +210,14 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Current Stock:</span>
-                  <span className="font-bold text-2xl">{item.currentStock}</span>
+                  <span className="font-bold text-2xl">{normalizedItem.currentStock}</span>
                 </div>
-                
+
                 <div className="w-full bg-muted rounded-full h-2">
-                  <div 
+                  <div
                     className={`h-2 rounded-full transition-all ${
-                      item.status === 'out_of_stock' ? 'bg-destructive' :
-                      item.status === 'low_stock' ? 'bg-warning' : 'bg-success'
+                      normalizedItem.status === 'out_of_stock' ? 'bg-destructive' :
+                      normalizedItem.status === 'low_stock' ? 'bg-warning' : 'bg-success'
                     }`}
                     style={{ width: `${Math.min(stockPercentage, 100)}%` }}
                   />
@@ -203,17 +226,17 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Min Level:</span>
-                    <div className="font-medium">{item.minStock}</div>
+                    <div className="font-medium">{normalizedItem.minStock}</div>
                   </div>
-                  {item.maxStock && (
+                  {normalizedItem.maxStock && (
                     <div>
                       <span className="text-muted-foreground">Max Level:</span>
-                      <div className="font-medium">{item.maxStock}</div>
+                      <div className="font-medium">{normalizedItem.maxStock}</div>
                     </div>
                   )}
                 </div>
 
-                {item.currentStock <= item.minStock && (
+                {normalizedItem.currentStock <= normalizedItem.minStock && (
                   <div className="flex items-center space-x-2 p-3 bg-warning-light rounded-lg">
                     <AlertTriangle className="h-4 w-4 text-warning" />
                     <span className="text-warning text-sm font-medium">
@@ -226,15 +249,15 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
               {/* Pricing */}
               <div className="border-t pt-4 space-y-3">
                 <div className="grid grid-cols-2 gap-4">
-                  {item.costPrice && (
+                  {normalizedItem.costPrice && parseFloat(normalizedItem.costPrice) > 0 && (
                     <div>
                       <span className="text-muted-foreground text-sm">Cost Price:</span>
-                      <div className="font-medium">{formatCurrency(item.costPrice)}</div>
+                      <div className="font-medium">{formatCurrency(normalizedItem.costPrice)}</div>
                     </div>
                   )}
                   <div>
                     <span className="text-muted-foreground text-sm">Selling Price:</span>
-                    <div className="font-medium">{formatCurrency(item.unitPrice)}</div>
+                    <div className="font-medium">{formatCurrency(normalizedItem.unitPrice)}</div>
                   </div>
                 </div>
 
@@ -242,28 +265,28 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
                   <span className="text-muted-foreground text-sm">Total Value:</span>
                   <div className="font-bold text-xl text-primary flex items-center space-x-2">
                     <TrendingUp className="h-5 w-5" />
-                    <span>{formatCurrency(item.totalValue)}</span>
+                    <span>{formatCurrency(totalValue)}</span>
                   </div>
                 </div>
 
-                {item.costPrice && (
+                {normalizedItem.costPrice && parseFloat(normalizedItem.costPrice) > 0 && (
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <div className="text-sm space-y-1">
                       <div className="flex justify-between">
                         <span>Margin per unit:</span>
                         <span className="font-medium">
                           {formatCurrency(
-                            parseFloat(item.unitPrice.replace(/[^0-9.-]+/g, '')) - 
-                            parseFloat(item.costPrice.replace(/[^0-9.-]+/g, ''))
+                            parseFloat(normalizedItem.unitPrice.replace(/[^0-9.-]+/g, '')) -
+                            parseFloat(normalizedItem.costPrice.replace(/[^0-9.-]+/g, ''))
                           )}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Markup:</span>
                         <span className="font-medium">
-                          {(((parseFloat(item.unitPrice.replace(/[^0-9.-]+/g, '')) - 
-                             parseFloat(item.costPrice.replace(/[^0-9.-]+/g, ''))) / 
-                             parseFloat(item.costPrice.replace(/[^0-9.-]+/g, ''))) * 100).toFixed(1)}%
+                          {(((parseFloat(normalizedItem.unitPrice.replace(/[^0-9.-]+/g, '')) -
+                             parseFloat(normalizedItem.costPrice.replace(/[^0-9.-]+/g, ''))) /
+                             parseFloat(normalizedItem.costPrice.replace(/[^0-9.-]+/g, ''))) * 100).toFixed(1)}%
                         </span>
                       </div>
                     </div>
@@ -285,11 +308,11 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <div className="text-2xl font-bold text-primary">{item.currentStock}</div>
+                <div className="text-2xl font-bold text-primary">{normalizedItem.currentStock}</div>
                 <div className="text-sm text-muted-foreground">Current Stock</div>
               </div>
               <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <div className="text-2xl font-bold text-success">{formatCurrency(item.totalValue)}</div>
+                <div className="text-2xl font-bold text-success">{formatCurrency(totalValue)}</div>
                 <div className="text-sm text-muted-foreground">Total Value</div>
               </div>
               <div className="text-center p-4 bg-muted/50 rounded-lg">
@@ -306,14 +329,14 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
 
         <DialogFooter className="flex justify-between">
           <div className="flex space-x-2">
-            {item.status === 'low_stock' && (
+            {normalizedItem.status === 'low_stock' && (
               <Button variant="outline" onClick={onRestock} className="bg-warning-light text-warning border-warning/20">
                 <Package className="h-4 w-4 mr-2" />
                 Restock Item
               </Button>
             )}
           </div>
-          
+
           <div className="flex space-x-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close

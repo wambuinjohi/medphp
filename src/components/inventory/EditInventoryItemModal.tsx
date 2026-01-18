@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useUpdateProduct } from '@/hooks/useDatabase';
+import { useUpdateProduct, useDatabase } from '@/hooks/useDatabase';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -41,16 +41,21 @@ const STANDARD_UNITS = [
 ];
 
 interface InventoryItem {
-  id?: string;
+  id: string;
   name: string;
-  product_code: string;
+  product_code?: string;
+  sku?: string;
   description?: string;
   category_id?: string;
-  unit_of_measure: string;
-  cost_price: number;
-  selling_price: number;
-  stock_quantity: number;
-  min_stock_level: number;
+  unit_of_measure?: string;
+  cost_price?: number;
+  selling_price?: number;
+  unit_price?: number;
+  stock_quantity?: number;
+  reorder_level?: number;
+  minimum_stock_level?: number;
+  min_stock_level?: number;
+  maximum_stock_level?: number;
   max_stock_level?: number;
 }
 
@@ -83,6 +88,21 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const updateProduct = useUpdateProduct();
+  const { provider } = useDatabase();
+
+  // Guard: Show message if item is missing ID
+  if (!item || !item.id) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Error</DialogTitle>
+          </DialogHeader>
+          <div className="text-destructive">Product ID is missing. Please try again.</div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ['product_categories'],
@@ -102,15 +122,15 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
     if (item && open) {
       setFormData({
         name: item.name || '',
-        product_code: item.product_code || '',
+        product_code: item.sku || item.product_code || '',
         description: item.description || '',
         category_id: item.category_id || '__none__',
         unit_of_measure: item.unit_of_measure || 'pieces',
-        cost_price: Number(item.cost_price) || 0,
-        selling_price: Number(item.selling_price) || 0,
-        stock_quantity: Number(item.stock_quantity) || 0,
-        min_stock_level: Number(item.min_stock_level) || 10,
-        max_stock_level: Number(item.max_stock_level) || 100
+        cost_price: Number(item.cost_price || 0),
+        selling_price: Number(item.selling_price || item.unit_price || 0),
+        stock_quantity: Number(item.stock_quantity || 0),
+        min_stock_level: Number(item.minimum_stock_level || item.min_stock_level || 10),
+        max_stock_level: Number(item.maximum_stock_level || item.max_stock_level || 100)
       });
     }
   }, [item, open]);
@@ -143,28 +163,45 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
       return;
     }
 
+    if (!item || !item.id) {
+      toast.error('Error: Product ID is missing. Cannot update product.');
+      console.error('EditInventoryItemModal - item.id is missing', { item, formData });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      if (!item?.id) {
-        throw new Error('Product ID is missing');
-      }
 
-      const updatedData = {
-        id: item.id,
+      // Build update data with fields appropriate for the database provider
+      const baseData = {
         name: formData.name,
-        product_code: formData.product_code,
         description: formData.description,
         category_id: formData.category_id === '__none__' ? null : formData.category_id,
         unit_of_measure: formData.unit_of_measure,
         cost_price: Number(formData.cost_price),
-        selling_price: Number(formData.selling_price),
-        stock_quantity: Number(formData.stock_quantity),
-        minimum_stock_level: Number(formData.min_stock_level),
-        maximum_stock_level: Number(formData.max_stock_level)
+        stock_quantity: Number(formData.stock_quantity)
       };
 
-      await updateProduct.mutateAsync(updatedData);
+      const updatedData = provider === 'external-api'
+        ? {
+            // External API field names
+            ...baseData,
+            sku: formData.product_code,
+            unit_price: Number(formData.selling_price),
+            reorder_level: Number(formData.min_stock_level),
+            status: 'active'
+          }
+        : {
+            // Supabase field names
+            ...baseData,
+            product_code: formData.product_code,
+            selling_price: Number(formData.selling_price),
+            minimum_stock_level: Number(formData.min_stock_level),
+            maximum_stock_level: Number(formData.max_stock_level)
+          };
+
+      await updateProduct.mutateAsync({ id: item.id, data: updatedData });
       toast.success(`${formData.name} updated successfully!`);
       onSuccess();
       onOpenChange(false);
