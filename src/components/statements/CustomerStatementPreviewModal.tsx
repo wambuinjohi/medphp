@@ -233,8 +233,8 @@ export default function CustomerStatementPreviewModal({
                           <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
                           <TableCell>{new Date(invoice.invoice_date).toLocaleDateString()}</TableCell>
                           <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
-                          <TableCell>${invoice.total_amount.toFixed(2)}</TableCell>
-                          <TableCell>${(invoice.paid_amount || 0).toFixed(2)}</TableCell>
+                          <TableCell>${Number(invoice.total_amount || 0).toFixed(2)}</TableCell>
+                          <TableCell>${Number(invoice.paid_amount || 0).toFixed(2)}</TableCell>
                           <TableCell className="font-medium">${outstanding.toFixed(2)}</TableCell>
                           <TableCell>{getStatusBadge(daysOverdue, outstanding)}</TableCell>
                         </TableRow>
