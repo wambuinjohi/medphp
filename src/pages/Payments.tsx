@@ -59,7 +59,11 @@ function getStatusColor() {
   return 'bg-success-light text-success border-success/20'; // All payments are completed when recorded
 }
 
-function getMethodColor(method: string) {
+function getMethodColor(method?: string) {
+  if (!method) {
+    return 'bg-muted text-muted-foreground border-muted-foreground/20';
+  }
+
   switch (method) {
     case 'cash':
       return 'bg-success-light text-success border-success/20';
