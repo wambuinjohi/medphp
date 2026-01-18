@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 
 // SQL script to create proforma invoice tables
 const PROFORMA_TABLES_SQL = `
