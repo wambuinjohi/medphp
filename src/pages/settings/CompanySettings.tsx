@@ -147,7 +147,7 @@ export default function CompanySettings() {
 
       // Update local state & persist using existing hook
       setCompanyData(prev => ({ ...prev, logo_url: logoUrl }));
-      await updateCompany.mutateAsync({ id: currentCompany.id, logo_url: logoUrl });
+      await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: logoUrl } });
 
       toast.success('Logo uploaded and saved successfully!');
     } catch (err: any) {
