@@ -547,7 +547,7 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
         </div>
       )}
 
-      {/* Finance Section */}
+      {/* Finance Section - Trips */}
       {activeTab === 'finance' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
@@ -562,19 +562,19 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
             </div>
             <Button onClick={() => setShowCreateFinanceModal(true)} className="ml-2">
               <Plus className="h-4 w-4 mr-2" />
-              Add Record
+              Create Trip
             </Button>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Transport Finance</CardTitle>
+              <CardTitle>Transport Trips & Payments</CardTitle>
             </CardHeader>
             <CardContent>
               {financesError && (
                 <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-lg mb-4">
                   <AlertCircle className="h-4 w-4" />
-                  Failed to load finance records. <Button variant="link" size="sm" onClick={() => retryFinances()}>Retry</Button>
+                  Failed to load trips. <Button variant="link" size="sm" onClick={() => retryFinances()}>Retry</Button>
                 </div>
               )}
 
@@ -589,50 +589,54 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Date</TableHead>
                         <TableHead>Vehicle</TableHead>
-                        <TableHead>Materials</TableHead>
-                        <TableHead>Buying Price</TableHead>
-                        <TableHead>Fuel</TableHead>
-                        <TableHead>Driver Fees</TableHead>
-                        <TableHead>Other Expenses</TableHead>
-                        <TableHead>Selling Price</TableHead>
-                        <TableHead>Profit/Loss</TableHead>
-                        <TableHead>Payment Status</TableHead>
                         <TableHead>Customer</TableHead>
+                        <TableHead className="text-right">Trip Amount</TableHead>
+                        <TableHead className="text-right">Profit/Loss</TableHead>
+                        <TableHead className="text-right">Payment Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredFinances.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={11} className="text-center py-4 text-muted-foreground">
-                            No finance records found
+                          <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                            No trips found
                           </TableCell>
                         </TableRow>
                       ) : (
                         filteredFinances.map((finance) => (
                           <TableRow key={finance.id}>
+                            <TableCell className="text-sm">{finance.date || '-'}</TableCell>
                             <TableCell className="font-medium">{finance.vehicle_number || '-'}</TableCell>
-                            <TableCell>{finance.materials || '-'}</TableCell>
-                            <TableCell className="text-right">{finance.buying_price?.toLocaleString() || '-'}</TableCell>
-                            <TableCell className="text-right">{finance.fuel_cost?.toLocaleString() || '-'}</TableCell>
-                            <TableCell className="text-right">{finance.driver_fees?.toLocaleString() || '-'}</TableCell>
-                            <TableCell className="text-right">{finance.other_expenses?.toLocaleString() || '-'}</TableCell>
-                            <TableCell className="text-right font-medium">{finance.selling_price?.toLocaleString() || '-'}</TableCell>
+                            <TableCell>{finance.customer_name || '-'}</TableCell>
+                            <TableCell className="text-right font-medium">{(finance.selling_price || 0).toLocaleString()}</TableCell>
                             <TableCell className={`text-right font-medium ${(finance.profit_loss ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                               {finance.profit_loss?.toLocaleString() || '-'}
                             </TableCell>
-                            <TableCell>
-                              <Badge 
+                            <TableCell className="text-right">
+                              <Badge
                                 variant={finance.payment_status === 'paid' ? 'default' : 'secondary'}
-                                className={finance.payment_status === 'paid' ? 'bg-green-600' : finance.payment_status === 'unpaid' ? 'bg-red-600' : ''}
+                                className={finance.payment_status === 'paid' ? 'bg-green-600' : finance.payment_status === 'unpaid' ? 'bg-red-600' : 'bg-yellow-600'}
                               >
                                 {finance.payment_status}
                               </Badge>
                             </TableCell>
-                            <TableCell>{finance.customer_name || '-'}</TableCell>
                             <TableCell>
                               <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedTripForPayment(finance);
+                                    setShowPaymentModal(true);
+                                  }}
+                                  disabled={finance.payment_status === 'paid'}
+                                >
+                                  <DollarSign className="h-4 w-4 mr-1" />
+                                  Payment
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
