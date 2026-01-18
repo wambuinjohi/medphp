@@ -253,6 +253,16 @@ const App = () => {
                   }
                 />
 
+                {/* Transport Management */}
+                <Route
+                  path="/app/transport"
+                  element={
+                    <ProtectedRoute>
+                      <Transport />
+                    </ProtectedRoute>
+                  }
+                />
+
                 {/* Additional Features */}
                 <Route
                   path="/app/remittance"
