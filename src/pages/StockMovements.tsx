@@ -275,8 +275,18 @@ export default function StockMovements() {
         </Button>
       </div>
 
+      {/* Error Alert */}
+      {error && (
+        <Alert className="border-destructive bg-destructive/10 border-destructive/30">
+          <AlertCircle className="h-4 w-4 text-destructive" />
+          <AlertDescription className="text-destructive">
+            <strong>Error loading stock movements:</strong> {error.message || 'Failed to fetch data. Please try again.'}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Empty State Alert */}
-      {!isLoading && (!movements || movements.length === 0) && (
+      {!isLoading && !error && (!movements || movements.length === 0) && (
         <Alert className="border-warning bg-warning/10 border-warning/30">
           <AlertCircle className="h-4 w-4 text-warning" />
           <AlertDescription className="text-warning">
