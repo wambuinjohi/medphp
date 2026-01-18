@@ -108,6 +108,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
   useEffect(() => {
     if (item && open) {
       // Capture the ID so we have it available for submission
+      console.log('EditInventoryItemModal - item received:', item);
       setProductId(item.id);
       setFormData({
         name: item.name || '',
