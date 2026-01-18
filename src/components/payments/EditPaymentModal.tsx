@@ -63,8 +63,7 @@ export function EditPaymentModal({
     amount: 0,
     payment_date: '',
     payment_method: '',
-    reference_number: '',
-    notes: ''
+    reference_number: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [amountChanged, setAmountChanged] = useState(false);
