@@ -58,11 +58,11 @@ export function CustomerPerformanceOptimizer() {
   const handleOptimize = async () => {
     setIsOptimizing(true);
     setOptimizationResult(null);
-    
+
     try {
       const result = await createCustomerIndexes();
       setOptimizationResult(result);
-      
+
       if (result.success) {
         toast.success('Customer performance optimized!');
         // Re-check status after optimization
@@ -70,12 +70,13 @@ export function CustomerPerformanceOptimizer() {
       } else {
         toast.warning('Manual customer optimization required');
       }
-    } catch (error: any) {
-      toast.error('Customer optimization failed', { description: error.message });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Customer optimization failed';
+      toast.error('Customer optimization failed', { description: errorMessage });
       setOptimizationResult({
         success: false,
         message: 'Customer optimization failed',
-        details: [error.message]
+        details: [errorMessage]
       });
     } finally {
       setIsOptimizing(false);
