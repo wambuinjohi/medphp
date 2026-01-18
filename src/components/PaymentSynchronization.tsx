@@ -50,10 +50,11 @@ export function PaymentSynchronization() {
         .filter(index => index !== -1);
       
       setSelectedMatches(new Set(highConfidenceIndexes));
-      
+
       toast.success('Analysis completed successfully');
-    } catch (err: any) {
-      setError(err.message || 'Failed to analyze payment status');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to analyze payment status';
+      setError(errorMessage);
       toast.error('Analysis failed');
     } finally {
       setIsAnalyzing(false);
