@@ -224,13 +224,6 @@ export default function CompanySettings() {
   };
 
 
-  // Test storage on component mount
-  useEffect(() => {
-    if (currentCompany && storageStatus === 'unknown') {
-      testStorageAvailability();
-    }
-  }, [currentCompany, storageStatus]);
-
   const validateCompanyData = (data: any) => {
     const errors = [];
 
