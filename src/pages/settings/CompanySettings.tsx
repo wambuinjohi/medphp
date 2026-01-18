@@ -612,15 +612,17 @@ export default function CompanySettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tax-id">Tax ID / Registration Number</Label>
+                <Label htmlFor="website">Website</Label>
                 <Input
-                  id="tax-id"
-                  value={companyData.registration_number || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, registration_number: e.target.value }))}
+                  id="website"
+                  type="url"
+                  value={companyData.website || ''}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, website: e.target.value }))}
+                  placeholder="https://yourcompany.com"
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="address">Address</Label>
               <Textarea
@@ -650,16 +652,12 @@ export default function CompanySettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tax-number">PIN/Tax Number (Reference Only)</Label>
+                <Label htmlFor="country">Country</Label>
                 <Input
-                  id="tax-number"
-                  value={companyData.tax_number || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, tax_number: e.target.value }))}
-                  placeholder="For reference - not saved to database"
+                  id="country"
+                  value={companyData.country || 'Kenya'}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, country: e.target.value }))}
                 />
-                <p className="text-xs text-muted-foreground">
-                  This field is for display purposes only and is not saved to the database. Tax numbers are managed through Tax Settings below.
-                </p>
               </div>
             </div>
           </CardContent>
