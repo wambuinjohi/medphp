@@ -118,22 +118,25 @@ export default function CompanySettings() {
 
     setUploading(true);
     try {
-      // Upload to external API
+      // Upload to server
       let logoUrl: string | null = null;
 
       try {
         logoUrl = await uploadToExternalAPI(file, currentCompany.id);
-        console.log('✅ External API upload successful:', logoUrl);
+        console.log('✅ Server upload successful:', logoUrl);
+        toast.success('Logo uploaded to server successfully!');
       } catch (uploadError) {
-        console.warn('⚠️ External API upload failed:', uploadError);
+        console.error('❌ Server upload failed:', uploadError);
+        logError(uploadError, 'Logo Upload to Server');
 
-        // Fallback to base64 for smaller files
+        // Only fall back to base64 for smaller files if server upload fails
         if (file.size <= 1024 * 1024) { // 1MB limit for base64
+          console.warn('⚠️ Falling back to local base64 storage');
           logoUrl = await convertToBase64(file);
           console.log('✅ Base64 fallback successful');
-          toast.info('Logo saved locally (upload service not available)');
+          toast.warning('Logo saved locally (server upload failed). Consider checking your upload configuration.');
         } else {
-          throw new Error('File too large for local storage. Please use a smaller image.');
+          throw new Error('Server upload failed and file is too large for local storage. Please use a smaller image (max 1MB) or check server configuration.');
         }
       }
 
@@ -145,7 +148,6 @@ export default function CompanySettings() {
       setCompanyData(prev => ({ ...prev, logo_url: logoUrl }));
       await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: logoUrl } });
 
-      toast.success('Logo uploaded and saved successfully!');
     } catch (err: any) {
       // Use centralized error parsing and logging for file upload
       logError(err, 'Logo Upload');
