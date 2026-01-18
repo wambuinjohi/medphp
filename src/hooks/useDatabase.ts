@@ -329,11 +329,37 @@ export function useCustomers(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useProducts(companyId?: string) {
+  const { provider } = useDatabase();
   const filter = useMemo(() =>
     companyId ? { company_id: companyId } : undefined,
     [companyId]
   );
-  return useSelect('products', filter);
+
+  const { data: rawData, isLoading, error, retry, loadingTimeout } = useSelect('products', filter);
+
+  // Normalize field names for external API vs Supabase
+  const data = useMemo(() => {
+    if (!rawData || rawData.length === 0) return rawData;
+
+    return rawData.map((product: any) => {
+      if (provider === 'external-api') {
+        // Map external API fields to standard names
+        return {
+          ...product,
+          product_code: product.sku || product.product_code,
+          selling_price: product.unit_price || product.selling_price,
+          minimum_stock_level: product.reorder_level || product.minimum_stock_level,
+          // Keep original fields too for compatibility
+          sku: product.sku,
+          unit_price: product.unit_price,
+          reorder_level: product.reorder_level
+        };
+      }
+      return product;
+    });
+  }, [rawData, provider]);
+
+  return { data, isLoading, error, retry, loadingTimeout };
 }
 
 /**
