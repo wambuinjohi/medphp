@@ -443,7 +443,7 @@ export default function CompanySettings() {
         // Update existing company
         await updateCompany.mutateAsync({
           id: currentCompany.id,
-          ...sanitizedData
+          data: sanitizedData
         });
         toast.success('Company settings saved successfully');
       }
