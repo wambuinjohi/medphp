@@ -126,12 +126,14 @@ export function DashboardStats() {
   }
 
   const formatCurrency = (amount: number) => {
+    // Ensure amount is a valid number, default to 0 if NaN or invalid
+    const safeAmount = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
       currency: 'KES',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(amount);
+    }).format(safeAmount);
   };
 
   const dashboardStats = [
