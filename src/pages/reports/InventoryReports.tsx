@@ -160,32 +160,32 @@ export default function InventoryReports() {
   const categoryDistribution = useMemo(() => calculateCategoryDistribution(), [products]);
   const turnoverData = useMemo(() => calculateTurnoverData(), [products]);
 
-  // Calculate real stats from data
-  const calculateStats = () => {
+  // Calculate real stats from data - memoized
+  const stats = useMemo(() => {
     if (!products) return { totalItems: 0, stockValue: 0, lowStock: 0, outOfStock: 0 };
 
     const totalItems = products.reduce((sum, product) => sum + (product.stock_quantity || 0), 0);
-    const stockValue = products.reduce((sum, product) => 
+    const stockValue = products.reduce((sum, product) =>
       sum + ((product.stock_quantity || 0) * (product.cost_price || 0)), 0
     );
-    const lowStock = products.filter(product => 
+    const lowStock = products.filter(product =>
       (product.stock_quantity || 0) <= (product.minimum_stock_level || 0)
     ).length;
     const outOfStock = products.filter(product => (product.stock_quantity || 0) === 0).length;
 
     return { totalItems, stockValue, lowStock, outOfStock };
-  };
+  }, [products]);
 
-  const stats = calculateStats();
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-KE', {
+  // Memoize currency formatter to create it only once
+  const formatCurrency = useMemo(() => {
+    const formatter = new Intl.NumberFormat('en-KE', {
       style: 'currency',
       currency: 'KES',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(amount);
-  };
+    });
+    return (amount: number) => formatter.format(amount);
+  }, []);
 
   const getStockStatusBadge = (product: any) => {
     if ((product.stock_quantity || 0) === 0) {
