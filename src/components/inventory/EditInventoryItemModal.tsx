@@ -73,11 +73,6 @@ interface EditInventoryItemModalProps {
 }
 
 export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: EditInventoryItemModalProps) {
-  // Guard: Early return if item is missing (must be before hooks)
-  if (!item || !item.id) {
-    return null;
-  }
-
   const [formData, setFormData] = useState({
     name: '',
     product_code: '',
