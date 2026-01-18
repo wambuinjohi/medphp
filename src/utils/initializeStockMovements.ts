@@ -147,8 +147,9 @@ export async function createStockMovements(movements: Array<{
       console.error('Batch stock movements insert error:', error);
       console.error('Movement data sample:', movementData[0]);
 
-      // Attempt automated fixes for common schema issues (missing updated_at or cost_per_unit)
-      const lowerMsg = String(error.message || '').toLowerCase();
+      const errorMsg = typeof error === 'object' && error !== null ? (error as any).message : String(error);
+      const errorCode = typeof error === 'object' && error !== null ? (error as any).code : '';
+      const lowerMsg = errorMsg.toLowerCase();
       let attemptedFix = false;
 
       try {
@@ -162,10 +163,9 @@ export async function createStockMovements(movements: Array<{
           }
         }
 
-        if (!attemptedFix && (lowerMsg.includes('cost_per_unit') || lowerMsg.includes('could not find the') && lowerMsg.includes('cost_per_unit'))) {
+        if (!attemptedFix && (lowerMsg.includes('cost_per_unit') || (lowerMsg.includes('could not find the') && lowerMsg.includes('cost_per_unit')))) {
           console.warn('Detected missing cost_per_unit column in stock_movements. Attempting to add column...');
           // Add cost_per_unit column via RPC
-          const db = getDatabase();
           await db.rpc('exec_sql', { sql: `ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS cost_per_unit DECIMAL(15,2);` });
           attemptedFix = true;
         }
@@ -175,10 +175,7 @@ export async function createStockMovements(movements: Array<{
 
       if (attemptedFix) {
         // Retry the insert once after attempted fix
-        const { data: retryData, error: retryError } = await supabase
-          .from('stock_movements')
-          .insert(movementData)
-          .select();
+        const { data: retryData, error: retryError } = await db.insert('stock_movements', movementData);
 
         if (retryError) {
           console.error('Retry after schema fix failed:', retryError);
@@ -190,20 +187,21 @@ export async function createStockMovements(movements: Array<{
       }
 
       // Provide more specific error messages
-      if (error.code === '23514') {
-        const constraintError = new Error(`Check constraint violation: ${error.message}. The database constraints need to be fixed. Please use the StockMovementsConstraintFix component to resolve this issue.`);
+      if (errorCode === '23514' || lowerMsg.includes('check constraint')) {
+        const constraintError = new Error(`Check constraint violation: ${errorMsg}. The database constraints need to be fixed. Please use the StockMovementsConstraintFix component to resolve this issue.`);
         constraintError.name = 'ConstraintViolationError';
         throw constraintError;
-      } else if (error.code === '42P01') {
+      } else if (errorCode === '42P01' || lowerMsg.includes('does not exist')) {
         throw new Error('Stock movements table not found. Please contact system administrator.');
       } else {
-        throw new Error(`Failed to create stock movements: ${error.message}`);
+        throw new Error(`Failed to create stock movements: ${errorMsg}`);
       }
     }
 
     return { data, error: null };
   } catch (error) {
     console.error('Error creating stock movements:', error);
-    return { data: null, error };
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    return { data: null, error: new Error(errorMsg) };
   }
 }
