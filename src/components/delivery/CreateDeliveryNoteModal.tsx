@@ -109,14 +109,14 @@ export const CreateDeliveryNoteModal = ({
         }));
 
         if (selectedInvoice.invoice_items && selectedInvoice.invoice_items.length > 0) {
-          const deliveryItems: DeliveryItem[] = selectedInvoice.invoice_items.map((item: any) => ({
+          const deliveryItems: DeliveryItem[] = selectedInvoice.invoice_items.map((item: Record<string, unknown>) => ({
             id: `item-${item.id}`,
-            product_id: item.product_id || '',
-            product_name: item.products?.name || item.description || 'Unknown Product',
-            description: item.description || item.products?.name || '',
+            product_id: (item.product_id as string) || '',
+            product_name: (item.products as Record<string, unknown>)?.name as string || item.description as string || 'Unknown Product',
+            description: item.description as string || (item.products as Record<string, unknown>)?.name as string || '',
             quantity_ordered: Math.max(Number(item.quantity) || 1, 1),
             quantity_delivered: Math.max(Number(item.quantity) || 1, 1),
-            unit_of_measure: item.products?.unit_of_measure || 'pcs',
+            unit_of_measure: (item.products as Record<string, unknown>)?.unit_of_measure as string || 'pcs',
           }));
 
           setItems(deliveryItems);
