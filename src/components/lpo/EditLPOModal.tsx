@@ -291,8 +291,8 @@ export const EditLPOModal = ({
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select 
-                value={formData.status} 
+              <Select
+                value={formData.status || ''}
                 onValueChange={(value) => handleInputChange('status', value)}
               >
                 <SelectTrigger>

@@ -434,7 +434,7 @@ export const CreateLPOModal = ({
             <div className="space-y-2">
               <Label htmlFor="supplier_id">Supplier *</Label>
               <Select
-                value={formData.supplier_id}
+                value={formData.supplier_id || ''}
                 onValueChange={handleSupplierChange}
                 disabled={isValidatingSupplier}
               >
