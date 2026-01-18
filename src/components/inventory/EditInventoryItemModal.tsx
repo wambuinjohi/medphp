@@ -246,7 +246,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
             Edit Inventory Item
           </DialogTitle>
           <DialogDescription>
-            Update the details for {item.name}
+            Update the details for {item?.name || 'this product'}
           </DialogDescription>
         </DialogHeader>
 
