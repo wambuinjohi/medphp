@@ -916,6 +916,62 @@ export function useCreatePaymentMethod() {
 }
 
 /**
+ * Hook to update a payment method
+ */
+export function useUpdatePaymentMethod() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
+      const { data: result, error } = await supabase
+        .from('payment_methods')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
+      toast.success('Payment method updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating payment method:', error);
+      toast.error('Failed to update payment method. Please try again.');
+    },
+  });
+}
+
+/**
+ * Hook to delete a payment method
+ */
+export function useDeletePaymentMethod() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string | number) => {
+      const { error } = await supabase
+        .from('payment_methods')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
+      toast.success('Payment method deleted successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting payment method:', error);
+      toast.error('Failed to delete payment method. Please try again.');
+    },
+  });
+}
+
+/**
  * Hook to create a payment
  * Attempts to use server-side RPC if available, falls back to client-side insertion
  */
