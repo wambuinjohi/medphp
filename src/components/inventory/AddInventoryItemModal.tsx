@@ -409,7 +409,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !formData.name.trim() || formData.selling_price <= 0}
+            disabled={isSubmitting || !formData.name.trim() || formData.unit_price <= 0}
           >
             <Package className="h-4 w-4 mr-2" />
             {isSubmitting ? 'Adding...' : 'Add Product'}
