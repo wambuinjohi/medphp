@@ -198,6 +198,7 @@ export const mysqlTableDefinitions = {
       tax_amount DECIMAL(15,2) DEFAULT 0,
       total DECIMAL(15,2) DEFAULT 0,
       notes TEXT,
+      valid_until DATE NULL,
       due_date TIMESTAMP NULL,
       created_by VARCHAR(36),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

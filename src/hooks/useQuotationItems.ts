@@ -809,14 +809,23 @@ export const useConvertQuotationToProforma = () => {
       };
 
       // Create proforma using database adapter
-      const proformaInsertResult = await db.insert('proforma_invoices', proformaData);
+      let proformaInsertResult = await db.insert('proforma_invoices', proformaData);
       if (proformaInsertResult.error) {
+        const errorMessage = String(proformaInsertResult.error.message || '').toLowerCase();
+
+        // Fallback: if column missing, retry without valid_until
+        if (errorMessage.includes('valid_until')) {
+          const { valid_until, ...dataWithoutValidUntil } = proformaData;
+          const retryResult = await db.insert('proforma_invoices', dataWithoutValidUntil);
+          if (retryResult.error) throw retryResult.error;
+          proformaInsertResult = retryResult;
+        }
         // Fallback: if FK violation on created_by, retry with created_by = null
-        if (String(proformaInsertResult.error.message || '').includes('created_by')) {
+        else if (errorMessage.includes('created_by')) {
           const retryPayload = { ...proformaData, created_by: null };
           const retryResult = await db.insert('proforma_invoices', retryPayload);
           if (retryResult.error) throw retryResult.error;
-          proformaData.created_by = null;
+          proformaInsertResult = retryResult;
         } else {
           throw proformaInsertResult.error;
         }

@@ -27,12 +27,12 @@ export const exportCustomerStatementsToCSV = (statements: CustomerStatementData[
   const csvData = statements.map(statement => [
     statement.customer_name,
     statement.customer_email || '',
-    statement.total_outstanding.toFixed(2),
-    statement.current_due.toFixed(2),
-    statement.overdue_amount.toFixed(2),
+    Number(statement.total_outstanding || 0).toFixed(2),
+    Number(statement.current_due || 0).toFixed(2),
+    Number(statement.overdue_amount || 0).toFixed(2),
     statement.days_overdue.toString(),
     statement.last_payment_date ? new Date(statement.last_payment_date).toLocaleDateString() : '',
-    statement.last_payment_amount ? statement.last_payment_amount.toFixed(2) : '',
+    statement.last_payment_amount ? Number(statement.last_payment_amount || 0).toFixed(2) : '',
     statement.invoice_count.toString()
   ]);
 
@@ -74,12 +74,12 @@ export const exportCustomerStatementsToExcel = (statements: CustomerStatementDat
   const rows = statements.map(s => [
     s.customer_name,
     s.customer_email || '',
-    s.total_outstanding.toFixed(2),
-    s.current_due.toFixed(2),
-    s.overdue_amount.toFixed(2),
+    Number(s.total_outstanding || 0).toFixed(2),
+    Number(s.current_due || 0).toFixed(2),
+    Number(s.overdue_amount || 0).toFixed(2),
     s.days_overdue.toString(),
     s.last_payment_date ? new Date(s.last_payment_date).toLocaleDateString() : '',
-    s.last_payment_amount ? s.last_payment_amount.toFixed(2) : '',
+    s.last_payment_amount ? Number(s.last_payment_amount || 0).toFixed(2) : '',
     s.invoice_count.toString()
   ]);
 

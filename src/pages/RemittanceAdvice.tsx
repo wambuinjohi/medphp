@@ -244,7 +244,7 @@ const RemittanceAdvice = () => {
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">
-                      ${(remittance.total_payment || remittance.totalPayment || 0).toFixed(2)}
+                      ${Number(remittance.total_payment || remittance.totalPayment || 0).toFixed(2)}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -375,20 +375,20 @@ const RemittanceAdvice = () => {
                         {item.invoiceNumber || item.creditNote}
                       </TableCell>
                       <TableCell className="text-right">
-                        {item.invoiceAmount ? `$${(item.invoiceAmount || 0).toFixed(2)}` : ''}
+                        {item.invoiceAmount ? `$${Number(item.invoiceAmount || 0).toFixed(2)}` : ''}
                       </TableCell>
                       <TableCell className="text-right">
-                        {item.creditAmount ? `$${(item.creditAmount || 0).toFixed(2)}` : ''}
+                        {item.creditAmount ? `$${Number(item.creditAmount || 0).toFixed(2)}` : ''}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        ${(item.payment || 0).toFixed(2)}
+                        ${Number(item.payment || 0).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="border-t-2">
                     <TableCell colSpan={4} className="font-semibold">Total Payment</TableCell>
                     <TableCell className="text-right font-bold text-lg">
-                      ${(filteredRemittances[0].totalPayment || 0).toFixed(2)}
+                      ${Number(filteredRemittances[0].totalPayment || 0).toFixed(2)}
                     </TableCell>
                   </TableRow>
                 </TableBody>

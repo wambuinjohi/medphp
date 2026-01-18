@@ -201,20 +201,21 @@ export async function setupProformaTables() {
     console.log('🔍 Verifying proforma tables...');
     const tablesToCheck = ['proforma_invoices', 'proforma_items'];
     let tablesExist = 0;
-    
+    const db = getDatabase();
+
     for (const table of tablesToCheck) {
       try {
-        const { error } = await supabase.from(table).select('id').limit(1);
-        if (!error) {
+        const result = await db.select(table, {});
+        if (!result.error) {
           tablesExist++;
         }
       } catch (err) {
         console.warn(`Table ${table} verification failed:`, err);
       }
     }
-    
-    results.steps.push({ 
-      step: `Verify proforma tables (${tablesExist}/${tablesToCheck.length} working)`, 
+
+    results.steps.push({
+      step: `Verify proforma tables (${tablesExist}/${tablesToCheck.length} working)`,
       success: tablesExist === tablesToCheck.length
     });
 
@@ -271,6 +272,9 @@ export async function ensureProformaSchema() {
  */
 export async function checkProformaTables() {
   try {
+    const { getDatabase } = await import('@/integrations/database');
+    const db = getDatabase();
+
     const tables = ['proforma_invoices', 'proforma_items'];
     const status = {
       tablesChecked: 0,
@@ -281,13 +285,17 @@ export async function checkProformaTables() {
 
     for (const table of tables) {
       try {
-        const { error } = await supabase.from(table).select('id').limit(1);
-        status.tables[table] = !error;
+        // Try to query the table - works with both Supabase and MySQL via adapter
+        const result = await db.select(table, {});
+
+        // If we get here without error, the table exists
+        status.tables[table] = !result.error;
         status.tablesChecked++;
-        if (!error) {
+        if (!result.error) {
           status.tablesWorking++;
         }
       } catch (err) {
+        // Table doesn't exist or query failed
         status.tables[table] = false;
         status.tablesChecked++;
       }
