@@ -300,8 +300,8 @@ export const CreateDeliveryNoteModal = ({
             </div>
             <div className="space-y-2">
               <Label htmlFor="customer_id">Customer *</Label>
-              <Select 
-                value={formData.customer_id} 
+              <Select
+                value={formData.customer_id || ''}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, customer_id: value }))}
                 disabled={!!formData.invoice_id} // Disable if created from invoice
               >
@@ -319,7 +319,7 @@ export const CreateDeliveryNoteModal = ({
             </div>
             <div className="space-y-2">
               <Label htmlFor="invoice_id">Related Invoice *</Label>
-              <Select value={formData.invoice_id} onValueChange={(value) => {
+              <Select value={formData.invoice_id || ''} onValueChange={(value) => {
                 setFormData(prev => ({ ...prev, invoice_id: value }));
                 if (value) {
                   toast.info('Loading items from selected invoice...');
@@ -359,7 +359,7 @@ export const CreateDeliveryNoteModal = ({
             </div>
             <div className="space-y-2">
               <Label htmlFor="delivery_method">Delivery Method</Label>
-              <Select value={formData.delivery_method} onValueChange={(value) => 
+              <Select value={formData.delivery_method || ''} onValueChange={(value) =>
                 setFormData(prev => ({ ...prev, delivery_method: value }))
               }>
                 <SelectTrigger>
