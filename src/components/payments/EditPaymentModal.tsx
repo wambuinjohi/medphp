@@ -128,8 +128,7 @@ export function EditPaymentModal({
           amount: formData.amount,
           payment_date: formData.payment_date,
           payment_method: formData.payment_method,
-          reference_number: formData.reference_number,
-          notes: formData.notes
+          reference_number: formData.reference_number
         },
         oldAmount: payment.amount
       });
