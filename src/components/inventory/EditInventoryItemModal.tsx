@@ -73,6 +73,11 @@ interface EditInventoryItemModalProps {
 }
 
 export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: EditInventoryItemModalProps) {
+  // Guard: Early return if item is missing (must be before hooks)
+  if (!item || !item.id) {
+    return null;
+  }
+
   const [formData, setFormData] = useState({
     name: '',
     product_code: '',
@@ -89,20 +94,6 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const updateProduct = useUpdateProduct();
   const { provider } = useDatabase();
-
-  // Guard: Show message if item is missing ID
-  if (!item || !item.id) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Error</DialogTitle>
-          </DialogHeader>
-          <div className="text-destructive">Product ID is missing. Please try again.</div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ['product_categories'],
