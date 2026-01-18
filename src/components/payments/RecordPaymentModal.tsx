@@ -581,18 +581,6 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                 />
               </div>
 
-              {/* Notes */}
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={paymentData.notes}
-                  onChange={(e) => handleInputChange('notes', e.target.value)}
-                  rows={3}
-                  placeholder="Additional notes about this payment..."
-                />
-              </div>
-
               {/* Payment Summary */}
               {paymentData.invoice_id && (() => {
                 const selectedInv = invoice || availableInvoices.find(inv => inv.id === paymentData.invoice_id);
