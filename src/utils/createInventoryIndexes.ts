@@ -102,11 +102,12 @@ export async function createInventoryIndexes(): Promise<IndexResult> {
 
     let indexesCreated = false;
     let lastError = '';
+    const db = getDatabase();
 
     for (const method of executionMethods) {
       try {
         console.log(`Trying RPC method: ${method.name}`);
-        const { data, error } = await supabase.rpc(method.name, method.params);
+        const { data, error } = await db.rpc(method.name, method.params);
         
         if (!error) {
           console.log(`✅ Indexes created successfully using ${method.name}`);
