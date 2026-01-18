@@ -499,77 +499,13 @@ export const useDeleteProforma = () => {
 export const useGenerateProformaNumber = () => {
   return useMutation({
     mutationFn: async (companyId: string) => {
-      try {
-        const { data, error } = await supabase.rpc('generate_proforma_number', {
-          company_uuid: companyId
-        });
+      // Generate proforma number client-side using timestamp
+      const timestamp = Date.now().toString().slice(-6);
+      const year = new Date().getFullYear();
+      const proformaNumber = `PF-${year}-${timestamp}`;
 
-        if (error) {
-          // Extract meaningful error message from Supabase error object
-          let errorMessage = 'Unknown database error';
-
-          if (typeof error === 'string') {
-            errorMessage = error;
-          } else if (error && typeof error === 'object') {
-            // Handle different Supabase error formats
-            if (error.message) {
-              errorMessage = error.message;
-            } else if (error.details) {
-              errorMessage = error.details;
-            } else if (error.hint) {
-              errorMessage = error.hint;
-            } else if (error.code) {
-              errorMessage = `Database error (code: ${error.code})`;
-            } else {
-              // Try to get meaningful info from error object
-              try {
-                const errorKeys = Object.keys(error);
-                if (errorKeys.length > 0) {
-                  errorMessage = JSON.stringify(error, null, 2);
-                }
-              } catch {
-                errorMessage = parseErrorMessage(error);
-              }
-            }
-          }
-
-          console.error('Error generating proforma number:', errorMessage);
-
-          // Check if it's a function not found error
-          if (errorMessage.includes('function generate_proforma_number') ||
-              errorMessage.includes('does not exist') ||
-              errorMessage.includes('is not defined') ||
-              errorMessage.includes('cannot find') ||
-              errorMessage.includes('schema cache')) {
-            console.warn('generate_proforma_number function not found, using fallback');
-            console.info('💡 To fix this permanently, visit: /proforma-function-fix');
-            throw new Error('Database function not found. Visit /proforma-function-fix to create it.');
-          }
-
-          // Check for permission errors
-          if (errorMessage.includes('permission denied') ||
-              errorMessage.includes('access denied') ||
-              errorMessage.includes('insufficient privilege')) {
-            console.warn('Permission denied for proforma number generation, using fallback');
-            throw new Error('Permission denied for database function. Using fallback number generation.');
-          }
-
-          throw new Error(`Failed to generate proforma number: ${errorMessage}`);
-        }
-
-        return data;
-      } catch (error) {
-        // Fallback to client-side generation
-        const timestamp = Date.now().toString().slice(-6);
-        const year = new Date().getFullYear();
-        const fallbackNumber = `PF-${year}-${timestamp}`;
-
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.warn('Proforma number generation failed, using fallback:', errorMessage);
-        console.info('Generated fallback number:', fallbackNumber);
-
-        return fallbackNumber;
-      }
+      console.info('Generated proforma number:', proformaNumber);
+      return proformaNumber;
     },
   });
 };
