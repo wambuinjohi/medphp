@@ -148,6 +148,8 @@ export default function DeliveryNotes() {
 
   const handleCreateSuccess = () => {
     setShowCreateModal(false);
+    // Refresh delivery notes list to show new data
+    retryDeliveryNotes();
     toast.success('Delivery note created successfully!');
   };
 
