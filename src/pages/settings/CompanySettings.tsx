@@ -762,38 +762,7 @@ export default function CompanySettings() {
                     </p>
                     {companyData.logo_url.startsWith('data:') && (
                       <div className="text-xs text-orange-600 space-y-1">
-                        <p>Note: Logo is stored locally. For production use, consider setting up cloud storage.</p>
-                        {storageStatus === 'unavailable' && (
-                          <details className="cursor-pointer">
-                            <summary className="hover:text-orange-700">View cloud storage setup instructions</summary>
-                            <div className="mt-2 p-2 bg-orange-50 rounded text-orange-800 space-y-2">
-                              <div>
-                                <p className="font-medium">Option 1: Create storage bucket (Admin required)</p>
-                                <ol className="list-decimal list-inside space-y-1 text-xs mt-1">
-                                  <li>Go to your Supabase dashboard</li>
-                                  <li>Navigate to Storage section</li>
-                                  <li>Create a new bucket named "company-logos"</li>
-                                  <li>Set as Public bucket with 5MB file size limit</li>
-                                  <li>Allow MIME types: image/jpeg, image/png, image/gif, image/webp</li>
-                                  <li>Configure RLS policies to allow authenticated users to upload</li>
-                                  <li>Click "Retry" button above to test</li>
-                                </ol>
-                              </div>
-                              <div className="border-t pt-2">
-                                <p className="font-medium">Option 2: Use local storage (Current)</p>
-                                <p className="text-xs">Files up to 1MB are stored as base64 data. This works for most logos but files won't be accessible via direct URLs.</p>
-                              </div>
-                              <div className="border-t pt-2">
-                                <p className="font-medium">RLS Policy Example:</p>
-                                <code className="text-xs bg-orange-100 p-1 rounded block mt-1">
-                                  CREATE POLICY "Authenticated users can upload logos" ON storage.objects
-                                  FOR INSERT TO authenticated
-                                  WITH CHECK (bucket_id = 'company-logos');
-                                </code>
-                              </div>
-                            </div>
-                          </details>
-                        )}
+                        <p>Note: Logo is stored locally (Base64). For production, upload to the server.</p>
                       </div>
                     )}
                   </div>
