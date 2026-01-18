@@ -97,15 +97,16 @@ export async function createProformaFunction(): Promise<{
 }> {
   try {
     console.log('🚀 Creating generate_proforma_number function...');
-    
+
     // Execute the SQL to create the function using exec_sql if available
+    const db = getDatabase();
     let result;
     try {
-      result = await supabase.rpc('exec_sql', { sql: CREATE_PROFORMA_FUNCTION_SQL });
+      result = await db.rpc('exec_sql', { sql: CREATE_PROFORMA_FUNCTION_SQL });
     } catch (execError) {
       // If exec_sql doesn't exist, try alternative method
       console.warn('exec_sql not available, trying direct execution...');
-      result = await supabase.rpc('sql', { query: CREATE_PROFORMA_FUNCTION_SQL });
+      result = await db.rpc('sql', { query: CREATE_PROFORMA_FUNCTION_SQL });
     }
 
     const { data, error } = result;
