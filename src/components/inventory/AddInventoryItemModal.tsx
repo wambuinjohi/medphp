@@ -228,22 +228,22 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="product_code">Product Code</Label>
+                  <Label htmlFor="sku">SKU (Product Code)</Label>
                   <div className="relative">
                     <Barcode className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      id="product_code"
-                      value={formData.product_code}
-                      onChange={(e) => handleInputChange('product_code', e.target.value)}
+                      id="sku"
+                      value={formData.sku}
+                      onChange={(e) => handleInputChange('sku', e.target.value)}
                       placeholder="Auto-generated"
                       className="pl-10"
                     />
                   </div>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     size="sm"
-                    onClick={() => handleInputChange('product_code', generateProductCode())}
+                    onClick={() => handleInputChange('sku', generateProductCode())}
                   >
                     Generate Code
                   </Button>
