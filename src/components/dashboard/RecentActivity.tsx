@@ -97,7 +97,7 @@ export function RecentActivity() {
     });
   }, [auditLogs]);
 
-  if (hasError && !isLoading) {
+  if (hasError) {
     return (
       <Card className="shadow-card">
         <CardHeader>
@@ -110,25 +110,6 @@ export function RecentActivity() {
               Unable to load recent activity. Please try refreshing the page.
             </AlertDescription>
           </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Show empty state if loading is taking too long OR we have no data and are no longer loading
-  if (isLoadingTooLong || (hasNoData && !isLoading && !companiesLoading)) {
-    return (
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No recent activity</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Start creating invoices, payments, or quotations to see activity here
-            </p>
-          </div>
         </CardContent>
       </Card>
     );
@@ -165,32 +146,30 @@ export function RecentActivity() {
           <div className="text-center py-8">
             <p className="text-muted-foreground">No recent activity</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Start creating invoices, payments, or quotations to see activity here
+              Activity will appear here as you create and manage documents
             </p>
           </div>
         ) : (
           activities.map((activity) => (
-            <div key={activity.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg hover:bg-muted/50 transition-smooth cursor-pointer">
+            <div
+              key={activity.id}
+              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+            >
               <Avatar className="h-10 w-10 flex-shrink-0">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
-                  {getTypeIcon(activity.type)}
+                <AvatarFallback className={`bg-primary text-primary-foreground text-sm font-medium`}>
+                  {getActionIcon(activity.action)}
                 </AvatarFallback>
               </Avatar>
 
               <div className="flex-1 space-y-2 sm:space-y-1 min-w-0">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
                   <p className="text-sm font-medium truncate">{activity.title}</p>
-                  {activity.amount && (
-                    <span className="text-sm font-semibold text-foreground">
-                      {activity.amount}
-                    </span>
-                  )}
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <p className="text-xs text-muted-foreground truncate">{activity.customer}</p>
+                  <p className="text-xs text-muted-foreground truncate">{activity.description}</p>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className={getStatusColor(activity.status)}>
-                      {activity.status}
+                    <Badge variant="outline" className={getActionColor(activity.action)}>
+                      {activity.action}
                     </Badge>
                     <span className="text-xs text-muted-foreground whitespace-nowrap">
                       {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
@@ -201,7 +180,7 @@ export function RecentActivity() {
             </div>
           ))
         )}
-        
+
         {activities.length > 0 && (
           <div className="text-center pt-4 border-t">
             <p className="text-sm text-muted-foreground">
