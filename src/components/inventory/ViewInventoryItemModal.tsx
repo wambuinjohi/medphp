@@ -308,11 +308,11 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <div className="text-2xl font-bold text-primary">{item.currentStock}</div>
+                <div className="text-2xl font-bold text-primary">{normalizedItem.currentStock}</div>
                 <div className="text-sm text-muted-foreground">Current Stock</div>
               </div>
               <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <div className="text-2xl font-bold text-success">{formatCurrency(item.totalValue)}</div>
+                <div className="text-2xl font-bold text-success">{formatCurrency(totalValue)}</div>
                 <div className="text-sm text-muted-foreground">Total Value</div>
               </div>
               <div className="text-center p-4 bg-muted/50 rounded-lg">
