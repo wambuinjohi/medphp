@@ -146,12 +146,20 @@ export default function StockMovements() {
 
   // Calculate totals
   const totals = useMemo(() => {
-    const inTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'in' ? sum + (m.quantity || 0) : sum, 0);
-    const outTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'out' ? sum + (m.quantity || 0) : sum, 0);
-    const adjustmentTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'adjustment' ? sum + Math.abs(m.quantity || 0) : sum, 0);
-    const costTotal = filteredMovements.reduce((sum, m) => sum + ((m.cost_per_unit || 0) * (m.quantity || 0)), 0);
+    if (!filteredMovements || filteredMovements.length === 0) {
+      return { inTotal: 0, outTotal: 0, adjustmentTotal: 0, costTotal: 0 };
+    }
 
-    return { inTotal, outTotal, adjustmentTotal, costTotal };
+    const inTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'in' ? sum + (typeof m.quantity === 'number' ? m.quantity : 0) : sum, 0);
+    const outTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'out' ? sum + (typeof m.quantity === 'number' ? m.quantity : 0) : sum, 0);
+    const adjustmentTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'adjustment' ? sum + Math.abs(typeof m.quantity === 'number' ? m.quantity : 0) : sum, 0);
+    const costTotal = filteredMovements.reduce((sum, m) => {
+      const cost = typeof m.cost_per_unit === 'number' ? m.cost_per_unit : 0;
+      const qty = typeof m.quantity === 'number' ? m.quantity : 0;
+      return sum + (cost * qty);
+    }, 0);
+
+    return { inTotal: Number(inTotal) || 0, outTotal: Number(outTotal) || 0, adjustmentTotal: Number(adjustmentTotal) || 0, costTotal: Number(costTotal) || 0 };
   }, [filteredMovements]);
 
   const [showFilters, setShowFilters] = useState(false);
