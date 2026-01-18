@@ -421,7 +421,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                       <SelectValue placeholder="Choose an invoice to pay" />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableInvoices.map((inv) => (
+                      {availableInvoices.filter(inv => inv?.id).map((inv) => (
                         <SelectItem key={inv.id} value={inv.id}>
                           <div className="flex justify-between items-center w-full">
                             <span>{inv.invoice_number} - {inv.customers?.name}</span>
