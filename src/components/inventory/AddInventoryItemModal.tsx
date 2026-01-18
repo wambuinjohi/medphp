@@ -300,9 +300,9 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
 
               <div className="space-y-2">
                 <Label htmlFor="unit_of_measure">Unit of Measure</Label>
-                <Select value={formData.unit_of_measure} onValueChange={(value) => handleInputChange('unit_of_measure', value)}>
+                <Select value={formData.unit_of_measure || 'pieces'} onValueChange={(value) => handleInputChange('unit_of_measure', value)}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select unit of measure" />
                   </SelectTrigger>
                   <SelectContent>
                     {STANDARD_UNITS.map((unit) => (
