@@ -329,14 +329,14 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
 
         <DialogFooter className="flex justify-between">
           <div className="flex space-x-2">
-            {item.status === 'low_stock' && (
+            {normalizedItem.status === 'low_stock' && (
               <Button variant="outline" onClick={onRestock} className="bg-warning-light text-warning border-warning/20">
                 <Package className="h-4 w-4 mr-2" />
                 Restock Item
               </Button>
             )}
           </div>
-          
+
           <div className="flex space-x-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
