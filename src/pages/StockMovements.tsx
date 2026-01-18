@@ -59,8 +59,11 @@ interface StockMovement {
   created_by?: number;
 }
 
-function getMovementTypeBadge(type: string) {
-  switch (type) {
+function getMovementTypeBadge(type: string | null | undefined) {
+  if (!type) return <Badge variant="secondary">Unknown</Badge>;
+
+  const normalizedType = (type || '').toLowerCase().trim();
+  switch (normalizedType) {
     case 'in':
       return <Badge className="bg-success-light text-success border-success/20 flex items-center gap-1"><TrendingUp className="h-3 w-3" />In</Badge>;
     case 'out':
@@ -74,9 +77,11 @@ function getMovementTypeBadge(type: string) {
   }
 }
 
-function getReferenceTypeBadge(type?: string) {
+function getReferenceTypeBadge(type?: string | null) {
   if (!type) return '-';
-  switch (type) {
+
+  const normalizedType = (type || '').toLowerCase().replace(/_/g, '_').trim();
+  switch (normalizedType) {
     case 'invoice':
       return <Badge variant="outline" className="text-xs">Invoice</Badge>;
     case 'proforma':
@@ -108,12 +113,25 @@ export default function StockMovements() {
   const { data: movements = [], isLoading: isMovementsLoading, error } = useStockMovements(activeCompanyId);
   const { data: products = [], isLoading: isProductsLoading } = useProducts(activeCompanyId);
 
-  // Only show loading if data is actually being fetched AND we have no data yet
-  const isLoading = (isMovementsLoading || isProductsLoading) && (!movements || !products);
+  // Show loading state when either hook is loading AND no data yet (empty arrays default to [])
+  const isLoading = (isMovementsLoading || isProductsLoading) && (movements.length === 0 && products.length === 0);
+
+  // Helper to normalize movement type for comparison
+  const normalizeMovementType = (type: string | null | undefined): string => {
+    return (type || '').toUpperCase().trim();
+  };
+
+  // Helper to parse date safely
+  const parseDateSafely = (dateString: string | null | undefined): number | null => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    const time = date.getTime();
+    return isNaN(time) ? null : time;
+  };
 
   // Filter and search logic
   const filteredMovements = useMemo(() => {
-    return movements?.filter(movement => {
+    return (movements || []).filter(movement => {
       // Search filter
       const matchesSearch =
         (movement.product?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -121,41 +139,59 @@ export default function StockMovements() {
         (movement.reference_id?.toString()?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
         (movement.notes?.toLowerCase() || '').includes(searchTerm.toLowerCase());
 
-      // Movement type filter
-      const matchesMovementType = movementTypeFilter === 'all' || movement.movement_type === movementTypeFilter;
+      // Movement type filter - normalize to uppercase for comparison
+      const normalizedMovementType = normalizeMovementType(movement.movement_type);
+      const normalizedFilterType = movementTypeFilter === 'all' ? 'ALL' : normalizeMovementType(movementTypeFilter);
+      const matchesMovementType = normalizedFilterType === 'ALL' || normalizedMovementType === normalizedFilterType;
 
       // Product filter
       const matchesProduct = productFilter === 'all' || movement.product_id?.toString() === productFilter;
 
-      // Date filters
+      // Date filters with null safety
       let matchesDateFrom = true;
       let matchesDateTo = true;
 
       if (dateFromFilter) {
-        const filterDate = new Date(dateFromFilter).getTime();
-        const movementDate = new Date(movement.movement_date || movement.created_at || '').getTime();
-        matchesDateFrom = movementDate >= filterDate;
+        const filterDate = parseDateSafely(dateFromFilter);
+        const movementDate = parseDateSafely(movement.movement_date || movement.created_at);
+        if (filterDate !== null && movementDate !== null) {
+          matchesDateFrom = movementDate >= filterDate;
+        }
       }
 
       if (dateToFilter) {
-        const filterDate = new Date(dateToFilter).getTime();
-        const movementDate = new Date(movement.movement_date || movement.created_at || '').getTime();
-        matchesDateTo = movementDate <= filterDate;
+        const filterDate = parseDateSafely(dateToFilter);
+        const movementDate = parseDateSafely(movement.movement_date || movement.created_at);
+        if (filterDate !== null && movementDate !== null) {
+          matchesDateTo = movementDate <= filterDate;
+        }
       }
 
       return matchesSearch && matchesMovementType && matchesProduct && matchesDateFrom && matchesDateTo;
-    }) || [];
+    });
   }, [movements, searchTerm, movementTypeFilter, productFilter, dateFromFilter, dateToFilter]);
 
-  // Calculate totals
+  // Calculate totals with normalized movement types
   const totals = useMemo(() => {
     if (!filteredMovements || filteredMovements.length === 0) {
       return { inTotal: 0, outTotal: 0, adjustmentTotal: 0, costTotal: 0 };
     }
 
-    const inTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'in' ? sum + (typeof m.quantity === 'number' ? m.quantity : 0) : sum, 0);
-    const outTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'out' ? sum + (typeof m.quantity === 'number' ? m.quantity : 0) : sum, 0);
-    const adjustmentTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'adjustment' ? sum + Math.abs(typeof m.quantity === 'number' ? m.quantity : 0) : sum, 0);
+    const inTotal = filteredMovements.reduce((sum, m) => {
+      const qty = typeof m.quantity === 'number' ? m.quantity : 0;
+      return normalizeMovementType(m.movement_type) === 'IN' ? sum + qty : sum;
+    }, 0);
+
+    const outTotal = filteredMovements.reduce((sum, m) => {
+      const qty = typeof m.quantity === 'number' ? m.quantity : 0;
+      return normalizeMovementType(m.movement_type) === 'OUT' ? sum + qty : sum;
+    }, 0);
+
+    const adjustmentTotal = filteredMovements.reduce((sum, m) => {
+      const qty = typeof m.quantity === 'number' ? m.quantity : 0;
+      return normalizeMovementType(m.movement_type) === 'ADJUSTMENT' ? sum + Math.abs(qty) : sum;
+    }, 0);
+
     const costTotal = filteredMovements.reduce((sum, m) => {
       const cost = typeof m.cost_per_unit === 'number' ? m.cost_per_unit : 0;
       const qty = typeof m.quantity === 'number' ? m.quantity : 0;
@@ -213,9 +249,10 @@ export default function StockMovements() {
     toast.success('Stock movements exported successfully');
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString();
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? '-' : date.toLocaleDateString();
   };
 
   const formatCurrency = (amount: number) => {
@@ -379,10 +416,10 @@ export default function StockMovements() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="in">Stock In</SelectItem>
-                      <SelectItem value="out">Stock Out</SelectItem>
-                      <SelectItem value="adjustment">Adjustment</SelectItem>
-                      <SelectItem value="return">Return</SelectItem>
+                      <SelectItem value="IN">Stock In</SelectItem>
+                      <SelectItem value="OUT">Stock Out</SelectItem>
+                      <SelectItem value="ADJUSTMENT">Adjustment</SelectItem>
+                      <SelectItem value="RETURN">Return</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

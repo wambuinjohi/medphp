@@ -7,10 +7,8 @@ import { getDatabase } from '@/integrations/database';
 export async function initializeStockMovements() {
   try {
     // First check if the table exists by trying a simple query
-    const { error: checkError } = await supabase
-      .from('stock_movements')
-      .select('id')
-      .limit(1);
+    const db = getDatabase();
+    const { error: checkError } = await db.select('stock_movements', { limit: 1 });
 
     // If table doesn't exist, we'll get a specific error
     if (checkError && checkError.code === 'PGRST116') {
@@ -44,13 +42,24 @@ export async function createStockMovement(movement: {
   notes?: string;
 }) {
   try {
+    const db = getDatabase();
+
+    // Validate input
+    if (!movement.company_id || !movement.product_id) {
+      throw new Error('Missing required fields: company_id and product_id are required');
+    }
+
+    if (typeof movement.quantity !== 'number' || movement.quantity === null) {
+      throw new Error('Invalid quantity: must be a number');
+    }
+
     // Prepare the movement data with all required fields
     const movementData = {
       company_id: movement.company_id,
       product_id: movement.product_id,
-      movement_type: movement.movement_type,
-      reference_type: movement.reference_type,
-      reference_id: movement.reference_id,
+      movement_type: movement.movement_type || 'ADJUSTMENT',
+      reference_type: movement.reference_type || 'MANUAL',
+      reference_id: movement.reference_id || '',
       quantity: movement.quantity,
       cost_per_unit: movement.cost_per_unit || null,
       movement_date: new Date().toISOString().split('T')[0],
@@ -59,29 +68,30 @@ export async function createStockMovement(movement: {
       updated_at: new Date().toISOString()
     };
 
-    const { data, error } = await supabase
-      .from('stock_movements')
-      .insert([movementData])
-      .select();
+    const { data, error } = await db.insert('stock_movements', [movementData]);
 
     if (error) {
       console.error('Stock movement insert error:', error);
       console.error('Movement data:', movementData);
-      
+
       // Provide more specific error messages
-      if (error.code === '23514') {
-        throw new Error(`Invalid data: Check constraint violation. ${error.message}`);
-      } else if (error.code === '42P01') {
+      const errorMsg = typeof error === 'object' && error !== null ? (error as any).message : String(error);
+      const errorCode = typeof error === 'object' && error !== null ? (error as any).code : '';
+
+      if (errorCode === '23514' || errorMsg.includes('check constraint')) {
+        throw new Error(`Invalid data: Check constraint violation. ${errorMsg}`);
+      } else if (errorCode === '42P01' || errorMsg.includes('does not exist')) {
         throw new Error('Stock movements table not found. Please contact system administrator.');
       } else {
-        throw new Error(`Failed to create stock movement: ${error.message}`);
+        throw new Error(`Failed to create stock movement: ${errorMsg}`);
       }
     }
 
     return { data, error: null };
   } catch (error) {
     console.error('Error creating stock movement:', error);
-    return { data: null, error };
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    return { data: null, error: new Error(errorMsg) };
   }
 }
 
@@ -99,50 +109,47 @@ export async function createStockMovements(movements: Array<{
   notes?: string;
 }>) {
   try {
-    // Initialize table check
-    const initResult = await initializeStockMovements();
-    if (!initResult.success) {
-      throw initResult.error;
+    const db = getDatabase();
+
+    // Validate inputs
+    if (!Array.isArray(movements) || movements.length === 0) {
+      throw new Error('Movements array must be non-empty');
     }
 
-    // Validate movement data before inserting
-    const { validateStockMovementData } = await import('./fixStockMovementsConstraints');
-
+    // Validate each movement has required fields
     for (const movement of movements) {
-      try {
-        validateStockMovementData(movement);
-      } catch (validationError) {
-        console.error('Movement data validation failed:', validationError);
-        throw validationError;
+      if (!movement.company_id || !movement.product_id) {
+        throw new Error('Each movement must have company_id and product_id');
+      }
+      if (typeof movement.quantity !== 'number' || movement.quantity === null) {
+        throw new Error('Each movement must have a valid quantity number');
       }
     }
 
-    // Prepare all movement data
+    // Prepare all movement data with defaults
     const movementData = movements.map(movement => ({
       company_id: movement.company_id,
       product_id: movement.product_id,
-      movement_type: movement.movement_type,
-      reference_type: movement.reference_type,
-      reference_id: movement.reference_id,
-      quantity: movement.quantity,
-      cost_per_unit: movement.cost_per_unit || null,
+      movement_type: movement.movement_type || 'ADJUSTMENT',
+      reference_type: movement.reference_type || 'MANUAL',
+      reference_id: movement.reference_id || '',
+      quantity: movement.quantity ?? 0,
+      cost_per_unit: movement.cost_per_unit ?? null,
       movement_date: new Date().toISOString().split('T')[0],
-      notes: movement.notes || null,
+      notes: movement.notes ?? null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));
 
-    let { data, error } = await supabase
-      .from('stock_movements')
-      .insert(movementData)
-      .select();
+    let { data, error } = await db.insert('stock_movements', movementData);
 
     if (error) {
       console.error('Batch stock movements insert error:', error);
       console.error('Movement data sample:', movementData[0]);
 
-      // Attempt automated fixes for common schema issues (missing updated_at or cost_per_unit)
-      const lowerMsg = String(error.message || '').toLowerCase();
+      const errorMsg = typeof error === 'object' && error !== null ? (error as any).message : String(error);
+      const errorCode = typeof error === 'object' && error !== null ? (error as any).code : '';
+      const lowerMsg = errorMsg.toLowerCase();
       let attemptedFix = false;
 
       try {
@@ -156,10 +163,9 @@ export async function createStockMovements(movements: Array<{
           }
         }
 
-        if (!attemptedFix && (lowerMsg.includes('cost_per_unit') || lowerMsg.includes('could not find the') && lowerMsg.includes('cost_per_unit'))) {
+        if (!attemptedFix && (lowerMsg.includes('cost_per_unit') || (lowerMsg.includes('could not find the') && lowerMsg.includes('cost_per_unit')))) {
           console.warn('Detected missing cost_per_unit column in stock_movements. Attempting to add column...');
           // Add cost_per_unit column via RPC
-          const db = getDatabase();
           await db.rpc('exec_sql', { sql: `ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS cost_per_unit DECIMAL(15,2);` });
           attemptedFix = true;
         }
@@ -169,10 +175,7 @@ export async function createStockMovements(movements: Array<{
 
       if (attemptedFix) {
         // Retry the insert once after attempted fix
-        const { data: retryData, error: retryError } = await supabase
-          .from('stock_movements')
-          .insert(movementData)
-          .select();
+        const { data: retryData, error: retryError } = await db.insert('stock_movements', movementData);
 
         if (retryError) {
           console.error('Retry after schema fix failed:', retryError);
@@ -184,20 +187,21 @@ export async function createStockMovements(movements: Array<{
       }
 
       // Provide more specific error messages
-      if (error.code === '23514') {
-        const constraintError = new Error(`Check constraint violation: ${error.message}. The database constraints need to be fixed. Please use the StockMovementsConstraintFix component to resolve this issue.`);
+      if (errorCode === '23514' || lowerMsg.includes('check constraint')) {
+        const constraintError = new Error(`Check constraint violation: ${errorMsg}. The database constraints need to be fixed. Please use the StockMovementsConstraintFix component to resolve this issue.`);
         constraintError.name = 'ConstraintViolationError';
         throw constraintError;
-      } else if (error.code === '42P01') {
+      } else if (errorCode === '42P01' || lowerMsg.includes('does not exist')) {
         throw new Error('Stock movements table not found. Please contact system administrator.');
       } else {
-        throw new Error(`Failed to create stock movements: ${error.message}`);
+        throw new Error(`Failed to create stock movements: ${errorMsg}`);
       }
     }
 
     return { data, error: null };
   } catch (error) {
     console.error('Error creating stock movements:', error);
-    return { data: null, error };
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    return { data: null, error: new Error(errorMsg) };
   }
 }

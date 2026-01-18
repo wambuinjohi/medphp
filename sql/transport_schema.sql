@@ -180,6 +180,50 @@ ALTER TABLE vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE materials ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transport_finance ENABLE ROW LEVEL SECURITY;
 
+-- ============================================
+-- TRANSPORT PAYMENTS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS transport_payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  trip_id UUID NOT NULL REFERENCES transport_finance(id) ON DELETE CASCADE,
+  payment_amount DECIMAL(15, 2) NOT NULL,
+  payment_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  payment_method VARCHAR(50) DEFAULT 'cash' CHECK (payment_method IN ('cash', 'check', 'bank_transfer', 'mobile_money', 'card', 'other')),
+  reference_number VARCHAR(100),
+  notes TEXT,
+  recorded_by UUID,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for transport_payments
+CREATE INDEX idx_transport_payments_company_id ON transport_payments(company_id);
+CREATE INDEX idx_transport_payments_trip_id ON transport_payments(trip_id);
+CREATE INDEX idx_transport_payments_payment_date ON transport_payments(payment_date);
+CREATE INDEX idx_transport_payments_payment_method ON transport_payments(payment_method);
+
+-- Enable RLS on transport_payments
+ALTER TABLE transport_payments ENABLE ROW LEVEL SECURITY;
+
+-- ============================================
+-- VIEW FOR TRANSPORT PAYMENTS SUMMARY
+-- ============================================
+CREATE OR REPLACE VIEW transport_payments_summary AS
+SELECT
+  tf.id as trip_id,
+  tf.company_id,
+  tf.selling_price,
+  tf.profit_loss,
+  tf.payment_status,
+  COALESCE(SUM(tp.payment_amount), 0)::DECIMAL(15, 2) as total_paid,
+  (tf.selling_price - COALESCE(SUM(tp.payment_amount), 0))::DECIMAL(15, 2) as balance_due,
+  COUNT(tp.id) as payment_count,
+  MAX(tp.payment_date) as last_payment_date
+FROM transport_finance tf
+LEFT JOIN transport_payments tp ON tf.id = tp.trip_id
+GROUP BY tf.id, tf.company_id, tf.selling_price, tf.profit_loss, tf.payment_status;
+
 -- Drivers RLS Policies
 CREATE POLICY drivers_company_isolation ON drivers
   USING (company_id = auth.jwt() ->> 'company_id'::text OR auth.jwt() ->> 'company_id'::text IS NULL)
@@ -197,6 +241,11 @@ CREATE POLICY materials_company_isolation ON materials
 
 -- Transport Finance RLS Policies
 CREATE POLICY transport_finance_company_isolation ON transport_finance
+  USING (company_id = auth.jwt() ->> 'company_id'::text OR auth.jwt() ->> 'company_id'::text IS NULL)
+  WITH CHECK (company_id = auth.jwt() ->> 'company_id'::text);
+
+-- Transport Payments RLS Policies
+CREATE POLICY transport_payments_company_isolation ON transport_payments
   USING (company_id = auth.jwt() ->> 'company_id'::text OR auth.jwt() ->> 'company_id'::text IS NULL)
   WITH CHECK (company_id = auth.jwt() ->> 'company_id'::text);
 

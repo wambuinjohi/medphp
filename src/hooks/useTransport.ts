@@ -16,4 +16,9 @@ export {
   useCreateTransportFinance,
   useUpdateTransportFinance,
   useDeleteTransportFinance,
+  useTransportPayments,
+  useTransportPaymentsSummary,
+  useCreateTransportPayment,
+  useUpdateTransportPayment,
+  useDeleteTransportPayment,
 } from './useDatabase';

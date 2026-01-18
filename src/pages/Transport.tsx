@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Table, 
   TableBody, 
@@ -27,11 +27,12 @@ import {
 } from 'lucide-react';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
-import { 
-  useDrivers, 
-  useVehicles, 
-  useMaterials, 
+import {
+  useDrivers,
+  useVehicles,
+  useMaterials,
   useTransportFinance,
+  useTransportPayments,
   useCreateDriver,
   useCreateVehicle,
   useCreateMaterial,
@@ -53,6 +54,7 @@ import { CreateMaterialModal } from '@/components/transport/CreateMaterialModal'
 import { EditMaterialModal } from '@/components/transport/EditMaterialModal';
 import { TransportFinanceModal } from '@/components/transport/TransportFinanceModal';
 import { EditTransportFinanceModal } from '@/components/transport/EditTransportFinanceModal';
+import { RecordTripPaymentModal } from '@/components/transport/RecordTripPaymentModal';
 
 interface Driver {
   id: string;
@@ -98,9 +100,18 @@ interface TransportFinance {
   date: string;
 }
 
-export default function Transport() {
+interface TransportProps {
+  initialTab?: 'drivers' | 'vehicles' | 'materials' | 'finance';
+}
+
+export default function Transport({ initialTab = 'drivers' }: TransportProps) {
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('drivers');
+  const [activeTab, setActiveTab] = useState<'drivers' | 'vehicles' | 'materials' | 'finance'>(initialTab);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab, location.pathname]);
   
   // Drivers state
   const [showCreateDriverModal, setShowCreateDriverModal] = useState(false);
@@ -121,6 +132,10 @@ export default function Transport() {
   const [showCreateFinanceModal, setShowCreateFinanceModal] = useState(false);
   const [showEditFinanceModal, setShowEditFinanceModal] = useState(false);
   const [selectedFinance, setSelectedFinance] = useState<TransportFinance | null>(null);
+
+  // Payment state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedTripForPayment, setSelectedTripForPayment] = useState<TransportFinance | null>(null);
 
   const { currentCompany, isLoading: isCompanyLoading } = useCurrentCompany();
   const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
@@ -199,25 +214,36 @@ export default function Transport() {
     finance.customer_name?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  // Get section title and description based on active tab
+  const getSectionInfo = () => {
+    switch (activeTab) {
+      case 'drivers':
+        return { title: 'Drivers', description: 'Manage and track all drivers' };
+      case 'vehicles':
+        return { title: 'Vehicles', description: 'Manage and track all vehicles' };
+      case 'materials':
+        return { title: 'Materials', description: 'Manage transport materials' };
+      case 'finance':
+        return { title: 'Finance', description: 'Track transport finance and costs' };
+      default:
+        return { title: 'Transport Management', description: 'Manage drivers, vehicles, materials, and transport finances' };
+    }
+  };
+
+  const sectionInfo = getSectionInfo();
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Transport Management</h1>
-          <p className="text-muted-foreground mt-1">Manage drivers, vehicles, materials, and transport finances</p>
+          <h1 className="text-3xl font-bold tracking-tight">{sectionInfo.title}</h1>
+          <p className="text-muted-foreground mt-1">{sectionInfo.description}</p>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="drivers">Drivers</TabsTrigger>
-          <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
-          <TabsTrigger value="materials">Materials</TabsTrigger>
-          <TabsTrigger value="finance">Finance</TabsTrigger>
-        </TabsList>
-
-        {/* Drivers Tab */}
-        <TabsContent value="drivers" className="space-y-4">
+      {/* Drivers Section */}
+      {activeTab === 'drivers' && (
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2 flex-1">
               <Search className="h-5 w-5 text-muted-foreground" />
@@ -314,10 +340,12 @@ export default function Transport() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+      )}
 
-        {/* Vehicles Tab */}
-        <TabsContent value="vehicles" className="space-y-4">
+      {/* Vehicles Section */}
+      {activeTab === 'vehicles' && (
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2 flex-1">
               <Search className="h-5 w-5 text-muted-foreground" />
@@ -414,10 +442,12 @@ export default function Transport() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+      )}
 
-        {/* Materials Tab */}
-        <TabsContent value="materials" className="space-y-4">
+      {/* Materials Section */}
+      {activeTab === 'materials' && (
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2 flex-1">
               <Search className="h-5 w-5 text-muted-foreground" />
@@ -514,10 +544,12 @@ export default function Transport() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+      )}
 
-        {/* Finance Tab */}
-        <TabsContent value="finance" className="space-y-4">
+      {/* Finance Section - Trips */}
+      {activeTab === 'finance' && (
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2 flex-1">
               <Search className="h-5 w-5 text-muted-foreground" />
@@ -530,19 +562,19 @@ export default function Transport() {
             </div>
             <Button onClick={() => setShowCreateFinanceModal(true)} className="ml-2">
               <Plus className="h-4 w-4 mr-2" />
-              Add Record
+              Create Trip
             </Button>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Transport Finance</CardTitle>
+              <CardTitle>Transport Trips & Payments</CardTitle>
             </CardHeader>
             <CardContent>
               {financesError && (
                 <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-lg mb-4">
                   <AlertCircle className="h-4 w-4" />
-                  Failed to load finance records. <Button variant="link" size="sm" onClick={() => retryFinances()}>Retry</Button>
+                  Failed to load trips. <Button variant="link" size="sm" onClick={() => retryFinances()}>Retry</Button>
                 </div>
               )}
 
@@ -557,50 +589,54 @@ export default function Transport() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Date</TableHead>
                         <TableHead>Vehicle</TableHead>
-                        <TableHead>Materials</TableHead>
-                        <TableHead>Buying Price</TableHead>
-                        <TableHead>Fuel</TableHead>
-                        <TableHead>Driver Fees</TableHead>
-                        <TableHead>Other Expenses</TableHead>
-                        <TableHead>Selling Price</TableHead>
-                        <TableHead>Profit/Loss</TableHead>
-                        <TableHead>Payment Status</TableHead>
                         <TableHead>Customer</TableHead>
+                        <TableHead className="text-right">Trip Amount</TableHead>
+                        <TableHead className="text-right">Profit/Loss</TableHead>
+                        <TableHead className="text-right">Payment Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredFinances.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={11} className="text-center py-4 text-muted-foreground">
-                            No finance records found
+                          <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                            No trips found
                           </TableCell>
                         </TableRow>
                       ) : (
                         filteredFinances.map((finance) => (
                           <TableRow key={finance.id}>
+                            <TableCell className="text-sm">{finance.date || '-'}</TableCell>
                             <TableCell className="font-medium">{finance.vehicle_number || '-'}</TableCell>
-                            <TableCell>{finance.materials || '-'}</TableCell>
-                            <TableCell className="text-right">{finance.buying_price?.toLocaleString() || '-'}</TableCell>
-                            <TableCell className="text-right">{finance.fuel_cost?.toLocaleString() || '-'}</TableCell>
-                            <TableCell className="text-right">{finance.driver_fees?.toLocaleString() || '-'}</TableCell>
-                            <TableCell className="text-right">{finance.other_expenses?.toLocaleString() || '-'}</TableCell>
-                            <TableCell className="text-right font-medium">{finance.selling_price?.toLocaleString() || '-'}</TableCell>
+                            <TableCell>{finance.customer_name || '-'}</TableCell>
+                            <TableCell className="text-right font-medium">{(finance.selling_price || 0).toLocaleString()}</TableCell>
                             <TableCell className={`text-right font-medium ${(finance.profit_loss ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                               {finance.profit_loss?.toLocaleString() || '-'}
                             </TableCell>
-                            <TableCell>
-                              <Badge 
+                            <TableCell className="text-right">
+                              <Badge
                                 variant={finance.payment_status === 'paid' ? 'default' : 'secondary'}
-                                className={finance.payment_status === 'paid' ? 'bg-green-600' : finance.payment_status === 'unpaid' ? 'bg-red-600' : ''}
+                                className={finance.payment_status === 'paid' ? 'bg-green-600' : finance.payment_status === 'unpaid' ? 'bg-red-600' : 'bg-yellow-600'}
                               >
                                 {finance.payment_status}
                               </Badge>
                             </TableCell>
-                            <TableCell>{finance.customer_name || '-'}</TableCell>
                             <TableCell>
                               <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedTripForPayment(finance);
+                                    setShowPaymentModal(true);
+                                  }}
+                                  disabled={finance.payment_status === 'paid'}
+                                >
+                                  <DollarSign className="h-4 w-4 mr-1" />
+                                  Payment
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -630,8 +666,8 @@ export default function Transport() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
 
       {/* Modals */}
       <CreateDriverModal 
@@ -720,8 +756,8 @@ export default function Transport() {
       />
       
       {selectedFinance && (
-        <EditTransportFinanceModal 
-          open={showEditFinanceModal} 
+        <EditTransportFinanceModal
+          open={showEditFinanceModal}
           onOpenChange={setShowEditFinanceModal}
           finance={selectedFinance}
           onSuccess={() => {
@@ -735,6 +771,18 @@ export default function Transport() {
           materials={materials || []}
         />
       )}
+
+      <RecordTripPaymentModal
+        open={showPaymentModal}
+        onOpenChange={setShowPaymentModal}
+        onSuccess={() => {
+          retryFinances();
+          setShowPaymentModal(false);
+          setSelectedTripForPayment(null);
+        }}
+        trip={selectedTripForPayment}
+        companyId={activeCompanyId}
+      />
     </div>
   );
 }

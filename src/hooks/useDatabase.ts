@@ -1819,6 +1819,143 @@ export function useDeleteTransportFinance() {
   return useDelete('transport_finance');
 }
 
+/**
+ * Hook to fetch transport payments for a trip
+ */
+export function useTransportPayments(tripId?: string) {
+  const filter = useMemo(() => {
+    if (!tripId) return undefined;
+    return { trip_id: tripId };
+  }, [tripId]);
+
+  return useSelect('transport_payments', filter);
+}
+
+/**
+ * Hook to fetch transport payments summary by company
+ */
+export function useTransportPaymentsSummary(companyId?: string) {
+  const filter = useMemo(() => {
+    if (!companyId) return undefined;
+    return { company_id: companyId };
+  }, [companyId]);
+
+  return useSelect('transport_payments_summary', filter);
+}
+
+/**
+ * Hook to create a transport payment
+ */
+export function useCreateTransportPayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formData: {
+      company_id: string;
+      trip_id: string;
+      payment_amount: number;
+      payment_date: string;
+      payment_method: 'cash' | 'check' | 'bank_transfer' | 'mobile_money' | 'card' | 'other';
+      reference_number?: string;
+      notes?: string;
+      recorded_by?: string;
+    }) => {
+      const db = getDatabase();
+      const { data, error } = await db.insert('transport_payments', formData);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update transport_finance payment_status based on total paid vs selling_price
+      const { data: tripData } = await db.selectOne('transport_finance', { id: formData.trip_id });
+      if (tripData) {
+        const { data: paymentsData } = await db.select('transport_payments', { trip_id: formData.trip_id });
+        const totalPaid = (paymentsData || []).reduce((sum: number, p: any) => sum + (p.payment_amount || 0), 0);
+
+        let newPaymentStatus: 'paid' | 'unpaid' | 'pending' = 'unpaid';
+        if (totalPaid >= (tripData.selling_price || 0)) {
+          newPaymentStatus = 'paid';
+        } else if (totalPaid > 0) {
+          newPaymentStatus = 'pending';
+        }
+
+        // Update trip payment status if it changed
+        if (newPaymentStatus !== tripData.payment_status) {
+          await db.update('transport_finance', { id: formData.trip_id }, { payment_status: newPaymentStatus });
+        }
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transport_payments'] });
+      queryClient.invalidateQueries({ queryKey: ['transport_finance'] });
+      queryClient.invalidateQueries({ queryKey: ['transport_payments_summary'] });
+    },
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to create payment');
+    },
+  });
+}
+
+/**
+ * Hook to update a transport payment
+ */
+export function useUpdateTransportPayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formData: { id: string; [key: string]: any }) => {
+      const db = getDatabase();
+      const { id, ...updateData } = formData;
+      const { data, error } = await db.update('transport_payments', { id }, updateData);
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transport_payments'] });
+      queryClient.invalidateQueries({ queryKey: ['transport_finance'] });
+      queryClient.invalidateQueries({ queryKey: ['transport_payments_summary'] });
+    },
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to update payment');
+    },
+  });
+}
+
+/**
+ * Hook to delete a transport payment
+ */
+export function useDeleteTransportPayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const db = getDatabase();
+      const { data, error } = await db.delete('transport_payments', { id });
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transport_payments'] });
+      queryClient.invalidateQueries({ queryKey: ['transport_finance'] });
+      queryClient.invalidateQueries({ queryKey: ['transport_payments_summary'] });
+    },
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to delete payment');
+    },
+  });
+}
+
 // ============================================
 // Types for export
 // ============================================
