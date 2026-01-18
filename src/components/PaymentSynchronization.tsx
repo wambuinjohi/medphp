@@ -83,8 +83,9 @@ export function PaymentSynchronization() {
       } else {
         toast.error('Synchronization completed with errors');
       }
-    } catch (err: any) {
-      setError(err.message || 'Synchronization failed');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Synchronization failed';
+      setError(errorMessage);
       toast.error('Synchronization failed');
     } finally {
       setIsSyncing(false);
