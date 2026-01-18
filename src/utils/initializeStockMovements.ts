@@ -73,21 +73,25 @@ export async function createStockMovement(movement: {
     if (error) {
       console.error('Stock movement insert error:', error);
       console.error('Movement data:', movementData);
-      
+
       // Provide more specific error messages
-      if (error.code === '23514') {
-        throw new Error(`Invalid data: Check constraint violation. ${error.message}`);
-      } else if (error.code === '42P01') {
+      const errorMsg = typeof error === 'object' && error !== null ? (error as any).message : String(error);
+      const errorCode = typeof error === 'object' && error !== null ? (error as any).code : '';
+
+      if (errorCode === '23514' || errorMsg.includes('check constraint')) {
+        throw new Error(`Invalid data: Check constraint violation. ${errorMsg}`);
+      } else if (errorCode === '42P01' || errorMsg.includes('does not exist')) {
         throw new Error('Stock movements table not found. Please contact system administrator.');
       } else {
-        throw new Error(`Failed to create stock movement: ${error.message}`);
+        throw new Error(`Failed to create stock movement: ${errorMsg}`);
       }
     }
 
     return { data, error: null };
   } catch (error) {
     console.error('Error creating stock movement:', error);
-    return { data: null, error };
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    return { data: null, error: new Error(errorMsg) };
   }
 }
 
