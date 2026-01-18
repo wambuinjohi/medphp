@@ -72,15 +72,15 @@ export const calculateLineItemTotal = (item: {
 // Hook for restocking inventory
 export const useRestockProduct = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ 
-      productId, 
-      quantity, 
-      costPerUnit, 
-      companyId, 
-      supplier, 
-      notes 
+    mutationFn: async ({
+      productId,
+      quantity,
+      costPerUnit,
+      companyId,
+      supplier,
+      notes
     }: {
       productId: string;
       quantity: number;
@@ -89,33 +89,29 @@ export const useRestockProduct = () => {
       supplier?: string;
       notes?: string;
     }) => {
-      // Create stock movement record
-      const { data: movement, error: movementError } = await supabase
-        .from('stock_movements')
-        .insert([{
-          company_id: companyId,
-          product_id: productId,
-          movement_type: 'IN',
-          reference_type: 'RESTOCK',
-          quantity: quantity,
-          cost_per_unit: costPerUnit,
-          notes: notes || `Restock from ${supplier || 'supplier'}`
-        }])
-        .select()
-        .single();
-      
-      if (movementError) throw movementError;
-      
-      // Update product stock quantity
-      const { error: stockError } = await supabase.rpc('update_product_stock', {
-        product_uuid: productId,
+      const db = getDatabase();
+
+      // Create stock movement record using database adapter
+      const movementData = {
+        company_id: companyId,
+        product_id: productId,
         movement_type: 'IN',
-        quantity: quantity
-      });
-      
-      if (stockError) throw stockError;
-      
-      return movement;
+        reference_type: 'RESTOCK',
+        quantity: quantity,
+        cost_per_unit: costPerUnit,
+        notes: notes || `Restock from ${supplier || 'supplier'}`
+      };
+
+      const movementResult = await db.insert('stock_movements', movementData);
+      if (movementResult.error) throw movementResult.error;
+      if (!movementResult.id) throw new Error('Failed to create stock movement: no ID returned');
+
+      // Fetch the created movement
+      const movementSelectResult = await db.selectOne('stock_movements', movementResult.id);
+      if (movementSelectResult.error) throw movementSelectResult.error;
+      if (!movementSelectResult.data) throw new Error('Failed to fetch created stock movement');
+
+      return movementSelectResult.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
