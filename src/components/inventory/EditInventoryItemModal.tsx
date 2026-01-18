@@ -237,8 +237,6 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
     onOpenChange(false);
   };
 
-  if (!item) return null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
