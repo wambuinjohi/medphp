@@ -401,8 +401,8 @@ export function useConvertInvoiceToCreditNote() {
       if (invoiceError) throw invoiceError;
 
       // 2. Generate credit note number
-      const { data: creditNoteNumber, error: numberError } = await supabase
-        .rpc('generate_credit_note_number', { company_uuid: invoice.company_id });
+      const db = getDatabase();
+      const { data: creditNoteNumber, error: numberError } = await db.rpc<string>('generate_credit_note_number', { company_uuid: invoice.company_id });
 
       if (numberError) throw numberError;
 
