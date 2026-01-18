@@ -73,6 +73,7 @@ interface EditInventoryItemModalProps {
 }
 
 export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: EditInventoryItemModalProps) {
+  const [productId, setProductId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     product_code: '',
