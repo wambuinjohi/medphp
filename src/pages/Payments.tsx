@@ -475,6 +475,8 @@ export default function Payments() {
           setShowEditModal(false);
           setShowViewModal(false);
           setSelectedPayment(null);
+          // Refresh payments list to show updated data
+          retryPayments();
         }}
       />
 
@@ -489,6 +491,8 @@ export default function Payments() {
           setShowRecordModal(false);
           setShowEditModal(false);
           setSelectedPayment(null);
+          // Refresh payments list to show updated data
+          retryPayments();
         }}
       />
     </div>
