@@ -258,11 +258,8 @@ export default function CompanySettings() {
     }
 
     // Length validations for other fields
-    if (data.registration_number && data.registration_number.length > 100) {
-      errors.push('Registration number must be less than 100 characters');
-    }
-    if (data.tax_number && data.tax_number.length > 100) {
-      errors.push('Tax number must be less than 100 characters');
+    if (data.website && data.website.length > 255) {
+      errors.push('Website URL must be less than 255 characters');
     }
     if (data.phone && data.phone.length > 50) {
       errors.push('Phone number must be less than 50 characters');
