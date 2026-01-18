@@ -41,7 +41,7 @@ interface StockAdjustmentModalProps {
 export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: StockAdjustmentModalProps) {
   const [adjustmentType, setAdjustmentType] = useState<'increase' | 'decrease' | 'set'>('increase');
   const [quantity, setQuantity] = useState<number>(0);
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState<string | undefined>(undefined);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
