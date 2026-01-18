@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { AddInventoryItemModal } from '@/components/inventory/AddInventoryItemModal';
 import { EditInventoryItemModal } from '@/components/inventory/EditInventoryItemModal';
 import { ViewInventoryItemModal } from '@/components/inventory/ViewInventoryItemModal';
@@ -91,7 +92,7 @@ export default function Inventory() {
   // Fetch products from database
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: products, isLoading: loadingProducts, error: productsError, retry: retryProducts } = useProducts(currentCompany?.id);
+  const { data: products, isLoading: loadingProducts, error: productsError, retry: retryProducts, loadingTimeout } = useProducts(currentCompany?.id);
   const { canView, canCreate, canEdit, loading: permissionsLoading, role } = usePermissions();
 
   useEffect(() => {
@@ -171,24 +172,73 @@ export default function Inventory() {
     toast.success('Stock adjustment completed successfully!');
   };
 
-  // Transform products data to inventory items
-  const inventory: InventoryItem[] = products?.map(product => ({
-    ...product,
-    status: getStockStatus(product.stock_quantity || 0, product.minimum_stock_level || 0)
-  })) || [];
+  // Transform products data to inventory items - memoized to prevent recalculation
+  const inventory: InventoryItem[] = useMemo(() => {
+    return products?.map(product => ({
+      ...product,
+      status: getStockStatus(product.stock_quantity || 0, product.minimum_stock_level || 0)
+    })) || [];
+  }, [products]);
 
-  const filteredInventory = inventory.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (item.product_categories?.name && item.product_categories.name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Filter inventory based on search term - memoized
+  const filteredInventory = useMemo(() => {
+    return inventory.filter(item =>
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.product_categories?.name && item.product_categories.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [inventory, searchTerm]);
 
-  const totalValue = inventory.reduce((sum, item) => {
-    return sum + ((item.stock_quantity || 0) * (item.selling_price || 0));
-  }, 0);
+  // Calculate total inventory value - memoized
+  const totalValue = useMemo(() => {
+    return inventory.reduce((sum, item) => {
+      return sum + ((item.stock_quantity || 0) * (item.selling_price || 0));
+    }, 0);
+  }, [inventory]);
 
-  const lowStockItems = inventory.filter(item => item.status === 'low_stock').length;
-  const outOfStockItems = inventory.filter(item => item.status === 'out_of_stock').length;
+  // Calculate stock statistics - memoized
+  const lowStockItems = useMemo(() => {
+    return inventory.filter(item => item.status === 'low_stock').length;
+  }, [inventory]);
+
+  const outOfStockItems = useMemo(() => {
+    return inventory.filter(item => item.status === 'out_of_stock').length;
+  }, [inventory]);
+
+  // Handle timeout state - if loading is taking too long, show helpful message
+  if (loadingTimeout && !productsError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
+            <p className="text-muted-foreground">Inventory items</p>
+          </div>
+        </div>
+        <Card className="shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center min-h-[300px]">
+              <div className="text-center max-w-md">
+                <AlertTriangle className="h-12 w-12 text-warning mx-auto mb-4" />
+                <h2 className="text-lg font-semibold text-foreground mb-2">Loading is taking longer than expected</h2>
+                <p className="text-muted-foreground text-sm mb-6">
+                  The inventory is still loading. This may indicate a slow connection or large dataset.
+                  You can wait or retry the request.
+                </p>
+                <Button
+                  onClick={() => retryProducts()}
+                  className="bg-primary text-primary-foreground hover:opacity-90"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Retry Loading
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Handle loading and error states
   if (loadingProducts) {
@@ -206,7 +256,7 @@ export default function Inventory() {
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                 <p className="text-muted-foreground">Loading products...</p>
-                <p className="text-muted-foreground text-sm mt-2">Connecting to database...</p>
+                <p className="text-muted-foreground text-sm mt-2">This should only take a moment...</p>
               </div>
             </div>
           </CardContent>

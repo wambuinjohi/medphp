@@ -71,12 +71,35 @@ export const VariantsTab = () => {
   };
 
   const loadImagesForVariants = async (vars: WebVariant[]) => {
-    const imagesMap: Record<string, VariantImage[]> = {};
-    for (const variant of vars) {
-      const images = await fetchVariantImages(variant.id);
-      imagesMap[variant.id] = images;
+    if (vars.length === 0) {
+      setVariantImages({});
+      return;
     }
-    setVariantImages(imagesMap);
+
+    try {
+      // Parallelize image fetches using Promise.all instead of sequential awaits
+      const imagePromises = vars.map(variant =>
+        fetchVariantImages(variant.id)
+          .then(images => ({ variantId: variant.id, images }))
+          .catch(error => {
+            console.warn(`Failed to load images for variant ${variant.id}:`, error);
+            return { variantId: variant.id, images: [] };
+          })
+      );
+
+      const results = await Promise.all(imagePromises);
+      const imagesMap: Record<string, VariantImage[]> = {};
+
+      results.forEach(({ variantId, images }) => {
+        imagesMap[variantId] = images;
+      });
+
+      setVariantImages(imagesMap);
+    } catch (error) {
+      console.error('Error loading images for variants:', error);
+      // Gracefully handle overall error by setting empty map
+      setVariantImages({});
+    }
   };
 
   const handleSearch = (value: string) => {

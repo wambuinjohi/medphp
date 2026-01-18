@@ -15,6 +15,7 @@ export interface TableStatus {
 
 /**
  * Check if specific tables exist in the Supabase database
+ * Uses parallel requests instead of sequential to improve performance
  */
 export async function checkDatabaseTables(): Promise<TableStatus> {
   const requiredTables = [
@@ -43,9 +44,8 @@ export async function checkDatabaseTables(): Promise<TableStatus> {
     'lpo_items',
   ];
 
-  const results: TableCheckResult[] = [];
-
-  for (const tableName of requiredTables) {
+  // Check all tables in parallel using Promise.all instead of sequential awaits
+  const checkTablePromises = requiredTables.map(async (tableName) => {
     try {
       const { error } = await supabase
         .from(tableName as any)
@@ -55,32 +55,35 @@ export async function checkDatabaseTables(): Promise<TableStatus> {
       if (error) {
         // Check if it's a "relation does not exist" error
         if (error.message?.includes('relation') || error.message?.includes('does not exist')) {
-          results.push({
+          return {
             tableName,
             exists: false,
             error: `Table "${tableName}" does not exist`
-          });
+          };
         } else {
-          results.push({
+          return {
             tableName,
             exists: true,
             error: error.message
-          });
+          };
         }
       } else {
-        results.push({
+        return {
           tableName,
           exists: true
-        });
+        };
       }
     } catch (err) {
-      results.push({
+      return {
         tableName,
         exists: false,
         error: String(err)
-      });
+      };
     }
-  }
+  });
+
+  // Execute all checks in parallel
+  const results = await Promise.all(checkTablePromises);
 
   const totalExists = results.filter(r => r.exists).length;
   const allTablesExist = totalExists === requiredTables.length;

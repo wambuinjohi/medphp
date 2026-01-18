@@ -72,7 +72,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
     name: '',
     product_code: '',
     description: '',
-    category_id: '',
+    category_id: '__none__', // Always use string, never null
     unit_of_measure: 'pieces',
     cost_price: 0,
     selling_price: 0,
@@ -276,7 +276,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
                   Create New
                 </Button>
               </div>
-              <Select value={formData.category_id} onValueChange={(value) => handleInputChange('category_id', value === '__none__' ? null : value)}>
+              <Select value={formData.category_id || '__none__'} onValueChange={(value) => handleInputChange('category_id', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category (optional)" />
                 </SelectTrigger>
