@@ -105,7 +105,8 @@ export function PaymentSynchronization() {
       
       // Refresh analysis
       await runAnalysis();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      console.error('Recalculation failed:', err);
       toast.error('Failed to recalculate invoice balances');
     } finally {
       setIsSyncing(false);
