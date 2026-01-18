@@ -82,14 +82,11 @@ const EXPECTED_STRUCTURE = {
     'tax_percentage', 'tax_amount', 'tax_inclusive', 'line_total', 'sort_order'
   ],
   remittance_advice: [
-    'id', 'company_id', 'customer_id', 'customer_name', 'customer_address',
-    'advice_number', 'advice_date', 'total_payment', 'status', 'notes',
-    'created_at', 'updated_at'
+    'id', 'company_id', 'supplier_id', 'remittance_number', 'total_amount',
+    'created_at'
   ],
   remittance_advice_items: [
-    'id', 'remittance_advice_id', 'payment_id', 'invoice_id', 'document_date',
-    'document_number', 'document_type', 'invoice_amount', 'credit_amount',
-    'payment_amount', 'tax_setting_id'
+    'id', 'remittance_id', 'invoice_number', 'amount'
   ]
 };
 

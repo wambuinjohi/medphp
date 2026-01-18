@@ -30,8 +30,6 @@ export default function CompanySettings() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [companyData, setCompanyData] = useState({
     name: '',
-    registration_number: '',
-    tax_number: '',
     email: '',
     phone: '',
     address: '',
@@ -40,7 +38,7 @@ export default function CompanySettings() {
     postal_code: '',
     country: 'Kenya',
     currency: 'KES',
-    fiscal_year_start: 1,
+    website: '',
     logo_url: '',
     primary_color: '#FF8C42'
   });
@@ -65,12 +63,8 @@ export default function CompanySettings() {
     // Check for schema errors in the companies query
     if (companiesError) {
       const errorString = String(companiesError);
-      if (errorString.includes('fiscal_year_start') && (errorString.includes('column') || errorString.includes('schema cache'))) {
-        setSchemaError('fiscal_year_start column missing');
-      } else if (errorString.includes('currency') && (errorString.includes('column') || errorString.includes('schema cache'))) {
+      if (errorString.includes('currency') && (errorString.includes('column') || errorString.includes('schema cache'))) {
         setSchemaError('currency column missing');
-      } else if (errorString.includes('registration_number') && errorString.includes('column')) {
-        setSchemaError('registration_number column missing');
       }
     }
   }, [companiesLoading, companiesError, currentCompany, taxSettings, taxSettingsLoading, taxSettingsError]);
@@ -264,11 +258,8 @@ export default function CompanySettings() {
     }
 
     // Length validations for other fields
-    if (data.registration_number && data.registration_number.length > 100) {
-      errors.push('Registration number must be less than 100 characters');
-    }
-    if (data.tax_number && data.tax_number.length > 100) {
-      errors.push('Tax number must be less than 100 characters');
+    if (data.website && data.website.length > 255) {
+      errors.push('Website URL must be less than 255 characters');
     }
     if (data.phone && data.phone.length > 50) {
       errors.push('Phone number must be less than 50 characters');
@@ -289,10 +280,6 @@ export default function CompanySettings() {
       errors.push('Currency code must be 3 characters or less');
     }
 
-    // Fiscal year validation
-    if (data.fiscal_year_start && (data.fiscal_year_start < 1 || data.fiscal_year_start > 12)) {
-      errors.push('Fiscal year start must be between 1 and 12');
-    }
 
     return errors;
   };
@@ -343,20 +330,12 @@ export default function CompanySettings() {
         primary_color: companyData.primary_color?.trim() || '#FF8C42'
       };
 
-      // Only include optional columns if they exist in the database
-      // Skip tax_number as it doesn't exist in the schema
-      if (companyData.registration_number?.trim()) {
-        sanitizedData.registration_number = companyData.registration_number.trim();
+      // Include optional fields that exist in the schema
+      if (companyData.website?.trim()) {
+        sanitizedData.website = companyData.website.trim();
       }
       if (companyData.currency?.trim()) {
         sanitizedData.currency = companyData.currency.trim();
-      }
-
-      // Only include fiscal_year_start for non-external API providers
-      // External API doesn't have this column yet
-      const provider = getDatabaseProvider();
-      if (companyData.fiscal_year_start && provider !== 'external-api') {
-        sanitizedData.fiscal_year_start = companyData.fiscal_year_start;
       }
 
       // Remove empty strings and convert to null for optional fields
@@ -387,12 +366,8 @@ export default function CompanySettings() {
 
       // Check if this is a schema error
       const errorString = String(error);
-      if (errorString.includes('fiscal_year_start') && (errorString.includes('column') || errorString.includes('schema cache'))) {
-        setSchemaError('fiscal_year_start column missing');
-      } else if (errorString.includes('currency') && (errorString.includes('column') || errorString.includes('schema cache'))) {
+      if (errorString.includes('currency') && (errorString.includes('column') || errorString.includes('schema cache'))) {
         setSchemaError('currency column missing');
-      } else if (errorString.includes('registration_number') && errorString.includes('column')) {
-        setSchemaError('registration_number column missing');
       }
 
       toast.error(userMessage);
@@ -637,15 +612,17 @@ export default function CompanySettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tax-id">Tax ID / Registration Number</Label>
+                <Label htmlFor="website">Website</Label>
                 <Input
-                  id="tax-id"
-                  value={companyData.registration_number || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, registration_number: e.target.value }))}
+                  id="website"
+                  type="url"
+                  value={companyData.website || ''}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, website: e.target.value }))}
+                  placeholder="https://yourcompany.com"
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="address">Address</Label>
               <Textarea
@@ -675,16 +652,12 @@ export default function CompanySettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tax-number">PIN/Tax Number (Reference Only)</Label>
+                <Label htmlFor="country">Country</Label>
                 <Input
-                  id="tax-number"
-                  value={companyData.tax_number || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, tax_number: e.target.value }))}
-                  placeholder="For reference - not saved to database"
+                  id="country"
+                  value={companyData.country || 'Kenya'}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, country: e.target.value }))}
                 />
-                <p className="text-xs text-muted-foreground">
-                  This field is for display purposes only and is not saved to the database. Tax numbers are managed through Tax Settings below.
-                </p>
               </div>
             </div>
           </CardContent>

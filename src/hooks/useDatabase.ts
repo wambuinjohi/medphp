@@ -637,8 +637,8 @@ export function useUpdateRemittanceAdvice() {
   const { db } = useDatabase();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const result = await db.update('remittance_advice', id, data);
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const result = await db.update('remittance_advice', String(id), data);
       if (result.error) throw result.error;
       return result;
     },
@@ -662,8 +662,8 @@ export function useUpdateRemittanceAdviceItems() {
   const { db } = useDatabase();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const result = await db.update('remittance_advice_items', id, data);
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const result = await db.update('remittance_advice_items', String(id), data);
       if (result.error) throw result.error;
       return result;
     },
