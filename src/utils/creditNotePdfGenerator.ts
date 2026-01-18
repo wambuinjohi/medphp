@@ -36,8 +36,6 @@ export interface CompanyData {
   address?: string;
   city?: string;
   country?: string;
-  tax_number?: string;
-  registration_number?: string;
   logo_url?: string;
 }
 
