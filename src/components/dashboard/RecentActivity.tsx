@@ -7,6 +7,7 @@ import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
 
 interface Activity {
   id: string;
