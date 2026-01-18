@@ -138,13 +138,17 @@ export function useCreateCreditNoteWithItems() {
               console.log('Stock movements created successfully');
               
               // Update product stock quantities
+              const db = getDatabase();
               for (const movement of stockMovements) {
                 try {
-                  await supabase.rpc('update_product_stock', {
+                  const { error: stockError } = await db.rpc('update_product_stock', {
                     product_uuid: movement.product_id,
                     movement_type: movement.movement_type,
                     quantity: Math.abs(movement.quantity)
                   });
+                  if (stockError) {
+                    throw stockError;
+                  }
                 } catch (stockUpdateError: any) {
                   console.error('Error updating product stock:', {
                     error: stockUpdateError,
