@@ -30,8 +30,6 @@ export default function CompanySettings() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [companyData, setCompanyData] = useState({
     name: '',
-    registration_number: '',
-    tax_number: '',
     email: '',
     phone: '',
     address: '',
@@ -40,7 +38,7 @@ export default function CompanySettings() {
     postal_code: '',
     country: 'Kenya',
     currency: 'KES',
-    fiscal_year_start: 1,
+    website: '',
     logo_url: '',
     primary_color: '#FF8C42'
   });
