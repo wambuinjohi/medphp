@@ -388,7 +388,7 @@ const RemittanceAdvice = () => {
                   <TableRow className="border-t-2">
                     <TableCell colSpan={4} className="font-semibold">Total Payment</TableCell>
                     <TableCell className="text-right font-bold text-lg">
-                      ${(filteredRemittances[0].totalPayment || 0).toFixed(2)}
+                      ${Number(filteredRemittances[0].totalPayment || 0).toFixed(2)}
                     </TableCell>
                   </TableRow>
                 </TableBody>
