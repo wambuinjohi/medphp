@@ -274,6 +274,16 @@ export default function StockMovements() {
         </Button>
       </div>
 
+      {/* Empty State Alert */}
+      {!isLoading && (!movements || movements.length === 0) && (
+        <Alert className="border-warning bg-warning/10 border-warning/30">
+          <AlertCircle className="h-4 w-4 text-warning" />
+          <AlertDescription className="text-warning">
+            <strong>No stock movements found</strong> - You haven't recorded any inventory movements yet. Start tracking movements by creating stock adjustments, receiving shipments, or shipping orders.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="shadow-card">
