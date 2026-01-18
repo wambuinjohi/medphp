@@ -76,6 +76,11 @@ const sidebarItems: SidebarItem[] = [
     ]
   },
   {
+    title: 'Transport',
+    icon: TrendingDown,
+    href: '/app/transport'
+  },
+  {
     title: 'Customers',
     icon: Users,
     href: '/app/customers'
