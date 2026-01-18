@@ -409,7 +409,7 @@ export function CreateCreditNoteModal({
                 {selectedCustomerId && customerInvoices.length > 0 && (
                   <div className="space-y-2">
                     <Label htmlFor="invoice">Related Invoice (Optional)</Label>
-                    <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId}>
+                    <Select value={selectedInvoiceId || 'none'} onValueChange={setSelectedInvoiceId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select an invoice (optional)" />
                       </SelectTrigger>
