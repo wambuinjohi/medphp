@@ -72,7 +72,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
     name: '',
     product_code: '',
     description: '',
-    category_id: '',
+    category_id: '__none__', // Always use string, never null
     unit_of_measure: 'pieces',
     cost_price: 0,
     selling_price: 0,
