@@ -155,9 +155,10 @@ export default function InventoryReports() {
       .slice(0, 10); // Top 10
   };
 
-  const stockMovementData = calculateStockMovementData();
-  const categoryDistribution = calculateCategoryDistribution();
-  const turnoverData = calculateTurnoverData();
+  // Memoize calculations to prevent recalculation on every render
+  const stockMovementData = useMemo(() => calculateStockMovementData(), [stockMovements]);
+  const categoryDistribution = useMemo(() => calculateCategoryDistribution(), [products]);
+  const turnoverData = useMemo(() => calculateTurnoverData(), [products]);
 
   // Calculate real stats from data
   const calculateStats = () => {
