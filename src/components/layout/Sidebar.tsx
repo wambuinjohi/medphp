@@ -21,7 +21,8 @@ import {
   RotateCcw,
   Database,
   TrendingUp,
-  Banknote
+  Banknote,
+  TrendingDown
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
