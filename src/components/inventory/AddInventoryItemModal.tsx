@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useCreateProduct } from '@/hooks/useDatabase';
+import { useCreateProduct, useDatabase } from '@/hooks/useDatabase';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
