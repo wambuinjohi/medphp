@@ -108,15 +108,15 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
     if (item && open) {
       setFormData({
         name: item.name || '',
-        product_code: item.product_code || '',
+        product_code: item.sku || item.product_code || '',
         description: item.description || '',
         category_id: item.category_id || '__none__',
         unit_of_measure: item.unit_of_measure || 'pieces',
-        cost_price: Number(item.cost_price) || 0,
-        selling_price: Number(item.selling_price) || 0,
-        stock_quantity: Number(item.stock_quantity) || 0,
-        min_stock_level: Number(item.min_stock_level) || 10,
-        max_stock_level: Number(item.max_stock_level) || 100
+        cost_price: Number(item.cost_price || 0),
+        selling_price: Number(item.selling_price || item.unit_price || 0),
+        stock_quantity: Number(item.stock_quantity || 0),
+        min_stock_level: Number(item.minimum_stock_level || item.min_stock_level || 10),
+        max_stock_level: Number(item.maximum_stock_level || item.max_stock_level || 100)
       });
     }
   }, [item, open]);
