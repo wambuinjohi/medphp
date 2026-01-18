@@ -105,10 +105,11 @@ export default function StockMovements() {
   const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
   const activeCompanyId = currentCompany?.id || DEFAULT_COMPANY_ID;
 
-  const { data: movements, isLoading: isMovementsLoading, error } = useStockMovements(activeCompanyId);
-  const { data: products, isLoading: isProductsLoading } = useProducts(activeCompanyId);
+  const { data: movements = [], isLoading: isMovementsLoading, error } = useStockMovements(activeCompanyId);
+  const { data: products = [], isLoading: isProductsLoading } = useProducts(activeCompanyId);
 
-  const isLoading = isCompanyLoading || isMovementsLoading || isProductsLoading;
+  // Only show loading if data is actually being fetched AND we have no data yet
+  const isLoading = (isMovementsLoading || isProductsLoading) && (!movements || !products);
 
   // Filter and search logic
   const filteredMovements = useMemo(() => {
