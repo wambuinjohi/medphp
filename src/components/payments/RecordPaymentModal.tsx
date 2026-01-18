@@ -49,9 +49,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
     amount: invoice?.balance_due || 0,
     payment_date: new Date().toISOString().split('T')[0],
     payment_method: '',
-    reference_number: '',
-    notes: '',
-    customer_name: invoice?.customers?.name || ''
+    reference_number: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allocationFailed, setAllocationFailed] = useState(false);
