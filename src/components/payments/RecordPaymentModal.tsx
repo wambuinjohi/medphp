@@ -706,17 +706,6 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                 Unique identifier for this payment method (lowercase, no spaces)
               </p>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="method_description">Description</Label>
-              <Textarea
-                id="method_description"
-                placeholder="Optional description of this payment method..."
-                value={newMethodData.description}
-                onChange={(e) => setNewMethodData(prev => ({ ...prev, description: e.target.value }))}
-                rows={2}
-              />
-            </div>
           </div>
 
           <DialogFooter>
