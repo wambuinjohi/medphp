@@ -559,6 +559,93 @@ export function useAllSuppliersAndCustomers(companyId?: string) {
 }
 
 /**
+ * Hook to get all suppliers
+ * @param companyId - Optional company ID for filtering
+ */
+export function useSuppliers(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('suppliers', filter);
+}
+
+/**
+ * Hook to create a new supplier
+ */
+export function useCreateSupplier() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (supplierData: any) => {
+      const result = await db.insert('suppliers', supplierData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record
+      const { data } = await db.selectOne('suppliers', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast.success('Supplier created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating supplier:', error);
+      const message = error?.message || 'Failed to create supplier';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to update a supplier
+ */
+export function useUpdateSupplier() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
+      const result = await db.update('suppliers', String(id), data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast.success('Supplier updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating supplier:', error);
+      const message = error?.message || 'Failed to update supplier';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to delete a supplier
+ */
+export function useDeleteSupplier() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (id: string | number) => {
+      const result = await db.delete('suppliers', String(id));
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast.success('Supplier deleted successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting supplier:', error);
+      const message = error?.message || 'Failed to delete supplier';
+      toast.error(message);
+    },
+  });
+}
+
+/**
  * Hook to update an LPO with items
  */
 export function useUpdateLPOWithItems() {
