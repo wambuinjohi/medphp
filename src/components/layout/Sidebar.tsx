@@ -83,7 +83,10 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Purchase Orders',
     icon: ShoppingCart,
-    href: '/app/lpos'
+    children: [
+      { title: 'Local Purchase Orders', icon: ShoppingCart, href: '/app/lpos' },
+      { title: 'Suppliers', icon: Building2, href: '/app/suppliers' }
+    ]
   },
   {
     title: 'Reports',
