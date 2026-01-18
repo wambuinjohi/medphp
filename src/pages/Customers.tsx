@@ -186,13 +186,15 @@ export default function Customers() {
   };
 
   const handleEditSuccess = () => {
-    // Customer list will refresh automatically due to React Query cache invalidation
     setSelectedCustomer(null);
+    // Refresh customers list to show updated data
+    retryCustomers();
   };
 
   const handleCreateSuccess = () => {
-    // Customer list will refresh automatically due to React Query cache invalidation
     setShowCreateModal(false);
+    // Refresh customers list to show new data
+    retryCustomers();
   };
 
   const handleSendEmail = (email: string) => {
