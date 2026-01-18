@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 
 /**
  * SQL to create the generate_proforma_number function
