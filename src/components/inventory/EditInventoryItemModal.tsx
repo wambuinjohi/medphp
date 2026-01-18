@@ -237,6 +237,11 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
     onOpenChange(false);
   };
 
+  // Guard: Return null if item or item.id is missing
+  if (!item || !item.id) {
+    return null;
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
