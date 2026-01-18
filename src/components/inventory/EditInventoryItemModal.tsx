@@ -175,14 +175,11 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
 
       const updatedData = provider === 'external-api'
         ? {
-            // External API field names - send both unit_price and selling_price to handle both schemas
+            // External API field names - only reference unit_price when communicating with the backend
             ...baseData,
             sku: formData.product_code,
             unit_price: Number(formData.selling_price),
-            selling_price: Number(formData.selling_price),  // Also send selling_price for compatibility
             reorder_level: Number(formData.min_stock_level),
-            minimum_stock_level: Number(formData.min_stock_level),  // Also send for compatibility
-            maximum_stock_level: Number(formData.max_stock_level),  // Also send for compatibility
             status: 'active'
           }
         : {
