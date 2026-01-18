@@ -188,6 +188,39 @@ export class MySQLAdapter implements IDatabase {
     }
   }
 
+  async rpc<T>(functionName: string, params?: Record<string, any>): Promise<{ data: T | null; error: Error | null }> {
+    try {
+      const { data, error } = await this.apiCall(
+        'POST',
+        '/rpc',
+        { function: functionName, params }
+      );
+
+      return { data: error ? null : (data as T), error };
+    } catch (error) {
+      return { data: null, error: error as Error };
+    }
+  }
+
+  async rpcList<T>(functionName: string, params?: Record<string, any>): Promise<{ data: T[]; error: Error | null; count?: number }> {
+    try {
+      const { data, error } = await this.apiCall(
+        'POST',
+        '/rpc',
+        { function: functionName, params }
+      );
+
+      if (error) {
+        return { data: [], error };
+      }
+
+      const resultData = Array.isArray(data) ? data : [];
+      return { data: resultData as T[], error: null, count: resultData.length };
+    } catch (error) {
+      return { data: [], error: error as Error };
+    }
+  }
+
   async raw<T>(sql: string, params?: any[]): Promise<ListQueryResult<T>> {
     try {
       const { data, error } = await this.apiCall(
@@ -305,6 +338,7 @@ export const mysqlAdapter = new MySQLAdapter();
  * - PUT  /api/db/update-many/:table      - Update multiple records
  * - DEL  /api/db/delete/:table/:id       - Delete record
  * - POST /api/db/delete-many/:table      - Delete multiple records
+ * - POST /api/db/rpc                     - Execute RPC function
  * - POST /api/db/raw                     - Execute raw SQL
  * - POST /api/db/auth/can-read           - Check read permission
  * - POST /api/db/auth/can-write          - Check write permission

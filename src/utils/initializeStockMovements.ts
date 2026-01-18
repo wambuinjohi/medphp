@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 
 /**
  * Initialize stock movements table with proper schema
@@ -159,7 +159,8 @@ export async function createStockMovements(movements: Array<{
         if (!attemptedFix && (lowerMsg.includes('cost_per_unit') || lowerMsg.includes('could not find the') && lowerMsg.includes('cost_per_unit'))) {
           console.warn('Detected missing cost_per_unit column in stock_movements. Attempting to add column...');
           // Add cost_per_unit column via RPC
-          await supabase.rpc('exec_sql', { sql: `ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS cost_per_unit DECIMAL(15,2);` });
+          const db = getDatabase();
+          await db.rpc('exec_sql', { sql: `ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS cost_per_unit DECIMAL(15,2);` });
           attemptedFix = true;
         }
       } catch (fixErr) {

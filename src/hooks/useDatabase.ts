@@ -849,7 +849,8 @@ export function useCreatePayment() {
     }) => {
       try {
         // Try to use the server-side RPC function for atomic payment + allocation
-        const { data, error } = await supabase.rpc('record_payment_with_allocation', {
+        const db = getDatabase();
+        const { data, error } = await db.rpc('record_payment_with_allocation', {
           p_company_id: paymentRecord.company_id,
           p_customer_id: paymentRecord.customer_id,
           p_invoice_id: paymentRecord.invoice_id,
@@ -1077,7 +1078,8 @@ export function useCreateOverpaymentCreditNote() {
     }) => {
       try {
         // Generate credit note number
-        const { data: creditNoteNumber, error: numberError } = await supabase.rpc(
+        const db = getDatabase();
+        const { data: creditNoteNumber, error: numberError } = await db.rpc<string>(
           'generate_credit_note_number',
           { company_uuid: overpaymentData.company_id }
         );
@@ -1388,8 +1390,9 @@ export function useGenerateDocumentNumber() {
         };
 
         const rpcFunction = rpcFunctionMap[type] || 'generate_invoice_number';
+        const db = getDatabase();
 
-        const { data, error } = await supabase.rpc(rpcFunction, {
+        const { data, error } = await db.rpc<string>(rpcFunction, {
           company_uuid: companyId
         });
 

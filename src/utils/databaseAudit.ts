@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 
 export interface TableAuditResult {
   tableName: string;
@@ -133,14 +133,15 @@ async function checkTaxColumns(tableName: string, result: TableAuditResult): Pro
 
 async function checkRpcFunction(functionName: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase.rpc(functionName, {});
-    
+    const db = getDatabase();
+    const { data, error } = await db.rpc(functionName, {});
+
     // If function exists but fails due to parameters, that's OK - it exists
-    if (error && (error.code === '42883' || error.message.includes('function') && error.message.includes('does not exist'))) {
+    if (error && (error.message.includes('function') && error.message.includes('does not exist'))) {
       console.log(`❌ RPC function ${functionName} does not exist:`, error.message);
       return false;
     }
-    
+
     console.log(`✅ RPC function ${functionName} exists`);
     return true;
   } catch (error) {

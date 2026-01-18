@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 import type { CreditNote, CreditNoteItem } from './useCreditNotes';
 
@@ -137,13 +138,17 @@ export function useCreateCreditNoteWithItems() {
               console.log('Stock movements created successfully');
               
               // Update product stock quantities
+              const db = getDatabase();
               for (const movement of stockMovements) {
                 try {
-                  await supabase.rpc('update_product_stock', {
+                  const { error: stockError } = await db.rpc('update_product_stock', {
                     product_uuid: movement.product_id,
                     movement_type: movement.movement_type,
                     quantity: Math.abs(movement.quantity)
                   });
+                  if (stockError) {
+                    throw stockError;
+                  }
                 } catch (stockUpdateError: any) {
                   console.error('Error updating product stock:', {
                     error: stockUpdateError,
@@ -235,13 +240,17 @@ export function useUpdateCreditNoteWithItems() {
               console.error('Error creating reverse movements:', reverseError);
             } else {
               // Update product stock for reversals
+              const db = getDatabase();
               for (const movement of reverseMovements) {
                 try {
-                  await supabase.rpc('update_product_stock', {
+                  const { error: stockError } = await db.rpc('update_product_stock', {
                     product_uuid: movement.product_id,
                     movement_type: movement.movement_type,
                     quantity: Math.abs(movement.quantity)
                   });
+                  if (stockError) {
+                    throw stockError;
+                  }
                 } catch (stockUpdateError) {
                   console.error('Error updating product stock (reversal):', stockUpdateError);
                 }
@@ -309,13 +318,17 @@ export function useUpdateCreditNoteWithItems() {
               console.error('Error creating new stock movements:', stockError);
             } else {
               // Update product stock quantities
+              const db = getDatabase();
               for (const movement of stockMovements) {
                 try {
-                  await supabase.rpc('update_product_stock', {
+                  const { error: stockError } = await db.rpc('update_product_stock', {
                     product_uuid: movement.product_id,
                     movement_type: movement.movement_type,
                     quantity: Math.abs(movement.quantity)
                   });
+                  if (stockError) {
+                    throw stockError;
+                  }
                 } catch (stockUpdateError) {
                   console.error('Error updating product stock (new):', stockUpdateError);
                 }
@@ -388,8 +401,8 @@ export function useConvertInvoiceToCreditNote() {
       if (invoiceError) throw invoiceError;
 
       // 2. Generate credit note number
-      const { data: creditNoteNumber, error: numberError } = await supabase
-        .rpc('generate_credit_note_number', { company_uuid: invoice.company_id });
+      const db = getDatabase();
+      const { data: creditNoteNumber, error: numberError } = await db.rpc<string>('generate_credit_note_number', { company_uuid: invoice.company_id });
 
       if (numberError) throw numberError;
 

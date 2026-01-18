@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 
 /**
  * Fix stock movements table constraints to match application expectations
@@ -16,12 +16,12 @@ export async function fixStockMovementsConstraints() {
       ALTER TABLE stock_movements DROP CONSTRAINT IF EXISTS stock_movements_reference_type_check;
 
       -- Add correct constraints with uppercase values as expected by the application
-      ALTER TABLE stock_movements 
-      ADD CONSTRAINT stock_movements_movement_type_check 
+      ALTER TABLE stock_movements
+      ADD CONSTRAINT stock_movements_movement_type_check
       CHECK (movement_type IN ('IN', 'OUT', 'ADJUSTMENT'));
 
-      ALTER TABLE stock_movements 
-      ADD CONSTRAINT stock_movements_reference_type_check 
+      ALTER TABLE stock_movements
+      ADD CONSTRAINT stock_movements_reference_type_check
       CHECK (reference_type IN ('INVOICE', 'DELIVERY_NOTE', 'RESTOCK', 'ADJUSTMENT', 'CREDIT_NOTE', 'PURCHASE'));
 
       -- Ensure the table has the updated_at column
@@ -48,7 +48,8 @@ export async function fixStockMovementsConstraints() {
     `;
 
     // Try to execute the fix using RPC
-    const { error } = await supabase.rpc('exec_sql', { sql: constraintFixSQL });
+    const db = getDatabase();
+    const { error } = await db.rpc('exec_sql', { sql: constraintFixSQL });
 
     if (error) {
       console.error('Failed to fix constraints via RPC:', error);

@@ -482,6 +482,65 @@ export class ExternalAPIAdapter implements IDatabase {
     }
   }
 
+  async rpc<T>(functionName: string, params?: Record<string, any>): Promise<{ data: T | null; error: Error | null }> {
+    try {
+      const response = await fetch(`${this.apiBase}?action=rpc`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ function: functionName, params: params || {} }),
+      });
+
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. RPC call failed.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
+
+      if (!response.ok) {
+        return {
+          data: null,
+          error: new Error(result.message || `RPC call to ${functionName} failed`),
+        };
+      }
+
+      return { data: result.data || result, error: null };
+    } catch (error) {
+      return { data: null, error: error as Error };
+    }
+  }
+
+  async rpcList<T>(functionName: string, params?: Record<string, any>): Promise<{ data: T[]; error: Error | null; count?: number }> {
+    try {
+      const response = await fetch(`${this.apiBase}?action=rpc`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ function: functionName, params: params || {} }),
+      });
+
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. RPC call failed.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
+
+      if (!response.ok) {
+        return {
+          data: [],
+          error: new Error(result.message || `RPC call to ${functionName} failed`),
+        };
+      }
+
+      const data = Array.isArray(result.data) ? result.data : [];
+      return { data, error: null, count: data.length };
+    } catch (error) {
+      return { data: [], error: error as Error };
+    }
+  }
+
   async canRead(table: string, recordId: string, auth: AuthContext): Promise<boolean> {
     // Simple authorization - admin can read everything
     // Users can only read their own records or public records

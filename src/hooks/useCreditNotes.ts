@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 
 export interface CreditNote {
@@ -404,8 +405,8 @@ export function useDeleteCreditNote() {
 export function useGenerateCreditNoteNumber() {
   return useMutation({
     mutationFn: async (companyId: string) => {
-      const { data, error } = await supabase
-        .rpc('generate_credit_note_number', { company_uuid: companyId });
+      const db = getDatabase();
+      const { data, error } = await db.rpc<string>('generate_credit_note_number', { company_uuid: companyId });
 
       if (error) throw error;
       return data as string;
@@ -466,13 +467,13 @@ export function useApplyCreditNoteToInvoice() {
       amount: number;
       appliedBy: string;
     }) => {
-      const { data, error } = await supabase
-        .rpc('apply_credit_note_to_invoice', {
-          credit_note_uuid: creditNoteId,
-          invoice_uuid: invoiceId,
-          amount_to_apply: amount,
-          applied_by_uuid: appliedBy
-        });
+      const db = getDatabase();
+      const { data, error } = await db.rpc('apply_credit_note_to_invoice', {
+        credit_note_uuid: creditNoteId,
+        invoice_uuid: invoiceId,
+        amount_to_apply: amount,
+        applied_by_uuid: appliedBy
+      });
 
       if (error) throw error;
       return data;

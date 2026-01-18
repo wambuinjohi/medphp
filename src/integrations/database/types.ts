@@ -66,7 +66,7 @@ export interface DeleteResult {
 export interface IDatabase {
   // Authentication
   getAuthContext(userId: string): Promise<AuthContext | null>;
-  
+
   // Select operations
   select<T>(table: string, filter?: Record<string, any>): Promise<ListQueryResult<T>>;
   selectOne<T>(table: string, id: string): Promise<QueryResult<T>>;
@@ -83,6 +83,10 @@ export interface IDatabase {
   // Delete operations
   delete(table: string, id: string): Promise<DeleteResult>;
   deleteMany(table: string, filter: Record<string, any>): Promise<DeleteResult>;
+
+  // RPC calls (Remote Procedure Calls)
+  rpc<T>(functionName: string, params?: Record<string, any>): Promise<QueryResult<T>>;
+  rpcList<T>(functionName: string, params?: Record<string, any>): Promise<ListQueryResult<T>>;
 
   // Raw queries (with authorization)
   raw<T>(query: string, params?: any[]): Promise<ListQueryResult<T>>;

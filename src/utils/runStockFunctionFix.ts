@@ -1,6 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
-
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 import { executeSQL } from './execSQL';
 
 /**
@@ -110,15 +108,16 @@ GRANT EXECUTE ON FUNCTION public.update_product_stock(TEXT, UUID, INTEGER) TO au
     // Try a lightweight test call for existence (use a dummy UUID)
     try {
       const dummyId = '00000000-0000-0000-0000-000000000000';
+      const db = getDatabase();
       // Call with named parameters in the order some clients use
-      const { error: testError1, data: testData1 } = await supabase.rpc('update_product_stock', {
+      const { error: testError1, data: testData1 } = await db.rpc('update_product_stock', {
         movement_type: 'IN',
         product_uuid: dummyId,
         quantity: 1
       } as any);
 
       // Also test alternate order
-      const { error: testError2, data: testData2 } = await supabase.rpc('update_product_stock', {
+      const { error: testError2, data: testData2 } = await db.rpc('update_product_stock', {
         product_uuid: dummyId,
         movement_type: 'IN',
         quantity: 1
@@ -152,7 +151,8 @@ GRANT EXECUTE ON FUNCTION public.update_product_stock(TEXT, UUID, INTEGER) TO au
 export async function testStockUpdateFunction() {
   try {
     const dummyId = '00000000-0000-0000-0000-000000000000';
-    const { data, error } = await supabase.rpc('update_product_stock', {
+    const db = getDatabase();
+    const { data, error } = await db.rpc('update_product_stock', {
       movement_type: 'IN',
       product_uuid: dummyId,
       quantity: 1

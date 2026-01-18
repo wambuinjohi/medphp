@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 
 /**
  * SQL to create the generate_proforma_number function
@@ -97,15 +97,16 @@ export async function createProformaFunction(): Promise<{
 }> {
   try {
     console.log('🚀 Creating generate_proforma_number function...');
-    
+
     // Execute the SQL to create the function using exec_sql if available
+    const db = getDatabase();
     let result;
     try {
-      result = await supabase.rpc('exec_sql', { sql: CREATE_PROFORMA_FUNCTION_SQL });
+      result = await db.rpc('exec_sql', { sql: CREATE_PROFORMA_FUNCTION_SQL });
     } catch (execError) {
       // If exec_sql doesn't exist, try alternative method
       console.warn('exec_sql not available, trying direct execution...');
-      result = await supabase.rpc('sql', { query: CREATE_PROFORMA_FUNCTION_SQL });
+      result = await db.rpc('sql', { query: CREATE_PROFORMA_FUNCTION_SQL });
     }
 
     const { data, error } = result;
@@ -139,8 +140,9 @@ export async function testProformaFunction(companyId: string = '550e8400-e29b-41
 }> {
   try {
     console.log('🧪 Testing generate_proforma_number function...');
-    
-    const { data, error } = await supabase.rpc('generate_proforma_number', {
+
+    const db = getDatabase();
+    const { data, error } = await db.rpc('generate_proforma_number', {
       company_uuid: companyId
     });
 
