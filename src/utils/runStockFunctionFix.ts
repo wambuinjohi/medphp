@@ -151,7 +151,8 @@ GRANT EXECUTE ON FUNCTION public.update_product_stock(TEXT, UUID, INTEGER) TO au
 export async function testStockUpdateFunction() {
   try {
     const dummyId = '00000000-0000-0000-0000-000000000000';
-    const { data, error } = await supabase.rpc('update_product_stock', {
+    const db = getDatabase();
+    const { data, error } = await db.rpc('update_product_stock', {
       movement_type: 'IN',
       product_uuid: dummyId,
       quantity: 1
