@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getDatabase, getDatabaseProvider } from '@/integrations/database';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { toast } from 'sonner';
 
