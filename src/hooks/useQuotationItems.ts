@@ -126,9 +126,12 @@ export const useRestockProduct = () => {
 
 export const useCreateQuotationWithItems = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ quotation, items }: { quotation: any; items: QuotationItem[] }) => {
+      const db = getDatabase();
+      const provider = getDatabaseProvider();
+
       // Ensure created_by references the authenticated user to satisfy FK constraints
       let cleanQuotation = { ...quotation } as any;
       try {
@@ -145,31 +148,44 @@ export const useCreateQuotationWithItems = () => {
         }
       }
 
-      // First create the quotation
-      let quotationDataRes;
-      let quotationErrorRes;
-      {
+      // First create the quotation using the appropriate database provider
+      let quotationData: any;
+      let quotationError: any;
+
+      if (provider === 'external-api') {
+        // Use external API adapter
+        const result = await db.insert('quotations', cleanQuotation);
+        quotationError = result.error;
+        if (!quotationError && result.id) {
+          // Fetch the created quotation to get full data
+          const selectResult = await db.selectOne('quotations', result.id);
+          quotationData = selectResult.data;
+          quotationError = selectResult.error;
+        }
+      } else {
+        // Use Supabase
         const { data, error } = await supabase
           .from('quotations')
           .insert([cleanQuotation])
           .select()
           .single();
-        quotationDataRes = data; quotationErrorRes = error as any;
+        quotationData = data;
+        quotationError = error as any;
+
+        // Fallback: if FK violation on created_by, retry with created_by = null
+        if (quotationError && quotationError.code === '23503' && String(quotationError.message || '').includes('created_by')) {
+          const retryPayload = { ...cleanQuotation, created_by: null };
+          const { data: retryData, error: retryError } = await supabase
+            .from('quotations')
+            .insert([retryPayload])
+            .select()
+            .single();
+          quotationData = retryData;
+          quotationError = retryError as any;
+        }
       }
 
-      // Fallback: if FK violation on created_by, retry with created_by = null
-      if (quotationErrorRes && quotationErrorRes.code === '23503' && String(quotationErrorRes.message || '').includes('created_by')) {
-        const retryPayload = { ...cleanQuotation, created_by: null };
-        const { data: retryData, error: retryError } = await supabase
-          .from('quotations')
-          .insert([retryPayload])
-          .select()
-          .single();
-        quotationDataRes = retryData; quotationErrorRes = retryError as any;
-      }
-
-      if (quotationErrorRes) throw quotationErrorRes;
-      const quotationData = quotationDataRes;
+      if (quotationError) throw quotationError;
 
       // Then create the quotation items if any
       if (items.length > 0) {
@@ -178,14 +194,20 @@ export const useCreateQuotationWithItems = () => {
           quotation_id: quotationData.id,
           sort_order: index + 1
         }));
-        
-        const { error: itemsError } = await supabase
-          .from('quotation_items')
-          .insert(quotationItems);
-        
-        if (itemsError) throw itemsError;
+
+        if (provider === 'external-api') {
+          // Use external API adapter for bulk insert
+          const { error: itemsError } = await db.insertMany('quotation_items', quotationItems);
+          if (itemsError) throw itemsError;
+        } else {
+          // Use Supabase
+          const { error: itemsError } = await supabase
+            .from('quotation_items')
+            .insert(quotationItems);
+          if (itemsError) throw itemsError;
+        }
       }
-      
+
       return quotationData;
     },
     onSuccess: () => {
