@@ -405,8 +405,8 @@ export function useDeleteCreditNote() {
 export function useGenerateCreditNoteNumber() {
   return useMutation({
     mutationFn: async (companyId: string) => {
-      const { data, error } = await supabase
-        .rpc('generate_credit_note_number', { company_uuid: companyId });
+      const db = getDatabase();
+      const { data, error } = await db.rpc<string>('generate_credit_note_number', { company_uuid: companyId });
 
       if (error) throw error;
       return data as string;
