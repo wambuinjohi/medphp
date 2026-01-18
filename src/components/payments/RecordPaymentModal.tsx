@@ -166,14 +166,11 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
 
       const paymentRecord = {
         company_id: selectedInvoice?.company_id || currentCompany.id,
-        customer_id: selectedInvoice?.customer_id || null,
         invoice_id: paymentData.invoice_id,
-        payment_number: paymentNumber,
         payment_date: paymentData.payment_date,
         amount: paymentData.amount,
         payment_method: paymentData.payment_method,
-        reference_number: paymentData.reference_number || paymentNumber,
-        notes: paymentData.notes
+        reference_number: paymentData.reference_number || paymentNumber
       };
 
       const result = await createPaymentMutation.mutateAsync(paymentRecord);
