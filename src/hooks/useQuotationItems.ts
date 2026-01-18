@@ -130,7 +130,6 @@ export const useCreateQuotationWithItems = () => {
   return useMutation({
     mutationFn: async ({ quotation, items }: { quotation: any; items: QuotationItem[] }) => {
       const db = getDatabase();
-      const provider = getDatabaseProvider();
 
       // Ensure created_by references the authenticated user to satisfy FK constraints
       let cleanQuotation = { ...quotation } as any;
@@ -148,46 +147,19 @@ export const useCreateQuotationWithItems = () => {
         }
       }
 
-      // First create the quotation using the appropriate database provider
-      let quotationData: any;
-      let quotationError: any;
+      // Create the quotation using the database adapter
+      const insertResult = await db.insert('quotations', cleanQuotation);
+      if (insertResult.error) throw insertResult.error;
+      if (!insertResult.id) throw new Error('Failed to create quotation: no ID returned');
 
-      if (provider === 'external-api') {
-        // Use external API adapter
-        const result = await db.insert('quotations', cleanQuotation);
-        quotationError = result.error;
-        if (!quotationError && result.id) {
-          // Fetch the created quotation to get full data
-          const selectResult = await db.selectOne('quotations', result.id);
-          quotationData = selectResult.data;
-          quotationError = selectResult.error;
-        }
-      } else {
-        // Use Supabase
-        const { data, error } = await supabase
-          .from('quotations')
-          .insert([cleanQuotation])
-          .select()
-          .single();
-        quotationData = data;
-        quotationError = error as any;
+      // Fetch the created quotation to get full data
+      const selectResult = await db.selectOne('quotations', insertResult.id);
+      if (selectResult.error) throw selectResult.error;
+      if (!selectResult.data) throw new Error('Failed to fetch created quotation');
 
-        // Fallback: if FK violation on created_by, retry with created_by = null
-        if (quotationError && quotationError.code === '23503' && String(quotationError.message || '').includes('created_by')) {
-          const retryPayload = { ...cleanQuotation, created_by: null };
-          const { data: retryData, error: retryError } = await supabase
-            .from('quotations')
-            .insert([retryPayload])
-            .select()
-            .single();
-          quotationData = retryData;
-          quotationError = retryError as any;
-        }
-      }
+      const quotationData = selectResult.data;
 
-      if (quotationError) throw quotationError;
-
-      // Then create the quotation items if any
+      // Create the quotation items if any
       if (items.length > 0) {
         const quotationItems = items.map((item, index) => ({
           ...item,
@@ -195,17 +167,8 @@ export const useCreateQuotationWithItems = () => {
           sort_order: index + 1
         }));
 
-        if (provider === 'external-api') {
-          // Use external API adapter for bulk insert
-          const { error: itemsError } = await db.insertMany('quotation_items', quotationItems);
-          if (itemsError) throw itemsError;
-        } else {
-          // Use Supabase
-          const { error: itemsError } = await supabase
-            .from('quotation_items')
-            .insert(quotationItems);
-          if (itemsError) throw itemsError;
-        }
+        const itemsResult = await db.insertMany('quotation_items', quotationItems);
+        if (itemsResult.error) throw itemsResult.error;
       }
 
       return quotationData;
