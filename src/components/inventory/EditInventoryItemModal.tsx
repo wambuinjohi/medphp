@@ -73,11 +73,6 @@ interface EditInventoryItemModalProps {
 }
 
 export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: EditInventoryItemModalProps) {
-  // Ensure item is not null - parent should handle this, but TypeScript needs verification
-  if (!item) {
-    return null;
-  }
-
   const [formData, setFormData] = useState({
     name: '',
     product_code: '',
