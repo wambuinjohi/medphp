@@ -99,9 +99,18 @@ interface TransportFinance {
   date: string;
 }
 
-export default function Transport() {
+interface TransportProps {
+  initialTab?: 'drivers' | 'vehicles' | 'materials' | 'finance';
+}
+
+export default function Transport({ initialTab = 'drivers' }: TransportProps) {
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('drivers');
+  const [activeTab, setActiveTab] = useState<'drivers' | 'vehicles' | 'materials' | 'finance'>(initialTab);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab, location.pathname]);
   
   // Drivers state
   const [showCreateDriverModal, setShowCreateDriverModal] = useState(false);
