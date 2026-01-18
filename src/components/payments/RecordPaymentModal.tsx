@@ -203,12 +203,6 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
               setCreatedCreditNoteNumber(creditNoteNumber);
             }
           } catch (creditNoteError: any) {
-            console.error('Failed to create overpayment credit note:', {
-              message: creditNoteError?.message,
-              code: creditNoteError?.code,
-              details: creditNoteError?.details,
-              hint: creditNoteError?.hint
-            });
             // Log warning to user but don't fail the payment
             toast.warning('Credit note creation failed', {
               description: creditNoteError?.message || 'Overpayment was recorded but credit note could not be created'
