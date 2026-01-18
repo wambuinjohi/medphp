@@ -82,8 +82,8 @@ export async function verifyManualSetup() {
 
   // Check 4: RPC functions
   try {
-    const { error } = await supabase
-      .rpc('generate_lpo_number', { company_uuid: '00000000-0000-0000-0000-000000000000' });
+    const db = getDatabase();
+    const { error } = await db.rpc('generate_lpo_number', { company_uuid: '00000000-0000-0000-0000-000000000000' });
 
     if (!error || !error.message.includes('does not exist')) {
       results.databaseStatus.rpcFunctions = true;
