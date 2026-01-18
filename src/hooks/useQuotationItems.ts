@@ -646,23 +646,24 @@ export const useCreateProformaWithItems = () => {
 // Create delivery note (affects inventory without creating invoice)
 export const useCreateDeliveryNote = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ deliveryNote, items }: { deliveryNote: any; items: any[] }) => {
+      const db = getDatabase();
+
       // Validate that delivery note is backed by a sale (invoice)
       if (!deliveryNote.invoice_id) {
         throw new Error('Delivery note must be linked to an existing invoice or sale.');
       }
 
       // Verify the invoice exists and belongs to the same company
-      const { data: invoice, error: invoiceError } = await supabase
-        .from('invoices')
-        .select('id, customer_id, company_id')
-        .eq('id', deliveryNote.invoice_id)
-        .eq('company_id', deliveryNote.company_id)
-        .single();
+      const invoiceResult = await db.selectOne('invoices', deliveryNote.invoice_id);
+      if (invoiceResult.error) {
+        throw new Error('Related invoice not found or does not belong to this company.');
+      }
 
-      if (invoiceError || !invoice) {
+      const invoice = invoiceResult.data as any;
+      if (!invoice || invoice.company_id !== deliveryNote.company_id) {
         throw new Error('Related invoice not found or does not belong to this company.');
       }
 
@@ -673,15 +674,14 @@ export const useCreateDeliveryNote = () => {
 
       // Verify delivery items correspond to invoice items
       if (items.length > 0) {
-        const { data: invoiceItems } = await supabase
-          .from('invoice_items')
-          .select('product_id, quantity')
-          .eq('invoice_id', deliveryNote.invoice_id);
+        const invoiceItemsResult = await db.selectBy('invoice_items', { invoice_id: deliveryNote.invoice_id });
 
         const invoiceProductMap = new Map();
-        (invoiceItems || []).forEach((item: any) => {
-          invoiceProductMap.set(item.product_id, item.quantity);
-        });
+        if (!invoiceItemsResult.error && invoiceItemsResult.data) {
+          (invoiceItemsResult.data || []).forEach((item: any) => {
+            invoiceProductMap.set(item.product_id, item.quantity);
+          });
+        }
 
         // Check that all delivery items exist in the invoice
         for (const item of items) {
@@ -703,15 +703,18 @@ export const useCreateDeliveryNote = () => {
         }
       }
 
-      // Create delivery note
-      const { data: deliveryData, error: deliveryError } = await supabase
-        .from('delivery_notes')
-        .insert([deliveryNote])
-        .select()
-        .single();
-      
-      if (deliveryError) throw deliveryError;
-      
+      // Create delivery note using database adapter
+      const deliveryInsertResult = await db.insert('delivery_notes', deliveryNote);
+      if (deliveryInsertResult.error) throw deliveryInsertResult.error;
+      if (!deliveryInsertResult.id) throw new Error('Failed to create delivery note: no ID returned');
+
+      // Fetch the created delivery note to get full data
+      const deliverySelectResult = await db.selectOne('delivery_notes', deliveryInsertResult.id);
+      if (deliverySelectResult.error) throw deliverySelectResult.error;
+      if (!deliverySelectResult.data) throw new Error('Failed to fetch created delivery note');
+
+      const deliveryData = deliverySelectResult.data;
+
       // Create delivery note items
       if (items.length > 0) {
         const deliveryItems = items.map((item, index) => {
@@ -729,11 +732,8 @@ export const useCreateDeliveryNote = () => {
           };
         });
 
-        const { error: itemsError } = await supabase
-          .from('delivery_note_items')
-          .insert(deliveryItems);
-
-        if (itemsError) throw itemsError;
+        const itemsInsertResult = await db.insertMany('delivery_note_items', deliveryItems);
+        if (itemsInsertResult.error) throw itemsInsertResult.error;
 
         // Create stock movements for delivered items
         const stockMovements = deliveryItems
@@ -741,27 +741,21 @@ export const useCreateDeliveryNote = () => {
           .map(item => ({
             company_id: deliveryNote.company_id,
             product_id: item.product_id,
-            movement_type: 'OUT' as const,
-            reference_type: 'DELIVERY_NOTE' as const,
+            movement_type: 'OUT',
+            reference_type: 'DELIVERY_NOTE',
             reference_id: deliveryData.id,
-            quantity: -(item.quantity_delivered ?? 0),
+            quantity: item.quantity_delivered,
             notes: `Stock delivery for delivery note ${deliveryNote.delivery_number || deliveryNote.delivery_note_number}`
           }));
 
         if (stockMovements.length > 0) {
-          await supabase.from('stock_movements').insert(stockMovements);
-
-          // Update product stock quantities
-          for (const movement of stockMovements) {
-            await supabase.rpc('update_product_stock', {
-              product_uuid: movement.product_id,
-              movement_type: movement.movement_type,
-              quantity: Math.abs(movement.quantity)
-            });
+          const movementsInsertResult = await db.insertMany('stock_movements', stockMovements);
+          if (movementsInsertResult.error) {
+            console.warn('Failed to create stock movements:', movementsInsertResult.error);
           }
         }
       }
-      
+
       return deliveryData;
     },
     onSuccess: () => {
