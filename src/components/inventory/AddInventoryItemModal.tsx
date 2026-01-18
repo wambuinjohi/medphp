@@ -337,12 +337,12 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="selling_price">Selling Price (KES) *</Label>
+                  <Label htmlFor="unit_price">Selling Price (KES) *</Label>
                   <Input
-                    id="selling_price"
+                    id="unit_price"
                     type="number"
-                    value={formData.selling_price}
-                    onChange={(e) => handleInputChange('selling_price', parseFloat(e.target.value) || 0)}
+                    value={formData.unit_price}
+                    onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
                     min="0"
                     step="0.01"
                     placeholder="0.00"
