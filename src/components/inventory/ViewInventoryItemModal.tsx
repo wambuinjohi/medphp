@@ -210,14 +210,14 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Current Stock:</span>
-                  <span className="font-bold text-2xl">{item.currentStock}</span>
+                  <span className="font-bold text-2xl">{normalizedItem.currentStock}</span>
                 </div>
-                
+
                 <div className="w-full bg-muted rounded-full h-2">
-                  <div 
+                  <div
                     className={`h-2 rounded-full transition-all ${
-                      item.status === 'out_of_stock' ? 'bg-destructive' :
-                      item.status === 'low_stock' ? 'bg-warning' : 'bg-success'
+                      normalizedItem.status === 'out_of_stock' ? 'bg-destructive' :
+                      normalizedItem.status === 'low_stock' ? 'bg-warning' : 'bg-success'
                     }`}
                     style={{ width: `${Math.min(stockPercentage, 100)}%` }}
                   />
@@ -226,17 +226,17 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Min Level:</span>
-                    <div className="font-medium">{item.minStock}</div>
+                    <div className="font-medium">{normalizedItem.minStock}</div>
                   </div>
-                  {item.maxStock && (
+                  {normalizedItem.maxStock && (
                     <div>
                       <span className="text-muted-foreground">Max Level:</span>
-                      <div className="font-medium">{item.maxStock}</div>
+                      <div className="font-medium">{normalizedItem.maxStock}</div>
                     </div>
                   )}
                 </div>
 
-                {item.currentStock <= item.minStock && (
+                {normalizedItem.currentStock <= normalizedItem.minStock && (
                   <div className="flex items-center space-x-2 p-3 bg-warning-light rounded-lg">
                     <AlertTriangle className="h-4 w-4 text-warning" />
                     <span className="text-warning text-sm font-medium">
@@ -249,15 +249,15 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
               {/* Pricing */}
               <div className="border-t pt-4 space-y-3">
                 <div className="grid grid-cols-2 gap-4">
-                  {item.costPrice && (
+                  {normalizedItem.costPrice && parseFloat(normalizedItem.costPrice) > 0 && (
                     <div>
                       <span className="text-muted-foreground text-sm">Cost Price:</span>
-                      <div className="font-medium">{formatCurrency(item.costPrice)}</div>
+                      <div className="font-medium">{formatCurrency(normalizedItem.costPrice)}</div>
                     </div>
                   )}
                   <div>
                     <span className="text-muted-foreground text-sm">Selling Price:</span>
-                    <div className="font-medium">{formatCurrency(item.unitPrice)}</div>
+                    <div className="font-medium">{formatCurrency(normalizedItem.unitPrice)}</div>
                   </div>
                 </div>
 
@@ -265,28 +265,28 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
                   <span className="text-muted-foreground text-sm">Total Value:</span>
                   <div className="font-bold text-xl text-primary flex items-center space-x-2">
                     <TrendingUp className="h-5 w-5" />
-                    <span>{formatCurrency(item.totalValue)}</span>
+                    <span>{formatCurrency(totalValue)}</span>
                   </div>
                 </div>
 
-                {item.costPrice && (
+                {normalizedItem.costPrice && parseFloat(normalizedItem.costPrice) > 0 && (
                   <div className="p-3 bg-muted/50 rounded-lg">
                     <div className="text-sm space-y-1">
                       <div className="flex justify-between">
                         <span>Margin per unit:</span>
                         <span className="font-medium">
                           {formatCurrency(
-                            parseFloat(item.unitPrice.replace(/[^0-9.-]+/g, '')) - 
-                            parseFloat(item.costPrice.replace(/[^0-9.-]+/g, ''))
+                            parseFloat(normalizedItem.unitPrice.replace(/[^0-9.-]+/g, '')) -
+                            parseFloat(normalizedItem.costPrice.replace(/[^0-9.-]+/g, ''))
                           )}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Markup:</span>
                         <span className="font-medium">
-                          {(((parseFloat(item.unitPrice.replace(/[^0-9.-]+/g, '')) - 
-                             parseFloat(item.costPrice.replace(/[^0-9.-]+/g, ''))) / 
-                             parseFloat(item.costPrice.replace(/[^0-9.-]+/g, ''))) * 100).toFixed(1)}%
+                          {(((parseFloat(normalizedItem.unitPrice.replace(/[^0-9.-]+/g, '')) -
+                             parseFloat(normalizedItem.costPrice.replace(/[^0-9.-]+/g, ''))) /
+                             parseFloat(normalizedItem.costPrice.replace(/[^0-9.-]+/g, ''))) * 100).toFixed(1)}%
                         </span>
                       </div>
                     </div>
