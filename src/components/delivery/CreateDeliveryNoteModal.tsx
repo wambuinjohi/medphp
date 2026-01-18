@@ -95,7 +95,7 @@ export const CreateDeliveryNoteModal = ({
     if (open && invoiceId && formData.invoice_id !== invoiceId) {
       setFormData(prev => ({ ...prev, invoice_id: invoiceId }));
     }
-  }, [open, invoiceId]);
+  }, [open, invoiceId, formData.invoice_id]);
 
   // When invoice is selected, populate customer and items
   useEffect(() => {
