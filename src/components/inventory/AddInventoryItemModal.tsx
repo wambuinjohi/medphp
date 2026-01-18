@@ -350,19 +350,19 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                 </div>
               </div>
 
-              {formData.cost_price > 0 && formData.selling_price > 0 && (
+              {formData.cost_price > 0 && formData.unit_price > 0 && (
                 <div className="p-3 bg-muted/50 rounded-lg">
                   <div className="text-sm">
                     <div className="flex justify-between">
                       <span>Margin:</span>
                       <span className="font-medium">
-                        KES {(formData.selling_price - formData.cost_price).toFixed(2)}
+                        KES {(formData.unit_price - formData.cost_price).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Markup:</span>
                       <span className="font-medium">
-                        {formData.cost_price > 0 ? (((formData.selling_price - formData.cost_price) / formData.cost_price) * 100).toFixed(1) : 0}%
+                        {formData.cost_price > 0 ? (((formData.unit_price - formData.cost_price) / formData.cost_price) * 100).toFixed(1) : 0}%
                       </span>
                     </div>
                   </div>
