@@ -73,6 +73,7 @@ interface EditInventoryItemModalProps {
 }
 
 export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: EditInventoryItemModalProps) {
+  const [productId, setProductId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     product_code: '',
@@ -90,20 +91,6 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
   const updateProduct = useUpdateProduct();
   const { provider } = useDatabase();
 
-  // Guard: Show message if item is missing ID
-  if (!item || !item.id) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Error</DialogTitle>
-          </DialogHeader>
-          <div className="text-destructive">Product ID is missing. Please try again.</div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ['product_categories'],
     queryFn: async () => {
@@ -120,6 +107,9 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
 
   useEffect(() => {
     if (item && open) {
+      // Capture the ID so we have it available for submission
+      console.log('EditInventoryItemModal - item received:', item);
+      setProductId(item.id);
       setFormData({
         name: item.name || '',
         product_code: item.sku || item.product_code || '',
@@ -163,9 +153,9 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
       return;
     }
 
-    if (!item || !item.id) {
+    if (!productId) {
       toast.error('Error: Product ID is missing. Cannot update product.');
-      console.error('EditInventoryItemModal - item.id is missing', { item, formData });
+      console.error('EditInventoryItemModal - productId is missing', { productId, formData });
       return;
     }
 
@@ -201,7 +191,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
             maximum_stock_level: Number(formData.max_stock_level)
           };
 
-      await updateProduct.mutateAsync({ id: item.id, data: updatedData });
+      await updateProduct.mutateAsync({ id: productId, data: updatedData });
       toast.success(`${formData.name} updated successfully!`);
       onSuccess();
       onOpenChange(false);
@@ -251,8 +241,6 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
     onOpenChange(false);
   };
 
-  if (!item) return null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -262,9 +250,15 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
             Edit Inventory Item
           </DialogTitle>
           <DialogDescription>
-            Update the details for {item.name}
+            Update the details for {item?.name || 'this product'}
           </DialogDescription>
         </DialogHeader>
+
+        {/* Debug: Display Product ID */}
+        <div className="mb-4 p-3 bg-muted rounded text-sm">
+          <span className="text-muted-foreground">Product ID: </span>
+          <span className="font-mono font-semibold">{productId || 'NOT SET'}</span>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
