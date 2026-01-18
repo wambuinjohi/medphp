@@ -182,7 +182,7 @@ export const ViewProformaModal = ({
                   <p className="text-sm font-medium text-muted-foreground">Amount</p>
                   <p className="text-sm flex items-center gap-1">
                     <DollarSign className="h-3 w-3" />
-                    ${proforma.total_amount?.toFixed(2)}
+                    ${Number(proforma.total_amount || 0).toFixed(2)}
                   </p>
                 </div>
               </div>
