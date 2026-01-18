@@ -130,21 +130,37 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
 
     setIsSubmitting(true);
     try {
-      const newProduct = {
+      // Build product data with fields appropriate for the database provider
+      const baseProduct = {
         company_id: currentCompany.id,
         name: formData.name,
-        product_code: formData.product_code || generateProductCode(),
         description: formData.description,
         category_id: formData.category_id === '__none__' || !formData.category_id ? null : formData.category_id,
         unit_of_measure: formData.unit_of_measure,
         cost_price: formData.cost_price,
-        selling_price: formData.selling_price,
-        stock_quantity: formData.stock_quantity,
-        minimum_stock_level: formData.min_stock_level,
-        maximum_stock_level: formData.max_stock_level,
-        is_active: true,
-        track_inventory: true
       };
+
+      const newProduct = provider === 'external-api'
+        ? {
+            // External API field names (from tableDefinitions.php)
+            ...baseProduct,
+            sku: formData.product_code || generateProductCode(),
+            unit_price: formData.selling_price,
+            stock_quantity: formData.stock_quantity,
+            reorder_level: formData.min_stock_level,
+            status: 'active'
+          }
+        : {
+            // Supabase field names
+            ...baseProduct,
+            product_code: formData.product_code || generateProductCode(),
+            selling_price: formData.selling_price,
+            stock_quantity: formData.stock_quantity,
+            minimum_stock_level: formData.min_stock_level,
+            maximum_stock_level: formData.max_stock_level,
+            is_active: true,
+            track_inventory: true
+          };
 
       await createProduct.mutateAsync(newProduct);
 
