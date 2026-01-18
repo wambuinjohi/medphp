@@ -201,20 +201,21 @@ export async function setupProformaTables() {
     console.log('🔍 Verifying proforma tables...');
     const tablesToCheck = ['proforma_invoices', 'proforma_items'];
     let tablesExist = 0;
-    
+    const db = getDatabase();
+
     for (const table of tablesToCheck) {
       try {
-        const { error } = await supabase.from(table).select('id').limit(1);
-        if (!error) {
+        const result = await db.select(table, {});
+        if (!result.error) {
           tablesExist++;
         }
       } catch (err) {
         console.warn(`Table ${table} verification failed:`, err);
       }
     }
-    
-    results.steps.push({ 
-      step: `Verify proforma tables (${tablesExist}/${tablesToCheck.length} working)`, 
+
+    results.steps.push({
+      step: `Verify proforma tables (${tablesExist}/${tablesToCheck.length} working)`,
       success: tablesExist === tablesToCheck.length
     });
 
