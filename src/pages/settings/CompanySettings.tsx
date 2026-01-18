@@ -225,54 +225,6 @@ export default function CompanySettings() {
     });
   };
 
-  // Test storage availability
-  const testStorageAvailability = async () => {
-    setTestingStorage(true);
-    try {
-      const bucketName = import.meta.env.VITE_COMPANY_LOGO_BUCKET || 'company-logos';
-      // Client apps cannot list buckets; instead, try listing the configured bucket directly
-      const { error: listError } = await supabase.storage
-        .from(bucketName)
-        .list('', { limit: 1 });
-
-      if (listError) {
-        const msg = listError.message || '';
-        if (msg.includes('Not Found') || msg.includes('does not exist') || msg.includes('No such file or directory')) {
-          setStorageStatus('unavailable');
-          toast.info(`Cloud storage bucket "${bucketName}" not found or not accessible from this client.`);
-          return;
-        }
-        if (msg.includes('row-level security') || msg.includes('permission') || msg.includes('policy') || msg.includes('Forbidden')) {
-          setStorageStatus('unavailable');
-          toast.warning('Cloud storage bucket exists but access is restricted. Using local storage.');
-          return;
-        }
-        // Any other error -> treat as unavailable but do not hard fail
-        setStorageStatus('unavailable');
-        toast.warning('Cloud storage not available. Using local storage.');
-        return;
-      }
-
-      // Bucket is accessible
-      setStorageStatus('available');
-      toast.success('Cloud storage is available and ready to use!');
-    } catch (error) {
-      console.warn('Storage test warning:', error instanceof Error ? error.message : String(error));
-      setStorageStatus('unavailable');
-
-      // Provide specific error messages based on error type
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('row-level security') ||
-          errorMessage.includes('permission') ||
-          errorMessage.includes('policy')) {
-        toast.info('Cloud storage requires admin setup. Using local storage (max 1MB) for now.');
-      } else {
-        toast.warning('Cloud storage not available. Logo uploads will use local storage (max 1MB).');
-      }
-    } finally {
-      setTestingStorage(false);
-    }
-  };
 
   // Test storage on component mount
   useEffect(() => {
