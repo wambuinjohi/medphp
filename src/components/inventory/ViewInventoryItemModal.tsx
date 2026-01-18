@@ -23,22 +23,32 @@ import {
 
 interface InventoryItem {
   id: string;
-  sku: string;
+  product_code?: string;
+  sku?: string;
   name: string;
   category?: {
     name: string;
   } | null;
+  product_categories?: {
+    name: string;
+  } | null;
   category_id?: string;
-  currentStock: number;
-  minStock: number;
+  stock_quantity?: number;
+  currentStock?: number;
+  minimum_stock_level?: number;
+  minStock?: number;
+  maximum_stock_level?: number;
   maxStock?: number;
-  unitPrice: string;
+  selling_price?: number;
+  unit_price?: number;
+  unitPrice?: string;
+  cost_price?: number;
   costPrice?: string;
-  totalValue: string;
   description?: string;
+  unit_of_measure?: string;
   unitOfMeasure?: string;
   lastRestocked?: string;
-  status: 'in_stock' | 'low_stock' | 'out_of_stock';
+  status?: 'in_stock' | 'low_stock' | 'out_of_stock';
 }
 
 interface ViewInventoryItemModalProps {
