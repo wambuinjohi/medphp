@@ -163,59 +163,50 @@ export default function CompanySettings() {
     }
   };
 
-  // Helper function to upload to Supabase Storage
-  const uploadToSupabaseStorage = async (file: File, companyId: string): Promise<string> => {
+  // Helper function to upload to external API
+  const uploadToExternalAPI = async (file: File, companyId: string): Promise<string> => {
+    const uploadUrl = import.meta.env.VITE_UPLOAD_URL || 'https://med.wayrus.co.ke/uploads';
+
     // Get file extension safely
     const fileNameParts = file.name.split('.');
     const ext = fileNameParts.length > 1 ? fileNameParts.pop() : 'png';
-    const filePath = `company-${companyId}/logo-${Date.now()}.${ext}`;
+    const fileName = `company-${companyId}-logo-${Date.now()}.${ext}`;
 
-    // Check if storage is available by listing buckets first
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    // Create FormData for multipart/form-data upload
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('filename', fileName);
 
-    if (bucketsError) {
-      // Handle RLS permission errors specifically
-      if (bucketsError.message.includes('row-level security') ||
-          bucketsError.message.includes('permission') ||
-          bucketsError.message.includes('policy')) {
-        throw new Error('Cloud storage requires admin permissions. Please use local storage or contact your administrator.');
-      }
-      throw new Error(`Storage not available: ${bucketsError.message}`);
-    }
-
-    const bucketName = import.meta.env.VITE_COMPANY_LOGO_BUCKET || 'company-logos';
-
-    // Upload the file directly to configured bucket
-    const { data: uploadData, error: uploadError } = await supabase
-      .storage
-      .from(bucketName)
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: true,
-        contentType: file.type
+    try {
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
       });
 
-    if (uploadError) {
-      // Handle RLS permission errors during upload
-      if (uploadError.message.includes('row-level security') ||
-          uploadError.message.includes('permission') ||
-          uploadError.message.includes('policy')) {
-        throw new Error('You don\'t have permission to upload to cloud storage. Please use local storage or contact your administrator.');
+      if (!response.ok) {
+        throw new Error(`Upload failed: HTTP ${response.status}`);
       }
-      throw new Error(`Upload failed: ${uploadError.message}`);
+
+      // Parse response - expecting { url: "https://..." } or similar
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error('Server returned invalid response format');
+      }
+
+      // Handle different response formats
+      const fileUrl = result.url || result.file_url || result.path || `${uploadUrl}/${fileName}`;
+
+      if (!fileUrl) {
+        throw new Error('No file URL returned from server');
+      }
+
+      return fileUrl;
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw error;
     }
-
-    // Get public URL
-    const { data: publicUrlData } = supabase
-      .storage
-      .from(import.meta.env.VITE_COMPANY_LOGO_BUCKET || 'company-logos')
-      .getPublicUrl(filePath);
-
-    if (!publicUrlData.publicUrl) {
-      throw new Error('Failed to get public URL for uploaded file');
-    }
-
-    return publicUrlData.publicUrl;
   };
 
   // Helper function to convert file to base64
