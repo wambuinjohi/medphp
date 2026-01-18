@@ -447,7 +447,7 @@ export const CreateLPOModal = ({
                       <div className="px-2 py-1 text-xs font-semibold text-green-600 bg-green-50 border-b">
                         ✓ Current Suppliers
                       </div>
-                      {supplierData.existing.map((supplier) => (
+                      {supplierData.existing.filter(s => s?.id).map((supplier) => (
                         <SelectItem key={supplier.id} value={supplier.id}>
                           <div className="flex items-center gap-2">
                             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
@@ -463,7 +463,7 @@ export const CreateLPOModal = ({
                       <div className="px-2 py-1 text-xs font-semibold text-orange-600 bg-orange-50 border-b border-t">
                         ⚠ Customers (Will Create Supplier Role)
                       </div>
-                      {supplierData.potential.map((customer) => (
+                      {supplierData.potential.filter(c => c?.id).map((customer) => (
                         <SelectItem key={customer.id} value={customer.id}>
                           <div className="flex items-center gap-2">
                             <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
