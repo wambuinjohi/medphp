@@ -172,24 +172,38 @@ export default function Inventory() {
     toast.success('Stock adjustment completed successfully!');
   };
 
-  // Transform products data to inventory items
-  const inventory: InventoryItem[] = products?.map(product => ({
-    ...product,
-    status: getStockStatus(product.stock_quantity || 0, product.minimum_stock_level || 0)
-  })) || [];
+  // Transform products data to inventory items - memoized to prevent recalculation
+  const inventory: InventoryItem[] = useMemo(() => {
+    return products?.map(product => ({
+      ...product,
+      status: getStockStatus(product.stock_quantity || 0, product.minimum_stock_level || 0)
+    })) || [];
+  }, [products]);
 
-  const filteredInventory = inventory.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (item.product_categories?.name && item.product_categories.name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Filter inventory based on search term - memoized
+  const filteredInventory = useMemo(() => {
+    return inventory.filter(item =>
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.product_categories?.name && item.product_categories.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [inventory, searchTerm]);
 
-  const totalValue = inventory.reduce((sum, item) => {
-    return sum + ((item.stock_quantity || 0) * (item.selling_price || 0));
-  }, 0);
+  // Calculate total inventory value - memoized
+  const totalValue = useMemo(() => {
+    return inventory.reduce((sum, item) => {
+      return sum + ((item.stock_quantity || 0) * (item.selling_price || 0));
+    }, 0);
+  }, [inventory]);
 
-  const lowStockItems = inventory.filter(item => item.status === 'low_stock').length;
-  const outOfStockItems = inventory.filter(item => item.status === 'out_of_stock').length;
+  // Calculate stock statistics - memoized
+  const lowStockItems = useMemo(() => {
+    return inventory.filter(item => item.status === 'low_stock').length;
+  }, [inventory]);
+
+  const outOfStockItems = useMemo(() => {
+    return inventory.filter(item => item.status === 'out_of_stock').length;
+  }, [inventory]);
 
   // Handle loading and error states
   if (loadingProducts) {
