@@ -206,20 +206,15 @@ export function ViewQuotationModal({
           {/* Header */}
           <div className="flex justify-between items-start">
             <div className="space-y-2">
-              {currentCompany?.logo_url ? (
-                <div className="flex items-center space-x-3">
-                  <img
-                    src={currentCompany.logo_url}
-                    alt={`${currentCompany.name} Logo`}
-                    className="h-20 w-auto object-contain"
-                    onError={(e) => {
-                      // Fallback to BiolegendLogo if company logo fails to load
-                      (e.target as HTMLImageElement).style.display = 'none';
-                      (e.target as HTMLElement).nextElementSibling?.setAttribute('style', 'display: block');
-                    }}
-                  />
-                  <BiolegendLogo size="lg" showText={true} style={{ display: 'none' }} />
-                </div>
+              {currentCompany?.logo_url && !headerLogoLoadError ? (
+                <img
+                  src={currentCompany.logo_url}
+                  alt={`${currentCompany.name} Logo`}
+                  className="h-20 w-auto object-contain"
+                  onError={() => {
+                    setHeaderLogoLoadError(true);
+                  }}
+                />
               ) : (
                 <BiolegendLogo size="lg" showText={true} />
               )}
