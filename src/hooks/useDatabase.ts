@@ -105,40 +105,75 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   const { db, isHealthy } = useDatabase();
 
   useEffect(() => {
+    let isMounted = true;
+    let timeoutHandle: NodeJS.Timeout | null = null;
+
     async function fetchData() {
       try {
-        setIsLoading(true);
-        const result = await db.select<T>(table, filter);
-        setData(result.data);
-        setError(result.error);
+        if (isMounted) {
+          setIsLoading(true);
+          setLoadingTimeout(false);
+        }
 
-        // Clear retry count on successful fetch
-        if (!result.error) {
-          setRetryCount(0);
+        // Set a 12-second timeout for the request (longer than API's 10s timeout)
+        timeoutHandle = setTimeout(() => {
+          if (isMounted) {
+            setLoadingTimeout(true);
+            setIsLoading(false);
+          }
+        }, 12000);
+
+        const result = await db.select<T>(table, filter);
+
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+
+        if (isMounted) {
+          setData(result.data);
+          setError(result.error);
+          setLoadingTimeout(false);
+
+          // Clear retry count on successful fetch
+          if (!result.error) {
+            setRetryCount(0);
+          }
         }
       } catch (err) {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+
         const error = err as Error;
         console.error(`Error fetching from ${table}:`, error);
-        setError(error);
-        setData([]);
+
+        if (isMounted) {
+          setError(error);
+          setData([]);
+          setLoadingTimeout(false);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
 
     // Try to fetch on initial load or when explicitly retried
     fetchData();
+
+    return () => {
+      isMounted = false;
+      if (timeoutHandle) clearTimeout(timeoutHandle);
+    };
   }, [db, table, filter, retryCount]);
 
   const retry = () => {
     setRetryCount(prev => prev + 1);
   };
 
-  return { data, isLoading, error, retry };
+  return { data, isLoading, error, retry, loadingTimeout };
 }
 
 /**
