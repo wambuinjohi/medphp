@@ -250,13 +250,11 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
       resetForm();
     } catch (error) {
       console.error('Error recording payment:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
 
       const errorMessage = parseErrorMessageWithCodes(error, 'payment');
 
       toast.error(errorMessage, {
-        duration: 6000,
-        description: 'Check the console for technical details'
+        duration: 6000
       });
     } finally {
       setIsSubmitting(false);
