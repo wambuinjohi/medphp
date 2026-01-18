@@ -180,7 +180,7 @@ export function EditUserModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="role">Role *</Label>
-              <Select value={formData.role} onValueChange={handleRoleChange} disabled={loading}>
+              <Select value={formData.role || ''} onValueChange={handleRoleChange} disabled={loading}>
                 <SelectTrigger className={formErrors.role ? 'border-destructive' : ''}>
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
@@ -202,7 +202,7 @@ export function EditUserModal({
 
             <div className="space-y-2">
               <Label htmlFor="status">Status *</Label>
-              <Select value={formData.status} onValueChange={handleStatusChange} disabled={loading}>
+              <Select value={formData.status || ''} onValueChange={handleStatusChange} disabled={loading}>
                 <SelectTrigger className={formErrors.status ? 'border-destructive' : ''}>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>

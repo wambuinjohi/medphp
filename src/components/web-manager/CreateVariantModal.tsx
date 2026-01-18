@@ -132,7 +132,7 @@ export const CreateVariantModal = ({
           <div className="space-y-2">
             <Label htmlFor="category">Category *</Label>
             <Select
-              value={formData.category_id}
+              value={formData.category_id || ''}
               onValueChange={(value) =>
                 setFormData((prev) => ({ ...prev, category_id: value }))
               }
