@@ -154,7 +154,8 @@ export default function Inventory() {
   };
 
   const handleModalSuccess = () => {
-    // Data will be automatically refreshed due to React Query invalidation
+    // Refetch products after successful creation
+    retryProducts();
     toast.success('Operation completed successfully!');
   };
 
