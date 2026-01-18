@@ -901,24 +901,22 @@ export const useConvertQuotationToProforma = () => {
 
   return useMutation({
     mutationFn: async (quotationId: string) => {
-      // Get quotation data
-      const { data: quotation, error: quotationError } = await supabase
-        .from('quotations')
-        .select(`
-          *,
-          quotation_items(*)
-        `)
-        .eq('id', quotationId)
-        .single();
+      const db = getDatabase();
 
-      if (quotationError) throw quotationError;
+      // Get quotation data using database adapter
+      const quotationResult = await db.selectOne('quotations', quotationId);
+      if (quotationResult.error) throw quotationResult.error;
+      if (!quotationResult.data) throw new Error('Quotation not found');
 
-      // Generate proforma number
-      const { data: proformaNumber, error: proformaNumberError } = await supabase.rpc('generate_proforma_number', {
-        company_uuid: quotation.company_id
-      });
+      const quotation = quotationResult.data as any;
 
-      if (proformaNumberError) throw proformaNumberError;
+      // Get quotation items
+      const itemsResult = await db.selectBy('quotation_items', { quotation_id: quotationId });
+      if (itemsResult.error) throw itemsResult.error;
+      const quotationItems = itemsResult.data || [];
+
+      // Generate proforma number using timestamp
+      const proformaNumber = `PROFORMA-${Date.now()}`;
 
       // Create proforma from quotation
       let createdBy: string | null = null;
@@ -946,29 +944,32 @@ export const useConvertQuotationToProforma = () => {
         created_by: createdBy
       };
 
-      let { data: proforma, error: proformaError } = await supabase
-        .from('proforma_invoices')
-        .insert([proformaData])
-        .select()
-        .single();
-
-      // Fallback: if FK violation on created_by, retry with created_by = null
-      if (proformaError && proformaError.code === '23503' && String(proformaError.message || '').includes('created_by')) {
-        const retryPayload = { ...proformaData, created_by: null };
-        const retryRes = await supabase
-          .from('proforma_invoices')
-          .insert([retryPayload])
-          .select()
-          .single();
-        proforma = retryRes.data;
-        proformaError = retryRes.error as any;
+      // Create proforma using database adapter
+      const proformaInsertResult = await db.insert('proforma_invoices', proformaData);
+      if (proformaInsertResult.error) {
+        // Fallback: if FK violation on created_by, retry with created_by = null
+        if (String(proformaInsertResult.error.message || '').includes('created_by')) {
+          const retryPayload = { ...proformaData, created_by: null };
+          const retryResult = await db.insert('proforma_invoices', retryPayload);
+          if (retryResult.error) throw retryResult.error;
+          proformaData.created_by = null;
+        } else {
+          throw proformaInsertResult.error;
+        }
       }
 
-      if (proformaError) throw proformaError;
+      if (!proformaInsertResult.id) throw new Error('Failed to create proforma: no ID returned');
+
+      // Fetch the created proforma to get full data
+      const proformaSelectResult = await db.selectOne('proforma_invoices', proformaInsertResult.id);
+      if (proformaSelectResult.error) throw proformaSelectResult.error;
+      if (!proformaSelectResult.data) throw new Error('Failed to fetch created proforma');
+
+      const proforma = proformaSelectResult.data as any;
 
       // Create proforma items from quotation items
-      if (quotation.quotation_items && quotation.quotation_items.length > 0) {
-        const proformaItems = quotation.quotation_items.map((item: any) => ({
+      if (quotationItems && quotationItems.length > 0) {
+        const proformaItems = quotationItems.map((item: any, index: number) => ({
           proforma_id: proforma.id,
           product_id: item.product_id,
           description: item.description,
@@ -979,30 +980,19 @@ export const useConvertQuotationToProforma = () => {
           tax_amount: item.tax_amount,
           tax_inclusive: item.tax_inclusive,
           line_total: item.line_total,
-          sort_order: item.sort_order
+          sort_order: item.sort_order || index + 1
         }));
 
-        let { error: itemsError } = await supabase
-          .from('proforma_items')
-          .insert(proformaItems);
-
-        if (itemsError) {
-          const msg = (itemsError.message || JSON.stringify(itemsError)).toLowerCase();
-          if (msg.includes('discount_percentage')) {
-            const minimalItems = proformaItems.map(({ discount_percentage, ...rest }) => rest);
-            const retry = await supabase.from('proforma_items').insert(minimalItems);
-            if (retry.error) throw retry.error;
-          } else {
-            throw itemsError;
-          }
-        }
+        const itemsInsertResult = await db.insertMany('proforma_items', proformaItems);
+        if (itemsInsertResult.error) throw itemsInsertResult.error;
       }
 
-      // Update quotation status
-      await supabase
-        .from('quotations')
-        .update({ status: 'converted' })
-        .eq('id', quotationId);
+      // Update quotation status using database adapter
+      const updateResult = await db.update('quotations', quotationId, { status: 'converted' });
+      if (updateResult.error) {
+        console.warn('Failed to update quotation status:', updateResult.error);
+        // Don't throw - proforma was created successfully
+      }
 
       return proforma;
     },
