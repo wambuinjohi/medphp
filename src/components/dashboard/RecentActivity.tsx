@@ -77,6 +77,9 @@ export function RecentActivity() {
   const hasError = invoicesError || paymentsError || remittancesError;
   const isLoadingTooLong = isLoading && loadingTimeout;
 
+  // Check if we have no data at all
+  const hasNoData = !invoices?.length && !payments?.length && !remittances?.length;
+
   const formatCurrency = useMemo(() => {
     return (amount: number) => {
       return new Intl.NumberFormat('en-KE', {
