@@ -68,9 +68,10 @@ export function AutoPaymentSync({ autoStart = true }: AutoPaymentSyncProps) {
       } else {
         throw new Error(result.message);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Auto payment sync setup failed:', err);
-      setError(err.message || 'Failed to set up payment synchronization');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to set up payment synchronization';
+      setError(errorMessage);
       toast.error('Payment sync setup failed. Check console for details.');
     } finally {
       setIsRunning(false);
