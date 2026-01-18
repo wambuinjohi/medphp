@@ -127,7 +127,7 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
   const handleClose = () => {
     setAdjustmentType('increase');
     setQuantity(0);
-    setReason('');
+    setReason(undefined);
     setNotes('');
     onOpenChange(false);
   };
