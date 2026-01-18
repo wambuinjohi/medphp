@@ -333,7 +333,7 @@ export const CreateDeliveryNoteModal = ({
                     .filter(inv => inv?.id)
                     .map((invoice) => (
                     <SelectItem key={invoice.id} value={invoice.id}>
-                      {invoice.invoice_number} - ${invoice.total_amount?.toFixed(2)}
+                      {invoice.invoice_number} - ${Number(invoice.total_amount || 0).toFixed(2)}
                       {invoice.invoice_items && invoice.invoice_items.length > 0 ?
                         ` (${invoice.invoice_items.length} items)` :
                         ' (no items)'
