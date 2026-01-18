@@ -164,8 +164,8 @@ export function RecentActivity() {
     );
   }
 
-  // Show empty state if loading is taking too long
-  if (isLoadingTooLong) {
+  // Show empty state if loading is taking too long OR we have no data and are no longer loading
+  if (isLoadingTooLong || (hasNoData && !isLoading && !companiesLoading)) {
     return (
       <Card className="shadow-card">
         <CardHeader>
@@ -173,9 +173,9 @@ export function RecentActivity() {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Loading activity...</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              If this takes too long, there may be no recent activity yet
+            <p className="text-muted-foreground">No recent activity</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Start creating invoices, payments, or quotations to see activity here
             </p>
           </div>
         </CardContent>
