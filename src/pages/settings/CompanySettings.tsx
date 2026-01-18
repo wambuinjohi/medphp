@@ -163,7 +163,18 @@ export default function CompanySettings() {
 
   // Helper function to upload to external API
   const uploadToExternalAPI = async (file: File, companyId: string): Promise<string> => {
-    const uploadUrl = import.meta.env.VITE_UPLOAD_URL || 'https://med.wayrus.co.ke/uploads';
+    // Determine the upload URL based on environment
+    let uploadUrl: string;
+
+    if (import.meta.env.DEV) {
+      // In development, use local/dev endpoint
+      uploadUrl = import.meta.env.VITE_UPLOAD_URL || `${window.location.origin}/api/uploads`;
+      console.log('📤 Dev mode upload URL:', uploadUrl);
+    } else {
+      // In production, use the configured endpoint
+      uploadUrl = import.meta.env.VITE_UPLOAD_URL || 'https://med.wayrus.co.ke/uploads';
+      console.log('📤 Prod mode upload URL:', uploadUrl);
+    }
 
     // Get file extension safely
     const fileNameParts = file.name.split('.');
@@ -176,10 +187,13 @@ export default function CompanySettings() {
     formData.append('filename', fileName);
 
     try {
+      console.log(`🚀 Starting upload to: ${uploadUrl}`);
       const response = await fetch(uploadUrl, {
         method: 'POST',
         body: formData,
       });
+
+      console.log(`📊 Upload response status: ${response.status}`);
 
       if (!response.ok) {
         throw new Error(`Upload failed: HTTP ${response.status}`);
@@ -200,9 +214,10 @@ export default function CompanySettings() {
         throw new Error('No file URL returned from server');
       }
 
+      console.log('✅ Upload successful. File URL:', fileUrl);
       return fileUrl;
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ Upload error:', error);
       throw error;
     }
   };
