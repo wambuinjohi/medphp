@@ -134,7 +134,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
         name: formData.name,
         product_code: formData.product_code || generateProductCode(),
         description: formData.description,
-        category_id: formData.category_id === '__none__' ? null : formData.category_id,
+        category_id: formData.category_id === '__none__' || !formData.category_id ? null : formData.category_id,
         unit_of_measure: formData.unit_of_measure,
         cost_price: formData.cost_price,
         selling_price: formData.selling_price,
