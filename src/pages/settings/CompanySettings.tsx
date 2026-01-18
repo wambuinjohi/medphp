@@ -120,23 +120,22 @@ export default function CompanySettings() {
 
     setUploading(true);
     try {
-      // Try multiple upload strategies
+      // Upload to external API
       let logoUrl: string | null = null;
 
-      // Strategy 1: Try Supabase Storage
       try {
-        logoUrl = await uploadToSupabaseStorage(file, currentCompany.id);
-        console.log('✅ Supabase storage upload successful');
-      } catch (storageError) {
-        console.warn('⚠️ Supabase storage failed:', storageError);
+        logoUrl = await uploadToExternalAPI(file, currentCompany.id);
+        console.log('✅ External API upload successful:', logoUrl);
+      } catch (uploadError) {
+        console.warn('⚠️ External API upload failed:', uploadError);
 
-        // Strategy 2: Fallback to base64 for smaller files
+        // Fallback to base64 for smaller files
         if (file.size <= 1024 * 1024) { // 1MB limit for base64
           logoUrl = await convertToBase64(file);
           console.log('✅ Base64 fallback successful');
-          toast.info('Logo saved locally (storage not available)');
+          toast.info('Logo saved locally (upload service not available)');
         } else {
-          throw new Error('File too large for local storage. Please use a smaller image or configure cloud storage.');
+          throw new Error('File too large for local storage. Please use a smaller image.');
         }
       }
 
@@ -153,24 +152,6 @@ export default function CompanySettings() {
       // Use centralized error parsing and logging for file upload
       logError(err, 'Logo Upload');
       let userMessage = getUserFriendlyMessage(err, 'Failed to upload logo');
-
-      // Add specific handling for different error types
-      if (userMessage.includes('company-logos') || userMessage.includes('bucket')) {
-        userMessage = 'Cloud storage not configured. Using local storage for smaller files (max 1MB).';
-
-        // Auto-retry with base64 for small files
-        if (file.size <= 1024 * 1024) {
-          try {
-            const base64Url = await convertToBase64(file);
-            setCompanyData(prev => ({ ...prev, logo_url: base64Url }));
-            await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: base64Url } });
-            toast.success('Logo saved locally!');
-            return;
-          } catch (base64Error) {
-            userMessage = 'Failed to save logo. Please try again with a smaller file.';
-          }
-        }
-      }
 
       toast.error(userMessage);
     } finally {
