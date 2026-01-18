@@ -275,6 +275,68 @@ function ensureTables($conn) {
 ensureTables($conn);
 
 try {
+    // File upload endpoint - supports logo and branding uploads
+    if ($action === "upload_file") {
+        if (!isset($_FILES['file'])) {
+            http_response_code(400);
+            throw new Exception("No file provided");
+        }
+
+        $file = $_FILES['file'];
+        $filename = $_POST['filename'] ?? $file['name'];
+
+        // Validate file
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("File upload error: " . $file['error']);
+        }
+
+        // Validate file type
+        $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($file['type'], $allowed_types)) {
+            throw new Exception("Invalid file type. Only images are allowed.");
+        }
+
+        // Validate file size (5MB limit)
+        if ($file['size'] > 5 * 1024 * 1024) {
+            throw new Exception("File too large. Maximum size is 5MB.");
+        }
+
+        // Create uploads directory if it doesn't exist
+        $uploads_dir = __DIR__ . '/uploads';
+        if (!is_dir($uploads_dir)) {
+            if (!mkdir($uploads_dir, 0755, true)) {
+                throw new Exception("Failed to create uploads directory");
+            }
+        }
+
+        // Generate safe filename
+        $file_ext = pathinfo($filename, PATHINFO_EXTENSION);
+        $safe_filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', pathinfo($filename, PATHINFO_FILENAME));
+        $safe_filename = $safe_filename . '-' . time() . '.' . $file_ext;
+
+        $upload_path = $uploads_dir . '/' . $safe_filename;
+
+        // Move uploaded file
+        if (!move_uploaded_file($file['tmp_name'], $upload_path)) {
+            throw new Exception("Failed to save uploaded file");
+        }
+
+        // Construct the public URL
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'];
+        $file_url = "$protocol://$host/uploads/$safe_filename";
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'File uploaded successfully',
+            'url' => $file_url,
+            'file_url' => $file_url,
+            'path' => "/uploads/$safe_filename",
+            'filename' => $safe_filename
+        ]);
+        exit();
+    }
+
     // Setup endpoint - create admin user
     if ($action === "setup") {
         $email = $_POST['email'] ?? $_GET['email'] ?? ($json_body['email'] ?? null);
