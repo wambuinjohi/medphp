@@ -26,6 +26,7 @@ export default function CompanySettings() {
   const [uploading, setUploading] = useState(false);
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [fixingCurrency, setFixingCurrency] = useState(false);
+  const [logoLoadError, setLogoLoadError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [companyData, setCompanyData] = useState({
     name: '',
@@ -146,6 +147,7 @@ export default function CompanySettings() {
 
       // Update local state & persist using existing hook
       setCompanyData(prev => ({ ...prev, logo_url: logoUrl }));
+      setLogoLoadError(false);
       await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: logoUrl } });
 
     } catch (err: any) {
@@ -701,32 +703,27 @@ export default function CompanySettings() {
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                     <span className="text-xs mt-1">Uploading...</span>
                   </div>
-                ) : companyData.logo_url ? (
+                ) : companyData.logo_url && !logoLoadError ? (
                   <img
                     src={companyData.logo_url}
                     alt="Company Logo"
                     className="w-full h-full object-contain"
-                    onError={(e) => {
+                    onError={() => {
                       console.error('Logo failed to load:', companyData.logo_url);
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      // Show fallback
-                      const parent = target.parentElement;
-                      if (parent) {
-                        parent.innerHTML = `
-                          <div class="flex flex-col items-center justify-center text-muted-foreground">
-                            <svg class="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            <span class="text-xs">Load Failed</span>
-                          </div>
-                        `;
-                      }
+                      setLogoLoadError(true);
                     }}
                     onLoad={() => {
                       console.log('Logo loaded successfully');
+                      setLogoLoadError(false);
                     }}
                   />
+                ) : logoLoadError ? (
+                  <div className="flex flex-col items-center justify-center text-muted-foreground">
+                    <svg className="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <span className="text-xs">Load Failed</span>
+                  </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center text-muted-foreground">
                     <Image className="h-6 w-6 mb-1" />
@@ -764,6 +761,7 @@ export default function CompanySettings() {
                       size="sm"
                       onClick={() => {
                         setCompanyData(prev => ({ ...prev, logo_url: '' }));
+                        setLogoLoadError(false);
                         toast.success('Logo removed. Click Save Settings to apply changes.');
                       }}
                       className="text-destructive hover:text-destructive"

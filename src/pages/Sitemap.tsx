@@ -16,17 +16,18 @@ export default function Sitemap() {
 
     const sitemapXML = generateSitemapXML(dynamicRoutes);
 
-    // Set proper content type
+    // Create a blob with proper XML content type and trigger download
     const blob = new Blob([sitemapXML], { type: 'application/xml' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = 'sitemap.xml';
 
-    // Instead of downloading, let's set the response header
-    // For a React app, we need to handle this differently
-    // Set the document content type
-    document.documentElement.innerHTML = sitemapXML;
+    // Trigger the download by simulating a click
+    link.click();
+
+    // Clean up the object URL to prevent memory leaks
+    URL.revokeObjectURL(url);
   }, [categories]);
 
   return null;

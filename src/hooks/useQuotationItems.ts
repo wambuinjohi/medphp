@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getDatabase, getDatabaseProvider } from '@/integrations/database';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { toast } from 'sonner';
 
@@ -125,9 +126,12 @@ export const useRestockProduct = () => {
 
 export const useCreateQuotationWithItems = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ quotation, items }: { quotation: any; items: QuotationItem[] }) => {
+      const db = getDatabase();
+      const provider = getDatabaseProvider();
+
       // Ensure created_by references the authenticated user to satisfy FK constraints
       let cleanQuotation = { ...quotation } as any;
       try {
@@ -144,31 +148,44 @@ export const useCreateQuotationWithItems = () => {
         }
       }
 
-      // First create the quotation
-      let quotationDataRes;
-      let quotationErrorRes;
-      {
+      // First create the quotation using the appropriate database provider
+      let quotationData: any;
+      let quotationError: any;
+
+      if (provider === 'external-api') {
+        // Use external API adapter
+        const result = await db.insert('quotations', cleanQuotation);
+        quotationError = result.error;
+        if (!quotationError && result.id) {
+          // Fetch the created quotation to get full data
+          const selectResult = await db.selectOne('quotations', result.id);
+          quotationData = selectResult.data;
+          quotationError = selectResult.error;
+        }
+      } else {
+        // Use Supabase
         const { data, error } = await supabase
           .from('quotations')
           .insert([cleanQuotation])
           .select()
           .single();
-        quotationDataRes = data; quotationErrorRes = error as any;
+        quotationData = data;
+        quotationError = error as any;
+
+        // Fallback: if FK violation on created_by, retry with created_by = null
+        if (quotationError && quotationError.code === '23503' && String(quotationError.message || '').includes('created_by')) {
+          const retryPayload = { ...cleanQuotation, created_by: null };
+          const { data: retryData, error: retryError } = await supabase
+            .from('quotations')
+            .insert([retryPayload])
+            .select()
+            .single();
+          quotationData = retryData;
+          quotationError = retryError as any;
+        }
       }
 
-      // Fallback: if FK violation on created_by, retry with created_by = null
-      if (quotationErrorRes && quotationErrorRes.code === '23503' && String(quotationErrorRes.message || '').includes('created_by')) {
-        const retryPayload = { ...cleanQuotation, created_by: null };
-        const { data: retryData, error: retryError } = await supabase
-          .from('quotations')
-          .insert([retryPayload])
-          .select()
-          .single();
-        quotationDataRes = retryData; quotationErrorRes = retryError as any;
-      }
-
-      if (quotationErrorRes) throw quotationErrorRes;
-      const quotationData = quotationDataRes;
+      if (quotationError) throw quotationError;
 
       // Then create the quotation items if any
       if (items.length > 0) {
@@ -177,14 +194,20 @@ export const useCreateQuotationWithItems = () => {
           quotation_id: quotationData.id,
           sort_order: index + 1
         }));
-        
-        const { error: itemsError } = await supabase
-          .from('quotation_items')
-          .insert(quotationItems);
-        
-        if (itemsError) throw itemsError;
+
+        if (provider === 'external-api') {
+          // Use external API adapter for bulk insert
+          const { error: itemsError } = await db.insertMany('quotation_items', quotationItems);
+          if (itemsError) throw itemsError;
+        } else {
+          // Use Supabase
+          const { error: itemsError } = await supabase
+            .from('quotation_items')
+            .insert(quotationItems);
+          if (itemsError) throw itemsError;
+        }
       }
-      
+
       return quotationData;
     },
     onSuccess: () => {
@@ -199,33 +222,59 @@ export const useUpdateQuotationWithItems = () => {
 
   return useMutation({
     mutationFn: async ({ quotationId, quotation, items }: { quotationId: string; quotation: any; items: QuotationItem[] }) => {
-      // Update the quotation
-      const { data: updatedQuotation, error: updateError } = await supabase
-        .from('quotations')
-        .update({
-          customer_id: quotation.customer_id,
-          quotation_date: quotation.quotation_date,
-          valid_until: quotation.valid_until,
-          status: quotation.status || 'draft',
-          notes: quotation.notes,
-          terms_and_conditions: quotation.terms_and_conditions,
-          subtotal: quotation.subtotal,
-          tax_amount: quotation.tax_amount,
-          total_amount: quotation.total_amount,
-        })
-        .eq('id', quotationId)
-        .select()
-        .single();
+      const db = getDatabase();
+      const provider = getDatabaseProvider();
+
+      const updateData = {
+        customer_id: quotation.customer_id,
+        quotation_date: quotation.quotation_date,
+        valid_until: quotation.valid_until,
+        status: quotation.status || 'draft',
+        notes: quotation.notes,
+        terms_and_conditions: quotation.terms_and_conditions,
+        subtotal: quotation.subtotal,
+        tax_amount: quotation.tax_amount,
+        total_amount: quotation.total_amount,
+      };
+
+      let updatedQuotation: any;
+      let updateError: any;
+
+      if (provider === 'external-api') {
+        // Use external API adapter
+        const result = await db.update('quotations', quotationId, updateData);
+        updateError = result.error;
+        if (!updateError) {
+          // Fetch the updated quotation
+          const selectResult = await db.selectOne('quotations', quotationId);
+          updatedQuotation = selectResult.data;
+          updateError = selectResult.error;
+        }
+      } else {
+        // Use Supabase
+        const { data, error } = await supabase
+          .from('quotations')
+          .update(updateData)
+          .eq('id', quotationId)
+          .select()
+          .single();
+        updatedQuotation = data;
+        updateError = error;
+      }
 
       if (updateError) throw updateError;
 
       // Delete existing quotation items
-      const { error: deleteError } = await supabase
-        .from('quotation_items')
-        .delete()
-        .eq('quotation_id', quotationId);
-
-      if (deleteError) throw deleteError;
+      if (provider === 'external-api') {
+        const { error: deleteError } = await db.deleteMany('quotation_items', { quotation_id: quotationId });
+        if (deleteError) throw deleteError;
+      } else {
+        const { error: deleteError } = await supabase
+          .from('quotation_items')
+          .delete()
+          .eq('quotation_id', quotationId);
+        if (deleteError) throw deleteError;
+      }
 
       // Insert new quotation items
       if (items.length > 0) {
@@ -243,11 +292,15 @@ export const useUpdateQuotationWithItems = () => {
           sort_order: index + 1
         }));
 
-        const { error: itemsError } = await supabase
-          .from('quotation_items')
-          .insert(quotationItems);
-
-        if (itemsError) throw itemsError;
+        if (provider === 'external-api') {
+          const { error: itemsError } = await db.insertMany('quotation_items', quotationItems);
+          if (itemsError) throw itemsError;
+        } else {
+          const { error: itemsError } = await supabase
+            .from('quotation_items')
+            .insert(quotationItems);
+          if (itemsError) throw itemsError;
+        }
       }
 
       return updatedQuotation;

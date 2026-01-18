@@ -349,7 +349,7 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
                       ) : (
                         customers?.filter(c => c?.id).map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
-                            {customer.name} ({customer.customer_code})
+                            {customer.name}{customer.customer_code ? ` (${customer.customer_code})` : ''}
                           </SelectItem>
                         ))
                       )}

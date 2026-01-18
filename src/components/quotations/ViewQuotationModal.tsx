@@ -62,6 +62,8 @@ export function ViewQuotationModal({
   onDelete
 }: ViewQuotationModalProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [headerLogoLoadError, setHeaderLogoLoadError] = useState(false);
+  const [footerLogoLoadError, setFooterLogoLoadError] = useState(false);
   const deleteQuotation = useDeleteQuotation();
 
   // Get company data for logo
@@ -204,20 +206,15 @@ export function ViewQuotationModal({
           {/* Header */}
           <div className="flex justify-between items-start">
             <div className="space-y-2">
-              {currentCompany?.logo_url ? (
-                <div className="flex items-center space-x-3">
-                  <img
-                    src={currentCompany.logo_url}
-                    alt={`${currentCompany.name} Logo`}
-                    className="h-20 w-auto object-contain"
-                    onError={(e) => {
-                      // Fallback to BiolegendLogo if company logo fails to load
-                      (e.target as HTMLImageElement).style.display = 'none';
-                      (e.target as HTMLElement).nextElementSibling?.setAttribute('style', 'display: block');
-                    }}
-                  />
-                  <BiolegendLogo size="lg" showText={true} style={{ display: 'none' }} />
-                </div>
+              {currentCompany?.logo_url && !headerLogoLoadError ? (
+                <img
+                  src={currentCompany.logo_url}
+                  alt={`${currentCompany.name} Logo`}
+                  className="h-20 w-auto object-contain"
+                  onError={() => {
+                    setHeaderLogoLoadError(true);
+                  }}
+                />
               ) : (
                 <BiolegendLogo size="lg" showText={true} />
               )}
@@ -432,19 +429,18 @@ export function ViewQuotationModal({
           {/* Footer */}
           <div className="text-center text-sm text-muted-foreground pt-6 border-t">
             <div className="mb-2 flex justify-center">
-              {currentCompany?.logo_url ? (
+              {currentCompany?.logo_url && !footerLogoLoadError ? (
                 <img
                   src={currentCompany.logo_url}
                   alt={`${currentCompany.name} Logo`}
                   className="h-12 w-auto object-contain"
-                  onError={(e) => {
-                    // Fallback to BiolegendLogo if company logo fails to load
-                    (e.target as HTMLImageElement).style.display = 'none';
-                    (e.target as HTMLElement).nextElementSibling?.setAttribute('style', 'display: block');
+                  onError={() => {
+                    setFooterLogoLoadError(true);
                   }}
                 />
-              ) : null}
-              <BiolegendLogo size="sm" showText={true} className="justify-center" style={{ display: currentCompany?.logo_url ? 'none' : 'block' }} />
+              ) : (
+                <BiolegendLogo size="sm" showText={true} className="justify-center" />
+              )}
             </div>
             <div>{currentCompany?.name || 'Your Medical & Laboratory Supplies Partner'}</div>
             {currentCompany?.business_description ? (
