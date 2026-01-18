@@ -259,12 +259,12 @@ export const ViewProformaModal = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm">Tax:</span>
-                    <span className="text-sm">${proforma.tax_amount?.toFixed(2)}</span>
+                    <span className="text-sm">${Number(proforma.tax_amount || 0).toFixed(2)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-semibold">
                     <span>Total:</span>
-                    <span>${proforma.total_amount?.toFixed(2)}</span>
+                    <span>${Number(proforma.total_amount || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </CardContent>
