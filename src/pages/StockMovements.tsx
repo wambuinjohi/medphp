@@ -113,10 +113,10 @@ export default function StockMovements() {
     return movements?.filter(movement => {
       // Search filter
       const matchesSearch =
-        movement.product?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        movement.product?.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        movement.reference_id?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-        movement.notes?.toLowerCase().includes(searchTerm.toLowerCase());
+        (movement.product?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (movement.product?.sku?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (movement.reference_id?.toString()?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (movement.notes?.toLowerCase() || '').includes(searchTerm.toLowerCase());
 
       // Movement type filter
       const matchesMovementType = movementTypeFilter === 'all' || movement.movement_type === movementTypeFilter;
