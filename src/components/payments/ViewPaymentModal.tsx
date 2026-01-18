@@ -162,7 +162,7 @@ export const ViewPaymentModal = ({
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
-                  <p className="text-sm">{payment.payment_method.replace('_', ' ')}</p>
+                  <p className="text-sm">{payment.payment_method ? payment.payment_method.replace('_', ' ') : 'Not specified'}</p>
                 </div>
               </div>
 
