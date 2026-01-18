@@ -467,13 +467,13 @@ export function useApplyCreditNoteToInvoice() {
       amount: number;
       appliedBy: string;
     }) => {
-      const { data, error } = await supabase
-        .rpc('apply_credit_note_to_invoice', {
-          credit_note_uuid: creditNoteId,
-          invoice_uuid: invoiceId,
-          amount_to_apply: amount,
-          applied_by_uuid: appliedBy
-        });
+      const db = getDatabase();
+      const { data, error } = await db.rpc('apply_credit_note_to_invoice', {
+        credit_note_uuid: creditNoteId,
+        invoice_uuid: invoiceId,
+        amount_to_apply: amount,
+        applied_by_uuid: appliedBy
+      });
 
       if (error) throw error;
       return data;
