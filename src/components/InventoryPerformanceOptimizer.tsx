@@ -68,12 +68,13 @@ export function InventoryPerformanceOptimizer() {
       } else {
         toast.warning('Manual optimization required');
       }
-    } catch (error: any) {
-      toast.error('Optimization failed', { description: error.message });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Optimization failed';
+      toast.error('Optimization failed', { description: errorMessage });
       setOptimizationResult({
         success: false,
         message: 'Optimization failed',
-        details: [error.message]
+        details: [errorMessage]
       });
     } finally {
       setIsOptimizing(false);
