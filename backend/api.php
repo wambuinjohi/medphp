@@ -105,6 +105,12 @@ $where = $_POST['where'] ?? ($_GET['where'] ?? null);
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
 
+// Debug logging for update operations
+if ($action === 'update') {
+    error_log("UPDATE DEBUG: Table: " . $table . " | Where: " . json_encode($where));
+    error_log("UPDATE DEBUG: Data count: " . count($data) . " | Data: " . json_encode($data));
+}
+
 // Handle REST-style requests from .htaccess rewrite
 $request_param = $_GET['request'] ?? null;
 if ($request_param && !$action) {
