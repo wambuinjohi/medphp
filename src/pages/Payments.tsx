@@ -385,9 +385,13 @@ export default function Payments() {
                     <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
                     <TableCell className="font-semibold text-success">{formatCurrency(payment.amount)}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={getMethodColor(payment.payment_method)}>
-                        {payment.payment_method.replace('_', ' ')}
-                      </Badge>
+                      {payment.payment_method ? (
+                        <Badge variant="outline" className={getMethodColor(payment.payment_method)}>
+                          {payment.payment_method.replace('_', ' ')}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">Unknown</Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={getStatusColor()}>
