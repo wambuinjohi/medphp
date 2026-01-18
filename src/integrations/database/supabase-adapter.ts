@@ -183,6 +183,25 @@ export class SupabaseAdapter implements IDatabase {
     }
   }
 
+  async rpc<T>(functionName: string, params?: Record<string, any>): Promise<{ data: T | null; error: Error | null }> {
+    try {
+      const { data, error } = await supabase.rpc(functionName, params || {});
+      return { data: data as T || null, error };
+    } catch (error) {
+      return { data: null, error: error as Error };
+    }
+  }
+
+  async rpcList<T>(functionName: string, params?: Record<string, any>): Promise<{ data: T[]; error: Error | null; count?: number }> {
+    try {
+      const { data, error, count } = await supabase.rpc(functionName, params || {});
+      const resultData = Array.isArray(data) ? data : [];
+      return { data: resultData as T[], error, count: count || resultData.length };
+    } catch (error) {
+      return { data: [], error: error as Error };
+    }
+  }
+
   async raw<T>(query: string, params?: any[]): Promise<ListQueryResult<T>> {
     try {
       // Supabase doesn't support raw queries directly via PostgREST
