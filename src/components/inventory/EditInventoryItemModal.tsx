@@ -163,12 +163,15 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
       return;
     }
 
+    if (!item || !item.id) {
+      toast.error('Error: Product ID is missing. Cannot update product.');
+      console.error('EditInventoryItemModal - item.id is missing', { item, formData });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      if (!item?.id) {
-        throw new Error('Product ID is missing');
-      }
 
       // Build update data with fields appropriate for the database provider
       const baseData = {
