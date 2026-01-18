@@ -151,18 +151,33 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
         throw new Error('Product ID is missing');
       }
 
-      const updatedData = {
+      // Build update data with fields appropriate for the database provider
+      const baseData = {
         name: formData.name,
-        product_code: formData.product_code,
         description: formData.description,
         category_id: formData.category_id === '__none__' ? null : formData.category_id,
         unit_of_measure: formData.unit_of_measure,
         cost_price: Number(formData.cost_price),
-        selling_price: Number(formData.selling_price),
-        stock_quantity: Number(formData.stock_quantity),
-        minimum_stock_level: Number(formData.min_stock_level),
-        maximum_stock_level: Number(formData.max_stock_level)
+        stock_quantity: Number(formData.stock_quantity)
       };
+
+      const updatedData = provider === 'external-api'
+        ? {
+            // External API field names
+            ...baseData,
+            sku: formData.product_code,
+            unit_price: Number(formData.selling_price),
+            reorder_level: Number(formData.min_stock_level),
+            status: 'active'
+          }
+        : {
+            // Supabase field names
+            ...baseData,
+            product_code: formData.product_code,
+            selling_price: Number(formData.selling_price),
+            minimum_stock_level: Number(formData.min_stock_level),
+            maximum_stock_level: Number(formData.max_stock_level)
+          };
 
       await updateProduct.mutateAsync({ id: item.id, data: updatedData });
       toast.success(`${formData.name} updated successfully!`);
