@@ -1577,6 +1577,249 @@ export function useAuditLogs(companyId?: string) {
 }
 
 // ============================================
+// Transport Management Hooks
+// ============================================
+
+/**
+ * Hook to get drivers for a company
+ */
+export function useDrivers(companyId?: string) {
+  const filter = useMemo(() => {
+    if (!companyId) return undefined;
+    return { company_id: companyId };
+  }, [companyId]);
+
+  return useSelect('drivers', filter);
+}
+
+/**
+ * Hook to create a driver
+ */
+export function useCreateDriver() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formData: {
+      name: string;
+      phone?: string;
+      license_number?: string;
+      status: 'active' | 'inactive';
+      company_id: string;
+    }) => {
+      const db = getDatabase();
+      const { data, error } = await db.insert('drivers', formData);
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drivers'] });
+    },
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to create driver');
+    },
+  });
+}
+
+/**
+ * Hook to update a driver
+ */
+export function useUpdateDriver() {
+  return useUpdate('drivers');
+}
+
+/**
+ * Hook to delete a driver
+ */
+export function useDeleteDriver() {
+  return useDelete('drivers');
+}
+
+/**
+ * Hook to get vehicles for a company
+ */
+export function useVehicles(companyId?: string) {
+  const filter = useMemo(() => {
+    if (!companyId) return undefined;
+    return { company_id: companyId };
+  }, [companyId]);
+
+  return useSelect('vehicles', filter);
+}
+
+/**
+ * Hook to create a vehicle
+ */
+export function useCreateVehicle() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formData: {
+      vehicle_number: string;
+      vehicle_type?: string;
+      capacity?: number;
+      status: 'active' | 'inactive' | 'maintenance';
+      company_id: string;
+    }) => {
+      const db = getDatabase();
+      const { data, error } = await db.insert('vehicles', formData);
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+    },
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to create vehicle');
+    },
+  });
+}
+
+/**
+ * Hook to update a vehicle
+ */
+export function useUpdateVehicle() {
+  return useUpdate('vehicles');
+}
+
+/**
+ * Hook to delete a vehicle
+ */
+export function useDeleteVehicle() {
+  return useDelete('vehicles');
+}
+
+/**
+ * Hook to get materials for a company
+ */
+export function useMaterials(companyId?: string) {
+  const filter = useMemo(() => {
+    if (!companyId) return undefined;
+    return { company_id: companyId };
+  }, [companyId]);
+
+  return useSelect('materials', filter);
+}
+
+/**
+ * Hook to create a material
+ */
+export function useCreateMaterial() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formData: {
+      name: string;
+      description?: string;
+      unit?: string;
+      status: 'active' | 'inactive';
+      company_id: string;
+    }) => {
+      const db = getDatabase();
+      const { data, error } = await db.insert('materials', formData);
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
+    },
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to create material');
+    },
+  });
+}
+
+/**
+ * Hook to update a material
+ */
+export function useUpdateMaterial() {
+  return useUpdate('materials');
+}
+
+/**
+ * Hook to delete a material
+ */
+export function useDeleteMaterial() {
+  return useDelete('materials');
+}
+
+/**
+ * Hook to get transport finance records for a company
+ */
+export function useTransportFinance(companyId?: string) {
+  const filter = useMemo(() => {
+    if (!companyId) return undefined;
+    return { company_id: companyId };
+  }, [companyId]);
+
+  return useSelect('transport_finance', filter);
+}
+
+/**
+ * Hook to create a transport finance record
+ */
+export function useCreateTransportFinance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formData: {
+      vehicle_id: string;
+      material_id: string;
+      buying_price: number;
+      fuel_cost: number;
+      driver_fees: number;
+      other_expenses: number;
+      selling_price: number;
+      profit_loss: number;
+      payment_status: 'paid' | 'unpaid' | 'pending';
+      customer_name?: string;
+      date: string;
+      company_id: string;
+    }) => {
+      const db = getDatabase();
+      const { data, error } = await db.insert('transport_finance', formData);
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transport_finance'] });
+    },
+    onError: (error) => {
+      toast.error(error?.message || 'Failed to create finance record');
+    },
+  });
+}
+
+/**
+ * Hook to update a transport finance record
+ */
+export function useUpdateTransportFinance() {
+  return useUpdate('transport_finance');
+}
+
+/**
+ * Hook to delete a transport finance record
+ */
+export function useDeleteTransportFinance() {
+  return useDelete('transport_finance');
+}
+
+// ============================================
 // Types for export
 // ============================================
 

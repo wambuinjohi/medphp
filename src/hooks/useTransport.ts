@@ -1,0 +1,19 @@
+// Re-export transport-specific hooks from useDatabase
+export {
+  useDrivers,
+  useCreateDriver,
+  useUpdateDriver,
+  useDeleteDriver,
+  useVehicles,
+  useCreateVehicle,
+  useUpdateVehicle,
+  useDeleteVehicle,
+  useMaterials,
+  useCreateMaterial,
+  useUpdateMaterial,
+  useDeleteMaterial,
+  useTransportFinance,
+  useCreateTransportFinance,
+  useUpdateTransportFinance,
+  useDeleteTransportFinance,
+} from './useDatabase';

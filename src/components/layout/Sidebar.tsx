@@ -21,7 +21,8 @@ import {
   RotateCcw,
   Database,
   TrendingUp,
-  Banknote
+  Banknote,
+  TrendingDown
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -73,6 +74,11 @@ const sidebarItems: SidebarItem[] = [
     children: [
       { title: 'Delivery Notes', icon: Truck, href: '/app/delivery-notes' }
     ]
+  },
+  {
+    title: 'Transport',
+    icon: TrendingDown,
+    href: '/app/transport'
   },
   {
     title: 'Customers',
