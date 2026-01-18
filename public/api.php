@@ -51,6 +51,10 @@ $conn->set_charset("utf8");
 
 // Utility function to escape strings
 function escape($conn, $val) {
+    // Handle arrays by JSON encoding them
+    if (is_array($val)) {
+        $val = json_encode($val);
+    }
     return $conn->real_escape_string((string)$val);
 }
 
