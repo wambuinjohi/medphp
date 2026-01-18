@@ -448,6 +448,8 @@ export default function Payments() {
         onOpenChange={setShowRecordModal}
         onSuccess={() => {
           setShowRecordModal(false);
+          // Refresh payments list to show new data
+          retryPayments();
           toast.success('Payment recorded successfully!');
         }}
         invoice={undefined} // For standalone payment recording
