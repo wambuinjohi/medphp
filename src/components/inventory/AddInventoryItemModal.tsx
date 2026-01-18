@@ -118,11 +118,11 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
       return;
     }
 
-    if (!formData.product_code.trim()) {
-      handleInputChange('product_code', generateProductCode());
+    if (!formData.sku.trim()) {
+      handleInputChange('sku', generateProductCode());
     }
 
-    if (formData.selling_price <= 0) {
+    if (formData.unit_price <= 0) {
       toast.error('Selling price must be greater than 0');
       return;
     }
