@@ -164,7 +164,7 @@ export default function CompanySettings() {
           try {
             const base64Url = await convertToBase64(file);
             setCompanyData(prev => ({ ...prev, logo_url: base64Url }));
-            await updateCompany.mutateAsync({ id: currentCompany.id, logo_url: base64Url });
+            await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: base64Url } });
             toast.success('Logo saved locally!');
             return;
           } catch (base64Error) {
