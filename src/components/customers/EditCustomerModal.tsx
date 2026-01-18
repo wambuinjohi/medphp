@@ -113,7 +113,7 @@ export function EditCustomerModal({ open, onOpenChange, onSuccess, customer }: E
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
