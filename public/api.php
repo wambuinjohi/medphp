@@ -51,6 +51,10 @@ $conn->set_charset("utf8");
 
 // Utility function to escape strings
 function escape($conn, $val) {
+    // Handle arrays by JSON encoding them
+    if (is_array($val)) {
+        $val = json_encode($val);
+    }
     return $conn->real_escape_string((string)$val);
 }
 
@@ -100,6 +104,12 @@ $data = $_POST['data'] ?? ($json_body ?? []);
 $where = $_POST['where'] ?? ($_GET['where'] ?? null);
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
+
+// Debug logging for update operations
+if ($action === 'update') {
+    error_log("UPDATE DEBUG: Table: " . $table . " | Where: " . json_encode($where));
+    error_log("UPDATE DEBUG: Data count: " . count($data) . " | Data: " . json_encode($data));
+}
 
 // Handle REST-style requests from .htaccess rewrite
 $request_param = $_GET['request'] ?? null;
@@ -513,14 +523,20 @@ try {
             $sql .= " WHERE " . $where;
         }
 
+        error_log("SQL UPDATE: " . $sql);
+
         if (!$conn->query($sql)) {
+            error_log("MySQL Error: " . $conn->error . " | SQL: " . $sql);
             throw new Exception("Update failed: " . $conn->error);
         }
+
+        $affectedRows = $conn->affected_rows;
+        error_log("Update completed - Affected rows: " . $affectedRows . " | Table: " . $table);
 
         echo json_encode([
             'status' => 'success',
             'message' => 'Record updated',
-            'affected_rows' => $conn->affected_rows
+            'affected_rows' => $affectedRows
         ]);
     }
     elseif ($action === "delete") {

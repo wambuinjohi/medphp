@@ -142,12 +142,15 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
 
       const newProduct = provider === 'external-api'
         ? {
-            // External API field names (from tableDefinitions.php)
+            // External API field names - send both unit_price and selling_price to handle both schemas
             ...baseProduct,
             sku: formData.product_code || generateProductCode(),
             unit_price: formData.selling_price,
+            selling_price: formData.selling_price,  // Also send selling_price for compatibility
             stock_quantity: formData.stock_quantity,
             reorder_level: formData.min_stock_level,
+            minimum_stock_level: formData.min_stock_level,  // Also send for compatibility
+            maximum_stock_level: formData.max_stock_level,  // Also send for compatibility
             status: 'active'
           }
         : {
