@@ -21,7 +21,7 @@ export class AuthErrorBoundary extends Component<Props, State> {
     this.state = { hasError: false, showDiagnostics: false };
   }
 
-  static getDerivedStateFromError(error: any): State {
+  static getDerivedStateFromError(error: unknown): State {
     // Ensure error.message is readable (avoid [object Object])
     try {
       const parsed = parseErrorMessage(error);
@@ -31,7 +31,7 @@ export class AuthErrorBoundary extends Component<Props, State> {
     } catch {
       // Extra safety: ensure error is properly stringified
       try {
-        const fallbackMsg = typeof error?.message === 'string' ? error.message : String(error || 'Unknown error');
+        const fallbackMsg = error instanceof Error && typeof error.message === 'string' ? error.message : String(error || 'Unknown error');
         return { hasError: true, error: new Error(fallbackMsg), showDiagnostics: false };
       } catch {
         return { hasError: true, error: new Error('An unexpected error occurred'), showDiagnostics: false };
@@ -39,7 +39,7 @@ export class AuthErrorBoundary extends Component<Props, State> {
     }
   }
 
-  componentDidCatch(error: any, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: unknown, errorInfo: React.ErrorInfo) {
     // Log a readable error message
     try {
       const parsed = parseErrorMessage(error);
