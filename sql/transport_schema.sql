@@ -244,6 +244,11 @@ CREATE POLICY transport_finance_company_isolation ON transport_finance
   USING (company_id = auth.jwt() ->> 'company_id'::text OR auth.jwt() ->> 'company_id'::text IS NULL)
   WITH CHECK (company_id = auth.jwt() ->> 'company_id'::text);
 
+-- Transport Payments RLS Policies
+CREATE POLICY transport_payments_company_isolation ON transport_payments
+  USING (company_id = auth.jwt() ->> 'company_id'::text OR auth.jwt() ->> 'company_id'::text IS NULL)
+  WITH CHECK (company_id = auth.jwt() ->> 'company_id'::text);
+
 -- ============================================
 -- AUDIT LOGGING
 -- ============================================
