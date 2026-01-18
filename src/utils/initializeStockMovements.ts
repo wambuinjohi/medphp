@@ -109,43 +109,39 @@ export async function createStockMovements(movements: Array<{
   notes?: string;
 }>) {
   try {
-    // Initialize table check
-    const initResult = await initializeStockMovements();
-    if (!initResult.success) {
-      throw initResult.error;
+    const db = getDatabase();
+
+    // Validate inputs
+    if (!Array.isArray(movements) || movements.length === 0) {
+      throw new Error('Movements array must be non-empty');
     }
 
-    // Validate movement data before inserting
-    const { validateStockMovementData } = await import('./fixStockMovementsConstraints');
-
+    // Validate each movement has required fields
     for (const movement of movements) {
-      try {
-        validateStockMovementData(movement);
-      } catch (validationError) {
-        console.error('Movement data validation failed:', validationError);
-        throw validationError;
+      if (!movement.company_id || !movement.product_id) {
+        throw new Error('Each movement must have company_id and product_id');
+      }
+      if (typeof movement.quantity !== 'number' || movement.quantity === null) {
+        throw new Error('Each movement must have a valid quantity number');
       }
     }
 
-    // Prepare all movement data
+    // Prepare all movement data with defaults
     const movementData = movements.map(movement => ({
       company_id: movement.company_id,
       product_id: movement.product_id,
-      movement_type: movement.movement_type,
-      reference_type: movement.reference_type,
-      reference_id: movement.reference_id,
-      quantity: movement.quantity,
-      cost_per_unit: movement.cost_per_unit || null,
+      movement_type: movement.movement_type || 'ADJUSTMENT',
+      reference_type: movement.reference_type || 'MANUAL',
+      reference_id: movement.reference_id || '',
+      quantity: movement.quantity ?? 0,
+      cost_per_unit: movement.cost_per_unit ?? null,
       movement_date: new Date().toISOString().split('T')[0],
-      notes: movement.notes || null,
+      notes: movement.notes ?? null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));
 
-    let { data, error } = await supabase
-      .from('stock_movements')
-      .insert(movementData)
-      .select();
+    let { data, error } = await db.insert('stock_movements', movementData);
 
     if (error) {
       console.error('Batch stock movements insert error:', error);
