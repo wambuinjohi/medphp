@@ -13,7 +13,6 @@ import { useUpdateCompany, useCreateCompany, useTaxSettings, useCreateTaxSetting
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 import { ForceTaxSettings } from '@/components/ForceTaxSettings';
-import { supabase } from '@/integrations/supabase/client';
 import { getUserFriendlyMessage, logError } from '@/utils/errorParser';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { QuickSchemaFix } from '@/components/QuickSchemaFix';
