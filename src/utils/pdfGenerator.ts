@@ -66,7 +66,6 @@ interface CompanyDetails {
   country?: string;
   phone?: string;
   email?: string;
-  tax_number?: string;
   logo_url?: string;
   primary_color?: string;
 }
