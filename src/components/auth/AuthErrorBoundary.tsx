@@ -25,9 +25,17 @@ export class AuthErrorBoundary extends Component<Props, State> {
     // Ensure error.message is readable (avoid [object Object])
     try {
       const parsed = parseErrorMessage(error);
-      return { hasError: true, error: new Error(parsed), showDiagnostics: false };
+      // Defensive check: ensure parsed is always a string and safe to use
+      const safeMessage = typeof parsed === 'string' ? parsed : String(parsed || 'Unknown error');
+      return { hasError: true, error: new Error(safeMessage), showDiagnostics: false };
     } catch {
-      return { hasError: true, error: new Error(String(error)), showDiagnostics: false };
+      // Extra safety: ensure error is properly stringified
+      try {
+        const fallbackMsg = typeof error?.message === 'string' ? error.message : String(error || 'Unknown error');
+        return { hasError: true, error: new Error(fallbackMsg), showDiagnostics: false };
+      } catch {
+        return { hasError: true, error: new Error('An unexpected error occurred'), showDiagnostics: false };
+      }
     }
   }
 
