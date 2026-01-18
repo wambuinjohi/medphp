@@ -244,7 +244,7 @@ const RemittanceAdvice = () => {
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">
-                      ${(remittance.total_payment || remittance.totalPayment || 0).toFixed(2)}
+                      ${Number(remittance.total_payment || remittance.totalPayment || 0).toFixed(2)}
                     </div>
                   </TableCell>
                   <TableCell>
