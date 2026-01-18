@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Table, 
   TableBody, 
@@ -209,25 +208,36 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
     finance.customer_name?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
+  // Get section title and description based on active tab
+  const getSectionInfo = () => {
+    switch (activeTab) {
+      case 'drivers':
+        return { title: 'Drivers', description: 'Manage and track all drivers' };
+      case 'vehicles':
+        return { title: 'Vehicles', description: 'Manage and track all vehicles' };
+      case 'materials':
+        return { title: 'Materials', description: 'Manage transport materials' };
+      case 'finance':
+        return { title: 'Finance', description: 'Track transport finance and costs' };
+      default:
+        return { title: 'Transport Management', description: 'Manage drivers, vehicles, materials, and transport finances' };
+    }
+  };
+
+  const sectionInfo = getSectionInfo();
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Transport Management</h1>
-          <p className="text-muted-foreground mt-1">Manage drivers, vehicles, materials, and transport finances</p>
+          <h1 className="text-3xl font-bold tracking-tight">{sectionInfo.title}</h1>
+          <p className="text-muted-foreground mt-1">{sectionInfo.description}</p>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="drivers">Drivers</TabsTrigger>
-          <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
-          <TabsTrigger value="materials">Materials</TabsTrigger>
-          <TabsTrigger value="finance">Finance</TabsTrigger>
-        </TabsList>
-
-        {/* Drivers Tab */}
-        <TabsContent value="drivers" className="space-y-4">
+      {/* Drivers Section */}
+      {activeTab === 'drivers' && (
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2 flex-1">
               <Search className="h-5 w-5 text-muted-foreground" />
@@ -324,10 +334,12 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+      )}
 
-        {/* Vehicles Tab */}
-        <TabsContent value="vehicles" className="space-y-4">
+      {/* Vehicles Section */}
+      {activeTab === 'vehicles' && (
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2 flex-1">
               <Search className="h-5 w-5 text-muted-foreground" />
@@ -424,10 +436,12 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+      )}
 
-        {/* Materials Tab */}
-        <TabsContent value="materials" className="space-y-4">
+      {/* Materials Section */}
+      {activeTab === 'materials' && (
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2 flex-1">
               <Search className="h-5 w-5 text-muted-foreground" />
@@ -524,10 +538,12 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
+      )}
 
-        {/* Finance Tab */}
-        <TabsContent value="finance" className="space-y-4">
+      {/* Finance Section */}
+      {activeTab === 'finance' && (
+        <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-2 flex-1">
               <Search className="h-5 w-5 text-muted-foreground" />
@@ -640,8 +656,8 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
 
       {/* Modals */}
       <CreateDriverModal 
