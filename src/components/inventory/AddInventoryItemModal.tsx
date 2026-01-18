@@ -183,15 +183,14 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
   const resetForm = () => {
     setFormData({
       name: '',
-      product_code: '',
+      sku: '',
       description: '',
       category_id: '__none__', // Always use string, never null
       unit_of_measure: 'pieces',
       cost_price: 0,
-      selling_price: 0,
+      unit_price: 0,
       stock_quantity: 0,
-      min_stock_level: 10,
-      max_stock_level: 100
+      reorder_level: 10
     });
   };
 
