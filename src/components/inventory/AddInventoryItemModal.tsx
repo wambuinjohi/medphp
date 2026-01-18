@@ -274,7 +274,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                       {categoriesLoading ? (
                         <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading categories...</div>
                       ) : categories && categories.length > 0 ? (
-                        categories.map((category) => (
+                        categories.filter(cat => cat?.id).map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                             {category.name}
                           </SelectItem>
