@@ -163,44 +163,34 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
                   <span className="text-muted-foreground">Product Code:</span>
                   <div className="font-medium flex items-center space-x-2">
                     <Barcode className="h-4 w-4" />
-                    <span>{item.sku}</span>
+                    <span>{normalizedItem.sku}</span>
                   </div>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Category:</span>
-                  <div className="font-medium">{item.category?.name || 'No category'}</div>
+                  <div className="font-medium">{normalizedItem.category?.name || 'No category'}</div>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Unit of Measure:</span>
-                  <div className="font-medium">{item.unitOfMeasure || 'pieces'}</div>
+                  <div className="font-medium">{normalizedItem.unitOfMeasure || 'pieces'}</div>
                 </div>
               </div>
 
-              {item.description && (
+              {normalizedItem.description && (
                 <div>
                   <span className="text-muted-foreground text-sm">Description:</span>
                   <div className="text-sm mt-1 p-2 bg-muted/50 rounded">
-                    {item.description}
+                    {normalizedItem.description}
                   </div>
                 </div>
               )}
 
-              {item.location && (
-                <div className="flex items-center space-x-2">
-                  <Warehouse className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <span className="text-muted-foreground text-sm">Location: </span>
-                    <span className="font-medium">{item.location}</span>
-                  </div>
-                </div>
-              )}
-
-              {item.lastRestocked && (
+              {normalizedItem.lastRestocked && (
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <span className="text-muted-foreground text-sm">Last Restocked: </span>
-                    <span className="font-medium">{new Date(item.lastRestocked).toLocaleDateString()}</span>
+                    <span className="font-medium">{new Date(normalizedItem.lastRestocked).toLocaleDateString()}</span>
                   </div>
                 </div>
               )}
