@@ -573,6 +573,8 @@ export const useCreateProformaWithItems = () => {
 
   return useMutation({
     mutationFn: async ({ proforma, items }: { proforma: any; items: any[] }) => {
+      const db = getDatabase();
+
       // Ensure created_by defaults to the authenticated user
       let cleanProforma = { ...proforma } as any;
       try {
@@ -589,31 +591,30 @@ export const useCreateProformaWithItems = () => {
         }
       }
 
-      // First create the proforma invoice
-      let proformaDataRes;
-      let proformaErrorRes;
-      {
-        const { data, error } = await supabase
-          .from('proforma_invoices')
-          .insert([cleanProforma])
-          .select()
-          .single();
-        proformaDataRes = data; proformaErrorRes = error as any;
-      }
-      if (proformaErrorRes && proformaErrorRes.code === '23503' && String(proformaErrorRes.message || '').includes('created_by')) {
-        const retryPayload = { ...cleanProforma, created_by: null };
-        const { data: retryData, error: retryError } = await supabase
-          .from('proforma_invoices')
-          .insert([retryPayload])
-          .select()
-          .single();
-        proformaDataRes = retryData; proformaErrorRes = retryError as any;
+      // Create the proforma invoice using database adapter
+      const proformaInsertResult = await db.insert('proforma_invoices', cleanProforma);
+      if (proformaInsertResult.error) {
+        // Fallback: if FK violation on created_by, retry with created_by = null
+        if (String(proformaInsertResult.error.message || '').includes('created_by')) {
+          const retryPayload = { ...cleanProforma, created_by: null };
+          const retryResult = await db.insert('proforma_invoices', retryPayload);
+          if (retryResult.error) throw retryResult.error;
+          if (!retryResult.id) throw new Error('Failed to create proforma: no ID returned');
+        } else {
+          throw proformaInsertResult.error;
+        }
       }
 
-      if (proformaErrorRes) throw proformaErrorRes;
-      const proformaData = proformaDataRes;
+      if (!proformaInsertResult.id) throw new Error('Failed to create proforma: no ID returned');
 
-      // Then create the proforma items if any
+      // Fetch the created proforma to get full data
+      const proformaSelectResult = await db.selectOne('proforma_invoices', proformaInsertResult.id);
+      if (proformaSelectResult.error) throw proformaSelectResult.error;
+      if (!proformaSelectResult.data) throw new Error('Failed to fetch created proforma');
+
+      const proformaData = proformaSelectResult.data;
+
+      // Create the proforma items if any
       if (items.length > 0) {
         const proformaItems = items.map((item, index) => ({
           proforma_id: proformaData.id,
@@ -630,20 +631,8 @@ export const useCreateProformaWithItems = () => {
           sort_order: index + 1
         }));
 
-        let { error: itemsError } = await supabase
-          .from('proforma_items')
-          .insert(proformaItems);
-
-        if (itemsError) {
-          const msg = (itemsError.message || JSON.stringify(itemsError)).toLowerCase();
-          if (msg.includes('discount_percentage')) {
-            const minimalItems = proformaItems.map(({ discount_percentage, ...rest }) => rest);
-            const retry = await supabase.from('proforma_items').insert(minimalItems);
-            if (retry.error) throw retry.error;
-          } else {
-            throw itemsError;
-          }
-        }
+        const itemsInsertResult = await db.insertMany('proforma_items', proformaItems);
+        if (itemsInsertResult.error) throw itemsInsertResult.error;
       }
 
       return proformaData;
