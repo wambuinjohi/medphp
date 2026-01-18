@@ -58,8 +58,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
   const [showCreateMethodDialog, setShowCreateMethodDialog] = useState(false);
   const [newMethodData, setNewMethodData] = useState({
     name: '',
-    code: '',
-    description: ''
+    code: ''
   });
   const [isCreatingMethod, setIsCreatingMethod] = useState(false);
   const [createdCreditNoteNumber, setCreatedCreditNoteNumber] = useState<string | null>(null);
