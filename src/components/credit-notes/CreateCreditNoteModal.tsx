@@ -438,7 +438,7 @@ export function CreateCreditNoteModal({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="reason">Reason *</Label>
-                    <Select value={reason} onValueChange={setReason}>
+                    <Select value={reason || ''} onValueChange={setReason}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select reason for credit note" />
                       </SelectTrigger>
