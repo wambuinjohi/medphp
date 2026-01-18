@@ -163,12 +163,16 @@ export default function LPOs() {
 
   const handleCreateSuccess = () => {
     setShowCreateModal(false);
+    // Refresh LPOs list to show new data
+    retryLPOs();
     toast.success('Local Purchase Order created successfully!');
   };
 
   const handleEditSuccess = () => {
     setShowEditModal(false);
     setSelectedLPO(null);
+    // Refresh LPOs list to show updated data
+    retryLPOs();
     toast.success('Local Purchase Order updated successfully!');
   };
 
