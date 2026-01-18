@@ -556,7 +556,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                     <SelectValue placeholder={methodsLoading ? "Loading..." : "Select payment method"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {paymentMethods.map((method) => (
+                    {paymentMethods.filter(m => m?.code).map((method) => (
                       <SelectItem key={method.id} value={method.code}>
                         <div className="flex items-center space-x-2">
                           {getMethodIcon(method.icon_name)}
