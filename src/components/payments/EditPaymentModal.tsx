@@ -79,8 +79,7 @@ export function EditPaymentModal({
         amount: payment.amount,
         payment_date: payment.payment_date,
         payment_method: payment.payment_method,
-        reference_number: payment.reference_number || '',
-        notes: payment.notes || ''
+        reference_number: payment.reference_number || ''
       });
       setAmountChanged(false);
     }
