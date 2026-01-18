@@ -210,7 +210,7 @@ export function ApplyCreditNoteModal({
                       No outstanding invoices for this customer
                     </div>
                   ) : (
-                    availableInvoices.map((invoice) => (
+                    availableInvoices.filter(inv => inv?.id).map((invoice) => (
                       <SelectItem key={invoice.id} value={invoice.id}>
                         <div className="flex items-center justify-between w-full">
                           <span>{invoice.invoice_number}</span>
