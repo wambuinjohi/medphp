@@ -83,6 +83,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const updateProduct = useUpdateProduct();
+  const { provider } = useDatabase();
 
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ['product_categories'],
