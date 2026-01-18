@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { AddInventoryItemModal } from '@/components/inventory/AddInventoryItemModal';
 import { EditInventoryItemModal } from '@/components/inventory/EditInventoryItemModal';
 import { ViewInventoryItemModal } from '@/components/inventory/ViewInventoryItemModal';
