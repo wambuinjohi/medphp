@@ -140,8 +140,9 @@ export async function testProformaFunction(companyId: string = '550e8400-e29b-41
 }> {
   try {
     console.log('🧪 Testing generate_proforma_number function...');
-    
-    const { data, error } = await supabase.rpc('generate_proforma_number', {
+
+    const db = getDatabase();
+    const { data, error } = await db.rpc('generate_proforma_number', {
       company_uuid: companyId
     });
 
