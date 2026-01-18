@@ -45,7 +45,7 @@ export default function DeliveryNotes() {
   // Database hooks
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: deliveryNotes, isLoading, error } = useDeliveryNotes(currentCompany?.id);
+  const { data: deliveryNotes, isLoading, error, retry: retryDeliveryNotes } = useDeliveryNotes(currentCompany?.id);
   const updateDeliveryNote = useUpdateDeliveryNote();
 
   const mappedDeliveryNotes = deliveryNotes?.map(mapDeliveryNoteForDisplay) || [];
@@ -148,6 +148,8 @@ export default function DeliveryNotes() {
 
   const handleCreateSuccess = () => {
     setShowCreateModal(false);
+    // Refresh delivery notes list to show new data
+    retryDeliveryNotes();
     toast.success('Delivery note created successfully!');
   };
 

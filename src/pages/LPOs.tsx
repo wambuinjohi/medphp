@@ -57,7 +57,7 @@ export default function LPOs() {
   // Database hooks
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: lpos, isLoading, error, refetch } = useLPOs(currentCompany?.id);
+  const { data: lpos, isLoading, error, retry: retryLPOs } = useLPOs(currentCompany?.id);
   const updateLPO = useUpdateLPO();
   const deleteLPO = useDeleteLPO();
 
@@ -163,12 +163,16 @@ export default function LPOs() {
 
   const handleCreateSuccess = () => {
     setShowCreateModal(false);
+    // Refresh LPOs list to show new data
+    retryLPOs();
     toast.success('Local Purchase Order created successfully!');
   };
 
   const handleEditSuccess = () => {
     setShowEditModal(false);
     setSelectedLPO(null);
+    // Refresh LPOs list to show updated data
+    retryLPOs();
     toast.success('Local Purchase Order updated successfully!');
   };
 

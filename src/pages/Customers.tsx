@@ -91,7 +91,7 @@ export default function Customers() {
   const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
   const activeCompanyId = currentCompany?.id || DEFAULT_COMPANY_ID;
 
-  const { data: customers, isLoading: isCustomersLoading, error } = useCustomers(activeCompanyId);
+  const { data: customers, isLoading: isCustomersLoading, error, retry: retryCustomers } = useCustomers(activeCompanyId);
   const deleteCustomer = useDeleteCustomer();
 
   const isLoading = isCompanyLoading || isCustomersLoading;
@@ -186,13 +186,15 @@ export default function Customers() {
   };
 
   const handleEditSuccess = () => {
-    // Customer list will refresh automatically due to React Query cache invalidation
     setSelectedCustomer(null);
+    // Refresh customers list to show updated data
+    retryCustomers();
   };
 
   const handleCreateSuccess = () => {
-    // Customer list will refresh automatically due to React Query cache invalidation
     setShowCreateModal(false);
+    // Refresh customers list to show new data
+    retryCustomers();
   };
 
   const handleSendEmail = (email: string) => {

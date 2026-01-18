@@ -39,7 +39,7 @@ const RemittanceAdvice = () => {
   const [selectedRemittance, setSelectedRemittance] = useState<any>(null);
 
   // Fetch live remittance advice data and company details
-  const { data: remittances = [], isLoading, error } = useRemittanceAdvice();
+  const { data: remittances = [], isLoading, error, retry: retryRemittances } = useRemittanceAdvice();
   const { data: companies = [] } = useCompanies();
 
   // Get the current company (assuming first company for now)
@@ -403,8 +403,9 @@ const RemittanceAdvice = () => {
         open={showCreateModal}
         onOpenChange={setShowCreateModal}
         onSuccess={() => {
-          // Refresh the data when a new remittance is created
-          // In a real app, this would refetch the data
+          setShowCreateModal(false);
+          // Refresh remittances list to show new data
+          retryRemittances();
           toast.success('Remittance advice created successfully!');
         }}
       />
@@ -425,6 +426,10 @@ const RemittanceAdvice = () => {
         onOpenChange={setShowEditModal}
         remittance={selectedRemittance}
         onSuccess={() => {
+          setShowEditModal(false);
+          setSelectedRemittance(null);
+          // Refresh remittances list to show updated data
+          retryRemittances();
           toast.success('Remittance advice updated successfully!');
         }}
       />

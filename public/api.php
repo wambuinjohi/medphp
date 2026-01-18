@@ -105,6 +105,20 @@ $where = $_POST['where'] ?? ($_GET['where'] ?? null);
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
 
+// Handle file uploads endpoint
+$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+$path_info = $_SERVER['PATH_INFO'] ?? '';
+$request_param_check = $_GET['request'] ?? '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' &&
+    (preg_match('/\/api\/uploads?(?:\?|$)/i', $request_uri) ||
+     preg_match('/\/uploads?(?:\?|$)/i', $path_info) ||
+     preg_match('/uploads?/i', $request_param_check)) &&
+    isset($_FILES['file'])) {
+    $action = 'upload_file';
+    error_log('🔵 File upload detected - action set to upload_file');
+}
+
 // Debug logging for update operations
 if ($action === 'update') {
     error_log("UPDATE DEBUG: Table: " . $table . " | Where: " . json_encode($where));
@@ -269,6 +283,102 @@ function ensureTables($conn) {
 ensureTables($conn);
 
 try {
+    // File upload endpoint - supports logo and branding uploads
+    if ($action === "upload_file") {
+        error_log('🎯 Processing file upload...');
+
+        if (!isset($_FILES['file'])) {
+            http_response_code(400);
+            throw new Exception("No file provided");
+        }
+
+        $file = $_FILES['file'];
+        $filename = $_POST['filename'] ?? $file['name'];
+
+        error_log('📁 File info - Name: ' . $file['name'] . ' | Size: ' . $file['size'] . ' | Type: ' . $file['type']);
+
+        // Validate file
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $error_messages = [
+                UPLOAD_ERR_INI_SIZE => 'File exceeds php.ini upload_max_filesize',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds form MAX_FILE_SIZE',
+                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                UPLOAD_ERR_EXTENSION => 'Extension not allowed',
+            ];
+            $error_msg = $error_messages[$file['error']] ?? 'Unknown upload error';
+            throw new Exception("File upload error: $error_msg");
+        }
+
+        // Validate file type
+        $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($file['type'], $allowed_types)) {
+            throw new Exception("Invalid file type. Only images are allowed. Got: " . $file['type']);
+        }
+
+        // Validate file size (5MB limit)
+        if ($file['size'] > 5 * 1024 * 1024) {
+            throw new Exception("File too large. Maximum size is 5MB. Got: " . ($file['size'] / 1024 / 1024) . "MB");
+        }
+
+        // Create uploads directory if it doesn't exist
+        $uploads_dir = __DIR__ . '/uploads';
+        if (!is_dir($uploads_dir)) {
+            error_log('📂 Creating uploads directory at: ' . $uploads_dir);
+            if (!mkdir($uploads_dir, 0755, true)) {
+                throw new Exception("Failed to create uploads directory at $uploads_dir");
+            }
+            error_log('✅ Uploads directory created');
+        } else {
+            error_log('✅ Uploads directory exists at: ' . $uploads_dir);
+        }
+
+        // Verify directory is writable
+        if (!is_writable($uploads_dir)) {
+            throw new Exception("Uploads directory is not writable. Check permissions.");
+        }
+
+        // Generate safe filename
+        $file_ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $safe_filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', pathinfo($filename, PATHINFO_FILENAME));
+        $safe_filename = $safe_filename . '-' . time() . '.' . $file_ext;
+
+        $upload_path = $uploads_dir . '/' . $safe_filename;
+
+        error_log('📝 Saving file to: ' . $upload_path);
+
+        // Move uploaded file
+        if (!move_uploaded_file($file['tmp_name'], $upload_path)) {
+            throw new Exception("Failed to save uploaded file to $upload_path");
+        }
+
+        error_log('✅ File saved successfully');
+
+        // Verify file was saved
+        if (!file_exists($upload_path)) {
+            throw new Exception("File was moved but cannot be found at $upload_path");
+        }
+
+        // Construct the public URL
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'];
+        $file_url = "$protocol://$host/uploads/$safe_filename";
+
+        error_log('🔗 File URL: ' . $file_url);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'File uploaded successfully',
+            'url' => $file_url,
+            'file_url' => $file_url,
+            'path' => "/uploads/$safe_filename",
+            'filename' => $safe_filename
+        ]);
+        exit();
+    }
+
     // Setup endpoint - create admin user
     if ($action === "setup") {
         $email = $_POST['email'] ?? $_GET['email'] ?? ($json_body['email'] ?? null);

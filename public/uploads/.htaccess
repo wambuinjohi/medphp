@@ -1,0 +1,11 @@
+# Allow direct access to uploaded files
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+    Allow from all
+    Header set Access-Control-Allow-Origin "*"
+    Header set Cache-Control "public, max-age=31536000"
+</FilesMatch>
+
+# Deny access to other file types for security
+<FilesMatch "\.(php|php3|php4|php5|phtml|shtml|phar|pht)$">
+    Deny from all
+</FilesMatch>

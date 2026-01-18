@@ -162,14 +162,16 @@ export default function Inventory() {
   const handleEditSuccess = () => {
     setShowEditModal(false);
     setSelectedItem(null);
-    // Data will be automatically refreshed due to React Query invalidation
+    // Refetch products to show updated data
+    retryProducts();
     toast.success('Item updated successfully!');
   };
 
   const handleAdjustmentSuccess = () => {
     setShowAdjustmentModal(false);
     setSelectedItem(null);
-    // Data will be automatically refreshed due to React Query invalidation
+    // Refetch products to show updated data
+    retryProducts();
     toast.success('Stock adjustment completed successfully!');
   };
 

@@ -94,7 +94,7 @@ export default function Payments() {
   // Fetch live payments data and company details
   const { data: companies = [] } = useCompanies();
   const currentCompany = companies[0];
-  const { data: payments = [], isLoading, error } = usePayments(currentCompany?.id);
+  const { data: payments = [], isLoading, error, retry: retryPayments } = usePayments(currentCompany?.id);
   const { data: invoices = [] } = useInvoices(currentCompany?.id);
   const { can: canCreatePayment, can: canViewPayment, can: canEditPayment, can: canDeletePayment, loading: permissionsLoading } = usePermissions();
 
@@ -448,6 +448,8 @@ export default function Payments() {
         onOpenChange={setShowRecordModal}
         onSuccess={() => {
           setShowRecordModal(false);
+          // Refresh payments list to show new data
+          retryPayments();
           toast.success('Payment recorded successfully!');
         }}
         invoice={undefined} // For standalone payment recording
@@ -473,6 +475,8 @@ export default function Payments() {
           setShowEditModal(false);
           setShowViewModal(false);
           setSelectedPayment(null);
+          // Refresh payments list to show updated data
+          retryPayments();
         }}
       />
 
@@ -487,6 +491,8 @@ export default function Payments() {
           setShowRecordModal(false);
           setShowEditModal(false);
           setSelectedPayment(null);
+          // Refresh payments list to show updated data
+          retryPayments();
         }}
       />
     </div>
