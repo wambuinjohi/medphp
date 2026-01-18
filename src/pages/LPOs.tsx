@@ -57,7 +57,7 @@ export default function LPOs() {
   // Database hooks
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: lpos, isLoading, error, refetch } = useLPOs(currentCompany?.id);
+  const { data: lpos, isLoading, error, retry: retryLPOs } = useLPOs(currentCompany?.id);
   const updateLPO = useUpdateLPO();
   const deleteLPO = useDeleteLPO();
 
