@@ -109,7 +109,7 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess, companyId: 
         payment_terms: 0,
         is_active: true,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating customer:', error);
       // Better formatting for Supabase errors
       try {
@@ -117,7 +117,8 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess, companyId: 
         const message = formatError(error);
         toast.error(`Failed to create customer: ${message}`);
       } catch (e) {
-        const message = error?.message ?? (error?.error ?? (typeof error === 'object' ? JSON.stringify(error) : String(error)));
+        const errorObj = error as Record<string, unknown> | null;
+        const message = errorObj?.message ?? (errorObj?.error ?? (typeof error === 'object' ? JSON.stringify(error) : String(error)));
         toast.error(`Failed to create customer: ${message}`);
       }
     } finally {
@@ -125,7 +126,7 @@ export function CreateCustomerModal({ open, onOpenChange, onSuccess, companyId: 
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
