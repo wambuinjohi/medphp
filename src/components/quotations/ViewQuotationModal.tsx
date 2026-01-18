@@ -62,6 +62,8 @@ export function ViewQuotationModal({
   onDelete
 }: ViewQuotationModalProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [headerLogoLoadError, setHeaderLogoLoadError] = useState(false);
+  const [footerLogoLoadError, setFooterLogoLoadError] = useState(false);
   const deleteQuotation = useDeleteQuotation();
 
   // Get company data for logo
