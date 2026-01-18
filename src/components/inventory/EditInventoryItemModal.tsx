@@ -152,9 +152,9 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
       return;
     }
 
-    if (!item || !item.id) {
+    if (!productId) {
       toast.error('Error: Product ID is missing. Cannot update product.');
-      console.error('EditInventoryItemModal - item.id is missing', { item, formData });
+      console.error('EditInventoryItemModal - productId is missing', { productId, formData });
       return;
     }
 
@@ -190,7 +190,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
             maximum_stock_level: Number(formData.max_stock_level)
           };
 
-      await updateProduct.mutateAsync({ id: item.id, data: updatedData });
+      await updateProduct.mutateAsync({ id: productId, data: updatedData });
       toast.success(`${formData.name} updated successfully!`);
       onSuccess();
       onOpenChange(false);
