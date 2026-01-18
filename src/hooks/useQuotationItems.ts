@@ -186,7 +186,6 @@ export const useUpdateQuotationWithItems = () => {
   return useMutation({
     mutationFn: async ({ quotationId, quotation, items }: { quotationId: string; quotation: any; items: QuotationItem[] }) => {
       const db = getDatabase();
-      const provider = getDatabaseProvider();
 
       const updateData = {
         customer_id: quotation.customer_id,
@@ -200,44 +199,20 @@ export const useUpdateQuotationWithItems = () => {
         total_amount: quotation.total_amount,
       };
 
-      let updatedQuotation: any;
-      let updateError: any;
+      // Update the quotation using the database adapter
+      const updateResult = await db.update('quotations', quotationId, updateData);
+      if (updateResult.error) throw updateResult.error;
 
-      if (provider === 'external-api') {
-        // Use external API adapter
-        const result = await db.update('quotations', quotationId, updateData);
-        updateError = result.error;
-        if (!updateError) {
-          // Fetch the updated quotation
-          const selectResult = await db.selectOne('quotations', quotationId);
-          updatedQuotation = selectResult.data;
-          updateError = selectResult.error;
-        }
-      } else {
-        // Use Supabase
-        const { data, error } = await supabase
-          .from('quotations')
-          .update(updateData)
-          .eq('id', quotationId)
-          .select()
-          .single();
-        updatedQuotation = data;
-        updateError = error;
-      }
+      // Fetch the updated quotation to get full data
+      const selectResult = await db.selectOne('quotations', quotationId);
+      if (selectResult.error) throw selectResult.error;
+      if (!selectResult.data) throw new Error('Failed to fetch updated quotation');
 
-      if (updateError) throw updateError;
+      const updatedQuotation = selectResult.data;
 
       // Delete existing quotation items
-      if (provider === 'external-api') {
-        const { error: deleteError } = await db.deleteMany('quotation_items', { quotation_id: quotationId });
-        if (deleteError) throw deleteError;
-      } else {
-        const { error: deleteError } = await supabase
-          .from('quotation_items')
-          .delete()
-          .eq('quotation_id', quotationId);
-        if (deleteError) throw deleteError;
-      }
+      const deleteResult = await db.deleteMany('quotation_items', { quotation_id: quotationId });
+      if (deleteResult.error) throw deleteResult.error;
 
       // Insert new quotation items
       if (items.length > 0) {
@@ -255,15 +230,8 @@ export const useUpdateQuotationWithItems = () => {
           sort_order: index + 1
         }));
 
-        if (provider === 'external-api') {
-          const { error: itemsError } = await db.insertMany('quotation_items', quotationItems);
-          if (itemsError) throw itemsError;
-        } else {
-          const { error: itemsError } = await supabase
-            .from('quotation_items')
-            .insert(quotationItems);
-          if (itemsError) throw itemsError;
-        }
+        const itemsResult = await db.insertMany('quotation_items', quotationItems);
+        if (itemsResult.error) throw itemsResult.error;
       }
 
       return updatedQuotation;
