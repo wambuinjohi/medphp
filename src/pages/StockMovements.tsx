@@ -442,7 +442,7 @@ export default function StockMovements() {
           <CardTitle>Movement History</CardTitle>
         </CardHeader>
         <CardContent>
-          {isMovementsLoading && (!movements || movements.length === 0) ? (
+          {isMovementsLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full" />
