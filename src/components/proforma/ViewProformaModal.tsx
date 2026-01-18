@@ -240,10 +240,10 @@ export const ViewProformaModal = ({
                         <TableCell className="font-medium">{item.product_name}</TableCell>
                         <TableCell>{item.description}</TableCell>
                         <TableCell>{item.quantity}</TableCell>
-                        <TableCell>${item.unit_price.toFixed(2)}</TableCell>
+                        <TableCell>${Number(item.unit_price || 0).toFixed(2)}</TableCell>
                         <TableCell>{item.tax_percentage}%</TableCell>
-                        <TableCell>${item.tax_amount.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">${item.line_total.toFixed(2)}</TableCell>
+                        <TableCell>${Number(item.tax_amount || 0).toFixed(2)}</TableCell>
+                        <TableCell className="text-right">${Number(item.line_total || 0).toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
