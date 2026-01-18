@@ -298,7 +298,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
 
     // Check if method with this name already exists
     const existingMethod = paymentMethods?.find(
-      method => method.name.toLowerCase() === newMethodData.name.trim().toLowerCase()
+      method => method.name && method.name.toLowerCase() === newMethodData.name.trim().toLowerCase()
     );
 
     if (existingMethod) {
