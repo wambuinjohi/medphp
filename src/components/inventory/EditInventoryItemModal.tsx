@@ -261,12 +261,12 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="product_code">Product Code *</Label>
+              <Label htmlFor="sku">SKU (Product Code) *</Label>
               <Input
-                id="product_code"
-                value={formData.product_code}
-                onChange={(e) => handleInputChange('product_code', e.target.value)}
-                placeholder="Enter product code"
+                id="sku"
+                value={formData.sku}
+                onChange={(e) => handleInputChange('sku', e.target.value)}
+                placeholder="Enter SKU"
               />
             </div>
 
@@ -349,12 +349,12 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="selling_price">Selling Price *</Label>
+                <Label htmlFor="unit_price">Selling Price *</Label>
                 <Input
-                  id="selling_price"
+                  id="unit_price"
                   type="number"
-                  value={formData.selling_price}
-                  onChange={(e) => handleInputChange('selling_price', parseFloat(e.target.value) || 0)}
+                  value={formData.unit_price}
+                  onChange={(e) => handleInputChange('unit_price', parseFloat(e.target.value) || 0)}
                   placeholder="0.00"
                   min="0"
                   step="0.01"
@@ -376,27 +376,18 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="min_stock_level">Min Stock Level</Label>
+                <Label htmlFor="reorder_level">Reorder Level (Minimum Stock)</Label>
                 <Input
-                  id="min_stock_level"
+                  id="reorder_level"
                   type="number"
-                  value={formData.min_stock_level}
-                  onChange={(e) => handleInputChange('min_stock_level', parseInt(e.target.value) || 0)}
+                  value={formData.reorder_level}
+                  onChange={(e) => handleInputChange('reorder_level', parseInt(e.target.value) || 0)}
                   placeholder="10"
                   min="0"
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="max_stock_level">Max Stock Level</Label>
-                <Input
-                  id="max_stock_level"
-                  type="number"
-                  value={formData.max_stock_level}
-                  onChange={(e) => handleInputChange('max_stock_level', parseInt(e.target.value) || 0)}
-                  placeholder="100"
-                  min="0"
-                />
+                <p className="text-xs text-muted-foreground">
+                  You'll be notified when stock falls below this level
+                </p>
               </div>
             </div>
           </div>
