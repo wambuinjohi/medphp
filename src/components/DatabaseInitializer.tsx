@@ -9,11 +9,21 @@ import { createSuperAdmin } from '@/utils/createSuperAdmin';
 import { ManualSQLSetup } from '@/components/ManualSQLSetup';
 import { toast } from 'sonner';
 
+interface AdminCredentials {
+  email?: string;
+  password?: string;
+  [key: string]: unknown;
+}
+
+interface DatabaseStatus {
+  [key: string]: unknown;
+}
+
 export function DatabaseInitializer() {
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
   const [adminCreated, setAdminCreated] = useState(false);
-  const [adminCredentials, setAdminCredentials] = useState<any>(null);
-  const [databaseStatus, setDatabaseStatus] = useState<any>(null);
+  const [adminCredentials, setAdminCredentials] = useState<AdminCredentials | null>(null);
+  const [databaseStatus, setDatabaseStatus] = useState<DatabaseStatus | null>(null);
 
   const checkDatabaseStatus = async () => {
     try {
