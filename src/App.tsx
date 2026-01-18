@@ -27,6 +27,7 @@ import CreditNotes from "./pages/CreditNotes";
 import Suppliers from "./pages/Suppliers";
 import StockMovements from "./pages/StockMovements";
 import WebManager from "./pages/WebManager";
+import Transport from "./pages/Transport";
 import NotFound from "./pages/NotFound";
 import PaymentSynchronizationPage from "./pages/PaymentSynchronization";
 import OptimizedInventory from "./pages/OptimizedInventory";
