@@ -7,10 +7,8 @@ import { getDatabase } from '@/integrations/database';
 export async function initializeStockMovements() {
   try {
     // First check if the table exists by trying a simple query
-    const { error: checkError } = await supabase
-      .from('stock_movements')
-      .select('id')
-      .limit(1);
+    const db = getDatabase();
+    const { error: checkError } = await db.select('stock_movements', { limit: 1 });
 
     // If table doesn't exist, we'll get a specific error
     if (checkError && checkError.code === 'PGRST116') {
