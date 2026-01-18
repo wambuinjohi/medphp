@@ -147,6 +147,7 @@ export default function CompanySettings() {
 
       // Update local state & persist using existing hook
       setCompanyData(prev => ({ ...prev, logo_url: logoUrl }));
+      setLogoLoadError(false);
       await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: logoUrl } });
 
     } catch (err: any) {
