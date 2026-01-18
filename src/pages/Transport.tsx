@@ -756,8 +756,8 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
       />
       
       {selectedFinance && (
-        <EditTransportFinanceModal 
-          open={showEditFinanceModal} 
+        <EditTransportFinanceModal
+          open={showEditFinanceModal}
           onOpenChange={setShowEditFinanceModal}
           finance={selectedFinance}
           onSuccess={() => {
@@ -771,6 +771,18 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
           materials={materials || []}
         />
       )}
+
+      <RecordTripPaymentModal
+        open={showPaymentModal}
+        onOpenChange={setShowPaymentModal}
+        onSuccess={() => {
+          retryFinances();
+          setShowPaymentModal(false);
+          setSelectedTripForPayment(null);
+        }}
+        trip={selectedTripForPayment}
+        companyId={activeCompanyId}
+      />
     </div>
   );
 }
