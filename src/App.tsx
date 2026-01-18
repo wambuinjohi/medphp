@@ -316,6 +316,14 @@ const App = () => {
                   }
                 />
                 <Route
+                  path="/app/settings/payment-methods"
+                  element={
+                    <ProtectedRoute>
+                      <PaymentMethods />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/app/settings/database-roles"
                   element={
                     <ProtectedRoute requiredRole="admin">
