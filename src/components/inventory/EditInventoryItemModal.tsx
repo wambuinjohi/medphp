@@ -253,6 +253,12 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
           </DialogDescription>
         </DialogHeader>
 
+        {/* Debug: Display Product ID */}
+        <div className="mb-4 p-3 bg-muted rounded text-sm">
+          <span className="text-muted-foreground">Product ID: </span>
+          <span className="font-mono font-semibold">{productId || 'NOT SET'}</span>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="space-y-2">
