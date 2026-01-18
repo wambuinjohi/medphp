@@ -129,37 +129,20 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
 
     setIsSubmitting(true);
     try {
-      // Build product data with fields appropriate for the database provider
-      const baseProduct = {
+      // Build product data aligned to schema
+      const newProduct = {
         company_id: currentCompany.id,
         name: formData.name,
         description: formData.description,
         category_id: formData.category_id === '__none__' || !formData.category_id ? null : formData.category_id,
+        sku: formData.sku || generateProductCode(),
         unit_of_measure: formData.unit_of_measure,
         cost_price: formData.cost_price,
+        unit_price: formData.unit_price,
+        stock_quantity: formData.stock_quantity,
+        reorder_level: formData.reorder_level,
+        status: 'active'
       };
-
-      const newProduct = provider === 'external-api'
-        ? {
-            // External API field names - only reference unit_price when communicating with the backend
-            ...baseProduct,
-            sku: formData.product_code || generateProductCode(),
-            unit_price: formData.selling_price,
-            stock_quantity: formData.stock_quantity,
-            reorder_level: formData.min_stock_level,
-            status: 'active'
-          }
-        : {
-            // Supabase field names
-            ...baseProduct,
-            product_code: formData.product_code || generateProductCode(),
-            selling_price: formData.selling_price,
-            stock_quantity: formData.stock_quantity,
-            minimum_stock_level: formData.min_stock_level,
-            maximum_stock_level: formData.max_stock_level,
-            is_active: true,
-            track_inventory: true
-          };
 
       await createProduct.mutateAsync(newProduct);
 
