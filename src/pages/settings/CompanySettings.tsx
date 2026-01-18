@@ -761,6 +761,7 @@ export default function CompanySettings() {
                       size="sm"
                       onClick={() => {
                         setCompanyData(prev => ({ ...prev, logo_url: '' }));
+                        setLogoLoadError(false);
                         toast.success('Logo removed. Click Save Settings to apply changes.');
                       }}
                       className="text-destructive hover:text-destructive"
