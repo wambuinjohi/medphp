@@ -375,13 +375,13 @@ const RemittanceAdvice = () => {
                         {item.invoiceNumber || item.creditNote}
                       </TableCell>
                       <TableCell className="text-right">
-                        {item.invoiceAmount ? `$${(item.invoiceAmount || 0).toFixed(2)}` : ''}
+                        {item.invoiceAmount ? `$${Number(item.invoiceAmount || 0).toFixed(2)}` : ''}
                       </TableCell>
                       <TableCell className="text-right">
-                        {item.creditAmount ? `$${(item.creditAmount || 0).toFixed(2)}` : ''}
+                        {item.creditAmount ? `$${Number(item.creditAmount || 0).toFixed(2)}` : ''}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        ${(item.payment || 0).toFixed(2)}
+                        ${Number(item.payment || 0).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}
