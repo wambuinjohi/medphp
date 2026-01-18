@@ -255,7 +255,8 @@ export async function ensureProformaSchema() {
   `;
 
   try {
-    const { error } = await supabase.rpc('exec_sql', { sql: SQL });
+    const db = getDatabase();
+    const { error } = await db.rpc('exec_sql', { sql: SQL });
     if (error) throw error;
     return { success: true };
   } catch (error) {
