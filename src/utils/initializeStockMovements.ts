@@ -42,13 +42,24 @@ export async function createStockMovement(movement: {
   notes?: string;
 }) {
   try {
+    const db = getDatabase();
+
+    // Validate input
+    if (!movement.company_id || !movement.product_id) {
+      throw new Error('Missing required fields: company_id and product_id are required');
+    }
+
+    if (typeof movement.quantity !== 'number' || movement.quantity === null) {
+      throw new Error('Invalid quantity: must be a number');
+    }
+
     // Prepare the movement data with all required fields
     const movementData = {
       company_id: movement.company_id,
       product_id: movement.product_id,
-      movement_type: movement.movement_type,
-      reference_type: movement.reference_type,
-      reference_id: movement.reference_id,
+      movement_type: movement.movement_type || 'ADJUSTMENT',
+      reference_type: movement.reference_type || 'MANUAL',
+      reference_id: movement.reference_id || '',
       quantity: movement.quantity,
       cost_per_unit: movement.cost_per_unit || null,
       movement_date: new Date().toISOString().split('T')[0],
@@ -57,10 +68,7 @@ export async function createStockMovement(movement: {
       updated_at: new Date().toISOString()
     };
 
-    const { data, error } = await supabase
-      .from('stock_movements')
-      .insert([movementData])
-      .select();
+    const { data, error } = await db.insert('stock_movements', [movementData]);
 
     if (error) {
       console.error('Stock movement insert error:', error);
