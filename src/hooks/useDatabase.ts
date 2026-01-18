@@ -1306,10 +1306,16 @@ export function useDashboardStats(companyId?: string) {
   const isAnyLoading = false; // We'll just check if data exists
 
   useEffect(() => {
+    // Helper function to safely convert to number
+    const toNumber = (value: any): number => {
+      const num = Number(value);
+      return isNaN(num) ? 0 : num;
+    };
+
     // Calculate aggregated statistics from the fetched data
     const totalRevenue = (invoices || [])
       .filter((inv: any) => inv.status !== 'cancelled')
-      .reduce((sum: number, inv: any) => sum + (inv.total_amount || 0), 0);
+      .reduce((sum: number, inv: any) => sum + toNumber(inv.total_amount), 0);
 
     const totalInvoices = (invoices || [])
       .filter((inv: any) => inv.status !== 'cancelled')
@@ -1324,11 +1330,11 @@ export function useDashboardStats(companyId?: string) {
     const productCount = (products || []).length;
 
     const lowStockProducts = (products || [])
-      .filter((prod: any) => (prod.stock_quantity || 0) < (prod.reorder_level || 10))
+      .filter((prod: any) => toNumber(prod.stock_quantity) < (toNumber(prod.reorder_level) || 10))
       .length;
 
     const totalPayments = (payments || [])
-      .reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0);
+      .reduce((sum: number, payment: any) => sum + toNumber(payment.amount), 0);
 
     const calculatedStats = {
       totalRevenue,
