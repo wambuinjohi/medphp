@@ -57,68 +57,91 @@ export function RecentActivity() {
   const { data: payments, isLoading: paymentsLoading, error: paymentsError } = usePayments(currentCompany?.id);
   const { data: remittances, isLoading: remittancesLoading, error: remittancesError } = useRemittanceAdvice(currentCompany?.id);
 
+  // Timeout handling - if loading for more than 5 seconds, show empty state
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+
+  useEffect(() => {
+    if (!invoicesLoading && !paymentsLoading && !remittancesLoading) {
+      setLoadingTimeout(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setLoadingTimeout(true);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [invoicesLoading, paymentsLoading, remittancesLoading]);
+
   const isLoading = invoicesLoading || paymentsLoading || remittancesLoading;
   const hasError = invoicesError || paymentsError || remittancesError;
+  const isLoadingTooLong = isLoading && loadingTimeout;
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
+  const formatCurrency = useMemo(() => {
+    return (amount: number) => {
+      return new Intl.NumberFormat('en-KE', {
+        style: 'currency',
+        currency: 'KES',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(amount);
+    };
+  }, []);
 
-  // Combine all activities
-  const activities: Activity[] = [];
+  // Combine all activities - memoized to prevent unnecessary recalculation
+  const activities: Activity[] = useMemo(() => {
+    const combined: Activity[] = [];
 
-  // Add invoices
-  if (invoices) {
-    invoices.slice(0, 3).forEach(invoice => {
-      activities.push({
-        id: `invoice-${invoice.id}`,
-        type: 'invoice',
-        title: `Invoice ${invoice.invoice_number}`,
-        customer: invoice.customers?.name || 'Unknown Customer',
-        amount: formatCurrency(invoice.total_amount || 0),
-        status: invoice.status as Activity['status'],
-        timestamp: new Date(invoice.created_at || '')
+    // Add invoices
+    if (invoices) {
+      invoices.slice(0, 3).forEach(invoice => {
+        combined.push({
+          id: `invoice-${invoice.id}`,
+          type: 'invoice',
+          title: `Invoice ${invoice.invoice_number}`,
+          customer: invoice.customers?.name || 'Unknown Customer',
+          amount: formatCurrency(invoice.total_amount || 0),
+          status: invoice.status as Activity['status'],
+          timestamp: new Date(invoice.created_at || '')
+        });
       });
-    });
-  }
+    }
 
-  // Add payments
-  if (payments) {
-    payments.slice(0, 2).forEach(payment => {
-      activities.push({
-        id: `payment-${payment.id}`,
-        type: 'payment',
-        title: `Payment ${payment.payment_number}`,
-        customer: payment.customers?.name || 'Unknown Customer',
-        amount: formatCurrency(payment.amount || 0),
-        status: 'completed',
-        timestamp: new Date(payment.created_at || '')
+    // Add payments
+    if (payments) {
+      payments.slice(0, 2).forEach(payment => {
+        combined.push({
+          id: `payment-${payment.id}`,
+          type: 'payment',
+          title: `Payment ${payment.payment_number}`,
+          customer: payment.customers?.name || 'Unknown Customer',
+          amount: formatCurrency(payment.amount || 0),
+          status: 'completed',
+          timestamp: new Date(payment.created_at || '')
+        });
       });
-    });
-  }
+    }
 
-  // Add remittance advice
-  if (remittances) {
-    remittances.slice(0, 1).forEach(remittance => {
-      activities.push({
-        id: `remittance-${remittance.id}`,
-        type: 'remittance',
-        title: `Remittance ${remittance.advice_number}`,
-        customer: remittance.customers?.name || 'Unknown Customer',
-        amount: formatCurrency(remittance.total_payment || 0),
-        status: remittance.status as Activity['status'],
-        timestamp: new Date(remittance.created_at || '')
+    // Add remittance advice
+    if (remittances) {
+      remittances.slice(0, 1).forEach(remittance => {
+        combined.push({
+          id: `remittance-${remittance.id}`,
+          type: 'remittance',
+          title: `Remittance ${remittance.advice_number}`,
+          customer: remittance.customers?.name || 'Unknown Customer',
+          amount: formatCurrency(remittance.total_payment || 0),
+          status: remittance.status as Activity['status'],
+          timestamp: new Date(remittance.created_at || '')
+        });
       });
-    });
-  }
+    }
 
-  // Sort by timestamp (most recent first)
-  activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    // Sort by timestamp (most recent first)
+    combined.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    return combined;
+  }, [invoices, payments, remittances, formatCurrency]);
 
   if (hasError && !isLoading) {
     return (
