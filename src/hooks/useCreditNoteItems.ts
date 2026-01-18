@@ -240,13 +240,17 @@ export function useUpdateCreditNoteWithItems() {
               console.error('Error creating reverse movements:', reverseError);
             } else {
               // Update product stock for reversals
+              const db = getDatabase();
               for (const movement of reverseMovements) {
                 try {
-                  await supabase.rpc('update_product_stock', {
+                  const { error: stockError } = await db.rpc('update_product_stock', {
                     product_uuid: movement.product_id,
                     movement_type: movement.movement_type,
                     quantity: Math.abs(movement.quantity)
                   });
+                  if (stockError) {
+                    throw stockError;
+                  }
                 } catch (stockUpdateError) {
                   console.error('Error updating product stock (reversal):', stockUpdateError);
                 }
