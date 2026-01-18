@@ -280,10 +280,6 @@ export default function CompanySettings() {
       errors.push('Currency code must be 3 characters or less');
     }
 
-    // Fiscal year validation
-    if (data.fiscal_year_start && (data.fiscal_year_start < 1 || data.fiscal_year_start > 12)) {
-      errors.push('Fiscal year start must be between 1 and 12');
-    }
 
     return errors;
   };
