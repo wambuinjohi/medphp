@@ -59,7 +59,11 @@ function getStatusColor() {
   return 'bg-success-light text-success border-success/20'; // All payments are completed when recorded
 }
 
-function getMethodColor(method: string) {
+function getMethodColor(method?: string) {
+  if (!method) {
+    return 'bg-muted text-muted-foreground border-muted-foreground/20';
+  }
+
   switch (method) {
     case 'cash':
       return 'bg-success-light text-success border-success/20';
@@ -161,9 +165,9 @@ export default function Payments() {
   // Removed inline PDF generation function - now using utility function
 
   const filteredPayments = payments.filter(payment =>
-    payment.customers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    payment.payment_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    payment.payment_allocations?.some(alloc => alloc.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()))
+    (payment.customers?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (payment.payment_number?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    payment.payment_allocations?.some(alloc => (alloc.invoice_number?.toLowerCase() || '').includes(searchTerm.toLowerCase()))
   );
 
   if (isLoading) {
@@ -239,16 +243,16 @@ export default function Payments() {
   // Calculate stats from live data
   const totalReceivedToday = payments
     .filter(p => new Date(p.payment_date).toDateString() === new Date().toDateString())
-    .reduce((sum, p) => sum + p.amount, 0);
-  
+    .reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0);
+
   const totalThisMonth = payments
     .filter(p => {
       const paymentDate = new Date(p.payment_date);
       const now = new Date();
       return paymentDate.getMonth() === now.getMonth() && paymentDate.getFullYear() === now.getFullYear();
     })
-    .reduce((sum, p) => sum + p.amount, 0);
-  
+    .reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0);
+
   const completedThisMonth = payments
     .filter(p => {
       const paymentDate = new Date(p.payment_date);
@@ -385,9 +389,13 @@ export default function Payments() {
                     <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
                     <TableCell className="font-semibold text-success">{formatCurrency(payment.amount)}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={getMethodColor(payment.payment_method)}>
-                        {payment.payment_method.replace('_', ' ')}
-                      </Badge>
+                      {payment.payment_method ? (
+                        <Badge variant="outline" className={getMethodColor(payment.payment_method)}>
+                          {payment.payment_method.replace('_', ' ')}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">Unknown</Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={getStatusColor()}>

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -34,6 +35,7 @@ import {
   RefreshCw,
   Package,
   Calendar,
+  AlertCircle,
 } from 'lucide-react';
 import { useStockMovements, useProducts } from '@/hooks/useDatabase';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
@@ -103,20 +105,21 @@ export default function StockMovements() {
   const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
   const activeCompanyId = currentCompany?.id || DEFAULT_COMPANY_ID;
 
-  const { data: movements, isLoading: isMovementsLoading, error } = useStockMovements(activeCompanyId);
-  const { data: products, isLoading: isProductsLoading } = useProducts(activeCompanyId);
+  const { data: movements = [], isLoading: isMovementsLoading, error } = useStockMovements(activeCompanyId);
+  const { data: products = [], isLoading: isProductsLoading } = useProducts(activeCompanyId);
 
-  const isLoading = isCompanyLoading || isMovementsLoading || isProductsLoading;
+  // Only show loading if data is actually being fetched AND we have no data yet
+  const isLoading = (isMovementsLoading || isProductsLoading) && (!movements || !products);
 
   // Filter and search logic
   const filteredMovements = useMemo(() => {
     return movements?.filter(movement => {
       // Search filter
       const matchesSearch =
-        movement.product?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        movement.product?.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        movement.reference_id?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-        movement.notes?.toLowerCase().includes(searchTerm.toLowerCase());
+        (movement.product?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (movement.product?.sku?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (movement.reference_id?.toString()?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (movement.notes?.toLowerCase() || '').includes(searchTerm.toLowerCase());
 
       // Movement type filter
       const matchesMovementType = movementTypeFilter === 'all' || movement.movement_type === movementTypeFilter;
@@ -146,12 +149,20 @@ export default function StockMovements() {
 
   // Calculate totals
   const totals = useMemo(() => {
-    const inTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'in' ? sum + (m.quantity || 0) : sum, 0);
-    const outTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'out' ? sum + (m.quantity || 0) : sum, 0);
-    const adjustmentTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'adjustment' ? sum + Math.abs(m.quantity || 0) : sum, 0);
-    const costTotal = filteredMovements.reduce((sum, m) => sum + ((m.cost_per_unit || 0) * (m.quantity || 0)), 0);
+    if (!filteredMovements || filteredMovements.length === 0) {
+      return { inTotal: 0, outTotal: 0, adjustmentTotal: 0, costTotal: 0 };
+    }
 
-    return { inTotal, outTotal, adjustmentTotal, costTotal };
+    const inTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'in' ? sum + (typeof m.quantity === 'number' ? m.quantity : 0) : sum, 0);
+    const outTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'out' ? sum + (typeof m.quantity === 'number' ? m.quantity : 0) : sum, 0);
+    const adjustmentTotal = filteredMovements.reduce((sum, m) => m.movement_type === 'adjustment' ? sum + Math.abs(typeof m.quantity === 'number' ? m.quantity : 0) : sum, 0);
+    const costTotal = filteredMovements.reduce((sum, m) => {
+      const cost = typeof m.cost_per_unit === 'number' ? m.cost_per_unit : 0;
+      const qty = typeof m.quantity === 'number' ? m.quantity : 0;
+      return sum + (cost * qty);
+    }, 0);
+
+    return { inTotal: Number(inTotal) || 0, outTotal: Number(outTotal) || 0, adjustmentTotal: Number(adjustmentTotal) || 0, costTotal: Number(costTotal) || 0 };
   }, [filteredMovements]);
 
   const [showFilters, setShowFilters] = useState(false);
@@ -263,6 +274,26 @@ export default function StockMovements() {
           Export CSV
         </Button>
       </div>
+
+      {/* Error Alert */}
+      {error && (
+        <Alert className="border-destructive bg-destructive/10 border-destructive/30">
+          <AlertCircle className="h-4 w-4 text-destructive" />
+          <AlertDescription className="text-destructive">
+            <strong>Error loading stock movements:</strong> {error.message || 'Failed to fetch data. Please try again.'}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Empty State Alert */}
+      {!isLoading && !error && (!movements || movements.length === 0) && (
+        <Alert className="border-warning bg-warning/10 border-warning/30">
+          <AlertCircle className="h-4 w-4 text-warning" />
+          <AlertDescription className="text-warning">
+            <strong>No stock movements found</strong> - You haven't recorded any inventory movements yet. Start tracking movements by creating stock adjustments, receiving shipments, or shipping orders.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -421,7 +452,16 @@ export default function StockMovements() {
           <CardTitle>Movement History</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {error ? (
+            <div className="text-center py-8">
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <p className="text-lg font-medium text-foreground mb-2">Failed to load stock movements</p>
+              <p className="text-muted-foreground text-sm mb-4">{error.message || 'An error occurred while fetching data.'}</p>
+              <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </div>
+          ) : isMovementsLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full" />
@@ -430,7 +470,8 @@ export default function StockMovements() {
           ) : filteredMovements.length === 0 ? (
             <div className="text-center py-8">
               <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No stock movements found</p>
+              <p className="text-lg font-medium text-foreground mb-2">No stock movements recorded</p>
+              <p className="text-muted-foreground">No movements match your current filters. Try adjusting your search or filter criteria.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -459,7 +500,7 @@ export default function StockMovements() {
                       <TableCell className="font-mono text-sm">{movement.product?.sku || '-'}</TableCell>
                       <TableCell>{getMovementTypeBadge(movement.movement_type)}</TableCell>
                       <TableCell>{getReferenceTypeBadge(movement.reference_type)}</TableCell>
-                      <TableCell className="text-right font-medium">{movement.quantity?.toFixed(2) || 0}</TableCell>
+                      <TableCell className="text-right font-medium">{typeof movement.quantity === 'number' ? movement.quantity.toFixed(2) : '0.00'}</TableCell>
                       <TableCell className="text-right">{movement.cost_per_unit ? formatCurrency(movement.cost_per_unit) : '-'}</TableCell>
                       <TableCell className="text-right">{formatCurrency((movement.cost_per_unit || 0) * (movement.quantity || 0))}</TableCell>
                       <TableCell className="text-sm text-muted-foreground max-w-xs truncate">{movement.notes || '-'}</TableCell>

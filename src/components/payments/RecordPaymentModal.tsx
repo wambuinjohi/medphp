@@ -298,7 +298,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
 
     // Check if method with this name already exists
     const existingMethod = paymentMethods?.find(
-      method => method.name.toLowerCase() === newMethodData.name.trim().toLowerCase()
+      method => method.name && method.name.toLowerCase() === newMethodData.name.trim().toLowerCase()
     );
 
     if (existingMethod) {
@@ -533,18 +533,30 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                   </Button>
                 </div>
                 <Select value={paymentData.payment_method || ''} onValueChange={(value) => handleInputChange('payment_method', value)}>
-                  <SelectTrigger disabled={methodsLoading}>
-                    <SelectValue placeholder={methodsLoading ? "Loading..." : "Select payment method"} />
+                  <SelectTrigger disabled={paymentMethods.length === 0 && !methodsLoading}>
+                    <SelectValue
+                      placeholder={methodsLoading ? "Loading payment methods..." : (paymentMethods.length === 0 ? "No methods available" : "Select payment method")}
+                    >
+                      {paymentData.payment_method ? (
+                        paymentMethods.find(m => m.code === paymentData.payment_method)?.name || paymentData.payment_method
+                      ) : null}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {paymentMethods.filter(m => m?.code).map((method) => (
-                      <SelectItem key={method.id} value={method.code}>
-                        <div className="flex items-center space-x-2">
-                          {getMethodIcon(method.icon_name)}
-                          <span>{method.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {paymentMethods.length > 0 ? (
+                      paymentMethods.filter(m => m?.code).map((method) => (
+                        <SelectItem key={method.id} value={method.code}>
+                          <div className="flex items-center space-x-2">
+                            {getMethodIcon(method.icon_name)}
+                            <span>{method.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                        {methodsLoading ? "Loading payment methods..." : "No payment methods available"}
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
                 {paymentMethods.length === 0 && !methodsLoading && (
@@ -605,15 +617,17 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                           <span className="font-semibold text-warning">{formatCurrency(creditNoteAmount)}</span>
                         </div>
                       )}
-                      <div className="flex justify-between">
-                        <span>Payment Method:</span>
-                        <div className="flex items-center space-x-1">
-                          {getMethodIcon(paymentData.payment_method)}
-                          <span className="font-semibold capitalize">
-                            {paymentData.payment_method.replace('_', ' ')}
-                          </span>
+                      {paymentData.payment_method && (
+                        <div className="flex justify-between">
+                          <span>Payment Method:</span>
+                          <div className="flex items-center space-x-1">
+                            {getMethodIcon(paymentData.payment_method)}
+                            <span className="font-semibold capitalize">
+                              {paymentData.payment_method.replace('_', ' ')}
+                            </span>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 );

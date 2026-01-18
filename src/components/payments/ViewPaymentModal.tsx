@@ -63,7 +63,11 @@ export const ViewPaymentModal = ({
 }: ViewPaymentModalProps) => {
   if (!payment) return null;
 
-  const getPaymentMethodBadge = (method: string) => {
+  const getPaymentMethodBadge = (method?: string) => {
+    if (!method) {
+      return <Badge variant="secondary">Unknown</Badge>;
+    }
+
     switch (method.toLowerCase()) {
       case 'cash':
         return <Badge variant="destructive"><DollarSign className="h-3 w-3 mr-1" />Cash</Badge>;
@@ -158,7 +162,7 @@ export const ViewPaymentModal = ({
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Payment Method</p>
-                  <p className="text-sm">{payment.payment_method.replace('_', ' ')}</p>
+                  <p className="text-sm">{payment.payment_method ? payment.payment_method.replace('_', ' ') : 'Not specified'}</p>
                 </div>
               </div>
 

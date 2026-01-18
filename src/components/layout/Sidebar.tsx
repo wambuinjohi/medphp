@@ -19,7 +19,6 @@ import {
   FileSpreadsheet,
   ShoppingCart,
   RotateCcw,
-  Globe,
   Database,
   TrendingUp,
   Banknote
@@ -96,11 +95,6 @@ const sidebarItems: SidebarItem[] = [
       { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory' },
       { title: 'Customer Statements', icon: FileSpreadsheet, href: '/app/reports/statements' }
     ]
-  },
-  {
-    title: 'Web Manager',
-    icon: Globe,
-    href: '/app/web-manager'
   },
   {
     title: 'Settings',
