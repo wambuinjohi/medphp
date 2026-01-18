@@ -439,7 +439,7 @@ export default function SalesReports() {
             </SelectTrigger>
               <SelectContent>
               <SelectItem value="all">All creators</SelectItem>
-              {(creators || []).map(creator => (
+              {(creators || []).filter(c => c?.id).map(creator => (
                 <SelectItem key={creator.id} value={creator.id}>{creator.name}</SelectItem>
               ))}
             </SelectContent>
