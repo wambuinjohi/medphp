@@ -243,16 +243,16 @@ export default function Payments() {
   // Calculate stats from live data
   const totalReceivedToday = payments
     .filter(p => new Date(p.payment_date).toDateString() === new Date().toDateString())
-    .reduce((sum, p) => sum + p.amount, 0);
-  
+    .reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0);
+
   const totalThisMonth = payments
     .filter(p => {
       const paymentDate = new Date(p.payment_date);
       const now = new Date();
       return paymentDate.getMonth() === now.getMonth() && paymentDate.getFullYear() === now.getFullYear();
     })
-    .reduce((sum, p) => sum + p.amount, 0);
-  
+    .reduce((sum, p) => sum + (typeof p.amount === 'number' ? p.amount : 0), 0);
+
   const completedThisMonth = payments
     .filter(p => {
       const paymentDate = new Date(p.payment_date);
