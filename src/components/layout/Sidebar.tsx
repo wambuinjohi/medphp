@@ -63,7 +63,10 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Inventory',
     icon: Package,
-    href: '/app/inventory'
+    children: [
+      { title: 'Inventory', icon: Package, href: '/app/inventory' },
+      { title: 'Stock Movements', icon: TrendingUp, href: '/app/stock-movements' }
+    ]
   },
   {
     title: 'Delivery Notes',
