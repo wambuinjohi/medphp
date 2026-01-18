@@ -151,7 +151,6 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
       }
 
       const updatedData = {
-        id: item.id,
         name: formData.name,
         product_code: formData.product_code,
         description: formData.description,
@@ -164,7 +163,7 @@ export function EditInventoryItemModal({ open, onOpenChange, onSuccess, item }: 
         maximum_stock_level: Number(formData.max_stock_level)
       };
 
-      await updateProduct.mutateAsync(updatedData);
+      await updateProduct.mutateAsync({ id: item.id, data: updatedData });
       toast.success(`${formData.name} updated successfully!`);
       onSuccess();
       onOpenChange(false);
