@@ -39,7 +39,7 @@ const RemittanceAdvice = () => {
   const [selectedRemittance, setSelectedRemittance] = useState<any>(null);
 
   // Fetch live remittance advice data and company details
-  const { data: remittances = [], isLoading, error } = useRemittanceAdvice();
+  const { data: remittances = [], isLoading, error, retry: retryRemittances } = useRemittanceAdvice();
   const { data: companies = [] } = useCompanies();
 
   // Get the current company (assuming first company for now)
