@@ -533,9 +533,9 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                   </Button>
                 </div>
                 <Select value={paymentData.payment_method || ''} onValueChange={(value) => handleInputChange('payment_method', value)}>
-                  <SelectTrigger disabled={methodsLoading}>
+                  <SelectTrigger disabled={paymentMethods.length === 0 && !methodsLoading}>
                     <SelectValue
-                      placeholder={methodsLoading ? "Loading..." : "Select payment method"}
+                      placeholder={methodsLoading ? "Loading payment methods..." : (paymentMethods.length === 0 ? "No methods available" : "Select payment method")}
                     >
                       {paymentData.payment_method ? (
                         paymentMethods.find(m => m.code === paymentData.payment_method)?.name || paymentData.payment_method
