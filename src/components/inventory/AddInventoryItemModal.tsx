@@ -385,30 +385,19 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="min_stock_level">Min Stock Level</Label>
-                  <Input
-                    id="min_stock_level"
-                    type="number"
-                    value={formData.min_stock_level}
-                    onChange={(e) => handleInputChange('min_stock_level', parseInt(e.target.value) || 0)}
-                    min="0"
-                    placeholder="10"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="max_stock_level">Max Stock Level</Label>
-                  <Input
-                    id="max_stock_level"
-                    type="number"
-                    value={formData.max_stock_level}
-                    onChange={(e) => handleInputChange('max_stock_level', parseInt(e.target.value) || 0)}
-                    min="0"
-                    placeholder="100"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="reorder_level">Reorder Level (Minimum Stock)</Label>
+                <Input
+                  id="reorder_level"
+                  type="number"
+                  value={formData.reorder_level}
+                  onChange={(e) => handleInputChange('reorder_level', parseInt(e.target.value) || 0)}
+                  min="0"
+                  placeholder="10"
+                />
+                <p className="text-xs text-muted-foreground">
+                  You'll be notified when stock falls below this level
+                </p>
               </div>
             </CardContent>
           </Card>
