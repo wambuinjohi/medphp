@@ -45,12 +45,12 @@ export const PublicFooter = ({ productCategories = [] }: PublicFooterProps) => {
 
         if (!error && data) {
           setCompany({
-            name: data.name || company.name,
-            address: data.address || company.address,
-            city: data.city || company.city,
-            country: data.country || company.country,
-            phone: data.phone || company.phone,
-            email: data.email || company.email
+            name: data.name || '>> Medical Supplies Limited',
+            address: data.address || 'Siens Plaza River Road',
+            city: data.city || 'Nairobi',
+            country: data.country || 'Kenya',
+            phone: data.phone || '+254 713 416 022',
+            email: data.email || 'sales@medplusafrica.com'
           });
         }
       } catch (error) {
