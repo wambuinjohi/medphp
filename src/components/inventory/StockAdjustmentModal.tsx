@@ -63,7 +63,7 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
       return;
     }
 
-    if (!reason.trim()) {
+    if (!reason?.trim()) {
       toast.error('Please provide a reason for the adjustment');
       return;
     }
