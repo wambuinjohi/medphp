@@ -79,6 +79,7 @@ export function AddInventoryItemModal({ open, onOpenChange, onSuccess }: AddInve
   const [showCreateCategory, setShowCreateCategory] = useState(false);
   const createProduct = useCreateProduct();
   const { currentCompany } = useCurrentCompany();
+  const { provider } = useDatabase();
 
   const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: ['product_categories'],
