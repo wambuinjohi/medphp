@@ -262,6 +262,38 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/app/transport/drivers"
+                  element={
+                    <ProtectedRoute>
+                      <Transport initialTab="drivers" />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/app/transport/vehicles"
+                  element={
+                    <ProtectedRoute>
+                      <Transport initialTab="vehicles" />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/app/transport/materials"
+                  element={
+                    <ProtectedRoute>
+                      <Transport initialTab="materials" />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/app/transport/finance"
+                  element={
+                    <ProtectedRoute>
+                      <Transport initialTab="finance" />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Additional Features */}
                 <Route
