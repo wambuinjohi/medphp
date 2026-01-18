@@ -36,12 +36,11 @@ interface EditPaymentModalProps {
   onSuccess: () => void;
   payment?: {
     id: string;
-    payment_number: string;
+    payment_number?: string;
     payment_date: string;
     amount: number;
     payment_method: string;
     reference_number?: string;
-    notes?: string;
     customers?: {
       name: string;
       email?: string;
