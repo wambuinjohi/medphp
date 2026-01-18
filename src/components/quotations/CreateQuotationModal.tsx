@@ -427,7 +427,7 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
                       ) : !customers || customers.length === 0 ? (
                         <div className="px-2 py-1.5 text-sm text-muted-foreground">No customers found - create customers first</div>
                       ) : (
-                        customers.map((customer) => (
+                        customers.filter(c => c?.id).map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
                             {customer.name} ({customer.customer_code})
                           </SelectItem>

@@ -84,12 +84,12 @@ export default function AuditLogsPage() {
   });
 
   const entityTypes = React.useMemo(
-    () => [...new Set(logs.map((l: AuditLog) => l.entity_type))].sort(),
+    () => [...new Set(logs.map((l: AuditLog) => l.entity_type).filter(Boolean))].sort(),
     [logs]
   );
 
   const actions = React.useMemo(
-    () => [...new Set(logs.map((l: AuditLog) => l.action))].sort(),
+    () => [...new Set(logs.map((l: AuditLog) => l.action).filter(Boolean))].sort(),
     [logs]
   );
 

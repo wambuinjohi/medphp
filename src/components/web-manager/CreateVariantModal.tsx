@@ -141,7 +141,7 @@ export const CreateVariantModal = ({
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map((cat) => (
+                {categories.filter(cat => cat?.id).map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     {cat.name}
                   </SelectItem>

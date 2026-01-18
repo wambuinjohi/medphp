@@ -238,7 +238,7 @@ export function EditPaymentModal({
                     <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
                   <SelectContent>
-                    {paymentMethods.map((method) => (
+                    {paymentMethods.filter(m => m?.code).map((method) => (
                       <SelectItem key={method.code} value={method.code}>
                         {method.name}
                       </SelectItem>

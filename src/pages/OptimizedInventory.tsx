@@ -388,7 +388,7 @@ export default function OptimizedInventory() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__all__">All Categories</SelectItem>
-                {categories?.map((category) => (
+                {categories?.filter(cat => cat?.id).map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
                   </SelectItem>

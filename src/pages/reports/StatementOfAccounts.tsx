@@ -296,7 +296,7 @@ const StatementOfAccounts = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Customers</SelectItem>
-                {computedStatements.map((statement) => (
+                {computedStatements.filter(s => s.customerId).map((statement) => (
                   <SelectItem key={statement.customerId} value={statement.customerId.toString()}>
                     {statement.customerName}
                   </SelectItem>

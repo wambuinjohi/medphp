@@ -330,7 +330,7 @@ export function CreateCategoryModal({ open, onOpenChange, onSuccess }: CreateCat
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None (Top Level)</SelectItem>
-                    {categories?.map((category) => (
+                    {categories?.filter(cat => cat?.id).map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
                       </SelectItem>

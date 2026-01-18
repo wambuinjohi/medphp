@@ -395,7 +395,7 @@ export function CreateCreditNoteModal({
                       {loadingCustomers ? (
                         <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading customers...</div>
                       ) : (
-                        customers?.map((customer) => (
+                        customers?.filter(c => c?.id).map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
                             {customer.name} ({customer.customer_code})
                           </SelectItem>
@@ -415,7 +415,7 @@ export function CreateCreditNoteModal({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No specific invoice</SelectItem>
-                        {customerInvoices.map((invoice) => (
+                        {customerInvoices.filter(inv => inv?.id).map((invoice) => (
                           <SelectItem key={invoice.id} value={invoice.id}>
                             {invoice.invoice_number} - {formatCurrency(invoice.balance_due || 0)} due
                           </SelectItem>

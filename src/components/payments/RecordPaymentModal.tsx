@@ -421,7 +421,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                       <SelectValue placeholder="Choose an invoice to pay" />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableInvoices.map((inv) => (
+                      {availableInvoices.filter(inv => inv?.id).map((inv) => (
                         <SelectItem key={inv.id} value={inv.id}>
                           <div className="flex justify-between items-center w-full">
                             <span>{inv.invoice_number} - {inv.customers?.name}</span>
@@ -556,7 +556,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                     <SelectValue placeholder={methodsLoading ? "Loading..." : "Select payment method"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {paymentMethods.map((method) => (
+                    {paymentMethods.filter(m => m?.code).map((method) => (
                       <SelectItem key={method.id} value={method.code}>
                         <div className="flex items-center space-x-2">
                           {getMethodIcon(method.icon_name)}

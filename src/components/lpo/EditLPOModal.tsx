@@ -281,7 +281,7 @@ export const EditLPOModal = ({
                   <SelectValue placeholder="Select supplier" />
                 </SelectTrigger>
                 <SelectContent>
-                  {suppliers?.map((supplier) => (
+                  {suppliers?.filter(s => s?.id).map((supplier) => (
                     <SelectItem key={supplier.id} value={supplier.id}>
                       {supplier.name}
                     </SelectItem>

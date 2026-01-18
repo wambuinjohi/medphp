@@ -309,7 +309,7 @@ export const CreateDeliveryNoteModal = ({
                   <SelectValue placeholder="Select customer" />
                 </SelectTrigger>
                 <SelectContent>
-                  {customers?.map((customer) => (
+                  {customers?.filter(c => c?.id).map((customer) => (
                     <SelectItem key={customer.id} value={customer.id}>
                       {customer.name}
                     </SelectItem>
@@ -330,6 +330,7 @@ export const CreateDeliveryNoteModal = ({
                 </SelectTrigger>
                 <SelectContent>
                   {invoices?.filter(inv => !formData.customer_id || inv.customer_id === formData.customer_id)
+                    .filter(inv => inv?.id)
                     .map((invoice) => (
                     <SelectItem key={invoice.id} value={invoice.id}>
                       {invoice.invoice_number} - ${invoice.total_amount?.toFixed(2)}
