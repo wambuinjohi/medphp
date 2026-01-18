@@ -276,9 +276,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
       amount: invoice?.balance_due || 0,
       payment_date: new Date().toISOString().split('T')[0],
       payment_method: paymentMethods.length > 0 ? paymentMethods[0].code : '',
-      reference_number: '',
-      notes: '',
-      customer_name: invoice?.customers?.name || ''
+      reference_number: ''
     });
     setAllocationFailed(false);
   };
