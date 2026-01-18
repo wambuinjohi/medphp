@@ -719,33 +719,9 @@ export default function CompanySettings() {
               </div>
               <div className="flex-1 space-y-3">
                 <div>
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Company Logo</Label>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={storageStatus === 'available' ? 'success' :
-                                    storageStatus === 'unavailable' ? 'warning' : 'outline'}>
-                        {storageStatus === 'available' && '✓ Cloud Ready'}
-                        {storageStatus === 'unavailable' && '⚠ Local Storage'}
-                        {storageStatus === 'unknown' && '⏳ Testing...'}
-                      </Badge>
-                      {storageStatus === 'unavailable' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={testStorageAvailability}
-                          disabled={testingStorage}
-                          className="text-xs h-6 px-2"
-                        >
-                          {testingStorage ? 'Testing...' : 'Retry'}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                  <Label className="text-sm font-medium">Company Logo</Label>
                   <p className="text-xs text-muted-foreground mt-1">
                     Upload your company logo. Recommended size: 200x200px, max 5MB. Supports PNG, JPG, GIF, WebP.
-                    {storageStatus === 'available' && ' Cloud storage is configured and ready for any file size.'}
-                    {storageStatus === 'unavailable' && ' Cloud storage not configured - files ≤1MB stored locally. Larger files need cloud storage setup.'}
-                    {storageStatus === 'unknown' && ' Checking storage configuration...'}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
