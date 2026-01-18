@@ -415,17 +415,17 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
                 {/* Customer Selection */}
                 <div className="space-y-2">
                   <Label htmlFor="customer">Customer *</Label>
-                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                  <Select value={selectedCustomerId || ''} onValueChange={setSelectedCustomerId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a customer" />
                     </SelectTrigger>
                     <SelectContent>
                       {loadingCustomers ? (
-                        <SelectItem value="loading" disabled>Loading customers...</SelectItem>
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading customers...</div>
                       ) : !currentCompany ? (
-                        <SelectItem value="no-company" disabled>No company found - please refresh</SelectItem>
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">No company found - please refresh</div>
                       ) : !customers || customers.length === 0 ? (
-                        <SelectItem value="no-customers" disabled>No customers found - create customers first</SelectItem>
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">No customers found - create customers first</div>
                       ) : (
                         customers.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
