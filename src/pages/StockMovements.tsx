@@ -467,7 +467,7 @@ export default function StockMovements() {
                       <TableCell className="font-mono text-sm">{movement.product?.sku || '-'}</TableCell>
                       <TableCell>{getMovementTypeBadge(movement.movement_type)}</TableCell>
                       <TableCell>{getReferenceTypeBadge(movement.reference_type)}</TableCell>
-                      <TableCell className="text-right font-medium">{movement.quantity?.toFixed(2) || 0}</TableCell>
+                      <TableCell className="text-right font-medium">{typeof movement.quantity === 'number' ? movement.quantity.toFixed(2) : '0.00'}</TableCell>
                       <TableCell className="text-right">{movement.cost_per_unit ? formatCurrency(movement.cost_per_unit) : '-'}</TableCell>
                       <TableCell className="text-right">{formatCurrency((movement.cost_per_unit || 0) * (movement.quantity || 0))}</TableCell>
                       <TableCell className="text-sm text-muted-foreground max-w-xs truncate">{movement.notes || '-'}</TableCell>
