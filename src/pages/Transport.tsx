@@ -133,6 +133,10 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
   const [showEditFinanceModal, setShowEditFinanceModal] = useState(false);
   const [selectedFinance, setSelectedFinance] = useState<TransportFinance | null>(null);
 
+  // Payment state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedTripForPayment, setSelectedTripForPayment] = useState<TransportFinance | null>(null);
+
   const { currentCompany, isLoading: isCompanyLoading } = useCurrentCompany();
   const DEFAULT_COMPANY_ID = '550e8400-e29b-41d4-a716-446655440000';
   const activeCompanyId = currentCompany?.id || DEFAULT_COMPANY_ID;
