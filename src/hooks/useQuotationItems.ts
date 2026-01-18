@@ -385,6 +385,8 @@ export const useCreateInvoiceWithItems = () => {
 
   return useMutation({
     mutationFn: async ({ invoice, items }: { invoice: any; items: InvoiceItem[] }) => {
+      const db = getDatabase();
+
       // Ensure created_by references the authenticated user to satisfy FK constraints
       let cleanInvoice = { ...invoice } as any;
       try {
@@ -393,41 +395,38 @@ export const useCreateInvoiceWithItems = () => {
         if (authUserId) {
           cleanInvoice.created_by = authUserId;
         } else if (typeof cleanInvoice.created_by === 'undefined') {
-          // Leave as null if no auth user available; FK allows null
           cleanInvoice.created_by = null;
         }
       } catch {
-        // If auth lookup fails, don't block invoice creation
         if (typeof cleanInvoice.created_by === 'undefined') {
           cleanInvoice.created_by = null;
         }
       }
 
-      // First create the invoice
-      let invoiceDataRes;
-      let invoiceErrorRes;
-      {
-        const { data, error } = await supabase
-          .from('invoices')
-          .insert([cleanInvoice])
-          .select()
-          .single();
-        invoiceDataRes = data; invoiceErrorRes = error as any;
-      }
-      if (invoiceErrorRes && invoiceErrorRes.code === '23503' && String(invoiceErrorRes.message || '').includes('created_by')) {
-        const retryPayload = { ...cleanInvoice, created_by: null };
-        const { data: retryData, error: retryError } = await supabase
-          .from('invoices')
-          .insert([retryPayload])
-          .select()
-          .single();
-        invoiceDataRes = retryData; invoiceErrorRes = retryError as any;
+      // Create the invoice using database adapter
+      const invoiceInsertResult = await db.insert('invoices', cleanInvoice);
+      if (invoiceInsertResult.error) {
+        // Fallback: if FK violation on created_by, retry with created_by = null
+        if (String(invoiceInsertResult.error.message || '').includes('created_by')) {
+          const retryPayload = { ...cleanInvoice, created_by: null };
+          const retryResult = await db.insert('invoices', retryPayload);
+          if (retryResult.error) throw retryResult.error;
+          if (!retryResult.id) throw new Error('Failed to create invoice: no ID returned');
+        } else {
+          throw invoiceInsertResult.error;
+        }
       }
 
-      if (invoiceErrorRes) throw invoiceErrorRes;
-      const invoiceData = invoiceDataRes;
+      if (!invoiceInsertResult.id) throw new Error('Failed to create invoice: no ID returned');
 
-      // Then create the invoice items if any
+      // Fetch the created invoice to get full data
+      const invoiceSelectResult = await db.selectOne('invoices', invoiceInsertResult.id);
+      if (invoiceSelectResult.error) throw invoiceSelectResult.error;
+      if (!invoiceSelectResult.data) throw new Error('Failed to fetch created invoice');
+
+      const invoiceData = invoiceSelectResult.data;
+
+      // Create the invoice items if any
       if (items.length > 0) {
         const invoiceItems = items.map((item, index) => ({
           ...item,
@@ -435,24 +434,8 @@ export const useCreateInvoiceWithItems = () => {
           sort_order: index + 1
         }));
 
-        let itemsError: any = null;
-        {
-          const res = await supabase
-            .from('invoice_items')
-            .insert(invoiceItems);
-          itemsError = res.error as any;
-        }
-
-        // Fallback: remove discount_before_vat if schema doesn't have it
-        if (itemsError && (itemsError.code === 'PGRST204' || String(itemsError.message || '').toLowerCase().includes('discount_before_vat'))) {
-          const minimalItems = invoiceItems.map(({ discount_before_vat, ...rest }) => rest);
-          const retry = await supabase
-            .from('invoice_items')
-            .insert(minimalItems);
-          itemsError = retry.error as any;
-        }
-
-        if (itemsError) throw itemsError;
+        const itemsInsertResult = await db.insertMany('invoice_items', invoiceItems);
+        if (itemsInsertResult.error) throw itemsInsertResult.error;
 
         // Create stock movements for products that affect inventory
         if (invoice.affects_inventory !== false) {
@@ -461,62 +444,21 @@ export const useCreateInvoiceWithItems = () => {
             .map(item => ({
               company_id: invoice.company_id,
               product_id: item.product_id!,
-              movement_type: 'OUT' as const,
-              reference_type: 'INVOICE' as const,
+              movement_type: 'OUT',
+              reference_type: 'INVOICE',
               reference_id: invoiceData.id,
-              quantity: item.quantity, // Positive quantity, movement_type determines direction
+              quantity: item.quantity,
               cost_per_unit: item.unit_price,
               notes: `Stock reduction for invoice ${invoice.invoice_number}`
             }));
 
           if (stockMovements.length > 0) {
-            // Use the robust stock movements creation utility
-            const { createStockMovements } = await import('@/utils/initializeStockMovements');
-            const { data: stockData, error: stockError } = await createStockMovements(stockMovements);
-
-            if (stockError) {
-              console.error('Failed to create stock movements:', stockError);
-
-              // Check if this is a constraint violation error
-              if (stockError.message && stockError.message.includes('check constraint violation')) {
-                console.error('Stock movements constraint error detected. The database constraints may need to be fixed.');
-                throw new Error('Invoice creation failed due to stock movements constraint error. Please contact your system administrator to fix the database constraints.');
-              }
-
-              // Don't throw for other errors - invoice was created successfully, stock inconsistency can be fixed later
-              console.warn(`Stock movements creation failed for invoice ${invoice.invoice_number}. Invoice created successfully but inventory may not be updated.`);
+            const movementsInsertResult = await db.insertMany('stock_movements', stockMovements);
+            if (movementsInsertResult.error) {
+              console.warn('Failed to create stock movements:', movementsInsertResult.error);
+              // Don't throw - invoice was created successfully, stock can be adjusted later
             } else {
-              console.log(`Created ${stockData?.length || 0} stock movements for invoice ${invoice.invoice_number}`);
-            }
-
-            // Update product stock quantities in parallel for better performance
-            const stockUpdatePromises = stockMovements.map(movement =>
-              supabase.rpc('update_product_stock', {
-                product_uuid: movement.product_id,
-                movement_type: movement.movement_type,
-                quantity: Math.abs(movement.quantity) // Use absolute value since movement_type determines direction
-              })
-            );
-
-            const stockUpdateResults = await Promise.allSettled(stockUpdatePromises);
-
-            // Check for any failed stock updates
-            const failedUpdates = stockUpdateResults.filter((result, index) => {
-              if (result.status === 'rejected') {
-                console.error('Failed to update stock for product:', stockMovements[index].product_id, result.reason);
-                return true;
-              }
-              if (result.status === 'fulfilled' && result.value && result.value.error) {
-                const msg = parseErrorMessageWithCodes(result.value.error, 'stock update');
-                console.error(`Stock update error for product: ${stockMovements[index].product_id} - ${msg}`, result.value.error);
-                return true;
-              }
-              return false;
-            });
-
-            if (failedUpdates.length > 0) {
-              console.warn(`${failedUpdates.length} out of ${stockMovements.length} stock updates failed`);
-              // Don't throw - invoice was created successfully, stock inconsistencies can be fixed later
+              console.log(`Created stock movements for invoice ${invoice.invoice_number}`);
             }
           }
         }
