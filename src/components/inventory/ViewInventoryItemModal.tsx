@@ -99,6 +99,7 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
 
   const formatCurrency = (amount: string | number) => {
     const num = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.-]+/g, '')) : amount;
+    if (isNaN(num)) return 'Ksh 0.00';
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
       currency: 'KES',
@@ -107,7 +108,7 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
     }).format(num);
   };
 
-  const stockPercentage = item.maxStock ? (item.currentStock / item.maxStock) * 100 : 0;
+  const stockPercentage = normalizedItem.maxStock ? (normalizedItem.currentStock / normalizedItem.maxStock) * 100 : 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
