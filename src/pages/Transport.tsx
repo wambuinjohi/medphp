@@ -54,6 +54,7 @@ import { CreateMaterialModal } from '@/components/transport/CreateMaterialModal'
 import { EditMaterialModal } from '@/components/transport/EditMaterialModal';
 import { TransportFinanceModal } from '@/components/transport/TransportFinanceModal';
 import { EditTransportFinanceModal } from '@/components/transport/EditTransportFinanceModal';
+import { RecordTripPaymentModal } from '@/components/transport/RecordTripPaymentModal';
 
 interface Driver {
   id: string;
