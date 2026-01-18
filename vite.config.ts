@@ -26,6 +26,17 @@ export default defineConfig(({ mode }) => {
       port: 8080,
       hmr: false,
       proxy: {
+        // Proxy file upload requests (keep these as-is)
+        '/api/upload': {
+          target: apiUrl,
+          changeOrigin: true,
+          rewrite: (path) => path,
+        },
+        '/api/uploads': {
+          target: apiUrl,
+          changeOrigin: true,
+          rewrite: (path) => path,
+        },
         // Proxy API requests to external backend or local server
         '/api': {
           target: apiUrl,
