@@ -1390,8 +1390,9 @@ export function useGenerateDocumentNumber() {
         };
 
         const rpcFunction = rpcFunctionMap[type] || 'generate_invoice_number';
+        const db = getDatabase();
 
-        const { data, error } = await supabase.rpc(rpcFunction, {
+        const { data, error } = await db.rpc<string>(rpcFunction, {
           company_uuid: companyId
         });
 
