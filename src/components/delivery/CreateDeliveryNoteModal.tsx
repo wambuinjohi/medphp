@@ -141,15 +141,15 @@ export const CreateDeliveryNoteModal = ({
     product.product_code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const addItem = (product: any) => {
+  const addItem = (product: Record<string, unknown>) => {
     const newItem: DeliveryItem = {
       id: `item-${Date.now()}`,
-      product_id: product.id,
-      product_name: product.name,
-      description: product.description || product.name || '',
+      product_id: (product.id as string) || '',
+      product_name: (product.name as string) || '',
+      description: (product.description as string) || (product.name as string) || '',
       quantity_ordered: 1, // Default to 1 unit
       quantity_delivered: 1, // Default to 1 unit for delivery
-      unit_of_measure: product.unit_of_measure || 'pcs',
+      unit_of_measure: (product.unit_of_measure as string) || 'pcs',
     };
 
     setItems(prev => [...prev, newItem]);
