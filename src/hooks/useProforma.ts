@@ -4,7 +4,6 @@ import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 import { calculateDocumentTotals, type TaxableItem } from '@/utils/taxCalculation';
 import { parseErrorMessage } from '@/utils/errorHelpers';
-import { serializeError } from '@/utils/errorHelpers';
 
 export interface ProformaItem {
   id?: string;
