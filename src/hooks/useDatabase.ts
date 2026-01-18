@@ -849,7 +849,8 @@ export function useCreatePayment() {
     }) => {
       try {
         // Try to use the server-side RPC function for atomic payment + allocation
-        const { data, error } = await supabase.rpc('record_payment_with_allocation', {
+        const db = getDatabase();
+        const { data, error } = await db.rpc('record_payment_with_allocation', {
           p_company_id: paymentRecord.company_id,
           p_customer_id: paymentRecord.customer_id,
           p_invoice_id: paymentRecord.invoice_id,
