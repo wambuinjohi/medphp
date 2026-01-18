@@ -270,7 +270,7 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
                   <SelectContent>
-                    {customers.map((customer) => (
+                    {customers.filter(c => c?.id).map((customer) => (
                       <SelectItem key={customer.id} value={customer.id}>
                         {customer.name}
                       </SelectItem>
