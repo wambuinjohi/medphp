@@ -89,7 +89,7 @@ export default function AuditLogsPage() {
   );
 
   const actions = React.useMemo(
-    () => [...new Set(logs.map((l: AuditLog) => l.action))].sort(),
+    () => [...new Set(logs.map((l: AuditLog) => l.action).filter(Boolean))].sort(),
     [logs]
   );
 
