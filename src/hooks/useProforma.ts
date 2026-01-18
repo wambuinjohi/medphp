@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 import { calculateDocumentTotals, type TaxableItem } from '@/utils/taxCalculation';
 import { parseErrorMessage } from '@/utils/errorHelpers';
@@ -499,77 +500,13 @@ export const useDeleteProforma = () => {
 export const useGenerateProformaNumber = () => {
   return useMutation({
     mutationFn: async (companyId: string) => {
-      try {
-        const { data, error } = await supabase.rpc('generate_proforma_number', {
-          company_uuid: companyId
-        });
+      // Generate proforma number client-side using timestamp
+      const timestamp = Date.now().toString().slice(-6);
+      const year = new Date().getFullYear();
+      const proformaNumber = `PF-${year}-${timestamp}`;
 
-        if (error) {
-          // Extract meaningful error message from Supabase error object
-          let errorMessage = 'Unknown database error';
-
-          if (typeof error === 'string') {
-            errorMessage = error;
-          } else if (error && typeof error === 'object') {
-            // Handle different Supabase error formats
-            if (error.message) {
-              errorMessage = error.message;
-            } else if (error.details) {
-              errorMessage = error.details;
-            } else if (error.hint) {
-              errorMessage = error.hint;
-            } else if (error.code) {
-              errorMessage = `Database error (code: ${error.code})`;
-            } else {
-              // Try to get meaningful info from error object
-              try {
-                const errorKeys = Object.keys(error);
-                if (errorKeys.length > 0) {
-                  errorMessage = JSON.stringify(error, null, 2);
-                }
-              } catch {
-                errorMessage = parseErrorMessage(error);
-              }
-            }
-          }
-
-          console.error('Error generating proforma number:', errorMessage);
-
-          // Check if it's a function not found error
-          if (errorMessage.includes('function generate_proforma_number') ||
-              errorMessage.includes('does not exist') ||
-              errorMessage.includes('is not defined') ||
-              errorMessage.includes('cannot find') ||
-              errorMessage.includes('schema cache')) {
-            console.warn('generate_proforma_number function not found, using fallback');
-            console.info('💡 To fix this permanently, visit: /proforma-function-fix');
-            throw new Error('Database function not found. Visit /proforma-function-fix to create it.');
-          }
-
-          // Check for permission errors
-          if (errorMessage.includes('permission denied') ||
-              errorMessage.includes('access denied') ||
-              errorMessage.includes('insufficient privilege')) {
-            console.warn('Permission denied for proforma number generation, using fallback');
-            throw new Error('Permission denied for database function. Using fallback number generation.');
-          }
-
-          throw new Error(`Failed to generate proforma number: ${errorMessage}`);
-        }
-
-        return data;
-      } catch (error) {
-        // Fallback to client-side generation
-        const timestamp = Date.now().toString().slice(-6);
-        const year = new Date().getFullYear();
-        const fallbackNumber = `PF-${year}-${timestamp}`;
-
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.warn('Proforma number generation failed, using fallback:', errorMessage);
-        console.info('Generated fallback number:', fallbackNumber);
-
-        return fallbackNumber;
-      }
+      console.info('Generated proforma number:', proformaNumber);
+      return proformaNumber;
     },
   });
 };
@@ -582,22 +519,22 @@ export const useConvertProformaToInvoice = () => {
 
   return useMutation({
     mutationFn: async (proformaId: string) => {
-      // Get proforma data with items
-      const { data: proforma, error: proformaError } = await supabase
-        .from('proforma_invoices')
-        .select(`
-          *,
-          proforma_items(*)
-        `)
-        .eq('id', proformaId)
-        .single();
+      const db = getDatabase();
 
-      if (proformaError) throw proformaError;
+      // Get proforma data using database adapter
+      const proformaResult = await db.selectOne('proforma_invoices', proformaId);
+      if (proformaResult.error) throw proformaResult.error;
+      if (!proformaResult.data) throw new Error('Proforma not found');
 
-      // Generate invoice number
-      const { data: invoiceNumber } = await supabase.rpc('generate_invoice_number', {
-        company_uuid: proforma.company_id
-      });
+      const proforma = proformaResult.data as any;
+
+      // Get proforma items
+      const itemsResult = await db.selectBy('proforma_items', { proforma_id: proformaId });
+      if (itemsResult.error) throw itemsResult.error;
+      const proformaItems = itemsResult.data || [];
+
+      // Generate invoice number using timestamp
+      const invoiceNumber = `INV-${Date.now()}`;
 
       // Get current user
       let createdBy: string | null = null;
@@ -625,29 +562,32 @@ export const useConvertProformaToInvoice = () => {
         created_by: createdBy
       };
 
-      let { data: invoice, error: invoiceError } = await supabase
-        .from('invoices')
-        .insert([invoiceData])
-        .select()
-        .single();
-
-      // Fallback: if FK violation on created_by, retry with created_by = null
-      if (invoiceError && invoiceError.code === '23503' && String(invoiceError.message || '').includes('created_by')) {
-        const retryPayload = { ...invoiceData, created_by: null };
-        const retryRes = await supabase
-          .from('invoices')
-          .insert([retryPayload])
-          .select()
-          .single();
-        invoice = retryRes.data;
-        invoiceError = retryRes.error as any;
+      // Create invoice using database adapter
+      const invoiceInsertResult = await db.insert('invoices', invoiceData);
+      if (invoiceInsertResult.error) {
+        // Fallback: if FK violation on created_by, retry with created_by = null
+        if (String(invoiceInsertResult.error.message || '').includes('created_by')) {
+          const retryPayload = { ...invoiceData, created_by: null };
+          const retryResult = await db.insert('invoices', retryPayload);
+          if (retryResult.error) throw retryResult.error;
+          if (!retryResult.id) throw new Error('Failed to create invoice: no ID returned');
+        } else {
+          throw invoiceInsertResult.error;
+        }
       }
 
-      if (invoiceError) throw invoiceError;
+      if (!invoiceInsertResult.id) throw new Error('Failed to create invoice: no ID returned');
+
+      // Fetch the created invoice
+      const invoiceSelectResult = await db.selectOne('invoices', invoiceInsertResult.id);
+      if (invoiceSelectResult.error) throw invoiceSelectResult.error;
+      if (!invoiceSelectResult.data) throw new Error('Failed to fetch created invoice');
+
+      const invoice = invoiceSelectResult.data as any;
 
       // Create invoice items from proforma items
-      if (proforma.proforma_items && proforma.proforma_items.length > 0) {
-        const invoiceItems = proforma.proforma_items.map((item: any) => ({
+      if (proformaItems && proformaItems.length > 0) {
+        const invoiceItems = proformaItems.map((item: any, index: number) => ({
           invoice_id: invoice.id,
           product_id: item.product_id,
           description: item.description,
@@ -657,13 +597,11 @@ export const useConvertProformaToInvoice = () => {
           tax_amount: item.tax_amount,
           tax_inclusive: item.tax_inclusive,
           line_total: item.line_total,
+          sort_order: item.sort_order || index + 1
         }));
 
-        const { error: itemsError } = await supabase
-          .from('invoice_items')
-          .insert(invoiceItems);
-
-        if (itemsError) throw itemsError;
+        const itemsInsertResult = await db.insertMany('invoice_items', invoiceItems);
+        if (itemsInsertResult.error) throw itemsInsertResult.error;
 
         // Create stock movements
         const stockMovements = invoiceItems
@@ -671,44 +609,27 @@ export const useConvertProformaToInvoice = () => {
           .map(item => ({
             company_id: invoice.company_id,
             product_id: item.product_id,
-            movement_type: 'OUT' as const,
-            reference_type: 'INVOICE' as const,
+            movement_type: 'OUT',
+            reference_type: 'INVOICE',
             reference_id: invoice.id,
-            quantity: -item.quantity,
+            quantity: item.quantity,
             cost_per_unit: item.unit_price,
             notes: `Stock reduction for invoice ${invoice.invoice_number} (converted from proforma ${proforma.proforma_number})`
           }));
 
         if (stockMovements.length > 0) {
-          await supabase.from('stock_movements').insert(stockMovements);
-
-          // Update product stock quantities
-          const stockUpdatePromises = stockMovements.map(movement =>
-            supabase.rpc('update_product_stock', {
-              product_uuid: movement.product_id,
-              movement_type: movement.movement_type,
-              quantity: Math.abs(movement.quantity)
-            })
-          );
-
-          const stockUpdateResults = await Promise.allSettled(stockUpdatePromises);
-
-          // Log any failed stock updates
-          stockUpdateResults.forEach((result, index) => {
-            if (result.status === 'rejected') {
-              console.error(`Failed to update stock for product: ${stockMovements[index].product_id}`, result.reason);
-            } else if (result.value && result.value.error) {
-              console.error(`Stock update error for product: ${stockMovements[index].product_id}`, result.value.error);
-            }
-          });
+          const movementsInsertResult = await db.insertMany('stock_movements', stockMovements);
+          if (movementsInsertResult.error) {
+            console.warn('Failed to create stock movements:', movementsInsertResult.error);
+          }
         }
       }
 
       // Update proforma status to converted
-      await supabase
-        .from('proforma_invoices')
-        .update({ status: 'converted' })
-        .eq('id', proformaId);
+      const updateResult = await db.update('proforma_invoices', proformaId, { status: 'converted' });
+      if (updateResult.error) {
+        console.warn('Failed to update proforma status:', updateResult.error);
+      }
 
       return invoice;
     },

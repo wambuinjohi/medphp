@@ -72,15 +72,15 @@ export const calculateLineItemTotal = (item: {
 // Hook for restocking inventory
 export const useRestockProduct = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ 
-      productId, 
-      quantity, 
-      costPerUnit, 
-      companyId, 
-      supplier, 
-      notes 
+    mutationFn: async ({
+      productId,
+      quantity,
+      costPerUnit,
+      companyId,
+      supplier,
+      notes
     }: {
       productId: string;
       quantity: number;
@@ -89,33 +89,29 @@ export const useRestockProduct = () => {
       supplier?: string;
       notes?: string;
     }) => {
-      // Create stock movement record
-      const { data: movement, error: movementError } = await supabase
-        .from('stock_movements')
-        .insert([{
-          company_id: companyId,
-          product_id: productId,
-          movement_type: 'IN',
-          reference_type: 'RESTOCK',
-          quantity: quantity,
-          cost_per_unit: costPerUnit,
-          notes: notes || `Restock from ${supplier || 'supplier'}`
-        }])
-        .select()
-        .single();
-      
-      if (movementError) throw movementError;
-      
-      // Update product stock quantity
-      const { error: stockError } = await supabase.rpc('update_product_stock', {
-        product_uuid: productId,
+      const db = getDatabase();
+
+      // Create stock movement record using database adapter
+      const movementData = {
+        company_id: companyId,
+        product_id: productId,
         movement_type: 'IN',
-        quantity: quantity
-      });
-      
-      if (stockError) throw stockError;
-      
-      return movement;
+        reference_type: 'RESTOCK',
+        quantity: quantity,
+        cost_per_unit: costPerUnit,
+        notes: notes || `Restock from ${supplier || 'supplier'}`
+      };
+
+      const movementResult = await db.insert('stock_movements', movementData);
+      if (movementResult.error) throw movementResult.error;
+      if (!movementResult.id) throw new Error('Failed to create stock movement: no ID returned');
+
+      // Fetch the created movement
+      const movementSelectResult = await db.selectOne('stock_movements', movementResult.id);
+      if (movementSelectResult.error) throw movementSelectResult.error;
+      if (!movementSelectResult.data) throw new Error('Failed to fetch created stock movement');
+
+      return movementSelectResult.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -130,7 +126,6 @@ export const useCreateQuotationWithItems = () => {
   return useMutation({
     mutationFn: async ({ quotation, items }: { quotation: any; items: QuotationItem[] }) => {
       const db = getDatabase();
-      const provider = getDatabaseProvider();
 
       // Ensure created_by references the authenticated user to satisfy FK constraints
       let cleanQuotation = { ...quotation } as any;
@@ -148,46 +143,19 @@ export const useCreateQuotationWithItems = () => {
         }
       }
 
-      // First create the quotation using the appropriate database provider
-      let quotationData: any;
-      let quotationError: any;
+      // Create the quotation using the database adapter
+      const insertResult = await db.insert('quotations', cleanQuotation);
+      if (insertResult.error) throw insertResult.error;
+      if (!insertResult.id) throw new Error('Failed to create quotation: no ID returned');
 
-      if (provider === 'external-api') {
-        // Use external API adapter
-        const result = await db.insert('quotations', cleanQuotation);
-        quotationError = result.error;
-        if (!quotationError && result.id) {
-          // Fetch the created quotation to get full data
-          const selectResult = await db.selectOne('quotations', result.id);
-          quotationData = selectResult.data;
-          quotationError = selectResult.error;
-        }
-      } else {
-        // Use Supabase
-        const { data, error } = await supabase
-          .from('quotations')
-          .insert([cleanQuotation])
-          .select()
-          .single();
-        quotationData = data;
-        quotationError = error as any;
+      // Fetch the created quotation to get full data
+      const selectResult = await db.selectOne('quotations', insertResult.id);
+      if (selectResult.error) throw selectResult.error;
+      if (!selectResult.data) throw new Error('Failed to fetch created quotation');
 
-        // Fallback: if FK violation on created_by, retry with created_by = null
-        if (quotationError && quotationError.code === '23503' && String(quotationError.message || '').includes('created_by')) {
-          const retryPayload = { ...cleanQuotation, created_by: null };
-          const { data: retryData, error: retryError } = await supabase
-            .from('quotations')
-            .insert([retryPayload])
-            .select()
-            .single();
-          quotationData = retryData;
-          quotationError = retryError as any;
-        }
-      }
+      const quotationData = selectResult.data;
 
-      if (quotationError) throw quotationError;
-
-      // Then create the quotation items if any
+      // Create the quotation items if any
       if (items.length > 0) {
         const quotationItems = items.map((item, index) => ({
           ...item,
@@ -195,17 +163,8 @@ export const useCreateQuotationWithItems = () => {
           sort_order: index + 1
         }));
 
-        if (provider === 'external-api') {
-          // Use external API adapter for bulk insert
-          const { error: itemsError } = await db.insertMany('quotation_items', quotationItems);
-          if (itemsError) throw itemsError;
-        } else {
-          // Use Supabase
-          const { error: itemsError } = await supabase
-            .from('quotation_items')
-            .insert(quotationItems);
-          if (itemsError) throw itemsError;
-        }
+        const itemsResult = await db.insertMany('quotation_items', quotationItems);
+        if (itemsResult.error) throw itemsResult.error;
       }
 
       return quotationData;
@@ -223,7 +182,6 @@ export const useUpdateQuotationWithItems = () => {
   return useMutation({
     mutationFn: async ({ quotationId, quotation, items }: { quotationId: string; quotation: any; items: QuotationItem[] }) => {
       const db = getDatabase();
-      const provider = getDatabaseProvider();
 
       const updateData = {
         customer_id: quotation.customer_id,
@@ -237,44 +195,20 @@ export const useUpdateQuotationWithItems = () => {
         total_amount: quotation.total_amount,
       };
 
-      let updatedQuotation: any;
-      let updateError: any;
+      // Update the quotation using the database adapter
+      const updateResult = await db.update('quotations', quotationId, updateData);
+      if (updateResult.error) throw updateResult.error;
 
-      if (provider === 'external-api') {
-        // Use external API adapter
-        const result = await db.update('quotations', quotationId, updateData);
-        updateError = result.error;
-        if (!updateError) {
-          // Fetch the updated quotation
-          const selectResult = await db.selectOne('quotations', quotationId);
-          updatedQuotation = selectResult.data;
-          updateError = selectResult.error;
-        }
-      } else {
-        // Use Supabase
-        const { data, error } = await supabase
-          .from('quotations')
-          .update(updateData)
-          .eq('id', quotationId)
-          .select()
-          .single();
-        updatedQuotation = data;
-        updateError = error;
-      }
+      // Fetch the updated quotation to get full data
+      const selectResult = await db.selectOne('quotations', quotationId);
+      if (selectResult.error) throw selectResult.error;
+      if (!selectResult.data) throw new Error('Failed to fetch updated quotation');
 
-      if (updateError) throw updateError;
+      const updatedQuotation = selectResult.data;
 
       // Delete existing quotation items
-      if (provider === 'external-api') {
-        const { error: deleteError } = await db.deleteMany('quotation_items', { quotation_id: quotationId });
-        if (deleteError) throw deleteError;
-      } else {
-        const { error: deleteError } = await supabase
-          .from('quotation_items')
-          .delete()
-          .eq('quotation_id', quotationId);
-        if (deleteError) throw deleteError;
-      }
+      const deleteResult = await db.deleteMany('quotation_items', { quotation_id: quotationId });
+      if (deleteResult.error) throw deleteResult.error;
 
       // Insert new quotation items
       if (items.length > 0) {
@@ -292,15 +226,8 @@ export const useUpdateQuotationWithItems = () => {
           sort_order: index + 1
         }));
 
-        if (provider === 'external-api') {
-          const { error: itemsError } = await db.insertMany('quotation_items', quotationItems);
-          if (itemsError) throw itemsError;
-        } else {
-          const { error: itemsError } = await supabase
-            .from('quotation_items')
-            .insert(quotationItems);
-          if (itemsError) throw itemsError;
-        }
+        const itemsResult = await db.insertMany('quotation_items', quotationItems);
+        if (itemsResult.error) throw itemsResult.error;
       }
 
       return updatedQuotation;
@@ -314,26 +241,26 @@ export const useUpdateQuotationWithItems = () => {
 // Convert quotation to invoice
 export const useConvertQuotationToInvoice = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (quotationId: string) => {
-      // Get quotation data
-      const { data: quotation, error: quotationError } = await supabase
-        .from('quotations')
-        .select(`
-          *,
-          quotation_items(*)
-        `)
-        .eq('id', quotationId)
-        .single();
-      
-      if (quotationError) throw quotationError;
-      
-      // Generate invoice number
-      const { data: invoiceNumber } = await supabase.rpc('generate_invoice_number', {
-        company_uuid: quotation.company_id
-      });
-      
+      const db = getDatabase();
+
+      // Get quotation data using database adapter
+      const quotationResult = await db.selectOne('quotations', quotationId);
+      if (quotationResult.error) throw quotationResult.error;
+      if (!quotationResult.data) throw new Error('Quotation not found');
+
+      const quotation = quotationResult.data as any;
+
+      // Get quotation items
+      const itemsResult = await db.selectBy('quotation_items', { quotation_id: quotationId });
+      if (itemsResult.error) throw itemsResult.error;
+      const quotationItems = itemsResult.data || [];
+
+      // Generate invoice number using timestamp
+      const invoiceNumber = `INV-${Date.now()}`;
+
       // Create invoice from quotation
       // Determine creator
       let createdBy: string | null = null;
@@ -360,109 +287,78 @@ export const useConvertQuotationToInvoice = () => {
         created_by: createdBy
       };
 
-      let { data: invoice, error: invoiceError } = await supabase
-        .from('invoices')
-        .insert([invoiceData])
-        .select()
-        .single();
-
-      // Fallback: if FK violation on created_by, retry with created_by = null
-      if (invoiceError && invoiceError.code === '23503' && String(invoiceError.message || '').includes('created_by')) {
-        const retryPayload = { ...invoiceData, created_by: null };
-        const retryRes = await supabase
-          .from('invoices')
-          .insert([retryPayload])
-          .select()
-          .single();
-        invoice = retryRes.data;
-        invoiceError = retryRes.error as any;
+      // Create invoice using database adapter
+      const invoiceInsertResult = await db.insert('invoices', invoiceData);
+      if (invoiceInsertResult.error) {
+        // Fallback: if FK violation on created_by, retry with created_by = null
+        if (String(invoiceInsertResult.error.message || '').includes('created_by')) {
+          const retryPayload = { ...invoiceData, created_by: null };
+          const retryResult = await db.insert('invoices', retryPayload);
+          if (retryResult.error) throw retryResult.error;
+          invoiceData.created_by = null;
+        } else {
+          throw invoiceInsertResult.error;
+        }
       }
 
-      if (invoiceError) throw invoiceError;
-      
+      if (!invoiceInsertResult.id) throw new Error('Failed to create invoice: no ID returned');
+
+      // Fetch the created invoice to get full data
+      const invoiceSelectResult = await db.selectOne('invoices', invoiceInsertResult.id);
+      if (invoiceSelectResult.error) throw invoiceSelectResult.error;
+      if (!invoiceSelectResult.data) throw new Error('Failed to fetch created invoice');
+
+      const invoice = invoiceSelectResult.data as any;
+
       // Create invoice items from quotation items
-      if (quotation.quotation_items && quotation.quotation_items.length > 0) {
-        const invoiceItems = quotation.quotation_items.map((item: any) => ({
+      if (quotationItems && quotationItems.length > 0) {
+        const invoiceItems = quotationItems.map((item: any, index: number) => ({
           invoice_id: invoice.id,
           product_id: item.product_id,
           description: item.description,
           quantity: item.quantity,
           unit_price: item.unit_price,
           discount_percentage: item.discount_percentage,
-          discount_before_vat: item.discount_before_vat || 0,
           tax_percentage: item.tax_percentage,
           tax_amount: item.tax_amount,
           tax_inclusive: item.tax_inclusive,
           line_total: item.line_total,
-          sort_order: item.sort_order
+          sort_order: item.sort_order || index + 1
         }));
-        
-        let itemsError: any = null;
-        {
-          const res = await supabase
-            .from('invoice_items')
-            .insert(invoiceItems);
-          itemsError = res.error as any;
-        }
 
-        // Fallback: remove discount_before_vat if schema doesn't have it
-        if (itemsError && (itemsError.code === 'PGRST204' || String(itemsError.message || '').toLowerCase().includes('discount_before_vat'))) {
-          const minimalItems = invoiceItems.map(({ discount_before_vat, ...rest }) => rest);
-          const retry = await supabase
-            .from('invoice_items')
-            .insert(minimalItems);
-          itemsError = retry.error as any;
-        }
+        const itemsInsertResult = await db.insertMany('invoice_items', invoiceItems);
+        if (itemsInsertResult.error) throw itemsInsertResult.error;
 
-        if (itemsError) throw itemsError;
-        
-        // Create stock movements
+        // Create stock movements for products
         const stockMovements = invoiceItems
           .filter(item => item.product_id && item.quantity > 0)
           .map(item => ({
             company_id: invoice.company_id,
             product_id: item.product_id,
-            movement_type: 'OUT' as const,
-            reference_type: 'INVOICE' as const,
+            movement_type: 'OUT',
+            reference_type: 'INVOICE',
             reference_id: invoice.id,
-            quantity: -item.quantity,
+            quantity: item.quantity,
             cost_per_unit: item.unit_price,
             notes: `Stock reduction for invoice ${invoice.invoice_number} (converted from quotation ${quotation.quotation_number})`
           }));
 
         if (stockMovements.length > 0) {
-          await supabase.from('stock_movements').insert(stockMovements);
-
-          // Update product stock quantities in parallel
-          const stockUpdatePromises = stockMovements.map(movement =>
-            supabase.rpc('update_product_stock', {
-              product_uuid: movement.product_id,
-              movement_type: movement.movement_type,
-              quantity: Math.abs(movement.quantity)
-            })
-          );
-
-          const stockUpdateResults = await Promise.allSettled(stockUpdatePromises);
-
-          // Log any failed stock updates
-          stockUpdateResults.forEach((result, index) => {
-            if (result.status === 'rejected') {
-              const msg = parseErrorMessageWithCodes(result.reason || result, 'stock update');
-              console.error(`Failed to update stock for product: ${stockMovements[index].product_id} - ${msg}`, result.reason || result);
-            } else if (result.value && result.value.error) {
-              const msg = parseErrorMessageWithCodes(result.value.error, 'stock update');
-              console.error(`Stock update error for product: ${stockMovements[index].product_id} - ${msg}`, result.value.error);
-            }
-          });
+          const movementsResult = await db.insertMany('stock_movements', stockMovements);
+          if (movementsResult.error) {
+            console.warn('Failed to create stock movements:', movementsResult.error);
+            // Don't throw - invoice was created successfully, stock can be adjusted later
+          }
         }
       }
-      
-      // Update quotation status
-      await supabase
-        .from('quotations')
-        .update({ status: 'converted' })
-        .eq('id', quotationId);
-      
+
+      // Update quotation status using database adapter
+      const updateResult = await db.update('quotations', quotationId, { status: 'converted' });
+      if (updateResult.error) {
+        console.warn('Failed to update quotation status:', updateResult.error);
+        // Don't throw - invoice was created successfully
+      }
+
       return invoice;
     },
     onSuccess: (data) => {
@@ -485,6 +381,8 @@ export const useCreateInvoiceWithItems = () => {
 
   return useMutation({
     mutationFn: async ({ invoice, items }: { invoice: any; items: InvoiceItem[] }) => {
+      const db = getDatabase();
+
       // Ensure created_by references the authenticated user to satisfy FK constraints
       let cleanInvoice = { ...invoice } as any;
       try {
@@ -493,41 +391,38 @@ export const useCreateInvoiceWithItems = () => {
         if (authUserId) {
           cleanInvoice.created_by = authUserId;
         } else if (typeof cleanInvoice.created_by === 'undefined') {
-          // Leave as null if no auth user available; FK allows null
           cleanInvoice.created_by = null;
         }
       } catch {
-        // If auth lookup fails, don't block invoice creation
         if (typeof cleanInvoice.created_by === 'undefined') {
           cleanInvoice.created_by = null;
         }
       }
 
-      // First create the invoice
-      let invoiceDataRes;
-      let invoiceErrorRes;
-      {
-        const { data, error } = await supabase
-          .from('invoices')
-          .insert([cleanInvoice])
-          .select()
-          .single();
-        invoiceDataRes = data; invoiceErrorRes = error as any;
-      }
-      if (invoiceErrorRes && invoiceErrorRes.code === '23503' && String(invoiceErrorRes.message || '').includes('created_by')) {
-        const retryPayload = { ...cleanInvoice, created_by: null };
-        const { data: retryData, error: retryError } = await supabase
-          .from('invoices')
-          .insert([retryPayload])
-          .select()
-          .single();
-        invoiceDataRes = retryData; invoiceErrorRes = retryError as any;
+      // Create the invoice using database adapter
+      const invoiceInsertResult = await db.insert('invoices', cleanInvoice);
+      if (invoiceInsertResult.error) {
+        // Fallback: if FK violation on created_by, retry with created_by = null
+        if (String(invoiceInsertResult.error.message || '').includes('created_by')) {
+          const retryPayload = { ...cleanInvoice, created_by: null };
+          const retryResult = await db.insert('invoices', retryPayload);
+          if (retryResult.error) throw retryResult.error;
+          if (!retryResult.id) throw new Error('Failed to create invoice: no ID returned');
+        } else {
+          throw invoiceInsertResult.error;
+        }
       }
 
-      if (invoiceErrorRes) throw invoiceErrorRes;
-      const invoiceData = invoiceDataRes;
+      if (!invoiceInsertResult.id) throw new Error('Failed to create invoice: no ID returned');
 
-      // Then create the invoice items if any
+      // Fetch the created invoice to get full data
+      const invoiceSelectResult = await db.selectOne('invoices', invoiceInsertResult.id);
+      if (invoiceSelectResult.error) throw invoiceSelectResult.error;
+      if (!invoiceSelectResult.data) throw new Error('Failed to fetch created invoice');
+
+      const invoiceData = invoiceSelectResult.data;
+
+      // Create the invoice items if any
       if (items.length > 0) {
         const invoiceItems = items.map((item, index) => ({
           ...item,
@@ -535,24 +430,8 @@ export const useCreateInvoiceWithItems = () => {
           sort_order: index + 1
         }));
 
-        let itemsError: any = null;
-        {
-          const res = await supabase
-            .from('invoice_items')
-            .insert(invoiceItems);
-          itemsError = res.error as any;
-        }
-
-        // Fallback: remove discount_before_vat if schema doesn't have it
-        if (itemsError && (itemsError.code === 'PGRST204' || String(itemsError.message || '').toLowerCase().includes('discount_before_vat'))) {
-          const minimalItems = invoiceItems.map(({ discount_before_vat, ...rest }) => rest);
-          const retry = await supabase
-            .from('invoice_items')
-            .insert(minimalItems);
-          itemsError = retry.error as any;
-        }
-
-        if (itemsError) throw itemsError;
+        const itemsInsertResult = await db.insertMany('invoice_items', invoiceItems);
+        if (itemsInsertResult.error) throw itemsInsertResult.error;
 
         // Create stock movements for products that affect inventory
         if (invoice.affects_inventory !== false) {
@@ -561,62 +440,21 @@ export const useCreateInvoiceWithItems = () => {
             .map(item => ({
               company_id: invoice.company_id,
               product_id: item.product_id!,
-              movement_type: 'OUT' as const,
-              reference_type: 'INVOICE' as const,
+              movement_type: 'OUT',
+              reference_type: 'INVOICE',
               reference_id: invoiceData.id,
-              quantity: item.quantity, // Positive quantity, movement_type determines direction
+              quantity: item.quantity,
               cost_per_unit: item.unit_price,
               notes: `Stock reduction for invoice ${invoice.invoice_number}`
             }));
 
           if (stockMovements.length > 0) {
-            // Use the robust stock movements creation utility
-            const { createStockMovements } = await import('@/utils/initializeStockMovements');
-            const { data: stockData, error: stockError } = await createStockMovements(stockMovements);
-
-            if (stockError) {
-              console.error('Failed to create stock movements:', stockError);
-
-              // Check if this is a constraint violation error
-              if (stockError.message && stockError.message.includes('check constraint violation')) {
-                console.error('Stock movements constraint error detected. The database constraints may need to be fixed.');
-                throw new Error('Invoice creation failed due to stock movements constraint error. Please contact your system administrator to fix the database constraints.');
-              }
-
-              // Don't throw for other errors - invoice was created successfully, stock inconsistency can be fixed later
-              console.warn(`Stock movements creation failed for invoice ${invoice.invoice_number}. Invoice created successfully but inventory may not be updated.`);
+            const movementsInsertResult = await db.insertMany('stock_movements', stockMovements);
+            if (movementsInsertResult.error) {
+              console.warn('Failed to create stock movements:', movementsInsertResult.error);
+              // Don't throw - invoice was created successfully, stock can be adjusted later
             } else {
-              console.log(`Created ${stockData?.length || 0} stock movements for invoice ${invoice.invoice_number}`);
-            }
-
-            // Update product stock quantities in parallel for better performance
-            const stockUpdatePromises = stockMovements.map(movement =>
-              supabase.rpc('update_product_stock', {
-                product_uuid: movement.product_id,
-                movement_type: movement.movement_type,
-                quantity: Math.abs(movement.quantity) // Use absolute value since movement_type determines direction
-              })
-            );
-
-            const stockUpdateResults = await Promise.allSettled(stockUpdatePromises);
-
-            // Check for any failed stock updates
-            const failedUpdates = stockUpdateResults.filter((result, index) => {
-              if (result.status === 'rejected') {
-                console.error('Failed to update stock for product:', stockMovements[index].product_id, result.reason);
-                return true;
-              }
-              if (result.status === 'fulfilled' && result.value && result.value.error) {
-                const msg = parseErrorMessageWithCodes(result.value.error, 'stock update');
-                console.error(`Stock update error for product: ${stockMovements[index].product_id} - ${msg}`, result.value.error);
-                return true;
-              }
-              return false;
-            });
-
-            if (failedUpdates.length > 0) {
-              console.warn(`${failedUpdates.length} out of ${stockMovements.length} stock updates failed`);
-              // Don't throw - invoice was created successfully, stock inconsistencies can be fixed later
+              console.log(`Created stock movements for invoice ${invoice.invoice_number}`);
             }
           }
         }
@@ -637,67 +475,48 @@ export const useUpdateInvoiceWithItems = () => {
 
   return useMutation({
     mutationFn: async ({ invoiceId, invoice, items }: { invoiceId: string; invoice: any; items: InvoiceItem[] }) => {
-      // First, reverse any existing stock movements for this invoice
-      const { data: existingMovements } = await supabase
-        .from('stock_movements')
-        .select('*')
-        .eq('reference_id', invoiceId)
-        .eq('reference_type', 'INVOICE');
+      const db = getDatabase();
 
-      if (existingMovements && existingMovements.length > 0) {
+      // First, reverse any existing stock movements for this invoice
+      const existingMovementsResult = await db.selectBy('stock_movements', {
+        reference_id: invoiceId,
+        reference_type: 'INVOICE'
+      });
+
+      if (!existingMovementsResult.error && existingMovementsResult.data && existingMovementsResult.data.length > 0) {
+        const existingMovements = existingMovementsResult.data;
+
         // Create reverse movements
-        const reverseMovements = existingMovements.map(movement => ({
+        const reverseMovements = existingMovements.map((movement: any) => ({
           company_id: movement.company_id,
           product_id: movement.product_id,
-          movement_type: movement.movement_type === 'OUT' ? 'IN' : 'OUT' as const,
-          reference_type: 'ADJUSTMENT' as const,
+          movement_type: movement.movement_type === 'OUT' ? 'IN' : 'OUT',
+          reference_type: 'ADJUSTMENT',
           reference_id: invoiceId,
           quantity: -movement.quantity,
           notes: `Reversal for updated invoice ${invoice.invoice_number}`
         }));
 
-        await supabase.from('stock_movements').insert(reverseMovements);
-
-        // Update product stock quantities in parallel for reverse movements
-        const reverseUpdatePromises = reverseMovements.map(movement =>
-          supabase.rpc('update_product_stock', {
-            product_uuid: movement.product_id,
-            movement_type: movement.movement_type,
-            quantity: Math.abs(movement.quantity)
-          })
-        );
-
-        const reverseUpdateResults = await Promise.allSettled(reverseUpdatePromises);
-
-        // Log any failed reverse stock updates
-        reverseUpdateResults.forEach((result, index) => {
-          if (result.status === 'rejected') {
-            const msg = parseErrorMessageWithCodes(result.reason || result, 'reverse stock update');
-            console.error(`Failed to reverse stock for product: ${reverseMovements[index].product_id} - ${msg}`, result.reason || result);
-          } else if (result.value && result.value.error) {
-            const msg = parseErrorMessageWithCodes(result.value.error, 'reverse stock update');
-            console.error(`Reverse stock update error for product: ${reverseMovements[index].product_id} - ${msg}`, result.value.error);
-          }
-        });
+        const reverseInsertResult = await db.insertMany('stock_movements', reverseMovements);
+        if (reverseInsertResult.error) {
+          console.warn('Failed to create reverse stock movements:', reverseInsertResult.error);
+        }
       }
 
-      // Update the invoice
-      const { data: invoiceData, error: invoiceError } = await supabase
-        .from('invoices')
-        .update(invoice)
-        .eq('id', invoiceId)
-        .select()
-        .single();
+      // Update the invoice using database adapter
+      const updateResult = await db.update('invoices', invoiceId, invoice);
+      if (updateResult.error) throw updateResult.error;
 
-      if (invoiceError) throw invoiceError;
+      // Fetch updated invoice
+      const invoiceSelectResult = await db.selectOne('invoices', invoiceId);
+      if (invoiceSelectResult.error) throw invoiceSelectResult.error;
+      if (!invoiceSelectResult.data) throw new Error('Failed to fetch updated invoice');
+
+      const invoiceData = invoiceSelectResult.data;
 
       // Delete existing invoice items
-      const { error: deleteError } = await supabase
-        .from('invoice_items')
-        .delete()
-        .eq('invoice_id', invoiceId);
-
-      if (deleteError) throw deleteError;
+      const deleteResult = await db.deleteMany('invoice_items', { invoice_id: invoiceId });
+      if (deleteResult.error) throw deleteResult.error;
 
       // Create new invoice items
       if (items.length > 0) {
@@ -707,24 +526,8 @@ export const useUpdateInvoiceWithItems = () => {
           sort_order: index + 1
         }));
 
-        let itemsError: any = null;
-        {
-          const res = await supabase
-            .from('invoice_items')
-            .insert(invoiceItems);
-          itemsError = res.error as any;
-        }
-
-        // Fallback: remove discount_before_vat if schema doesn't have it
-        if (itemsError && (itemsError.code === 'PGRST204' || String(itemsError.message || '').toLowerCase().includes('discount_before_vat'))) {
-          const minimalItems = invoiceItems.map(({ discount_before_vat, ...rest }) => rest);
-          const retry = await supabase
-            .from('invoice_items')
-            .insert(minimalItems);
-          itemsError = retry.error as any;
-        }
-
-        if (itemsError) throw itemsError;
+        const itemsInsertResult = await db.insertMany('invoice_items', invoiceItems);
+        if (itemsInsertResult.error) throw itemsInsertResult.error;
 
         // Create new stock movements if affects inventory
         if (invoice.affects_inventory !== false) {
@@ -733,38 +536,19 @@ export const useUpdateInvoiceWithItems = () => {
             .map(item => ({
               company_id: invoice.company_id,
               product_id: item.product_id!,
-              movement_type: 'OUT' as const,
-              reference_type: 'INVOICE' as const,
+              movement_type: 'OUT',
+              reference_type: 'INVOICE',
               reference_id: invoiceId,
-              quantity: -item.quantity,
+              quantity: item.quantity,
               cost_per_unit: item.unit_price,
               notes: `Stock reduction for updated invoice ${invoice.invoice_number}`
             }));
 
           if (stockMovements.length > 0) {
-            await supabase.from('stock_movements').insert(stockMovements);
-
-            // Update product stock quantities in parallel for new movements
-            const newStockUpdatePromises = stockMovements.map(movement =>
-              supabase.rpc('update_product_stock', {
-                product_uuid: movement.product_id,
-                movement_type: movement.movement_type,
-                quantity: Math.abs(movement.quantity)
-              })
-            );
-
-            const newStockUpdateResults = await Promise.allSettled(newStockUpdatePromises);
-
-            // Log any failed new stock updates
-            newStockUpdateResults.forEach((result, index) => {
-              if (result.status === 'rejected') {
-                const msg = parseErrorMessageWithCodes(result.reason || result, 'stock update');
-                console.error(`Failed to update stock for product: ${stockMovements[index].product_id} - ${msg}`, result.reason || result);
-              } else if (result.value && result.value.error) {
-                const msg = parseErrorMessageWithCodes(result.value.error, 'stock update');
-                console.error(`Stock update error for product: ${stockMovements[index].product_id} - ${msg}`, result.value.error);
-              }
-            });
+            const movementsInsertResult = await db.insertMany('stock_movements', stockMovements);
+            if (movementsInsertResult.error) {
+              console.warn('Failed to create stock movements:', movementsInsertResult.error);
+            }
           }
         }
       }
@@ -785,6 +569,8 @@ export const useCreateProformaWithItems = () => {
 
   return useMutation({
     mutationFn: async ({ proforma, items }: { proforma: any; items: any[] }) => {
+      const db = getDatabase();
+
       // Ensure created_by defaults to the authenticated user
       let cleanProforma = { ...proforma } as any;
       try {
@@ -801,31 +587,30 @@ export const useCreateProformaWithItems = () => {
         }
       }
 
-      // First create the proforma invoice
-      let proformaDataRes;
-      let proformaErrorRes;
-      {
-        const { data, error } = await supabase
-          .from('proforma_invoices')
-          .insert([cleanProforma])
-          .select()
-          .single();
-        proformaDataRes = data; proformaErrorRes = error as any;
-      }
-      if (proformaErrorRes && proformaErrorRes.code === '23503' && String(proformaErrorRes.message || '').includes('created_by')) {
-        const retryPayload = { ...cleanProforma, created_by: null };
-        const { data: retryData, error: retryError } = await supabase
-          .from('proforma_invoices')
-          .insert([retryPayload])
-          .select()
-          .single();
-        proformaDataRes = retryData; proformaErrorRes = retryError as any;
+      // Create the proforma invoice using database adapter
+      const proformaInsertResult = await db.insert('proforma_invoices', cleanProforma);
+      if (proformaInsertResult.error) {
+        // Fallback: if FK violation on created_by, retry with created_by = null
+        if (String(proformaInsertResult.error.message || '').includes('created_by')) {
+          const retryPayload = { ...cleanProforma, created_by: null };
+          const retryResult = await db.insert('proforma_invoices', retryPayload);
+          if (retryResult.error) throw retryResult.error;
+          if (!retryResult.id) throw new Error('Failed to create proforma: no ID returned');
+        } else {
+          throw proformaInsertResult.error;
+        }
       }
 
-      if (proformaErrorRes) throw proformaErrorRes;
-      const proformaData = proformaDataRes;
+      if (!proformaInsertResult.id) throw new Error('Failed to create proforma: no ID returned');
 
-      // Then create the proforma items if any
+      // Fetch the created proforma to get full data
+      const proformaSelectResult = await db.selectOne('proforma_invoices', proformaInsertResult.id);
+      if (proformaSelectResult.error) throw proformaSelectResult.error;
+      if (!proformaSelectResult.data) throw new Error('Failed to fetch created proforma');
+
+      const proformaData = proformaSelectResult.data;
+
+      // Create the proforma items if any
       if (items.length > 0) {
         const proformaItems = items.map((item, index) => ({
           proforma_id: proformaData.id,
@@ -842,20 +627,8 @@ export const useCreateProformaWithItems = () => {
           sort_order: index + 1
         }));
 
-        let { error: itemsError } = await supabase
-          .from('proforma_items')
-          .insert(proformaItems);
-
-        if (itemsError) {
-          const msg = (itemsError.message || JSON.stringify(itemsError)).toLowerCase();
-          if (msg.includes('discount_percentage')) {
-            const minimalItems = proformaItems.map(({ discount_percentage, ...rest }) => rest);
-            const retry = await supabase.from('proforma_items').insert(minimalItems);
-            if (retry.error) throw retry.error;
-          } else {
-            throw itemsError;
-          }
-        }
+        const itemsInsertResult = await db.insertMany('proforma_items', proformaItems);
+        if (itemsInsertResult.error) throw itemsInsertResult.error;
       }
 
       return proformaData;
@@ -869,23 +642,24 @@ export const useCreateProformaWithItems = () => {
 // Create delivery note (affects inventory without creating invoice)
 export const useCreateDeliveryNote = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ deliveryNote, items }: { deliveryNote: any; items: any[] }) => {
+      const db = getDatabase();
+
       // Validate that delivery note is backed by a sale (invoice)
       if (!deliveryNote.invoice_id) {
         throw new Error('Delivery note must be linked to an existing invoice or sale.');
       }
 
       // Verify the invoice exists and belongs to the same company
-      const { data: invoice, error: invoiceError } = await supabase
-        .from('invoices')
-        .select('id, customer_id, company_id')
-        .eq('id', deliveryNote.invoice_id)
-        .eq('company_id', deliveryNote.company_id)
-        .single();
+      const invoiceResult = await db.selectOne('invoices', deliveryNote.invoice_id);
+      if (invoiceResult.error) {
+        throw new Error('Related invoice not found or does not belong to this company.');
+      }
 
-      if (invoiceError || !invoice) {
+      const invoice = invoiceResult.data as any;
+      if (!invoice || invoice.company_id !== deliveryNote.company_id) {
         throw new Error('Related invoice not found or does not belong to this company.');
       }
 
@@ -896,15 +670,14 @@ export const useCreateDeliveryNote = () => {
 
       // Verify delivery items correspond to invoice items
       if (items.length > 0) {
-        const { data: invoiceItems } = await supabase
-          .from('invoice_items')
-          .select('product_id, quantity')
-          .eq('invoice_id', deliveryNote.invoice_id);
+        const invoiceItemsResult = await db.selectBy('invoice_items', { invoice_id: deliveryNote.invoice_id });
 
         const invoiceProductMap = new Map();
-        (invoiceItems || []).forEach((item: any) => {
-          invoiceProductMap.set(item.product_id, item.quantity);
-        });
+        if (!invoiceItemsResult.error && invoiceItemsResult.data) {
+          (invoiceItemsResult.data || []).forEach((item: any) => {
+            invoiceProductMap.set(item.product_id, item.quantity);
+          });
+        }
 
         // Check that all delivery items exist in the invoice
         for (const item of items) {
@@ -926,15 +699,18 @@ export const useCreateDeliveryNote = () => {
         }
       }
 
-      // Create delivery note
-      const { data: deliveryData, error: deliveryError } = await supabase
-        .from('delivery_notes')
-        .insert([deliveryNote])
-        .select()
-        .single();
-      
-      if (deliveryError) throw deliveryError;
-      
+      // Create delivery note using database adapter
+      const deliveryInsertResult = await db.insert('delivery_notes', deliveryNote);
+      if (deliveryInsertResult.error) throw deliveryInsertResult.error;
+      if (!deliveryInsertResult.id) throw new Error('Failed to create delivery note: no ID returned');
+
+      // Fetch the created delivery note to get full data
+      const deliverySelectResult = await db.selectOne('delivery_notes', deliveryInsertResult.id);
+      if (deliverySelectResult.error) throw deliverySelectResult.error;
+      if (!deliverySelectResult.data) throw new Error('Failed to fetch created delivery note');
+
+      const deliveryData = deliverySelectResult.data;
+
       // Create delivery note items
       if (items.length > 0) {
         const deliveryItems = items.map((item, index) => {
@@ -952,11 +728,8 @@ export const useCreateDeliveryNote = () => {
           };
         });
 
-        const { error: itemsError } = await supabase
-          .from('delivery_note_items')
-          .insert(deliveryItems);
-
-        if (itemsError) throw itemsError;
+        const itemsInsertResult = await db.insertMany('delivery_note_items', deliveryItems);
+        if (itemsInsertResult.error) throw itemsInsertResult.error;
 
         // Create stock movements for delivered items
         const stockMovements = deliveryItems
@@ -964,27 +737,21 @@ export const useCreateDeliveryNote = () => {
           .map(item => ({
             company_id: deliveryNote.company_id,
             product_id: item.product_id,
-            movement_type: 'OUT' as const,
-            reference_type: 'DELIVERY_NOTE' as const,
+            movement_type: 'OUT',
+            reference_type: 'DELIVERY_NOTE',
             reference_id: deliveryData.id,
-            quantity: -(item.quantity_delivered ?? 0),
+            quantity: item.quantity_delivered,
             notes: `Stock delivery for delivery note ${deliveryNote.delivery_number || deliveryNote.delivery_note_number}`
           }));
 
         if (stockMovements.length > 0) {
-          await supabase.from('stock_movements').insert(stockMovements);
-
-          // Update product stock quantities
-          for (const movement of stockMovements) {
-            await supabase.rpc('update_product_stock', {
-              product_uuid: movement.product_id,
-              movement_type: movement.movement_type,
-              quantity: Math.abs(movement.quantity)
-            });
+          const movementsInsertResult = await db.insertMany('stock_movements', stockMovements);
+          if (movementsInsertResult.error) {
+            console.warn('Failed to create stock movements:', movementsInsertResult.error);
           }
         }
       }
-      
+
       return deliveryData;
     },
     onSuccess: () => {
@@ -1001,24 +768,22 @@ export const useConvertQuotationToProforma = () => {
 
   return useMutation({
     mutationFn: async (quotationId: string) => {
-      // Get quotation data
-      const { data: quotation, error: quotationError } = await supabase
-        .from('quotations')
-        .select(`
-          *,
-          quotation_items(*)
-        `)
-        .eq('id', quotationId)
-        .single();
+      const db = getDatabase();
 
-      if (quotationError) throw quotationError;
+      // Get quotation data using database adapter
+      const quotationResult = await db.selectOne('quotations', quotationId);
+      if (quotationResult.error) throw quotationResult.error;
+      if (!quotationResult.data) throw new Error('Quotation not found');
 
-      // Generate proforma number
-      const { data: proformaNumber, error: proformaNumberError } = await supabase.rpc('generate_proforma_number', {
-        company_uuid: quotation.company_id
-      });
+      const quotation = quotationResult.data as any;
 
-      if (proformaNumberError) throw proformaNumberError;
+      // Get quotation items
+      const itemsResult = await db.selectBy('quotation_items', { quotation_id: quotationId });
+      if (itemsResult.error) throw itemsResult.error;
+      const quotationItems = itemsResult.data || [];
+
+      // Generate proforma number using timestamp
+      const proformaNumber = `PROFORMA-${Date.now()}`;
 
       // Create proforma from quotation
       let createdBy: string | null = null;
@@ -1046,29 +811,32 @@ export const useConvertQuotationToProforma = () => {
         created_by: createdBy
       };
 
-      let { data: proforma, error: proformaError } = await supabase
-        .from('proforma_invoices')
-        .insert([proformaData])
-        .select()
-        .single();
-
-      // Fallback: if FK violation on created_by, retry with created_by = null
-      if (proformaError && proformaError.code === '23503' && String(proformaError.message || '').includes('created_by')) {
-        const retryPayload = { ...proformaData, created_by: null };
-        const retryRes = await supabase
-          .from('proforma_invoices')
-          .insert([retryPayload])
-          .select()
-          .single();
-        proforma = retryRes.data;
-        proformaError = retryRes.error as any;
+      // Create proforma using database adapter
+      const proformaInsertResult = await db.insert('proforma_invoices', proformaData);
+      if (proformaInsertResult.error) {
+        // Fallback: if FK violation on created_by, retry with created_by = null
+        if (String(proformaInsertResult.error.message || '').includes('created_by')) {
+          const retryPayload = { ...proformaData, created_by: null };
+          const retryResult = await db.insert('proforma_invoices', retryPayload);
+          if (retryResult.error) throw retryResult.error;
+          proformaData.created_by = null;
+        } else {
+          throw proformaInsertResult.error;
+        }
       }
 
-      if (proformaError) throw proformaError;
+      if (!proformaInsertResult.id) throw new Error('Failed to create proforma: no ID returned');
+
+      // Fetch the created proforma to get full data
+      const proformaSelectResult = await db.selectOne('proforma_invoices', proformaInsertResult.id);
+      if (proformaSelectResult.error) throw proformaSelectResult.error;
+      if (!proformaSelectResult.data) throw new Error('Failed to fetch created proforma');
+
+      const proforma = proformaSelectResult.data as any;
 
       // Create proforma items from quotation items
-      if (quotation.quotation_items && quotation.quotation_items.length > 0) {
-        const proformaItems = quotation.quotation_items.map((item: any) => ({
+      if (quotationItems && quotationItems.length > 0) {
+        const proformaItems = quotationItems.map((item: any, index: number) => ({
           proforma_id: proforma.id,
           product_id: item.product_id,
           description: item.description,
@@ -1079,30 +847,19 @@ export const useConvertQuotationToProforma = () => {
           tax_amount: item.tax_amount,
           tax_inclusive: item.tax_inclusive,
           line_total: item.line_total,
-          sort_order: item.sort_order
+          sort_order: item.sort_order || index + 1
         }));
 
-        let { error: itemsError } = await supabase
-          .from('proforma_items')
-          .insert(proformaItems);
-
-        if (itemsError) {
-          const msg = (itemsError.message || JSON.stringify(itemsError)).toLowerCase();
-          if (msg.includes('discount_percentage')) {
-            const minimalItems = proformaItems.map(({ discount_percentage, ...rest }) => rest);
-            const retry = await supabase.from('proforma_items').insert(minimalItems);
-            if (retry.error) throw retry.error;
-          } else {
-            throw itemsError;
-          }
-        }
+        const itemsInsertResult = await db.insertMany('proforma_items', proformaItems);
+        if (itemsInsertResult.error) throw itemsInsertResult.error;
       }
 
-      // Update quotation status
-      await supabase
-        .from('quotations')
-        .update({ status: 'converted' })
-        .eq('id', quotationId);
+      // Update quotation status using database adapter
+      const updateResult = await db.update('quotations', quotationId, { status: 'converted' });
+      if (updateResult.error) {
+        console.warn('Failed to update quotation status:', updateResult.error);
+        // Don't throw - proforma was created successfully
+      }
 
       return proforma;
     },
@@ -1125,6 +882,8 @@ export const useDeleteQuotation = () => {
 
   return useMutation({
     mutationFn: async (quotationId: string) => {
+      const db = getDatabase();
+
       // Check permission before deletion
       const { profile } = await (async () => {
         const { data: { user } } = await supabase.auth.getUser();
@@ -1148,14 +907,10 @@ export const useDeleteQuotation = () => {
       let snapshot: any = null;
       let companyId: string | null = null;
       try {
-        const { data, error } = await supabase
-          .from('quotations')
-          .select(`*, quotation_items(*)`)
-          .eq('id', quotationId)
-          .single();
-        if (!error) {
-          snapshot = data;
-          companyId = (data as any)?.company_id ?? null;
+        const selectResult = await db.selectOne('quotations', quotationId);
+        if (!selectResult.error && selectResult.data) {
+          snapshot = selectResult.data;
+          companyId = (selectResult.data as any)?.company_id ?? null;
         }
       } catch {}
 
@@ -1169,19 +924,16 @@ export const useDeleteQuotation = () => {
 
       // Attempt to delete child items first (best-effort)
       try {
-        await supabase.from('quotation_items').delete().eq('quotation_id', quotationId);
+        await db.deleteMany('quotation_items', { quotation_id: quotationId });
       } catch (e) {
         console.warn('Quotation items delete skipped/failed:', (e as any)?.message || e);
       }
 
-      // Delete parent record
-      const { error } = await supabase
-        .from('quotations')
-        .delete()
-        .eq('id', quotationId);
+      // Delete parent record using the database adapter
+      const deleteResult = await db.delete('quotations', quotationId);
 
-      if (error) {
-        const errorMessage = parseErrorMessageWithCodes(error, 'delete quotation');
+      if (deleteResult.error) {
+        const errorMessage = parseErrorMessageWithCodes(deleteResult.error, 'delete quotation');
         console.error('Error deleting quotation:', errorMessage);
         throw new Error(`Failed to delete quotation: ${errorMessage}`);
       }
@@ -1204,33 +956,35 @@ export const useUpdateQuotationStatus = () => {
 
   return useMutation({
     mutationFn: async ({ quotationId, status, notes }: { quotationId: string; status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired'; notes?: string }) => {
+      const db = getDatabase();
       const updateData: any = { status };
 
       if (notes) {
         // Append note to existing notes
-        const { data: currentQuotation } = await supabase
-          .from('quotations')
-          .select('notes')
-          .eq('id', quotationId)
-          .single();
+        const currentQuotationResult = await db.selectOne('quotations', quotationId);
 
-        if (currentQuotation?.notes) {
-          updateData.notes = `${currentQuotation.notes}\n[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
+        if (!currentQuotationResult.error && currentQuotationResult.data) {
+          const currentQuotation = currentQuotationResult.data as any;
+          if (currentQuotation?.notes) {
+            updateData.notes = `${currentQuotation.notes}\n[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
+          } else {
+            updateData.notes = `[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
+          }
         } else {
           updateData.notes = `[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
         }
       }
 
-      const { data, error } = await supabase
-        .from('quotations')
-        .update(updateData)
-        .eq('id', quotationId)
-        .select()
-        .single();
+      // Update quotation status using database adapter
+      const updateResult = await db.update('quotations', quotationId, updateData);
+      if (updateResult.error) throw updateResult.error;
 
-      if (error) throw error;
+      // Fetch updated quotation
+      const quotationSelectResult = await db.selectOne('quotations', quotationId);
+      if (quotationSelectResult.error) throw quotationSelectResult.error;
+      if (!quotationSelectResult.data) throw new Error('Failed to fetch updated quotation');
 
-      return data;
+      return quotationSelectResult.data;
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
