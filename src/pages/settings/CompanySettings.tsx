@@ -63,12 +63,8 @@ export default function CompanySettings() {
     // Check for schema errors in the companies query
     if (companiesError) {
       const errorString = String(companiesError);
-      if (errorString.includes('fiscal_year_start') && (errorString.includes('column') || errorString.includes('schema cache'))) {
-        setSchemaError('fiscal_year_start column missing');
-      } else if (errorString.includes('currency') && (errorString.includes('column') || errorString.includes('schema cache'))) {
+      if (errorString.includes('currency') && (errorString.includes('column') || errorString.includes('schema cache'))) {
         setSchemaError('currency column missing');
-      } else if (errorString.includes('registration_number') && errorString.includes('column')) {
-        setSchemaError('registration_number column missing');
       }
     }
   }, [companiesLoading, companiesError, currentCompany, taxSettings, taxSettingsLoading, taxSettingsError]);
