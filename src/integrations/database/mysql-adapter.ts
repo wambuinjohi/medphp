@@ -338,6 +338,7 @@ export const mysqlAdapter = new MySQLAdapter();
  * - PUT  /api/db/update-many/:table      - Update multiple records
  * - DEL  /api/db/delete/:table/:id       - Delete record
  * - POST /api/db/delete-many/:table      - Delete multiple records
+ * - POST /api/db/rpc                     - Execute RPC function
  * - POST /api/db/raw                     - Execute raw SQL
  * - POST /api/db/auth/can-read           - Check read permission
  * - POST /api/db/auth/can-write          - Check write permission
