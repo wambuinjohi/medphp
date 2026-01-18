@@ -133,7 +133,7 @@ export function CreateCreditNoteModal({
     product.product_code.toLowerCase().includes(searchProduct.toLowerCase())
   ) || [];
 
-  const addItem = (product: any) => {
+  const addItem = (product: Product) => {
     const existingItem = items.find(item => item.product_id === product.id);
 
     if (existingItem) {
