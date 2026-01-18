@@ -331,13 +331,11 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
         company_id: currentCompany.id,
         name: newMethodData.name,
         code: newMethodData.code,
-        description: newMethodData.description || '',
-        is_active: true,
-        sort_order: (paymentMethods?.length || 0) + 1
+        is_active: true
       });
 
       handleInputChange('payment_method', newMethod.code);
-      setNewMethodData({ name: '', code: '', description: '' });
+      setNewMethodData({ name: '', code: '' });
       setShowCreateMethodDialog(false);
       toast.success(`Payment method "${newMethod.name}" created successfully!`);
     } catch (error) {
