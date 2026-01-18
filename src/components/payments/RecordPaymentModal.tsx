@@ -534,17 +534,29 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                 </div>
                 <Select value={paymentData.payment_method || ''} onValueChange={(value) => handleInputChange('payment_method', value)}>
                   <SelectTrigger disabled={methodsLoading}>
-                    <SelectValue placeholder={methodsLoading ? "Loading..." : "Select payment method"} />
+                    <SelectValue
+                      placeholder={methodsLoading ? "Loading..." : "Select payment method"}
+                    >
+                      {paymentData.payment_method ? (
+                        paymentMethods.find(m => m.code === paymentData.payment_method)?.name || paymentData.payment_method
+                      ) : null}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {paymentMethods.filter(m => m?.code).map((method) => (
-                      <SelectItem key={method.id} value={method.code}>
-                        <div className="flex items-center space-x-2">
-                          {getMethodIcon(method.icon_name)}
-                          <span>{method.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {paymentMethods.length > 0 ? (
+                      paymentMethods.filter(m => m?.code).map((method) => (
+                        <SelectItem key={method.id} value={method.code}>
+                          <div className="flex items-center space-x-2">
+                            {getMethodIcon(method.icon_name)}
+                            <span>{method.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                        {methodsLoading ? "Loading payment methods..." : "No payment methods available"}
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
                 {paymentMethods.length === 0 && !methodsLoading && (
