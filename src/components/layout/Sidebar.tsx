@@ -19,7 +19,6 @@ import {
   FileSpreadsheet,
   ShoppingCart,
   RotateCcw,
-  Globe,
   Database,
   TrendingUp,
   Banknote
