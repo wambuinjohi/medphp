@@ -266,7 +266,7 @@ export function CreateUserModal({
                 ) : roles.length === 0 ? (
                   <div className="px-2 py-2 text-sm text-muted-foreground">No roles available</div>
                 ) : (
-                  roles.map((role) => (
+                  roles.filter(r => r?.name).map((role) => (
                     <SelectItem key={role.id} value={role.name}>
                       <div className="flex flex-col">
                         <span className="font-medium">{role.name}</span>
