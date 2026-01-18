@@ -35,6 +35,7 @@ import {
   RefreshCw,
   Package,
   Calendar,
+  AlertCircle,
 } from 'lucide-react';
 import { useStockMovements, useProducts } from '@/hooks/useDatabase';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
