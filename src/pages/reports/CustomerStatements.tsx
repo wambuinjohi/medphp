@@ -585,20 +585,20 @@ export default function CustomerStatements() {
                     </TableCell>
                     <TableCell>
                       <div className="font-medium">
-                        ${statement.total_outstanding.toFixed(2)}
+                        ${Number(statement.total_outstanding || 0).toFixed(2)}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {statement.invoice_count} invoices
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className={statement.current_due > 0 ? 'text-warning' : 'text-muted-foreground'}>
-                        ${statement.current_due.toFixed(2)}
+                      <span className={Number(statement.current_due || 0) > 0 ? 'text-warning' : 'text-muted-foreground'}>
+                        ${Number(statement.current_due || 0).toFixed(2)}
                       </span>
                     </TableCell>
                     <TableCell>
-                      <span className={statement.overdue_amount > 0 ? 'text-destructive font-medium' : 'text-muted-foreground'}>
-                        ${statement.overdue_amount.toFixed(2)}
+                      <span className={Number(statement.overdue_amount || 0) > 0 ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+                        ${Number(statement.overdue_amount || 0).toFixed(2)}
                       </span>
                     </TableCell>
                     <TableCell>
