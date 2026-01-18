@@ -119,23 +119,23 @@ export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRes
               <Package className="h-6 w-6 text-primary" />
               <div>
                 <div className="flex items-center space-x-2">
-                  <span>{item.name}</span>
-                  <Badge variant="outline" className={getStatusColor(item.status)}>
-                    {item.status.replace('_', ' ').toUpperCase()}
+                  <span>{normalizedItem.name}</span>
+                  <Badge variant="outline" className={getStatusColor(normalizedItem.status)}>
+                    {normalizedItem.status.replace('_', ' ').toUpperCase()}
                   </Badge>
                 </div>
                 <div className="text-sm text-muted-foreground font-normal">
-                  {item.sku} • {item.category?.name || 'No category'}
+                  {normalizedItem.sku} • {normalizedItem.category?.name || 'No category'}
                 </div>
               </div>
             </div>
-            
+
             <div className="flex space-x-2">
               <Button variant="outline" size="sm" onClick={onEdit}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
               </Button>
-              {item.status === 'low_stock' && (
+              {normalizedItem.status === 'low_stock' && (
                 <Button size="sm" onClick={onRestock} className="bg-warning hover:bg-warning/90">
                   <Package className="h-4 w-4 mr-2" />
                   Restock
