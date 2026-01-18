@@ -1056,6 +1056,8 @@ export const useDeleteQuotation = () => {
 
   return useMutation({
     mutationFn: async (quotationId: string) => {
+      const db = getDatabase();
+
       // Check permission before deletion
       const { profile } = await (async () => {
         const { data: { user } } = await supabase.auth.getUser();
@@ -1079,14 +1081,10 @@ export const useDeleteQuotation = () => {
       let snapshot: any = null;
       let companyId: string | null = null;
       try {
-        const { data, error } = await supabase
-          .from('quotations')
-          .select(`*, quotation_items(*)`)
-          .eq('id', quotationId)
-          .single();
-        if (!error) {
-          snapshot = data;
-          companyId = (data as any)?.company_id ?? null;
+        const selectResult = await db.selectOne('quotations', quotationId);
+        if (!selectResult.error && selectResult.data) {
+          snapshot = selectResult.data;
+          companyId = (selectResult.data as any)?.company_id ?? null;
         }
       } catch {}
 
@@ -1100,19 +1098,16 @@ export const useDeleteQuotation = () => {
 
       // Attempt to delete child items first (best-effort)
       try {
-        await supabase.from('quotation_items').delete().eq('quotation_id', quotationId);
+        await db.deleteMany('quotation_items', { quotation_id: quotationId });
       } catch (e) {
         console.warn('Quotation items delete skipped/failed:', (e as any)?.message || e);
       }
 
-      // Delete parent record
-      const { error } = await supabase
-        .from('quotations')
-        .delete()
-        .eq('id', quotationId);
+      // Delete parent record using the database adapter
+      const deleteResult = await db.delete('quotations', quotationId);
 
-      if (error) {
-        const errorMessage = parseErrorMessageWithCodes(error, 'delete quotation');
+      if (deleteResult.error) {
+        const errorMessage = parseErrorMessageWithCodes(deleteResult.error, 'delete quotation');
         console.error('Error deleting quotation:', errorMessage);
         throw new Error(`Failed to delete quotation: ${errorMessage}`);
       }
