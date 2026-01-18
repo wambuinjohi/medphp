@@ -556,9 +556,6 @@ export const useConvertProformaToInvoice = () => {
         subtotal: proforma.subtotal,
         tax_amount: proforma.tax_amount,
         total_amount: proforma.total_amount,
-        notes: `Converted from proforma invoice ${proforma.proforma_number}`,
-        terms_and_conditions: proforma.terms_and_conditions,
-        affects_inventory: true,
         created_by: createdBy
       };
 
