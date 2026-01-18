@@ -41,16 +41,22 @@ const STANDARD_UNITS = [
 ];
 
 interface InventoryItem {
-  id?: string;
+  id: string;
   name: string;
-  product_code: string;
+  product_code?: string;
+  sku?: string;
   description?: string;
   category_id?: string;
-  unit_of_measure: string;
-  cost_price: number;
-  selling_price: number;
-  stock_quantity: number;
-  min_stock_level: number;
+  unit_of_measure?: string;
+  unit_of_measure?: string;
+  cost_price?: number;
+  selling_price?: number;
+  unit_price?: number;
+  stock_quantity?: number;
+  reorder_level?: number;
+  minimum_stock_level?: number;
+  min_stock_level?: number;
+  maximum_stock_level?: number;
   max_stock_level?: number;
 }
 
