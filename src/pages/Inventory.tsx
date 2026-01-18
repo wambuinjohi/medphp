@@ -205,6 +205,41 @@ export default function Inventory() {
     return inventory.filter(item => item.status === 'out_of_stock').length;
   }, [inventory]);
 
+  // Handle timeout state - if loading is taking too long, show helpful message
+  if (loadingTimeout && !productsError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Inventory</h1>
+            <p className="text-muted-foreground">Inventory items</p>
+          </div>
+        </div>
+        <Card className="shadow-card">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center min-h-[300px]">
+              <div className="text-center max-w-md">
+                <AlertTriangle className="h-12 w-12 text-warning mx-auto mb-4" />
+                <h2 className="text-lg font-semibold text-foreground mb-2">Loading is taking longer than expected</h2>
+                <p className="text-muted-foreground text-sm mb-6">
+                  The inventory is still loading. This may indicate a slow connection or large dataset.
+                  You can wait or retry the request.
+                </p>
+                <Button
+                  onClick={() => retryProducts()}
+                  className="bg-primary text-primary-foreground hover:opacity-90"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Retry Loading
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Handle loading and error states
   if (loadingProducts) {
     return (
@@ -221,7 +256,7 @@ export default function Inventory() {
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                 <p className="text-muted-foreground">Loading products...</p>
-                <p className="text-muted-foreground text-sm mt-2">Connecting to database...</p>
+                <p className="text-muted-foreground text-sm mt-2">This should only take a moment...</p>
               </div>
             </div>
           </CardContent>
