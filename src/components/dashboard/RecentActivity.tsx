@@ -2,149 +2,100 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
-import { usePayments, useRemittanceAdvice, useCompanies } from '@/hooks/useDatabase';
-import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
+import { useAuditLogs, useCompanies } from '@/hooks/useDatabase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
+
+interface AuditLog {
+  id: string;
+  actor_user_id?: number;
+  action: string;
+  entity_type: string;
+  record_id?: number;
+  created_at: string;
+  company_id?: number;
+}
 
 interface Activity {
   id: string;
-  type: 'invoice' | 'payment' | 'remittance' | 'delivery';
   title: string;
-  customer: string;
-  amount?: string;
-  status: 'completed' | 'pending' | 'overdue' | 'draft' | 'sent';
+  description: string;
+  action: string;
   timestamp: Date;
 }
 
-function getStatusColor(status: Activity['status']) {
-  switch (status) {
-    case 'completed':
-    case 'sent':
+function getActionColor(action: string) {
+  switch (action?.toLowerCase()) {
+    case 'create':
+    case 'insert':
       return 'bg-success-light text-success border-success/20';
-    case 'pending':
-      return 'bg-warning-light text-warning border-warning/20';
-    case 'overdue':
+    case 'update':
+    case 'edit':
+      return 'bg-info-light text-info border-info/20';
+    case 'delete':
       return 'bg-destructive-light text-destructive border-destructive/20';
-    case 'draft':
+    case 'view':
+    case 'read':
       return 'bg-muted text-muted-foreground border-muted-foreground/20';
     default:
       return 'bg-muted text-muted-foreground border-muted-foreground/20';
   }
 }
 
-function getTypeIcon(type: Activity['type']) {
-  switch (type) {
-    case 'invoice':
-      return 'IN';
-    case 'payment':
-      return 'PA';
-    case 'remittance':
-      return 'RA';
-    case 'delivery':
-      return 'DE';
+function getActionIcon(action: string) {
+  switch (action?.toLowerCase()) {
+    case 'create':
+    case 'insert':
+      return '✚';
+    case 'update':
+    case 'edit':
+      return '✎';
+    case 'delete':
+      return '✕';
+    case 'view':
+    case 'read':
+      return '👁';
     default:
-      return 'AC';
+      return '⚙';
   }
+}
+
+function formatEntityType(entityType: string): string {
+  return entityType
+    ?.split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ') || 'Activity';
 }
 
 export function RecentActivity() {
   const { data: companies, isLoading: companiesLoading } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useInvoices(currentCompany?.id);
-  const { data: payments, isLoading: paymentsLoading, error: paymentsError } = usePayments(currentCompany?.id);
-  const { data: remittances, isLoading: remittancesLoading, error: remittancesError } = useRemittanceAdvice(currentCompany?.id);
+  const { data: auditLogs, isLoading: auditLogsLoading, error: auditLogsError } = useAuditLogs(currentCompany?.id);
 
-  // Timeout handling - if loading for more than 3 seconds, show empty state
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const isLoading = auditLogsLoading || companiesLoading;
+  const hasError = auditLogsError && !isLoading;
 
-  useEffect(() => {
-    if (!invoicesLoading && !paymentsLoading && !remittancesLoading) {
-      setLoadingTimeout(false);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setLoadingTimeout(true);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [invoicesLoading, paymentsLoading, remittancesLoading]);
-
-  const isLoading = invoicesLoading || paymentsLoading || remittancesLoading;
-  const hasError = invoicesError || paymentsError || remittancesError;
-  const isLoadingTooLong = isLoading && loadingTimeout;
-
-  // Check if we have no data at all
-  const hasNoData = !invoices?.length && !payments?.length && !remittances?.length;
-
-  const formatCurrency = useMemo(() => {
-    return (amount: number) => {
-      return new Intl.NumberFormat('en-KE', {
-        style: 'currency',
-        currency: 'KES',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(amount);
-    };
-  }, []);
-
-  // Combine all activities - memoized to prevent unnecessary recalculation
+  // Format audit logs into activities - memoized to prevent unnecessary recalculation
   const activities: Activity[] = useMemo(() => {
-    const combined: Activity[] = [];
-
-    // Add invoices
-    if (invoices) {
-      invoices.slice(0, 3).forEach(invoice => {
-        combined.push({
-          id: `invoice-${invoice.id}`,
-          type: 'invoice',
-          title: `Invoice ${invoice.invoice_number}`,
-          customer: invoice.customers?.name || 'Unknown Customer',
-          amount: formatCurrency(invoice.total_amount || 0),
-          status: invoice.status as Activity['status'],
-          timestamp: new Date(invoice.created_at || '')
-        });
-      });
+    if (!auditLogs || auditLogs.length === 0) {
+      return [];
     }
 
-    // Add payments
-    if (payments) {
-      payments.slice(0, 2).forEach(payment => {
-        combined.push({
-          id: `payment-${payment.id}`,
-          type: 'payment',
-          title: `Payment ${payment.payment_number}`,
-          customer: payment.customers?.name || 'Unknown Customer',
-          amount: formatCurrency(payment.amount || 0),
-          status: 'completed',
-          timestamp: new Date(payment.created_at || '')
-        });
-      });
-    }
+    return auditLogs.slice(0, 6).map((log: AuditLog) => {
+      const entityType = formatEntityType(log.entity_type);
+      const actionText = log.action?.charAt(0).toUpperCase() + log.action?.slice(1).toLowerCase();
 
-    // Add remittance advice
-    if (remittances) {
-      remittances.slice(0, 1).forEach(remittance => {
-        combined.push({
-          id: `remittance-${remittance.id}`,
-          type: 'remittance',
-          title: `Remittance ${remittance.advice_number}`,
-          customer: remittance.customers?.name || 'Unknown Customer',
-          amount: formatCurrency(remittance.total_payment || 0),
-          status: remittance.status as Activity['status'],
-          timestamp: new Date(remittance.created_at || '')
-        });
-      });
-    }
-
-    // Sort by timestamp (most recent first)
-    combined.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-    return combined;
-  }, [invoices, payments, remittances, formatCurrency]);
+      return {
+        id: `audit-${log.id}`,
+        title: `${actionText} ${entityType}`,
+        description: log.record_id ? `ID: ${log.record_id}` : 'System action',
+        action: log.action,
+        timestamp: new Date(log.created_at || new Date()),
+      };
+    });
+  }, [auditLogs]);
 
   if (hasError && !isLoading) {
     return (
