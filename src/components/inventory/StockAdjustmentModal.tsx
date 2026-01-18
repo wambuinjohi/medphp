@@ -41,7 +41,7 @@ interface StockAdjustmentModalProps {
 export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: StockAdjustmentModalProps) {
   const [adjustmentType, setAdjustmentType] = useState<'increase' | 'decrease' | 'set'>('increase');
   const [quantity, setQuantity] = useState<number>(0);
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState<string | undefined>(undefined);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -63,7 +63,7 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
       return;
     }
 
-    if (!reason.trim()) {
+    if (!reason?.trim()) {
       toast.error('Please provide a reason for the adjustment');
       return;
     }
@@ -127,7 +127,7 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
   const handleClose = () => {
     setAdjustmentType('increase');
     setQuantity(0);
-    setReason('');
+    setReason(undefined);
     setNotes('');
     onOpenChange(false);
   };

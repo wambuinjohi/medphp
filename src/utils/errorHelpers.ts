@@ -6,14 +6,20 @@ export function parseErrorMessage(error: any): string {
   try {
     if (!error) return 'Unknown error occurred';
 
+    // Defensive check for null or undefined
+    if (error === null || error === undefined) return 'Unknown error occurred';
+
     // Handle standard Error instances
     if (error instanceof Error) {
-      return error.message || 'Error instance with no message';
+      // Ensure message property is a string and safe
+      const msg = typeof error.message === 'string' ? error.message : '';
+      return msg || 'Error instance with no message';
     }
 
     // Handle string errors
     if (typeof error === 'string') {
-      return error;
+      // Safely handle strings, checking that they're not empty
+      return error.length > 0 ? error : 'Empty error string';
     }
 
     // Handle Supabase/PostgrestError objects

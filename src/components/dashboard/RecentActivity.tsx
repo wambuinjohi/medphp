@@ -51,13 +51,13 @@ function getTypeIcon(type: Activity['type']) {
 }
 
 export function RecentActivity() {
-  const { data: companies } = useCompanies();
+  const { data: companies, isLoading: companiesLoading } = useCompanies();
   const currentCompany = companies?.[0];
   const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useInvoices(currentCompany?.id);
   const { data: payments, isLoading: paymentsLoading, error: paymentsError } = usePayments(currentCompany?.id);
   const { data: remittances, isLoading: remittancesLoading, error: remittancesError } = useRemittanceAdvice(currentCompany?.id);
 
-  // Timeout handling - if loading for more than 5 seconds, show empty state
+  // Timeout handling - if loading for more than 3 seconds, show empty state
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export function RecentActivity() {
 
     const timer = setTimeout(() => {
       setLoadingTimeout(true);
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [invoicesLoading, paymentsLoading, remittancesLoading]);
@@ -76,6 +76,9 @@ export function RecentActivity() {
   const isLoading = invoicesLoading || paymentsLoading || remittancesLoading;
   const hasError = invoicesError || paymentsError || remittancesError;
   const isLoadingTooLong = isLoading && loadingTimeout;
+
+  // Check if we have no data at all
+  const hasNoData = !invoices?.length && !payments?.length && !remittances?.length;
 
   const formatCurrency = useMemo(() => {
     return (amount: number) => {
@@ -161,8 +164,8 @@ export function RecentActivity() {
     );
   }
 
-  // Show empty state if loading is taking too long
-  if (isLoadingTooLong) {
+  // Show empty state if loading is taking too long OR we have no data and are no longer loading
+  if (isLoadingTooLong || (hasNoData && !isLoading && !companiesLoading)) {
     return (
       <Card className="shadow-card">
         <CardHeader>
@@ -170,9 +173,9 @@ export function RecentActivity() {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Loading activity...</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              If this takes too long, there may be no recent activity yet
+            <p className="text-muted-foreground">No recent activity</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Start creating invoices, payments, or quotations to see activity here
             </p>
           </div>
         </CardContent>
