@@ -605,15 +605,17 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                           <span className="font-semibold text-warning">{formatCurrency(creditNoteAmount)}</span>
                         </div>
                       )}
-                      <div className="flex justify-between">
-                        <span>Payment Method:</span>
-                        <div className="flex items-center space-x-1">
-                          {getMethodIcon(paymentData.payment_method)}
-                          <span className="font-semibold capitalize">
-                            {paymentData.payment_method.replace('_', ' ')}
-                          </span>
+                      {paymentData.payment_method && (
+                        <div className="flex justify-between">
+                          <span>Payment Method:</span>
+                          <div className="flex items-center space-x-1">
+                            {getMethodIcon(paymentData.payment_method)}
+                            <span className="font-semibold capitalize">
+                              {paymentData.payment_method.replace('_', ' ')}
+                            </span>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 );
