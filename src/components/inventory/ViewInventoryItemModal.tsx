@@ -62,6 +62,28 @@ interface ViewInventoryItemModalProps {
 export function ViewInventoryItemModal({ open, onOpenChange, item, onEdit, onRestock }: ViewInventoryItemModalProps) {
   if (!item) return null;
 
+  // Normalize field names from different sources
+  const normalizedItem = {
+    id: item.id,
+    name: item.name,
+    sku: item.sku || item.product_code || '',
+    category: item.category || item.product_categories,
+    category_id: item.category_id,
+    currentStock: item.stock_quantity ?? item.currentStock ?? 0,
+    minStock: item.minimum_stock_level ?? item.minStock ?? 10,
+    maxStock: item.maximum_stock_level ?? item.maxStock,
+    unitPrice: String(item.selling_price ?? item.unit_price ?? item.unitPrice ?? 0),
+    costPrice: String(item.cost_price ?? item.costPrice ?? 0),
+    description: item.description,
+    unitOfMeasure: item.unit_of_measure || item.unitOfMeasure || 'pieces',
+    lastRestocked: item.lastRestocked,
+    status: (item.status || 'in_stock') as 'in_stock' | 'low_stock' | 'out_of_stock'
+  };
+
+  // Calculate total value
+  const unitPrice = parseFloat(normalizedItem.unitPrice) || 0;
+  const totalValue = String((normalizedItem.currentStock || 0) * unitPrice);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'in_stock':
