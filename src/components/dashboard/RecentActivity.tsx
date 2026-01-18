@@ -51,13 +51,13 @@ function getTypeIcon(type: Activity['type']) {
 }
 
 export function RecentActivity() {
-  const { data: companies } = useCompanies();
+  const { data: companies, isLoading: companiesLoading } = useCompanies();
   const currentCompany = companies?.[0];
   const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useInvoices(currentCompany?.id);
   const { data: payments, isLoading: paymentsLoading, error: paymentsError } = usePayments(currentCompany?.id);
   const { data: remittances, isLoading: remittancesLoading, error: remittancesError } = useRemittanceAdvice(currentCompany?.id);
 
-  // Timeout handling - if loading for more than 5 seconds, show empty state
+  // Timeout handling - if loading for more than 3 seconds, show empty state
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export function RecentActivity() {
 
     const timer = setTimeout(() => {
       setLoadingTimeout(true);
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [invoicesLoading, paymentsLoading, remittancesLoading]);
