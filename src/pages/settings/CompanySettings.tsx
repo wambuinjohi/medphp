@@ -330,20 +330,12 @@ export default function CompanySettings() {
         primary_color: companyData.primary_color?.trim() || '#FF8C42'
       };
 
-      // Only include optional columns if they exist in the database
-      // Skip tax_number as it doesn't exist in the schema
-      if (companyData.registration_number?.trim()) {
-        sanitizedData.registration_number = companyData.registration_number.trim();
+      // Include optional fields that exist in the schema
+      if (companyData.website?.trim()) {
+        sanitizedData.website = companyData.website.trim();
       }
       if (companyData.currency?.trim()) {
         sanitizedData.currency = companyData.currency.trim();
-      }
-
-      // Only include fiscal_year_start for non-external API providers
-      // External API doesn't have this column yet
-      const provider = getDatabaseProvider();
-      if (companyData.fiscal_year_start && provider !== 'external-api') {
-        sanitizedData.fiscal_year_start = companyData.fiscal_year_start;
       }
 
       // Remove empty strings and convert to null for optional fields
