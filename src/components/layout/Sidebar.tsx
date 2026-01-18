@@ -78,7 +78,12 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Transport',
     icon: TrendingDown,
-    href: '/app/transport'
+    children: [
+      { title: 'Drivers', icon: Users, href: '/app/transport/drivers' },
+      { title: 'Vehicles', icon: Truck, href: '/app/transport/vehicles' },
+      { title: 'Materials', icon: PackageIcon, href: '/app/transport/materials' },
+      { title: 'Finance', icon: DollarSign, href: '/app/transport/finance' }
+    ]
   },
   {
     title: 'Customers',
