@@ -48,7 +48,6 @@ interface InventoryItem {
   description?: string;
   category_id?: string;
   unit_of_measure?: string;
-  unit_of_measure?: string;
   cost_price?: number;
   selling_price?: number;
   unit_price?: number;
