@@ -1568,15 +1568,12 @@ export function useGenerateDocumentNumber() {
  * @returns Audit logs data, loading state, and error
  */
 export function useAuditLogs(companyId?: string) {
-  const { db } = useDatabase();
   const filter = useMemo(() => {
     if (!companyId) return undefined;
     return { company_id: companyId };
   }, [companyId]);
 
-  return useSelectData('audit_logs', filter, {
-    orderBy: { column: 'created_at', direction: 'desc' },
-  });
+  return useSelect('audit_logs', filter);
 }
 
 // ============================================
