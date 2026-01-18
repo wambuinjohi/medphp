@@ -180,7 +180,8 @@ export async function setupProformaTables() {
     
     // Execute the SQL to create tables
     try {
-      const { error } = await supabase.rpc('exec_sql', { sql: PROFORMA_TABLES_SQL });
+      const db = getDatabase();
+      const { error } = await db.rpc('exec_sql', { sql: PROFORMA_TABLES_SQL });
       
       if (error) {
         throw error;
