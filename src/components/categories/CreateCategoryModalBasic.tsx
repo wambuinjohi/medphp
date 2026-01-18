@@ -86,8 +86,8 @@ export function CreateCategoryModalBasic({ open, onOpenChange, onSuccess }: Crea
         if (error instanceof Error) {
           errorMessage = error.message;
         } else if (error && typeof error === 'object') {
-          const supabaseError = error as any;
-          
+          const supabaseError = error as Record<string, unknown>;
+
           if (supabaseError.message) {
             errorMessage = supabaseError.message;
           } else if (supabaseError.details) {

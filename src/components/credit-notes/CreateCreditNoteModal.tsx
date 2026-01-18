@@ -49,12 +49,32 @@ interface CreditNoteItem {
   line_total: number;
 }
 
+interface Customer {
+  id: string;
+  [key: string]: unknown;
+}
+
+interface Invoice {
+  id: string;
+  customer_id: string;
+  [key: string]: unknown;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  product_code: string;
+  description?: string;
+  selling_price: number;
+  [key: string]: unknown;
+}
+
 interface CreateCreditNoteModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  preSelectedCustomer?: any;
-  preSelectedInvoice?: any;
+  preSelectedCustomer?: Customer;
+  preSelectedInvoice?: Invoice;
 }
 
 export function CreateCreditNoteModal({ 
@@ -113,7 +133,7 @@ export function CreateCreditNoteModal({
     product.product_code.toLowerCase().includes(searchProduct.toLowerCase())
   ) || [];
 
-  const addItem = (product: any) => {
+  const addItem = (product: Product) => {
     const existingItem = items.find(item => item.product_id === product.id);
 
     if (existingItem) {

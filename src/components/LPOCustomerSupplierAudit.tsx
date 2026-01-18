@@ -54,14 +54,13 @@ export const LPOCustomerSupplierAudit = () => {
   const { data: customers } = useCustomers(companyId);
   const { data: invoices } = useInvoicesFixed(companyId);
 
-  const performAudit = () => {
+  useEffect(() => {
     if (!lpos || !customers || !invoices) {
-      toast.error('Data not loaded yet. Please wait and try again.');
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
       // Create maps for faster lookups
       const customerMap = new Map(customers.map(c => [c.id, c]));
@@ -93,7 +92,7 @@ export const LPOCustomerSupplierAudit = () => {
       lposBySupplier.forEach((lpoList, supplierId) => {
         const customer = customerMap.get(supplierId);
         const customerInvoiceCount = invoicesByCustomer.get(supplierId) || 0;
-        
+
         if (customer) {
           // This entity has LPOs as supplier
           if (customerInvoiceCount > 0) {
@@ -150,7 +149,7 @@ export const LPOCustomerSupplierAudit = () => {
       };
 
       setAuditResult(result);
-      
+
       if (result.summary.conflictingEntities > 0) {
         toast.warning(`Found ${result.summary.conflictingEntities} entities used as both customers and suppliers!`);
       } else {
@@ -162,13 +161,6 @@ export const LPOCustomerSupplierAudit = () => {
       toast.error('Error performing audit');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    // Auto-run audit when data is available
-    if (lpos && customers && invoices && companyId) {
-      performAudit();
     }
   }, [lpos, customers, invoices, companyId]);
 

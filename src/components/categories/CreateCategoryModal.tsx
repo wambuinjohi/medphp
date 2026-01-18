@@ -166,7 +166,7 @@ export function CreateCategoryModal({ open, onOpenChange, onSuccess }: CreateCat
         if (error instanceof Error) {
           errorMessage = error.message;
         } else if (error && typeof error === 'object') {
-          const supabaseError = error as any;
+          const supabaseError = error as Record<string, unknown>;
 
           // Check for specific Supabase error patterns
           if (supabaseError.message) {

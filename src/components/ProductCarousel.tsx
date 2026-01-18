@@ -160,7 +160,7 @@ export default function ProductCarousel() {
     }
 
     autoScrollIntervalRef.current = setInterval(() => {
-      if (carouselRef.current && !isHovering) {
+      if (carouselRef.current) {
         const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
         const scrollAmount = 400;
 
@@ -180,7 +180,9 @@ export default function ProductCarousel() {
   };
 
   useEffect(() => {
-    startAutoScroll();
+    if (!isHovering) {
+      startAutoScroll();
+    }
 
     return () => {
       if (autoScrollIntervalRef.current) {

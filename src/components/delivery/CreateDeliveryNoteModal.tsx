@@ -95,7 +95,7 @@ export const CreateDeliveryNoteModal = ({
     if (open && invoiceId && formData.invoice_id !== invoiceId) {
       setFormData(prev => ({ ...prev, invoice_id: invoiceId }));
     }
-  }, [open, invoiceId]);
+  }, [open, invoiceId, formData.invoice_id]);
 
   // When invoice is selected, populate customer and items
   useEffect(() => {
@@ -109,14 +109,14 @@ export const CreateDeliveryNoteModal = ({
         }));
 
         if (selectedInvoice.invoice_items && selectedInvoice.invoice_items.length > 0) {
-          const deliveryItems: DeliveryItem[] = selectedInvoice.invoice_items.map((item: any) => ({
+          const deliveryItems: DeliveryItem[] = selectedInvoice.invoice_items.map((item: Record<string, unknown>) => ({
             id: `item-${item.id}`,
-            product_id: item.product_id || '',
-            product_name: item.products?.name || item.description || 'Unknown Product',
-            description: item.description || item.products?.name || '',
+            product_id: (item.product_id as string) || '',
+            product_name: (item.products as Record<string, unknown>)?.name as string || item.description as string || 'Unknown Product',
+            description: item.description as string || (item.products as Record<string, unknown>)?.name as string || '',
             quantity_ordered: Math.max(Number(item.quantity) || 1, 1),
             quantity_delivered: Math.max(Number(item.quantity) || 1, 1),
-            unit_of_measure: item.products?.unit_of_measure || 'pcs',
+            unit_of_measure: (item.products as Record<string, unknown>)?.unit_of_measure as string || 'pcs',
           }));
 
           setItems(deliveryItems);
@@ -141,15 +141,15 @@ export const CreateDeliveryNoteModal = ({
     product.product_code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const addItem = (product: any) => {
+  const addItem = (product: Record<string, unknown>) => {
     const newItem: DeliveryItem = {
       id: `item-${Date.now()}`,
-      product_id: product.id,
-      product_name: product.name,
-      description: product.description || product.name || '',
+      product_id: (product.id as string) || '',
+      product_name: (product.name as string) || '',
+      description: (product.description as string) || (product.name as string) || '',
       quantity_ordered: 1, // Default to 1 unit
       quantity_delivered: 1, // Default to 1 unit for delivery
-      unit_of_measure: product.unit_of_measure || 'pcs',
+      unit_of_measure: (product.unit_of_measure as string) || 'pcs',
     };
 
     setItems(prev => [...prev, newItem]);

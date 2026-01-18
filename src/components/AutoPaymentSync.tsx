@@ -11,11 +11,17 @@ interface AutoPaymentSyncProps {
   autoStart?: boolean;
 }
 
+interface SetupDetails {
+  alreadySetup?: boolean;
+  message?: string;
+  [key: string]: unknown;
+}
+
 export function AutoPaymentSync({ autoStart = true }: AutoPaymentSyncProps) {
   const [isRunning, setIsRunning] = useState(false);
   const [setupComplete, setSetupComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [setupDetails, setSetupDetails] = useState<any>(null);
+  const [setupDetails, setSetupDetails] = useState<SetupDetails | null>(null);
 
   useEffect(() => {
     if (autoStart) {
@@ -62,9 +68,10 @@ export function AutoPaymentSync({ autoStart = true }: AutoPaymentSyncProps) {
       } else {
         throw new Error(result.message);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Auto payment sync setup failed:', err);
-      setError(err.message || 'Failed to set up payment synchronization');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to set up payment synchronization';
+      setError(errorMessage);
       toast.error('Payment sync setup failed. Check console for details.');
     } finally {
       setIsRunning(false);

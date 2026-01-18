@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ImageGalleryProps {
@@ -19,36 +19,42 @@ export const ImageGallery = ({
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Use images array if available, otherwise use fallback
-  const displayImages = images && images.length > 0 
-    ? images 
-    : fallbackImage 
+  const displayImages = images && images.length > 0
+    ? images
+    : fallbackImage
       ? [{ url: fallbackImage, altText: fallbackAlt }]
       : [];
 
-  const goToPrevious = () => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setCurrentIndex((prev) => 
-      prev === 0 ? displayImages.length - 1 : prev - 1
-    );
-    setTimeout(() => setIsTransitioning(false), 300);
-  };
+  const goToPrevious = useCallback(() => {
+    setIsTransitioning(prev => {
+      if (prev) return true;
+      setCurrentIndex(current =>
+        current === 0 ? displayImages.length - 1 : current - 1
+      );
+      setTimeout(() => setIsTransitioning(false), 300);
+      return true;
+    });
+  }, [displayImages.length]);
 
-  const goToNext = () => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setCurrentIndex((prev) => 
-      prev === displayImages.length - 1 ? 0 : prev + 1
-    );
-    setTimeout(() => setIsTransitioning(false), 300);
-  };
+  const goToNext = useCallback(() => {
+    setIsTransitioning(prev => {
+      if (prev) return true;
+      setCurrentIndex(current =>
+        current === displayImages.length - 1 ? 0 : current + 1
+      );
+      setTimeout(() => setIsTransitioning(false), 300);
+      return true;
+    });
+  }, [displayImages.length]);
 
-  const goToSlide = (index: number) => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setCurrentIndex(index);
-    setTimeout(() => setIsTransitioning(false), 300);
-  };
+  const goToSlide = useCallback((index: number) => {
+    setIsTransitioning(prev => {
+      if (prev) return true;
+      setCurrentIndex(index);
+      setTimeout(() => setIsTransitioning(false), 300);
+      return true;
+    });
+  }, []);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -59,7 +65,7 @@ export const ImageGallery = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isTransitioning, displayImages.length]);
+  }, [goToPrevious, goToNext]);
 
   if (displayImages.length === 0) {
     return (

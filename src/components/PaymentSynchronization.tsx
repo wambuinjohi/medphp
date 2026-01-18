@@ -50,10 +50,11 @@ export function PaymentSynchronization() {
         .filter(index => index !== -1);
       
       setSelectedMatches(new Set(highConfidenceIndexes));
-      
+
       toast.success('Analysis completed successfully');
-    } catch (err: any) {
-      setError(err.message || 'Failed to analyze payment status');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to analyze payment status';
+      setError(errorMessage);
       toast.error('Analysis failed');
     } finally {
       setIsAnalyzing(false);
@@ -82,8 +83,9 @@ export function PaymentSynchronization() {
       } else {
         toast.error('Synchronization completed with errors');
       }
-    } catch (err: any) {
-      setError(err.message || 'Synchronization failed');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Synchronization failed';
+      setError(errorMessage);
       toast.error('Synchronization failed');
     } finally {
       setIsSyncing(false);
@@ -103,7 +105,8 @@ export function PaymentSynchronization() {
       
       // Refresh analysis
       await runAnalysis();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      console.error('Recalculation failed:', err);
       toast.error('Failed to recalculate invoice balances');
     } finally {
       setIsSyncing(false);

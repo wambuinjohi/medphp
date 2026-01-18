@@ -26,7 +26,7 @@ interface CliArgs {
 
 function parseArgs(): CliArgs {
   const args = process.argv.slice(2);
-  const parsed: any = {};
+  const parsed: Record<string, string | undefined> = {};
 
   for (let i = 0; i < args.length; i += 2) {
     const key = args[i].replace(/^--/, '').replace(/-([a-z])/g, (g) => g[1].toUpperCase());

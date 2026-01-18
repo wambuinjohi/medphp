@@ -73,13 +73,14 @@ export function CreditNotesConnectionStatus() {
         error: tablesExist ? undefined : 'Credit notes tables not found'
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setConnectionStatus({
         tablesExist: false,
         schemaCorrect: false,
         canCreate: false,
         testing: false,
-        error: error.message
+        error: errorMessage
       });
     }
   };
