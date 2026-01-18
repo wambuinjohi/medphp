@@ -254,18 +254,6 @@ export function EditPaymentModal({
                   className="mt-2"
                 />
               </div>
-
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange('notes', e.target.value)}
-                  placeholder="Additional notes about the payment"
-                  className="mt-2"
-                  rows={3}
-                />
-              </div>
             </CardContent>
           </Card>
 
