@@ -617,7 +617,7 @@ export default function CustomerStatements() {
                             {new Date(statement.last_payment_date).toLocaleDateString()}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            ${statement.last_payment_amount?.toFixed(2)}
+                            ${Number(statement.last_payment_amount || 0).toFixed(2)}
                           </div>
                         </div>
                       ) : (
