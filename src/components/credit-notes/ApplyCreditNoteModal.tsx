@@ -200,7 +200,7 @@ export function ApplyCreditNoteModal({
           <div className="space-y-4">
             <div>
               <Label htmlFor="invoice-select">Select Invoice to Apply Credit To</Label>
-              <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId}>
+              <Select value={selectedInvoiceId || ''} onValueChange={setSelectedInvoiceId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose an invoice..." />
                 </SelectTrigger>

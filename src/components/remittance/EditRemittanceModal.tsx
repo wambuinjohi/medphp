@@ -280,7 +280,7 @@ export function EditRemittanceModal({ open, onOpenChange, remittance, onSuccess 
 
               <div className="space-y-2">
                 <Label htmlFor="customer">Customer</Label>
-                <Select value={formData.customerId} onValueChange={(value) => handleInputChange('customerId', value)}>
+                <Select value={formData.customerId || ''} onValueChange={(value) => handleInputChange('customerId', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
@@ -296,7 +296,7 @@ export function EditRemittanceModal({ open, onOpenChange, remittance, onSuccess 
 
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                <Select value={formData.status || ''} onValueChange={(value) => handleInputChange('status', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>

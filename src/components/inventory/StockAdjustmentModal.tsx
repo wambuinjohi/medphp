@@ -249,7 +249,7 @@ export function StockAdjustmentModal({ open, onOpenChange, onSuccess, item }: St
 
             <div className="space-y-2">
               <Label htmlFor="reason">Reason for Adjustment *</Label>
-              <Select value={reason} onValueChange={setReason}>
+              <Select value={reason || ''} onValueChange={setReason}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select reason" />
                 </SelectTrigger>

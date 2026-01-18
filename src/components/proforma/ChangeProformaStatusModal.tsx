@@ -104,7 +104,7 @@ export function ChangeProformaStatusModal({
           {/* New Status Selector */}
           <div className="space-y-2">
             <Label htmlFor="new-status">New Status</Label>
-            <Select value={newStatus} onValueChange={handleStatusChange}>
+            <Select value={newStatus || ''} onValueChange={handleStatusChange}>
               <SelectTrigger id="new-status">
                 <SelectValue placeholder="Select new status" />
               </SelectTrigger>

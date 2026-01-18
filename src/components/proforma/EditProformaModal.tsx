@@ -296,7 +296,7 @@ export const EditProformaModal = ({
             </div>
             <div className="space-y-2">
               <Label htmlFor="customer_id">Customer *</Label>
-              <Select value={formData.customer_id} onValueChange={(value) => 
+              <Select value={formData.customer_id || ''} onValueChange={(value) =>
                 setFormData(prev => ({ ...prev, customer_id: value }))
               }>
                 <SelectTrigger>
@@ -313,7 +313,7 @@ export const EditProformaModal = ({
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(value) => 
+              <Select value={formData.status || ''} onValueChange={(value) =>
                 setFormData(prev => ({ ...prev, status: value }))
               }>
                 <SelectTrigger>

@@ -127,7 +127,7 @@ export const EditVariantModal = ({
         <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-6">
           <div className="space-y-2">
             <Label htmlFor="category">Category *</Label>
-            <Select value={formData.category_id} onValueChange={(value) =>
+            <Select value={formData.category_id || ''} onValueChange={(value) =>
                 setFormData((prev) => ({ ...prev, category_id: value }))
               }>
               <SelectTrigger id="category">

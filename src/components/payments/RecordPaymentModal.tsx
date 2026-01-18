@@ -408,8 +408,8 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
               {!invoice && (
                 <div className="space-y-2">
                   <Label htmlFor="invoice_select">Select Invoice *</Label>
-                  <Select 
-                    value={paymentData.invoice_id} 
+                  <Select
+                    value={paymentData.invoice_id || ''}
                     onValueChange={(value) => {
                       const selectedInv = availableInvoices.find(inv => inv.id === value);
                       handleInputChange('invoice_id', value);
@@ -551,7 +551,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
                     Add New
                   </Button>
                 </div>
-                <Select value={paymentData.payment_method} onValueChange={(value) => handleInputChange('payment_method', value)}>
+                <Select value={paymentData.payment_method || ''} onValueChange={(value) => handleInputChange('payment_method', value)}>
                   <SelectTrigger disabled={methodsLoading}>
                     <SelectValue placeholder={methodsLoading ? "Loading..." : "Select payment method"} />
                   </SelectTrigger>

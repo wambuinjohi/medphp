@@ -350,7 +350,7 @@ export const CreateProformaModal = ({
             </div>
             <div className="space-y-2">
               <Label htmlFor="customer_id">Customer *</Label>
-              <Select value={formData.customer_id} onValueChange={(value) => 
+              <Select value={formData.customer_id || ''} onValueChange={(value) =>
                 setFormData(prev => ({ ...prev, customer_id: value }))
               }>
                 <SelectTrigger>

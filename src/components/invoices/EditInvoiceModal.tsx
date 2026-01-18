@@ -356,7 +356,7 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
                 {/* Customer Selection */}
                 <div className="space-y-2">
                   <Label htmlFor="customer">Customer *</Label>
-                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                  <Select value={selectedCustomerId || ''} onValueChange={setSelectedCustomerId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a customer" />
                     </SelectTrigger>

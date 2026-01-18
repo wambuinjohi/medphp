@@ -387,13 +387,13 @@ export function CreateCreditNoteModal({
                 {/* Customer Selection */}
                 <div className="space-y-2">
                   <Label htmlFor="customer">Customer *</Label>
-                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                  <Select value={selectedCustomerId || ''} onValueChange={setSelectedCustomerId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a customer" />
                     </SelectTrigger>
                     <SelectContent>
                       {loadingCustomers ? (
-                        <SelectItem value="loading" disabled>Loading customers...</SelectItem>
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading customers...</div>
                       ) : (
                         customers?.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
@@ -409,7 +409,7 @@ export function CreateCreditNoteModal({
                 {selectedCustomerId && customerInvoices.length > 0 && (
                   <div className="space-y-2">
                     <Label htmlFor="invoice">Related Invoice (Optional)</Label>
-                    <Select value={selectedInvoiceId} onValueChange={setSelectedInvoiceId}>
+                    <Select value={selectedInvoiceId || 'none'} onValueChange={setSelectedInvoiceId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select an invoice (optional)" />
                       </SelectTrigger>
@@ -438,7 +438,7 @@ export function CreateCreditNoteModal({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="reason">Reason *</Label>
-                    <Select value={reason} onValueChange={setReason}>
+                    <Select value={reason || ''} onValueChange={setReason}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select reason for credit note" />
                       </SelectTrigger>

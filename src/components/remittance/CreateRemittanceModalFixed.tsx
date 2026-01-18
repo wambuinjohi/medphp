@@ -265,7 +265,7 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
 
               <div className="space-y-2">
                 <Label htmlFor="customer">Customer</Label>
-                <Select value={formData.customerId} onValueChange={(value) => handleInputChange('customerId', value)}>
+                <Select value={formData.customerId || ''} onValueChange={(value) => handleInputChange('customerId', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
