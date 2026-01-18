@@ -27,11 +27,12 @@ import {
 } from 'lucide-react';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
-import { 
-  useDrivers, 
-  useVehicles, 
-  useMaterials, 
+import {
+  useDrivers,
+  useVehicles,
+  useMaterials,
   useTransportFinance,
+  useTransportPayments,
   useCreateDriver,
   useCreateVehicle,
   useCreateMaterial,
