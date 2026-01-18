@@ -442,7 +442,16 @@ export default function StockMovements() {
           <CardTitle>Movement History</CardTitle>
         </CardHeader>
         <CardContent>
-          {isMovementsLoading ? (
+          {error ? (
+            <div className="text-center py-8">
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <p className="text-lg font-medium text-foreground mb-2">Failed to load stock movements</p>
+              <p className="text-muted-foreground text-sm mb-4">{error.message || 'An error occurred while fetching data.'}</p>
+              <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </div>
+          ) : isMovementsLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-12 w-full" />
