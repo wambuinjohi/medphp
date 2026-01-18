@@ -98,11 +98,6 @@ const sidebarItems: SidebarItem[] = [
     ]
   },
   {
-    title: 'Web Manager',
-    icon: Globe,
-    href: '/app/web-manager'
-  },
-  {
     title: 'Settings',
     icon: Settings,
     children: [
