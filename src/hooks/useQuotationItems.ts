@@ -960,33 +960,35 @@ export const useUpdateQuotationStatus = () => {
 
   return useMutation({
     mutationFn: async ({ quotationId, status, notes }: { quotationId: string; status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired'; notes?: string }) => {
+      const db = getDatabase();
       const updateData: any = { status };
 
       if (notes) {
         // Append note to existing notes
-        const { data: currentQuotation } = await supabase
-          .from('quotations')
-          .select('notes')
-          .eq('id', quotationId)
-          .single();
+        const currentQuotationResult = await db.selectOne('quotations', quotationId);
 
-        if (currentQuotation?.notes) {
-          updateData.notes = `${currentQuotation.notes}\n[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
+        if (!currentQuotationResult.error && currentQuotationResult.data) {
+          const currentQuotation = currentQuotationResult.data as any;
+          if (currentQuotation?.notes) {
+            updateData.notes = `${currentQuotation.notes}\n[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
+          } else {
+            updateData.notes = `[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
+          }
         } else {
           updateData.notes = `[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
         }
       }
 
-      const { data, error } = await supabase
-        .from('quotations')
-        .update(updateData)
-        .eq('id', quotationId)
-        .select()
-        .single();
+      // Update quotation status using database adapter
+      const updateResult = await db.update('quotations', quotationId, updateData);
+      if (updateResult.error) throw updateResult.error;
 
-      if (error) throw error;
+      // Fetch updated quotation
+      const quotationSelectResult = await db.selectOne('quotations', quotationId);
+      if (quotationSelectResult.error) throw quotationSelectResult.error;
+      if (!quotationSelectResult.data) throw new Error('Failed to fetch updated quotation');
 
-      return data;
+      return quotationSelectResult.data;
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
