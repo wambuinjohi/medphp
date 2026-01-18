@@ -559,6 +559,93 @@ export function useAllSuppliersAndCustomers(companyId?: string) {
 }
 
 /**
+ * Hook to get all suppliers
+ * @param companyId - Optional company ID for filtering
+ */
+export function useSuppliers(companyId?: string) {
+  const filter = companyId ? { company_id: companyId } : undefined;
+  return useSelect('suppliers', filter);
+}
+
+/**
+ * Hook to create a new supplier
+ */
+export function useCreateSupplier() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (supplierData: any) => {
+      const result = await db.insert('suppliers', supplierData);
+      if (result.error) throw result.error;
+
+      // Fetch the created record
+      const { data } = await db.selectOne('suppliers', result.id);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast.success('Supplier created successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error creating supplier:', error);
+      const message = error?.message || 'Failed to create supplier';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to update a supplier
+ */
+export function useUpdateSupplier() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
+      const result = await db.update('suppliers', String(id), data);
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast.success('Supplier updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating supplier:', error);
+      const message = error?.message || 'Failed to update supplier';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to delete a supplier
+ */
+export function useDeleteSupplier() {
+  const queryClient = useQueryClient();
+  const { db } = useDatabase();
+
+  return useMutation({
+    mutationFn: async (id: string | number) => {
+      const result = await db.delete('suppliers', String(id));
+      if (result.error) throw result.error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
+      toast.success('Supplier deleted successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting supplier:', error);
+      const message = error?.message || 'Failed to delete supplier';
+      toast.error(message);
+    },
+  });
+}
+
+/**
  * Hook to update an LPO with items
  */
 export function useUpdateLPOWithItems() {
@@ -824,6 +911,62 @@ export function useCreatePaymentMethod() {
     onError: (error: any) => {
       console.error('Error creating payment method:', error);
       toast.error('Failed to create payment method. Please try again.');
+    },
+  });
+}
+
+/**
+ * Hook to update a payment method
+ */
+export function useUpdatePaymentMethod() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
+      const { data: result, error } = await supabase
+        .from('payment_methods')
+        .update(data)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
+      toast.success('Payment method updated successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error updating payment method:', error);
+      toast.error('Failed to update payment method. Please try again.');
+    },
+  });
+}
+
+/**
+ * Hook to delete a payment method
+ */
+export function useDeletePaymentMethod() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string | number) => {
+      const { error } = await supabase
+        .from('payment_methods')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
+      toast.success('Payment method deleted successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error deleting payment method:', error);
+      toast.error('Failed to delete payment method. Please try again.');
     },
   });
 }
@@ -1412,6 +1555,27 @@ export function useGenerateDocumentNumber() {
         return fallbackNumber;
       }
     },
+  });
+}
+
+// ============================================
+// Audit Logs Hook
+// ============================================
+
+/**
+ * Hook to get audit logs for a company
+ * @param companyId - Company ID (optional, uses current company if not provided)
+ * @returns Audit logs data, loading state, and error
+ */
+export function useAuditLogs(companyId?: string) {
+  const { db } = useDatabase();
+  const filter = useMemo(() => {
+    if (!companyId) return undefined;
+    return { company_id: companyId };
+  }, [companyId]);
+
+  return useSelectData('audit_logs', filter, {
+    orderBy: { column: 'created_at', direction: 'desc' },
   });
 }
 

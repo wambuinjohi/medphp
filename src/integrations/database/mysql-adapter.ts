@@ -117,17 +117,29 @@ export class MySQLAdapter implements IDatabase {
 
   async insertMany<T>(table: string, data: Partial<T>[]): Promise<InsertResult> {
     try {
-      const { data: result, error } = await this.apiCall(
-        'POST',
-        `/insert-many/${table}`,
-        { records: data }
-      );
+      // Insert items one by one since batch insert endpoint may not exist
+      let lastId = '';
+      let lastError: Error | null = null;
 
-      if (error) {
-        return { id: '', error };
+      for (const item of data) {
+        const { data: result, error } = await this.apiCall(
+          'POST',
+          `/insert/${table}`,
+          item
+        );
+
+        if (error) {
+          lastError = error;
+          console.warn(`Failed to insert item into ${table}:`, error);
+          // Continue with next item instead of failing completely
+          continue;
+        }
+
+        lastId = result?.id || '';
       }
 
-      return { id: result?.id || '', error: null };
+      // Return the last ID (or error if all failed)
+      return { id: lastId, error: lastError };
     } catch (error) {
       return { id: '', error: error as Error };
     }

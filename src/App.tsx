@@ -24,6 +24,8 @@ import RemittanceAdvice from "./pages/RemittanceAdvice";
 import AuditLogs from "./pages/AuditLogs";
 import LPOs from "./pages/LPOs";
 import CreditNotes from "./pages/CreditNotes";
+import Suppliers from "./pages/Suppliers";
+import StockMovements from "./pages/StockMovements";
 import WebManager from "./pages/WebManager";
 import NotFound from "./pages/NotFound";
 import PaymentSynchronizationPage from "./pages/PaymentSynchronization";
@@ -38,6 +40,7 @@ import AdminInit from "./pages/AdminInit";
 import AdminInitExternal from "./pages/AdminInitExternal";
 import DatabaseManagementAdmin from "./pages/DatabaseManagementAdmin";
 import { APIDiagnosticsPage } from "./pages/APIDiagnosticsPage";
+import PaymentMethods from "./pages/settings/PaymentMethods";
 
 const App = () => {
 
@@ -209,6 +212,14 @@ const App = () => {
                   }
                 />
                 <Route
+                  path="/app/suppliers"
+                  element={
+                    <ProtectedRoute>
+                      <Suppliers />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/app/inventory"
                   element={
                     <ProtectedRoute>
@@ -221,6 +232,14 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <Inventory />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/app/stock-movements"
+                  element={
+                    <ProtectedRoute>
+                      <StockMovements />
                     </ProtectedRoute>
                   }
                 />
@@ -293,6 +312,14 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <UserManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/app/settings/payment-methods"
+                  element={
+                    <ProtectedRoute>
+                      <PaymentMethods />
                     </ProtectedRoute>
                   }
                 />

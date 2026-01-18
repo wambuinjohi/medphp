@@ -20,7 +20,9 @@ import {
   ShoppingCart,
   RotateCcw,
   Globe,
-  Database
+  Database,
+  TrendingUp,
+  Banknote
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -61,7 +63,10 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Inventory',
     icon: Package,
-    href: '/app/inventory'
+    children: [
+      { title: 'Inventory', icon: Package, href: '/app/inventory' },
+      { title: 'Stock Movements', icon: TrendingUp, href: '/app/stock-movements' }
+    ]
   },
   {
     title: 'Delivery Notes',
@@ -78,7 +83,10 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Purchase Orders',
     icon: ShoppingCart,
-    href: '/app/lpos'
+    children: [
+      { title: 'Local Purchase Orders', icon: ShoppingCart, href: '/app/lpos' },
+      { title: 'Suppliers', icon: Building2, href: '/app/suppliers' }
+    ]
   },
   {
     title: 'Reports',
@@ -100,6 +108,7 @@ const sidebarItems: SidebarItem[] = [
     children: [
       { title: 'Company Settings', icon: Building2, href: '/app/settings/company' },
       { title: 'User Management', icon: Users, href: '/app/settings/users' },
+      { title: 'Payment Methods', icon: Banknote, href: '/app/settings/payment-methods' },
       { title: 'Database & Roles', icon: Database, href: '/app/settings/database-roles' }
     ]
   }
