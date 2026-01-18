@@ -26,8 +26,6 @@ export default function CompanySettings() {
   const [uploading, setUploading] = useState(false);
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [fixingCurrency, setFixingCurrency] = useState(false);
-  const [testingStorage, setTestingStorage] = useState(false);
-  const [storageStatus, setStorageStatus] = useState<'unknown' | 'available' | 'unavailable'>('unknown');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [companyData, setCompanyData] = useState({
     name: '',
