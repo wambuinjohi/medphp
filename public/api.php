@@ -105,6 +105,12 @@ $where = $_POST['where'] ?? ($_GET['where'] ?? null);
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
 
+// Handle file uploads endpoint
+$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+if (preg_match('/\/api\/uploads?$/i', $request_uri) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = 'upload_file';
+}
+
 // Debug logging for update operations
 if ($action === 'update') {
     error_log("UPDATE DEBUG: Table: " . $table . " | Where: " . json_encode($where));
