@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { RecordPaymentModal } from '@/components/payments/RecordPaymentModal';
+import { CreateDirectReceiptModal } from '@/components/payments/CreateDirectReceiptModal';
 import { ViewPaymentModal } from '@/components/payments/ViewPaymentModal';
 import { EditPaymentModal } from '@/components/payments/EditPaymentModal';
 import { DeletePaymentModal } from '@/components/payments/DeletePaymentModal';
