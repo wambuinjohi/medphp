@@ -107,6 +107,7 @@ export class ExternalAPIAdapter implements IDatabase {
           headers,
           body: body ? JSON.stringify(body) : undefined,
           signal: controller.signal,
+          credentials: 'include', // Include credentials for CORS
         });
 
         if (timeoutId) clearTimeout(timeoutId);
@@ -130,9 +131,29 @@ export class ExternalAPIAdapter implements IDatabase {
           }
         }
 
-        // Network errors
-        if (fetchError instanceof TypeError && fetchError.message === 'Failed to fetch') {
-          throw new Error(`Unable to reach API endpoint: ${this.apiBase}. This could be a CORS issue, network problem, or the server may be down. Please check your internet connection and ensure the API endpoint is accessible.`);
+        // Network errors - provide detailed diagnostics
+        if (fetchError instanceof TypeError) {
+          const errorMessage = fetchError.message || '';
+
+          // Check if this might be a CORS error (very common with cross-origin requests)
+          if (errorMessage.includes('Failed to fetch') || errorMessage.includes('fetch')) {
+            console.error(`❌ Network Error for ${action} on ${table || 'API'}:`, errorMessage);
+            console.error(`API Endpoint: ${this.apiBase}`);
+            console.error('🔍 Troubleshooting:');
+            console.error('1. CORS Issue (Most Common):');
+            console.error('   - Backend needs: Access-Control-Allow-Origin header');
+            console.error('   - Backend needs to allow methods: GET, POST, PUT, DELETE, OPTIONS');
+            console.error('2. Network/Connectivity:');
+            console.error('   - Check if API endpoint is reachable');
+            console.error('   - Verify internet connection');
+            console.error('3. Firewall/Proxy:');
+            console.error('   - Check if network firewall blocks requests');
+            console.error('   - Check if corporate proxy is interfering');
+
+            throw new Error(`Unable to reach API: ${this.apiBase}. This is commonly a CORS issue. Please ensure the backend has proper CORS headers configured. Error: ${errorMessage}`);
+          }
+
+          throw new Error(`Network error: ${errorMessage}`);
         }
 
         throw fetchError;
