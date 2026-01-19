@@ -19,15 +19,16 @@ export class ExternalAPIAdapter implements IDatabase {
   private authToken: string | null = null;
   private isProxyMode: boolean = true; // Always use proxy mode
 
-  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
+  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke') {
     // Store the actual external API URL for proxy forwarding
-    this.externalApiUrl = apiUrl;
+    // Remove trailing /api.php if present and normalize to base URL
+    this.externalApiUrl = apiUrl.replace(/\/api\.php$/, '');
 
-    // Always use proxy mode through local backend to avoid CORS issues
-    this.apiBase = '/api.php';
+    // Use the vite proxy for /api endpoint
+    this.apiBase = '/api';
 
-    console.log('✅ Using PROXY MODE for CORS bypass');
-    console.log('📡 External API:', apiUrl);
+    console.log('✅ Using LOCAL PROXY for CORS bypass');
+    console.log('📡 External API:', this.externalApiUrl);
     console.log('🔀 Local proxy endpoint:', this.apiBase);
 
     // Load token from localStorage if available
@@ -57,17 +58,9 @@ export class ExternalAPIAdapter implements IDatabase {
     try {
       const params = new URLSearchParams();
 
-      // When using proxy mode, add proxy-specific parameters
-      if (this.isProxyMode) {
-        params.append('action', 'proxy_external_api');
-        params.append('external_api_url', this.externalApiUrl);
-        params.append('external_action', action);
-        params.append('external_method', method);
-        if (table) params.append('external_table', table);
-      } else {
-        params.append('action', action);
-        if (table) params.append('table', table);
-      }
+      // Always append the action directly - the vite proxy handles forwarding
+      params.append('action', action);
+      if (table) params.append('table', table);
 
       // Log the API call attempt
       const logPrefix = `📡 [${method.toUpperCase()}] ${action}${table ? ` on ${table}` : ''}`;
@@ -85,7 +78,7 @@ export class ExternalAPIAdapter implements IDatabase {
             whereParts.push(`${key}=${value}`);
           }
         });
-        params.append(this.isProxyMode ? 'external_where' : 'where', whereParts.join(' AND '));
+        params.append('where', whereParts.join(' AND '));
       }
 
       const url = `${this.apiBase}?${params.toString()}`;
@@ -128,7 +121,6 @@ export class ExternalAPIAdapter implements IDatabase {
           headers,
           body: body ? JSON.stringify(body) : undefined,
           signal: controller.signal,
-          credentials: 'include', // Include credentials for CORS
         });
 
         if (timeoutId) clearTimeout(timeoutId);
@@ -203,16 +195,14 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async login(email: string, password: string): Promise<{ token: string; user: any; error: Error | null }> {
     try {
-      console.log(`🔐 Attempting login with external API: ${this.apiBase}?action=login`);
-
       const loginUrl = `${this.apiBase}?action=login`;
+      console.log(`🔐 Attempting login: ${loginUrl}`);
 
       try {
         const response = await fetch(loginUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
-          credentials: 'include', // Include cookies for CORS
         });
 
         // Defensively parse JSON
@@ -285,7 +275,6 @@ export class ExternalAPIAdapter implements IDatabase {
       const response = await fetch(`${this.apiBase}?action=logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -521,7 +510,8 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async raw<T>(sql: string, params?: any[]): Promise<ListQueryResult<T>> {
     try {
-      const response = await fetch(`${this.apiBase}?action=raw`, {
+      const url = `${this.apiBase}?action=raw`;
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sql, params }),
@@ -663,7 +653,6 @@ export class ExternalAPIAdapter implements IDatabase {
         const response = await fetch(`${this.apiBase}?action=health`, {
           method: 'GET',
           signal: controller.signal,
-          credentials: 'include',
         });
 
         if (timeoutId) clearTimeout(timeoutId);

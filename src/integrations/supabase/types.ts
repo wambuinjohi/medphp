@@ -338,26 +338,6 @@ export type Database = {
           quantity?: number
         }
       }
-      discovery_leads: {
-        Row: {
-          id: number
-          business_name: string | null
-          location: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: number
-          business_name?: string | null
-          location?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: number
-          business_name?: string | null
-          location?: string | null
-          created_at?: string | null
-        }
-      }
       invoices: {
         Row: {
           id: number
@@ -459,29 +439,6 @@ export type Database = {
           tax_setting_id?: number | null
           line_total?: number
           sort_order?: number | null
-        }
-      }
-      leads: {
-        Row: {
-          id: number
-          business_name: string | null
-          contact_person: string | null
-          status: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: number
-          business_name?: string | null
-          contact_person?: string | null
-          status?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: number
-          business_name?: string | null
-          contact_person?: string | null
-          status?: string | null
-          created_at?: string | null
         }
       }
       logs: {
@@ -593,26 +550,6 @@ export type Database = {
         Update: {
           id?: number
           email?: string | null
-          created_at?: string | null
-        }
-      }
-      opportunities: {
-        Row: {
-          id: number
-          source: string | null
-          snippet: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: number
-          source?: string | null
-          snippet?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: number
-          source?: string | null
-          snippet?: string | null
           created_at?: string | null
         }
       }

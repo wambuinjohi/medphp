@@ -27,6 +27,7 @@ export default function CompanySettings() {
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [fixingCurrency, setFixingCurrency] = useState(false);
   const [logoLoadError, setLogoLoadError] = useState(false);
+  const [logoRefreshKey, setLogoRefreshKey] = useState(0); // Force re-render of logo image
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [companyData, setCompanyData] = useState({
     name: '',
@@ -138,11 +139,19 @@ export default function CompanySettings() {
         throw new Error('Failed to process logo upload');
       }
 
+      // Add cache-busting parameter if it's a URL (not base64)
+      const cachebustedUrl = logoUrl.startsWith('data:')
+        ? logoUrl
+        : `${logoUrl}?t=${Date.now()}`;
+
       // Update local state & persist using existing hook
-      setCompanyData(prev => ({ ...prev, logo_url: logoUrl }));
+      setCompanyData(prev => ({ ...prev, logo_url: cachebustedUrl }));
       setLogoLoadError(false);
+      setLogoRefreshKey(prev => prev + 1); // Force image re-render
+
+      // Persist to database
       await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: logoUrl } });
-      toast.success('Logo saved successfully! Click "Save Settings" to confirm all changes.');
+      toast.success('Logo uploaded successfully! The preview updates below.');
 
     } catch (err: any) {
       // Only show error if no fallback was attempted
@@ -167,13 +176,15 @@ export default function CompanySettings() {
     let uploadUrl: string;
 
     if (import.meta.env.DEV) {
-      // In development, use local backend (which proxies to external API)
-      uploadUrl = import.meta.env.VITE_UPLOAD_URL || `${window.location.origin}/api/uploads`;
-      console.log('📤 Dev mode - uploading to local backend at:', uploadUrl);
+      // In development, use the vite proxy to upload to external API
+      // The vite proxy will forward /api/uploads to the external API
+      uploadUrl = '/api/uploads';
+      console.log('🚀 Dev mode - uploading via vite proxy to:', uploadUrl);
+      console.log('   (Vite will forward to external API: https://med.wayrus.co.ke/api/uploads)');
     } else {
       // In production, upload directly to external API
-      const externalApiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-      uploadUrl = externalApiUrl.replace('/api.php', '/api/uploads') || `${window.location.origin}/api/uploads`;
+      const externalApiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke';
+      uploadUrl = new URL('/api/uploads', externalApiUrl).toString();
       console.log('📤 Production mode - uploading directly to external API:', uploadUrl);
     }
 
@@ -190,6 +201,7 @@ export default function CompanySettings() {
     try {
       console.log(`🚀 Starting upload to: ${uploadUrl}`);
       console.log(`📁 File: ${fileName} (${(file.size / 1024).toFixed(2)} KB)`);
+      console.log(`🔗 Full request URL: ${window.location.origin}${uploadUrl}`);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
@@ -700,15 +712,16 @@ export default function CompanySettings() {
                   </div>
                 ) : companyData.logo_url && !logoLoadError ? (
                   <img
+                    key={logoRefreshKey}
                     src={companyData.logo_url}
                     alt="Company Logo"
                     className="w-full h-full object-contain"
                     onError={() => {
-                      console.error('Logo failed to load:', companyData.logo_url);
+                      console.error('❌ Logo failed to load:', companyData.logo_url);
                       setLogoLoadError(true);
                     }}
                     onLoad={() => {
-                      console.log('Logo loaded successfully');
+                      console.log('✅ Logo loaded successfully:', companyData.logo_url);
                       setLogoLoadError(false);
                     }}
                   />
