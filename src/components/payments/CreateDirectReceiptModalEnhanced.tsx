@@ -406,10 +406,10 @@ export function CreateDirectReceiptModalEnhanced({
                   <TableHeader>
                     <TableRow>
                       <TableHead>Product</TableHead>
-                      <TableHead>Qty</TableHead>
-                      <TableHead>Unit Price</TableHead>
-                      <TableHead>Tax %</TableHead>
-                      <TableHead>Total</TableHead>
+                      <TableHead className="text-center">Qty</TableHead>
+                      <TableHead className="text-right">Unit Price</TableHead>
+                      <TableHead className="text-center">Tax %</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
                       <TableHead className="w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -417,28 +417,28 @@ export function CreateDirectReceiptModalEnhanced({
                     {items.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="max-w-xs">{item.description}</TableCell>
-                        <TableCell className="w-16">
+                        <TableCell className="w-24">
                           <Input
                             type="number"
                             min="1"
                             value={item.quantity}
                             onChange={(e) => updateItemQuantity(item.id, parseInt(e.target.value) || 1)}
-                            className="w-full text-center h-8"
+                            className="w-full text-center h-10 text-lg font-semibold"
                           />
                         </TableCell>
-                        <TableCell className="w-24">
+                        <TableCell className="w-28">
                           <Input
                             type="number"
                             step="0.01"
                             value={item.unit_price}
                             onChange={(e) => updateItemPrice(item.id, parseFloat(e.target.value) || 0)}
-                            className="w-full text-right h-8"
+                            className="w-full text-right h-10"
                           />
                         </TableCell>
-                        <TableCell className="w-16">
-                          <span className="text-sm">{item.tax_percentage}%</span>
+                        <TableCell className="w-20 text-center">
+                          <span className="text-sm font-medium">{item.tax_percentage}%</span>
                         </TableCell>
-                        <TableCell className="w-24 font-semibold">
+                        <TableCell className="w-28 font-semibold text-right">
                           {formatCurrency(item.line_total)}
                         </TableCell>
                         <TableCell className="w-10">
