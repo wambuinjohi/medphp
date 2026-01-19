@@ -203,7 +203,6 @@ export class ExternalAPIAdapter implements IDatabase {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
-          credentials: 'include', // Include cookies for CORS
         });
 
         // Defensively parse JSON
