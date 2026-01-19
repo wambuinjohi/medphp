@@ -205,6 +205,7 @@ export default function OptimizedCustomers() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showDirectReceiptModal, setShowDirectReceiptModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<OptimizedCustomer | null>(null);
 
   // Data fetching
