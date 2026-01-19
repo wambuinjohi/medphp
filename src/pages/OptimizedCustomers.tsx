@@ -708,6 +708,17 @@ export default function OptimizedCustomers() {
         }}
         preSelectedCustomer={selectedCustomer}
       />
+
+      <CreateDirectReceiptModal
+        open={showDirectReceiptModal}
+        onOpenChange={setShowDirectReceiptModal}
+        onSuccess={() => {
+          setShowDirectReceiptModal(false);
+          setSelectedCustomer(null);
+          refetchCustomers();
+        }}
+        preSelectedCustomer={selectedCustomer}
+      />
     </div>
   );
 }
