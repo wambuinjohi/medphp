@@ -350,6 +350,30 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/app/reports/trading-pl"
+                  element={
+                    <ProtectedRoute>
+                      <TradingPLReport />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/app/reports/transport-pl"
+                  element={
+                    <ProtectedRoute>
+                      <TransportPLReport />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/app/reports/consolidated-pl"
+                  element={
+                    <ProtectedRoute>
+                      <ConsolidatedPLReport />
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Web Manager */}
                 <Route
