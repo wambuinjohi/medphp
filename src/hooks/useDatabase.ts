@@ -43,17 +43,12 @@ export function useDatabase(): UseDatabaseReturn {
         setLastHealthCheckTime(Date.now());
 
         if (!healthy) {
-          setError(new Error(`Database service is temporarily unavailable. Using backup connection.`));
+          setError(new Error(`Database service is temporarily unavailable.`));
+          console.warn('⚠️  Database health check failed. The app may continue to work if you have an active session.');
 
-          // Show helpful error toast only once
-          if (!errorToastShown) {
-            errorToastShown = true;
-            setTimeout(() => {
-              toast.warning('Database Connection Issue', {
-                description: 'The primary database is unavailable, but the application is using a backup connection.',
-              });
-            }, 500);
-          }
+          // Note: We don't show a toast for health check failures anymore
+          // because the app can continue to function with an active auth token.
+          // Users can still access data if they're authenticated.
         } else {
           setError(null);
           errorToastShown = false;
@@ -62,16 +57,10 @@ export function useDatabase(): UseDatabaseReturn {
         const error = err as Error;
         setError(error);
         setIsHealthy(false);
+        console.warn('❌ Database health check error:', error.message);
 
-        // Show helpful error toast only once
-        if (!errorToastShown && error.message.includes('Failed to fetch')) {
-          errorToastShown = true;
-          setTimeout(() => {
-            toast.error('Connection Error', {
-              description: 'Unable to connect to the database. Please check your internet connection.',
-            });
-          }, 500);
-        }
+        // Note: We don't show a toast for health check failures
+        // The app will attempt real operations which will show appropriate errors if needed
       } finally {
         setIsLoading(false);
       }
@@ -79,8 +68,8 @@ export function useDatabase(): UseDatabaseReturn {
 
     checkHealth();
 
-    // Set up periodic health checks every 10 seconds if database is unhealthy
-    const healthCheckInterval = setInterval(checkHealth, 10000);
+    // Set up periodic health checks every 30 seconds (less frequent to reduce noise)
+    const healthCheckInterval = setInterval(checkHealth, 30000);
 
     return () => clearInterval(healthCheckInterval);
   }, [db, provider]);
