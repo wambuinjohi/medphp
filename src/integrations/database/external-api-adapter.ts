@@ -143,6 +143,7 @@ export class ExternalAPIAdapter implements IDatabase {
           throw new Error('Invalid response from server: Expected valid JSON');
         });
       } catch (fetchError: any) {
+        requestCompleted = true;
         if (timeoutId) clearTimeout(timeoutId);
 
         if (fetchError.name === 'AbortError') {
