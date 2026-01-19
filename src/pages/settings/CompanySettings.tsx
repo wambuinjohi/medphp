@@ -731,11 +731,13 @@ export default function CompanySettings() {
                       placeholder="https://yourcompany.com"
                       className={getFieldError('website') ? 'border-destructive' : ''}
                     />
-                    {getFieldError('website') && (
+                    {getFieldError('website') ? (
                       <div className="flex items-center gap-2 text-sm text-destructive">
                         <AlertCircle className="h-4 w-4" />
                         {getFieldError('website')}
                       </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Your company's website URL (e.g., https://example.com)</p>
                     )}
                   </div>
                 </div>
