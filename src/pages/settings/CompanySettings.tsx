@@ -30,6 +30,7 @@ export default function CompanySettings() {
   const [fixingCurrency, setFixingCurrency] = useState(false);
   const [logoLoadError, setLogoLoadError] = useState(false);
   const [logoRefreshKey, setLogoRefreshKey] = useState(0); // Force re-render of logo image
+  const [permissionError, setPermissionError] = useState<{ statusCode: number; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [companyData, setCompanyData] = useState({
     name: '',
