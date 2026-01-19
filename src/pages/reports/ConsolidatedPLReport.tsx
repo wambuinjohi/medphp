@@ -73,12 +73,9 @@ export default function ConsolidatedPLReport() {
 
   const companyId = useCurrentCompanyId();
   const { can: canViewReports, loading: permissionsLoading } = usePermissions();
-  
+
   const { data: invoices, isLoading: invoicesLoading } = useInvoices(companyId);
-  const { data: transportData, isLoading: transportLoading } = useSelect<TransportFinance>(
-    'transport_finance',
-    { where: { company_id: companyId } }
-  );
+  const { data: transportData, isLoading: transportLoading } = useTransportFinance(companyId);
 
   const isLoading = invoicesLoading || transportLoading;
 
