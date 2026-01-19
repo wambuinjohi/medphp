@@ -1346,22 +1346,26 @@ export const useCreateDirectReceiptWithItems = () => {
         cleanPayment.notes = payment.notes;
       }
 
-      const paymentInsertResult = await db.insert('payments', cleanPayment);
+      let paymentId: string | null = null;
+      let paymentInsertResult = await db.insert('payments', cleanPayment);
+
       if (paymentInsertResult.error) {
         if (String(paymentInsertResult.error.message || '').includes('created_by')) {
           const retryPayload = { ...cleanPayment, created_by: null };
           const retryResult = await db.insert('payments', retryPayload);
           if (retryResult.error) throw retryResult.error;
           if (!retryResult.id) throw new Error('Failed to create payment: no ID returned');
+          paymentId = retryResult.id;
         } else {
           throw paymentInsertResult.error;
         }
+      } else {
+        if (!paymentInsertResult.id) throw new Error('Failed to create payment: no ID returned');
+        paymentId = paymentInsertResult.id;
       }
 
-      if (!paymentInsertResult.id) throw new Error('Failed to create payment: no ID returned');
-
       // Fetch the created payment
-      const paymentSelectResult = await db.selectOne('payments', paymentInsertResult.id);
+      const paymentSelectResult = await db.selectOne('payments', paymentId!);
       if (paymentSelectResult.error) throw paymentSelectResult.error;
       if (!paymentSelectResult.data) throw new Error('Failed to fetch created payment');
 
