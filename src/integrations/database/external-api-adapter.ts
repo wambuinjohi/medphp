@@ -102,7 +102,7 @@ export class ExternalAPIAdapter implements IDatabase {
         body = where;
       }
 
-      // Add timeout for fetch requests - extended to 30 seconds for slow APIs
+      // Add timeout for fetch requests - extended to 60 seconds for slow APIs
       const controller = new AbortController();
       let timeoutId: NodeJS.Timeout | null = null;
       let isTimedOut = false;
@@ -119,7 +119,7 @@ export class ExternalAPIAdapter implements IDatabase {
             console.debug('Controller abort error (ignored):', e);
           }
         }
-      }, 30000); // 30 second timeout (increased from 10s)
+      }, 60000); // 60 second timeout (increased from 30s to handle slower servers)
 
       let response: Response;
       let result: any;
