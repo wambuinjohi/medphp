@@ -699,9 +699,19 @@ export default function CompanySettings() {
                   <Input
                     id="company-name"
                     value={companyData.name || ''}
-                    onChange={(e) => setCompanyData(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => {
+                      setCompanyData(prev => ({ ...prev, name: e.target.value }));
+                      debouncedValidate({ ...companyData, name: e.target.value });
+                    }}
                     placeholder="Enter company name"
+                    className={getFieldError('name') ? 'border-destructive' : ''}
                   />
+                  {getFieldError('name') && (
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      {getFieldError('name')}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="website">Website</Label>
