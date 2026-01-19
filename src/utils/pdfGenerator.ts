@@ -982,6 +982,27 @@ export const generatePDF = (data: DocumentData) => {
 
 // Function for generating payment receipt PDF with payment details
 export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyDetails) => {
+  // Format payment amount
+  const paymentAmount = typeof payment.amount === 'string' ?
+    parseFloat(payment.amount.replace('$', '').replace(',', '')) :
+    payment.amount;
+
+  // Process payment allocations with proper formatting
+  const items = (payment.payment_allocations && payment.payment_allocations.length > 0) ?
+    payment.payment_allocations.map((allocation: any) => ({
+      description: allocation.invoice_number ?
+        `Invoice ${allocation.invoice_number}${allocation.invoice_date ? ` - ${new Date(allocation.invoice_date).toLocaleDateString()}` : ''}` :
+        'Payment Allocation',
+      quantity: 1,
+      unit_price: allocation.allocated_amount || allocation.amount_allocated || 0,
+      tax_percentage: 0,
+      tax_amount: 0,
+      tax_inclusive: false,
+      line_total: allocation.allocated_amount || allocation.amount_allocated || 0,
+      unit_of_measure: 'payment',
+    })) :
+    [];
+
   const documentData: DocumentData = {
     type: 'receipt',
     number: payment.number || payment.payment_number || `REC-${Date.now()}`,
@@ -992,24 +1013,11 @@ export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyD
       email: payment.customers?.email,
       phone: payment.customers?.phone,
     },
-    // Add payment allocations as items to display in table
-    items: (payment.payment_allocations || []).map((allocation: any) => ({
-      description: `Invoice ${allocation.invoice_number} - ${allocation.invoice_date ? new Date(allocation.invoice_date).toLocaleDateString() : 'N/A'}`,
-      quantity: 1,
-      unit_price: allocation.allocated_amount || 0,
-      tax_percentage: 0,
-      tax_amount: 0,
-      tax_inclusive: false,
-      line_total: allocation.allocated_amount || 0,
-      unit_of_measure: 'payment',
-    })),
-    subtotal: typeof payment.amount === 'string' ?
-      parseFloat(payment.amount.replace('$', '').replace(',', '')) :
-      payment.amount,
+    // Include payment allocations as line items
+    items: items,
+    subtotal: paymentAmount,
     tax_amount: 0,
-    total_amount: typeof payment.amount === 'string' ?
-      parseFloat(payment.amount.replace('$', '').replace(',', '')) :
-      payment.amount,
+    total_amount: paymentAmount,
     notes: `Payment Method: ${payment.payment_method?.replace('_', ' ') || payment.method?.replace('_', ' ') || 'Unknown'}\nReference: ${payment.reference_number || 'N/A'}`,
   };
 
