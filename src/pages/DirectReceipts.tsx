@@ -286,27 +286,15 @@ export default function DirectReceipts() {
     try {
       let enrichedReceipt: any = receipt;
       if (!receipt.invoice_items || receipt.invoice_items.length === 0) {
-        const { data: items, error } = await supabase
-          .from('invoice_items')
-          .select(`
-            id,
-            invoice_id,
-            product_id,
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            discount_before_vat,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total,
-            sort_order,
-            products(id, name, product_code, unit_of_measure)
-          `)
-          .eq('invoice_id', receipt.invoice_id);
-        if (!error && items) {
-          enrichedReceipt = { ...receipt, invoice_items: items };
+        try {
+          const { data: items } = await apiClient.select('invoice_items', {
+            invoice_id: receipt.invoice_id
+          });
+          if (items && Array.isArray(items)) {
+            enrichedReceipt = { ...receipt, invoice_items: items };
+          }
+        } catch (e) {
+          console.warn('Could not fetch invoice items for PDF:', e);
         }
       }
 
@@ -322,13 +310,13 @@ export default function DirectReceipts() {
       } : undefined;
 
       await downloadInvoicePDF(
-        { 
-          ...enrichedReceipt, 
+        {
+          ...enrichedReceipt,
           type: 'receipt',
           number: receipt.payment_number,
           date: receipt.payment_date
-        }, 
-        'RECEIPT', 
+        },
+        'RECEIPT',
         companyDetails
       );
       toast.success(`Receipt PDF download started for ${receipt.payment_number}`);
