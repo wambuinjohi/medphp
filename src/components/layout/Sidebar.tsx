@@ -49,6 +49,7 @@ const sidebarItems: SidebarItem[] = [
       { title: 'Quotations', icon: FileText, href: '/app/quotations' },
       { title: 'Proforma Invoices', icon: FileCheck, href: '/app/proforma' },
       { title: 'Invoices', icon: Receipt, href: '/app/invoices' },
+      { title: 'Direct Receipts', icon: Banknote, href: '/app/direct-receipts' },
       { title: 'Credit Notes', icon: RotateCcw, href: '/app/credit-notes' }
     ]
   },
