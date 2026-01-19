@@ -44,7 +44,10 @@ export function BiolegendLogo({
           src={logoSrc}
           alt={`${companyName} Logo`}
           className="w-full h-full object-contain"
-          onError={(e) => { (e.target as HTMLImageElement).src = '/public/placeholder.svg'; }}
+          onError={(e) => {
+            console.warn(`Logo failed to load: ${logoSrc}`);
+            (e.target as HTMLImageElement).src = '/placeholder.svg';
+          }}
         />
       </div>
 
