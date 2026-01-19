@@ -186,18 +186,16 @@ export default function CompanySettings() {
     formData.append('filename', fileName);
 
     try {
-      console.log(`🚀 Starting upload to: ${uploadUrl}`);
+      console.log(`🚀 Starting upload to: ${remoteApiUrl}`);
       console.log(`📁 File: ${fileName} (${(file.size / 1024).toFixed(2)} KB)`);
-      console.log(`🔗 Full request URL: ${window.location.origin}${uploadUrl}`);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-      const response = await fetch(uploadUrl, {
+      const response = await fetch(remoteApiUrl, {
         method: 'POST',
         body: formData,
         signal: controller.signal,
-        credentials: 'include', // Include cookies for authentication
       });
 
       clearTimeout(timeoutId);
