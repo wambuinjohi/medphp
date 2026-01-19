@@ -264,28 +264,30 @@ export class ExternalAPIAdapter implements IDatabase {
       const response = await fetch(`${this.apiBase}?action=logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
 
       if (!response.ok) {
         // Defensively parse JSON
         const result = await response.json().catch(() => ({}));
-        return { error: new Error(result.message || 'Logout failed') };
+        console.warn('⚠️  Logout API returned error:', result.message || 'Logout failed');
       }
 
+      // Always clear tokens locally, even if API fails
       this.clearAuthToken();
-
-      // Also clear user info from localStorage
       localStorage.removeItem('med_api_user_id');
       localStorage.removeItem('med_api_user_email');
 
+      console.log('✅ Local logout complete');
       return { error: null };
     } catch (error) {
+      console.warn('⚠️  Logout error (clearing locally anyway):', error);
       // Clear tokens even if logout fails
       this.clearAuthToken();
       localStorage.removeItem('med_api_user_id');
       localStorage.removeItem('med_api_user_email');
 
-      return { error: error as Error };
+      return { error: null }; // Return no error since we cleared locally
     }
   }
 
