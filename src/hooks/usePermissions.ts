@@ -132,32 +132,38 @@ export const usePermissions = () => {
 
   /**
    * Check if current user has a specific permission
+   * DISABLED: Role enforcement disabled - always returns true
    */
   const can = useCallback(
     (permission: Permission): boolean => {
-      return hasPermission(role, permission);
+      // Role enforcement disabled - allow all permissions
+      return true;
     },
-    [role]
+    []
   );
 
   /**
    * Check if current user has any of the specified permissions
+   * DISABLED: Role enforcement disabled - always returns true
    */
   const canAny = useCallback(
     (permissions: Permission[]): boolean => {
-      return hasAnyPermission(role, permissions);
+      // Role enforcement disabled - allow all permissions
+      return true;
     },
-    [role]
+    []
   );
 
   /**
    * Check if current user has all specified permissions
+   * DISABLED: Role enforcement disabled - always returns true
    */
   const canAll = useCallback(
     (permissions: Permission[]): boolean => {
-      return hasAllPermissions(role, permissions);
+      // Role enforcement disabled - allow all permissions
+      return true;
     },
-    [role]
+    []
   );
 
   /**
