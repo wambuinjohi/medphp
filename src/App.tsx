@@ -18,6 +18,9 @@ import Proforma from "./pages/Proforma";
 import SalesReports from "./pages/reports/SalesReports";
 import InventoryReports from "./pages/reports/InventoryReports";
 import StatementOfAccounts from "./pages/reports/StatementOfAccounts";
+import TradingPLReport from "./pages/reports/TradingPLReport";
+import TransportPLReport from "./pages/reports/TransportPLReport";
+import ConsolidatedPLReport from "./pages/reports/ConsolidatedPLReport";
 import CompanySettings from "./pages/settings/CompanySettings";
 import UserManagement from "./pages/settings/UserManagement";
 import DatabaseRolesSettings from "./pages/settings/DatabaseRolesSettings";
@@ -344,6 +347,30 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <StatementOfAccounts />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/app/reports/trading-pl"
+                  element={
+                    <ProtectedRoute>
+                      <TradingPLReport />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/app/reports/transport-pl"
+                  element={
+                    <ProtectedRoute>
+                      <TransportPLReport />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/app/reports/consolidated-pl"
+                  element={
+                    <ProtectedRoute>
+                      <ConsolidatedPLReport />
                     </ProtectedRoute>
                   }
                 />
