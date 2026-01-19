@@ -494,7 +494,17 @@ export default function Payments() {
         invoice={undefined} // For standalone payment recording
       />
 
-
+      {/* Create Direct Receipt Modal */}
+      <CreateDirectReceiptModal
+        open={showDirectReceiptModal}
+        onOpenChange={setShowDirectReceiptModal}
+        onSuccess={() => {
+          setShowDirectReceiptModal(false);
+          // Refresh payments list to show new data
+          retryPayments();
+          toast.success('Direct receipt created successfully!');
+        }}
+      />
 
       {/* View Payment Modal */}
       <ViewPaymentModal
