@@ -284,24 +284,28 @@ export const generateLPOPDF = async (lpo: LPOPDFData, company: CompanyData) => {
   if (lpo.notes) {
     doc.setFont('helvetica', 'bold');
     doc.text('Notes:', 20, yPosition);
-    yPosition += 8;
+    yPosition += 4;
 
     doc.setFont('helvetica', 'normal');
     const noteLines = doc.splitTextToSize(lpo.notes, 170);
+    doc.setFontSize(9);
     doc.text(noteLines, 20, yPosition);
-    yPosition += noteLines.length * 5 + 10;
+    yPosition += noteLines.length * 4 + 5;
+    doc.setFontSize(10);
   }
 
   // Terms and Conditions
   if (lpo.terms_and_conditions) {
     doc.setFont('helvetica', 'bold');
     doc.text('Terms & Conditions:', 20, yPosition);
-    yPosition += 8;
+    yPosition += 4;
 
     doc.setFont('helvetica', 'normal');
     const termsLines = doc.splitTextToSize(lpo.terms_and_conditions, 170);
+    doc.setFontSize(9);
     doc.text(termsLines, 20, yPosition);
-    yPosition += termsLines.length * 5 + 10;
+    yPosition += termsLines.length * 4 + 5;
+    doc.setFontSize(10);
   }
 
   // Footer
