@@ -1211,67 +1211,31 @@ export const useCreateDirectReceiptWithItems = () => {
     }) => {
       const db = getDatabase();
 
-      // Ensure created_by references the authenticated user
-      let cleanPayment = { ...payment } as any;
+      // Get created_by from auth
+      let createdBy: any = null;
       try {
         const { data: userData } = await supabase.auth.getUser();
-        const authUserId = userData?.user?.id || null;
-        if (authUserId) {
-          cleanPayment.created_by = authUserId;
-        } else if (typeof cleanPayment.created_by === 'undefined') {
-          cleanPayment.created_by = null;
-        }
+        createdBy = userData?.user?.id || null;
       } catch {
-        if (typeof cleanPayment.created_by === 'undefined') {
-          cleanPayment.created_by = null;
-        }
+        createdBy = null;
       }
 
-      // Ensure payment has required fields
-      cleanPayment.company_id = companyId;
-      cleanPayment.customer_id = customerId;
-      if (!cleanPayment.payment_date) {
-        cleanPayment.payment_date = new Date().toISOString().split('T')[0];
-      }
-      if (!cleanPayment.payment_method) {
-        cleanPayment.payment_method = 'cash';
-      }
-
-      // Create the payment
-      const paymentInsertResult = await db.insert('payments', cleanPayment);
-      if (paymentInsertResult.error) {
-        if (String(paymentInsertResult.error.message || '').includes('created_by')) {
-          const retryPayload = { ...cleanPayment, created_by: null };
-          const retryResult = await db.insert('payments', retryPayload);
-          if (retryResult.error) throw retryResult.error;
-          if (!retryResult.id) throw new Error('Failed to create payment: no ID returned');
-        } else {
-          throw paymentInsertResult.error;
-        }
-      }
-
-      if (!paymentInsertResult.id) throw new Error('Failed to create payment: no ID returned');
-
-      // Fetch the created payment
-      const paymentSelectResult = await db.selectOne('payments', paymentInsertResult.id);
-      if (paymentSelectResult.error) throw paymentSelectResult.error;
-      if (!paymentSelectResult.data) throw new Error('Failed to fetch created payment');
-
-      const paymentData = paymentSelectResult.data as any;
+      const paymentDate = payment.payment_date || new Date().toISOString().split('T')[0];
+      const paymentAmount = payment.amount || 0;
 
       // Determine invoice status based on payment amount vs invoice total
       let invoiceStatus = 'draft';
       let paidAmount = 0;
       let balanceDue = invoiceAmount;
 
-      if (paymentData.amount >= invoiceAmount) {
+      if (paymentAmount >= invoiceAmount) {
         invoiceStatus = 'paid';
         paidAmount = invoiceAmount;
         balanceDue = 0;
-      } else if (paymentData.amount > 0) {
+      } else if (paymentAmount > 0) {
         invoiceStatus = 'partial';
-        paidAmount = paymentData.amount;
-        balanceDue = invoiceAmount - paymentData.amount;
+        paidAmount = paymentAmount;
+        balanceDue = invoiceAmount - paymentAmount;
       }
 
       // Generate invoice number if not provided
@@ -1289,20 +1253,20 @@ export const useCreateDirectReceiptWithItems = () => {
         }
       }
 
-      // Create auto invoice for the receipt
+      // CREATE INVOICE FIRST (before payment, since payments.invoice_id references invoices.id)
       let cleanInvoice = {
         company_id: companyId,
         customer_id: customerId,
         invoice_number: finalInvoiceNumber,
-        invoice_date: paymentData.payment_date,
-        due_date: paymentData.payment_date,
+        invoice_date: paymentDate,
+        due_date: paymentDate,
         status: invoiceStatus,
         subtotal: subtotal,
         tax_amount: taxAmount,
         total_amount: invoiceAmount,
         paid_amount: paidAmount,
         balance_due: balanceDue,
-        created_by: paymentData.created_by
+        created_by: createdBy
       } as any;
 
       const invoiceInsertResult = await db.insert('invoices', cleanInvoice);
@@ -1351,11 +1315,51 @@ export const useCreateDirectReceiptWithItems = () => {
         }
       }
 
+      // NOW CREATE PAYMENT with invoice_id
+      let cleanPayment = {
+        company_id: companyId,
+        invoice_id: invoiceData.id,
+        payment_date: paymentDate,
+        payment_method: payment.payment_method || 'cash',
+        amount: paymentAmount,
+        reference_number: payment.reference_number || null,
+        created_by: createdBy
+      } as any;
+
+      // Include optional fields if they exist in the payment object
+      if (payment.payment_number) {
+        cleanPayment.payment_number = payment.payment_number;
+      }
+      if (payment.notes) {
+        cleanPayment.notes = payment.notes;
+      }
+
+      const paymentInsertResult = await db.insert('payments', cleanPayment);
+      if (paymentInsertResult.error) {
+        if (String(paymentInsertResult.error.message || '').includes('created_by')) {
+          const retryPayload = { ...cleanPayment, created_by: null };
+          const retryResult = await db.insert('payments', retryPayload);
+          if (retryResult.error) throw retryResult.error;
+          if (!retryResult.id) throw new Error('Failed to create payment: no ID returned');
+        } else {
+          throw paymentInsertResult.error;
+        }
+      }
+
+      if (!paymentInsertResult.id) throw new Error('Failed to create payment: no ID returned');
+
+      // Fetch the created payment
+      const paymentSelectResult = await db.selectOne('payments', paymentInsertResult.id);
+      if (paymentSelectResult.error) throw paymentSelectResult.error;
+      if (!paymentSelectResult.data) throw new Error('Failed to fetch created payment');
+
+      const paymentData = paymentSelectResult.data as any;
+
       // Create payment allocation linking payment to invoice
       const allocationInsertResult = await db.insert('payment_allocations', {
         payment_id: paymentData.id,
         invoice_id: invoiceData.id,
-        amount: paymentData.amount
+        amount: paymentAmount
       });
 
       if (allocationInsertResult.error) {
