@@ -493,29 +493,62 @@ export function CreateDirectReceiptModalEnhanced({
                   placeholder="0.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
+                  className="h-10 text-lg"
                 />
                 {amount && <p className="text-xs text-muted-foreground">{formatCurrency(parseFloat(amount))}</p>}
               </div>
 
-              {/* Payment Status Indicator */}
+              {/* Payment Status Indicator with Change/Balance */}
               {amount && total > 0 && (
-                <div className="pt-2">
+                <div className="pt-2 space-y-2">
                   {isFullPayment && (
-                    <div className="flex items-center gap-2 p-2 bg-success-light text-success rounded text-sm">
+                    <div className="flex items-center gap-2 p-3 bg-success-light text-success rounded text-sm border border-success/20">
                       <span className="font-medium">✓ Full Payment</span>
                       <span>Invoice will be marked as PAID</span>
                     </div>
                   )}
                   {isPartialPayment && (
-                    <div className="flex items-center gap-2 p-2 bg-warning-light text-warning rounded text-sm">
-                      <span className="font-medium">⚠ Partial Payment</span>
-                      <span>Invoice will be marked as PARTIAL ({formatCurrency(total - amountNum)} remaining)</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 p-3 bg-warning-light text-warning rounded text-sm border border-warning/20">
+                        <span className="font-medium">⚠ Partial Payment</span>
+                        <span>Invoice will be marked as PARTIAL</span>
+                      </div>
+                      <div className="p-3 bg-muted rounded border border-muted-foreground/20">
+                        <div className="flex justify-between mb-2">
+                          <span className="text-muted-foreground">Invoice Total:</span>
+                          <span className="font-semibold">{formatCurrency(total)}</span>
+                        </div>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-muted-foreground">Amount Received:</span>
+                          <span className="font-semibold">{formatCurrency(amountNum)}</span>
+                        </div>
+                        <div className="border-t pt-2 flex justify-between">
+                          <span className="font-medium text-destructive">Balance Due:</span>
+                          <span className="font-bold text-destructive">{formatCurrency(total - amountNum)}</span>
+                        </div>
+                      </div>
                     </div>
                   )}
                   {amountNum > total && (
-                    <div className="flex items-center gap-2 p-2 bg-destructive-light text-destructive rounded text-sm">
-                      <span className="font-medium">⚠ Overpayment</span>
-                      <span>{formatCurrency(amountNum - total)} overpaid</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 p-3 bg-success-light text-success rounded text-sm border border-success/20">
+                        <span className="font-medium">✓ Overpayment - Change Due</span>
+                        <span>Invoice will be marked as PAID</span>
+                      </div>
+                      <div className="p-3 bg-muted rounded border border-muted-foreground/20">
+                        <div className="flex justify-between mb-2">
+                          <span className="text-muted-foreground">Invoice Total:</span>
+                          <span className="font-semibold">{formatCurrency(total)}</span>
+                        </div>
+                        <div className="flex justify-between mb-2">
+                          <span className="text-muted-foreground">Amount Received:</span>
+                          <span className="font-semibold">{formatCurrency(amountNum)}</span>
+                        </div>
+                        <div className="border-t pt-2 flex justify-between">
+                          <span className="font-medium text-success">Change:</span>
+                          <span className="font-bold text-success">{formatCurrency(amountNum - total)}</span>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
