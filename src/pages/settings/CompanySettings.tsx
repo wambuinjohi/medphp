@@ -706,11 +706,12 @@ export default function CompanySettings() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="company-name">Company Name</Label>
+                <Label htmlFor="company-name">Company Name *</Label>
                 <Input
                   id="company-name"
                   value={companyData.name || ''}
                   onChange={(e) => setCompanyData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter company name"
                 />
               </div>
               <div className="space-y-2">
@@ -722,6 +723,29 @@ export default function CompanySettings() {
                   onChange={(e) => setCompanyData(prev => ({ ...prev, website: e.target.value }))}
                   placeholder="https://yourcompany.com"
                 />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="registration-number">Registration Number</Label>
+                <Input
+                  id="registration-number"
+                  value={companyData.registration_number || ''}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, registration_number: e.target.value }))}
+                  placeholder="e.g., CR/2024/001"
+                />
+                <p className="text-xs text-muted-foreground">Company registration or incorporation number</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tax-number">Tax Number</Label>
+                <Input
+                  id="tax-number"
+                  value={companyData.tax_number || ''}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, tax_number: e.target.value }))}
+                  placeholder="e.g., PIN-123456789"
+                />
+                <p className="text-xs text-muted-foreground">Tax identification or VAT number</p>
               </div>
             </div>
 
