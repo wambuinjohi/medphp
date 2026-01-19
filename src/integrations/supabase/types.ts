@@ -338,26 +338,6 @@ export type Database = {
           quantity?: number
         }
       }
-      discovery_leads: {
-        Row: {
-          id: number
-          business_name: string | null
-          location: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: number
-          business_name?: string | null
-          location?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: number
-          business_name?: string | null
-          location?: string | null
-          created_at?: string | null
-        }
-      }
       invoices: {
         Row: {
           id: number
