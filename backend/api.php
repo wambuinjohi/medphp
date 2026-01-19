@@ -699,6 +699,67 @@ try {
             'message' => 'API is healthy'
         ]);
     }
+    // File upload handler
+    elseif ($action === "upload" || $_SERVER['REQUEST_URI'] === '/api/uploads' || strpos($_SERVER['REQUEST_URI'], '/api/uploads') === 0) {
+        // Handle file uploads
+        if (!isset($_FILES['file'])) {
+            throw new Exception("No file provided");
+        }
+
+        $file = $_FILES['file'];
+
+        // Validate file
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("File upload error: " . $file['error']);
+        }
+
+        // Check file size (limit to 5MB)
+        $max_size = 5 * 1024 * 1024; // 5MB
+        if ($file['size'] > $max_size) {
+            throw new Exception("File size exceeds 5MB limit");
+        }
+
+        // Validate MIME type
+        $allowed_mimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        if (!in_array($mime, $allowed_mimes)) {
+            throw new Exception("Invalid file type. Only image files are allowed.");
+        }
+
+        // Create uploads directory if it doesn't exist
+        $upload_dir = __DIR__ . '/uploads';
+        if (!is_dir($upload_dir)) {
+            if (!mkdir($upload_dir, 0755, true)) {
+                throw new Exception("Failed to create uploads directory");
+            }
+        }
+
+        // Generate unique filename
+        $filename = $_POST['filename'] ?? 'upload-' . time() . '-' . bin2hex(random_bytes(4)) . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
+        $file_path = $upload_dir . '/' . basename($filename);
+
+        // Move uploaded file
+        if (!move_uploaded_file($file['tmp_name'], $file_path)) {
+            throw new Exception("Failed to save uploaded file");
+        }
+
+        // Generate URL for the uploaded file
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'];
+        $file_url = $protocol . '://' . $host . '/backend/uploads/' . basename($filename);
+
+        echo json_encode([
+            'status' => 'success',
+            'url' => $file_url,
+            'file_url' => $file_url,
+            'filename' => basename($filename),
+            'size' => $file['size']
+        ]);
+        exit();
+    }
     else {
         throw new Exception("Unknown action: $action");
     }
