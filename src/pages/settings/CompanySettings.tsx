@@ -164,15 +164,16 @@ export default function CompanySettings() {
   // Helper function to upload to external API
   const uploadToExternalAPI = async (file: File, companyId: string): Promise<string> => {
     // Determine the upload URL based on environment
+    // Always use /api/uploads so the backend can detect file uploads
     let uploadUrl: string;
 
     if (import.meta.env.DEV) {
-      // In development, use proxy to local backend or external API
+      // In development, use proxy to external API
       uploadUrl = import.meta.env.VITE_UPLOAD_URL || `${window.location.origin}/api/uploads`;
       console.log('📤 Dev mode upload URL:', uploadUrl);
     } else {
-      // In production, use the configured API endpoint
-      uploadUrl = import.meta.env.VITE_UPLOAD_URL || 'https://med.wayrus.co.ke/api.php';
+      // In production, use /api/uploads on the same domain
+      uploadUrl = import.meta.env.VITE_UPLOAD_URL || `${window.location.origin}/api/uploads`;
       console.log('📤 Prod mode upload URL:', uploadUrl);
     }
 
