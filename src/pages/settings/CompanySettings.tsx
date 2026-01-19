@@ -1031,20 +1031,20 @@ export default function CompanySettings() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
+                <Label htmlFor="city-default">City</Label>
                 <Input
-                  id="city"
+                  id="city-default"
                   value={companyData.city || ''}
                   onChange={(e) => setCompanyData(prev => ({ ...prev, city: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
-                <Input
-                  id="country"
-                  value={companyData.country || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, country: e.target.value }))}
-                />
+                <Label htmlFor="postal-code-note" className="text-muted-foreground text-sm">
+                  Note: Country is set in Company Information above
+                </Label>
+                <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
+                  Your company is in: <strong>{companyData.country || 'Kenya'}</strong>
+                </div>
               </div>
             </div>
 
