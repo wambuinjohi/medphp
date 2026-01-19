@@ -138,6 +138,22 @@ const App = () => {
                   }
                 />
                 <Route
+                  path="/app/direct-receipts"
+                  element={
+                    <ProtectedRoute>
+                      <DirectReceipts />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/app/direct-receipts/new"
+                  element={
+                    <ProtectedRoute>
+                      <DirectReceipts />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/app/payments"
                   element={
                     <ProtectedRoute>
