@@ -1092,22 +1092,26 @@ export const useCreateDirectReceipt = () => {
         created_by: createdBy
       } as any;
 
-      const invoiceInsertResult = await db.insert('invoices', cleanInvoice);
+      let invoiceId: string | null = null;
+      let invoiceInsertResult = await db.insert('invoices', cleanInvoice);
+
       if (invoiceInsertResult.error) {
         if (String(invoiceInsertResult.error.message || '').includes('created_by')) {
           const retryPayload = { ...cleanInvoice, created_by: null };
           const retryResult = await db.insert('invoices', retryPayload);
           if (retryResult.error) throw retryResult.error;
           if (!retryResult.id) throw new Error('Failed to create invoice: no ID returned');
+          invoiceId = retryResult.id;
         } else {
           throw invoiceInsertResult.error;
         }
+      } else {
+        if (!invoiceInsertResult.id) throw new Error('Failed to create invoice: no ID returned');
+        invoiceId = invoiceInsertResult.id;
       }
 
-      if (!invoiceInsertResult.id) throw new Error('Failed to create invoice: no ID returned');
-
       // Fetch the created invoice
-      const invoiceSelectResult = await db.selectOne('invoices', invoiceInsertResult.id);
+      const invoiceSelectResult = await db.selectOne('invoices', invoiceId!);
       if (invoiceSelectResult.error) throw invoiceSelectResult.error;
       if (!invoiceSelectResult.data) throw new Error('Failed to fetch created invoice');
 
