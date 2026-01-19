@@ -19,9 +19,10 @@ if (file_exists(__DIR__ . '/.env')) {
 // CORS headers - allow credentials with dynamic origin
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
 header("Access-Control-Allow-Origin: $origin");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization");
+header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With");
 header("Access-Control-Allow-Credentials: true");
+header("Access-Control-Max-Age: 86400");
 
 // Don't force Content-Type for file uploads (multipart/form-data)
 $content_type = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
