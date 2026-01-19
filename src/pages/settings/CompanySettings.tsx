@@ -1043,13 +1043,25 @@ export default function CompanySettings() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="currency">Default Currency</Label>
-                  <Input
-                    id="currency"
-                    value={companyData.currency || ''}
-                    onChange={(e) => setCompanyData(prev => ({ ...prev, currency: e.target.value }))}
-                  />
-                </div>
+                <Label htmlFor="currency">Default Currency</Label>
+                <Input
+                  id="currency"
+                  value={companyData.currency || ''}
+                  onChange={(e) => {
+                    setCompanyData(prev => ({ ...prev, currency: e.target.value }));
+                    debouncedValidate({ ...companyData, currency: e.target.value });
+                  }}
+                  placeholder="KES"
+                  maxLength={3}
+                  className={getFieldError('currency') ? 'border-destructive' : ''}
+                />
+                {getFieldError('currency') && (
+                  <div className="flex items-center gap-2 text-sm text-destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    {getFieldError('currency')}
+                  </div>
+                )}
+              </div>
                 <div className="space-y-2">
                   <Label htmlFor="fiscal-year">Fiscal Year Start Month</Label>
                   <select
