@@ -1017,15 +1017,27 @@ export default function CompanySettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="fiscal-year">Fiscal Year Start (Month)</Label>
-                <Input
+                <Label htmlFor="fiscal-year">Fiscal Year Start Month</Label>
+                <select
                   id="fiscal-year"
-                  type="number"
-                  min="1"
-                  max="12"
                   value={companyData.fiscal_year_start || 1}
                   onChange={(e) => setCompanyData(prev => ({ ...prev, fiscal_year_start: parseInt(e.target.value) || 1 }))}
-                />
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="1">January</option>
+                  <option value="2">February</option>
+                  <option value="3">March</option>
+                  <option value="4">April</option>
+                  <option value="5">May</option>
+                  <option value="6">June</option>
+                  <option value="7">July</option>
+                  <option value="8">August</option>
+                  <option value="9">September</option>
+                  <option value="10">October</option>
+                  <option value="11">November</option>
+                  <option value="12">December</option>
+                </select>
+                <p className="text-xs text-muted-foreground">Select the month your fiscal year begins</p>
               </div>
             </div>
 
