@@ -29,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Handle file uploads at /api/uploads
-if (strpos($_SERVER['REQUEST_URI'], '/api/uploads') === 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+// Handle file uploads at /api/uploads or via action=upload
+if ((strpos($_SERVER['REQUEST_URI'], '/api/uploads') === 0 || $_POST['action'] === 'upload') && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate file upload
     if (!isset($_FILES['file'])) {
         http_response_code(400);
