@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, DollarSign, AlertCircle } from 'lucide-react';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
-import { useSelect } from '@/hooks/useDatabase';
+import { useTransportFinance } from '@/hooks/useTransport';
 import { useCurrentCompanyId } from '@/contexts/CompanyContext';
 import { 
   calculateTradingPLMetrics,
