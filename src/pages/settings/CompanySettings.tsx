@@ -347,11 +347,14 @@ export default function CompanySettings() {
   };
 
   const handleSaveCompany = async () => {
+    // Perform validation before saving
+    const validation = validateCompanyData(companyData);
+    setValidationErrors(validation);
 
-    // Comprehensive validation
-    const validationErrors = validateCompanyData(companyData);
-    if (validationErrors.length > 0) {
-      toast.error(`Validation failed: ${validationErrors[0]}`);
+    // Check if all validations passed
+    if (!isValidCompanyData(validation)) {
+      const errors = getValidationErrors(validation);
+      toast.error(`Validation failed: ${errors[0]}`);
       return;
     }
 
