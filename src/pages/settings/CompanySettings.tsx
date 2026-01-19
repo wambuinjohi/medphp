@@ -176,13 +176,15 @@ export default function CompanySettings() {
     let uploadUrl: string;
 
     if (import.meta.env.DEV) {
-      // In development, use local backend (which proxies to external API)
-      uploadUrl = import.meta.env.VITE_UPLOAD_URL || `${window.location.origin}/api/uploads`;
-      console.log('📤 Dev mode - uploading to local backend at:', uploadUrl);
+      // In development, use the vite proxy to upload to external API
+      // The vite proxy will forward /api/uploads to the external API
+      uploadUrl = '/api/uploads';
+      console.log('🚀 Dev mode - uploading via vite proxy to:', uploadUrl);
+      console.log('   (Vite will forward to external API: https://med.wayrus.co.ke/api/uploads)');
     } else {
       // In production, upload directly to external API
-      const externalApiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-      uploadUrl = externalApiUrl.replace('/api.php', '/api/uploads') || `${window.location.origin}/api/uploads`;
+      const externalApiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke';
+      uploadUrl = new URL('/api/uploads', externalApiUrl).toString();
       console.log('📤 Production mode - uploading directly to external API:', uploadUrl);
     }
 
