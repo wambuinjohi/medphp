@@ -143,6 +143,7 @@ export default function CompanySettings() {
       setCompanyData(prev => ({ ...prev, logo_url: logoUrl }));
       setLogoLoadError(false);
       await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: logoUrl } });
+      toast.success('Logo saved successfully! Click "Save Settings" to confirm all changes.');
 
     } catch (err: any) {
       // Only show error if no fallback was attempted
