@@ -119,7 +119,6 @@ export default function CompanySettings() {
       try {
         logoUrl = await uploadToExternalAPI(file, currentCompany.id);
         console.log('✅ Server upload successful:', logoUrl);
-        toast.success('Logo uploaded successfully!');
       } catch (uploadError) {
         console.error('❌ Server upload failed:', uploadError);
         logError(uploadError, 'Logo Upload to Server');
