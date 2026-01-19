@@ -1299,7 +1299,6 @@ export const useCreateDirectReceiptWithItems = () => {
         total_amount: invoiceAmount,
         paid_amount: paidAmount,
         balance_due: balanceDue,
-        notes: `Direct receipt created with line items. Payment Method: ${paymentData.payment_method || 'cash'}${paymentData.reference_number ? `. Reference: ${paymentData.reference_number}` : ''}`,
         created_by: paymentData.created_by
       } as any;
 
