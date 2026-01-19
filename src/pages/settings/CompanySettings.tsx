@@ -630,6 +630,16 @@ export default function CompanySettings() {
         </div>
       </div>
 
+      {/* Permission Error Helper - Show when user lacks permissions */}
+      {permissionError && (
+        <PermissionErrorHelper
+          statusCode={permissionError.statusCode}
+          errorMessage={permissionError.message}
+          operation="update"
+          resource="company settings"
+        />
+      )}
+
       {/* Simple Currency Column Fix - Show when schema errors are detected */}
       {schemaError && !companiesError && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
