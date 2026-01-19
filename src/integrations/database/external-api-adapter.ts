@@ -510,7 +510,8 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async raw<T>(sql: string, params?: any[]): Promise<ListQueryResult<T>> {
     try {
-      const response = await fetch(`${this.apiBase}?action=raw`, {
+      const url = `${this.apiBase}?action=raw`;
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sql, params }),
