@@ -234,12 +234,19 @@ export function EnhancedLogin() {
 
             {/* CORS Error Alert */}
             {corsError && (
-              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 space-y-2">
+              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 space-y-3">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-red-800">Connection Error</p>
-                    <p className="text-xs text-red-700 mt-1">{corsError}</p>
+                    <p className="text-sm font-semibold text-red-800">API Connection Error (CORS)</p>
+                    <p className="text-xs text-red-700 mt-2 leading-relaxed">{corsError}</p>
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs text-red-700 font-medium">Quick fix options:</p>
+                      <ol className="text-xs text-red-700 space-y-1 ml-4 list-decimal">
+                        <li>Use the <strong>"Use Local Dev Server"</strong> option below (works offline)</li>
+                        <li>Backend team: Add CORS headers to api.php (see CORS_SETUP_GUIDE.md)</li>
+                      </ol>
+                    </div>
                   </div>
                 </div>
               </div>
