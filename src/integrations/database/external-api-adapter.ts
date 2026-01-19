@@ -184,48 +184,71 @@ export class ExternalAPIAdapter implements IDatabase {
     try {
       console.log(`🔐 Attempting login with external API: ${this.apiBase}?action=login`);
 
-      const response = await fetch(`${this.apiBase}?action=login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      const loginUrl = `${this.apiBase}?action=login`;
 
-      // Defensively parse JSON
-      const result = await response.json().catch(() => {
-        if (!response.ok) {
-          throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+      try {
+        const response = await fetch(loginUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+          credentials: 'include', // Include cookies for CORS
+        });
+
+        // Defensively parse JSON
+        const result = await response.json().catch(() => {
+          if (!response.ok) {
+            throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+          }
+          throw new Error('Invalid response from server: Expected valid JSON');
+        });
+        console.log('📝 Login response status:', response.status, 'Result:', result);
+
+        if (!response.ok || result.status === 'error') {
+          const errorMsg = result.message || result.error || `Login failed with status ${response.status}`;
+          console.error('❌ Login error:', errorMsg);
+          return {
+            token: '',
+            user: null,
+            error: new Error(errorMsg),
+          };
         }
-        throw new Error('Invalid response from server: Expected valid JSON');
-      });
-      console.log('📝 Login response status:', response.status, 'Result:', result);
 
-      if (!response.ok || result.status === 'error') {
-        const errorMsg = result.message || result.error || `Login failed with status ${response.status}`;
-        console.error('❌ Login error:', errorMsg);
+        if (result.token) {
+          this.setAuthToken(result.token);
+          console.log('✅ Token stored successfully');
+
+          // Store user info in localStorage for consistent access
+          if (result.user && result.user.id) {
+            localStorage.setItem('med_api_user_id', result.user.id);
+            localStorage.setItem('med_api_user_email', email);
+            console.log('✅ User info stored:', { id: result.user.id, email });
+          }
+        }
+
         return {
-          token: '',
-          user: null,
-          error: new Error(errorMsg),
+          token: result.token || '',
+          user: result.user,
+          error: null,
         };
-      }
+      } catch (fetchError: any) {
+        // Enhanced error handling for login-specific issues
+        if (fetchError instanceof TypeError && fetchError.message.includes('Failed to fetch')) {
+          console.error('❌ Login failed - Network/CORS error:');
+          console.error('API Endpoint:', loginUrl);
+          console.error('This is likely a CORS issue.');
+          console.error('💡 Solution: Backend needs to configure CORS headers:');
+          console.error('   Access-Control-Allow-Origin: * (or specific domain)');
+          console.error('   Access-Control-Allow-Methods: POST, OPTIONS');
+          console.error('   Access-Control-Allow-Headers: Content-Type');
 
-      if (result.token) {
-        this.setAuthToken(result.token);
-        console.log('✅ Token stored successfully');
-
-        // Store user info in localStorage for consistent access
-        if (result.user && result.user.id) {
-          localStorage.setItem('med_api_user_id', result.user.id);
-          localStorage.setItem('med_api_user_email', email);
-          console.log('✅ User info stored:', { id: result.user.id, email });
+          return {
+            token: '',
+            user: null,
+            error: new Error(`Unable to connect to login endpoint: ${loginUrl}. This is likely a CORS issue. Please check the browser console for details.`),
+          };
         }
+        throw fetchError;
       }
-
-      return {
-        token: result.token || '',
-        user: result.user,
-        error: null,
-      };
     } catch (error) {
       console.error('❌ Login exception:', error);
       return {
