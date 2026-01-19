@@ -105,7 +105,10 @@ const sidebarItems: SidebarItem[] = [
     children: [
       { title: 'Sales Reports', icon: BarChart3, href: '/app/reports/sales' },
       { title: 'Inventory Reports', icon: Package, href: '/app/reports/inventory' },
-      { title: 'Customer Statements', icon: FileSpreadsheet, href: '/app/reports/statements' }
+      { title: 'Customer Statements', icon: FileSpreadsheet, href: '/app/reports/statements' },
+      { title: 'Trading P&L', icon: TrendingUp, href: '/app/reports/trading-pl' },
+      { title: 'Transport P&L', icon: Truck, href: '/app/reports/transport-pl' },
+      { title: 'Consolidated P&L', icon: BarChart3, href: '/app/reports/consolidated-pl' }
     ]
   },
   {
