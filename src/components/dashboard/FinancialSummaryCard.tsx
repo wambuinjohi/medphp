@@ -18,10 +18,7 @@ import {
 export function FinancialSummaryCard() {
   const companyId = useCurrentCompanyId();
   const { data: invoices, isLoading: invoicesLoading } = useInvoices(companyId);
-  const { data: transportData, isLoading: transportLoading } = useSelect<TransportFinance>(
-    'transport_finance',
-    { where: { company_id: companyId } }
-  );
+  const { data: transportData, isLoading: transportLoading } = useTransportFinance(companyId);
 
   const isLoading = invoicesLoading || transportLoading;
 
