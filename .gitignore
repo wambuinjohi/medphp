@@ -17,6 +17,10 @@ public/uploads/*
 !public/uploads/.gitkeep
 !public/uploads/.htaccess
 
+# Backend uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
