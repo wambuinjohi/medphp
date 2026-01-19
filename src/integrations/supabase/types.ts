@@ -553,26 +553,6 @@ export type Database = {
           created_at?: string | null
         }
       }
-      opportunities: {
-        Row: {
-          id: number
-          source: string | null
-          snippet: string | null
-          created_at: string | null
-        }
-        Insert: {
-          id?: number
-          source?: string | null
-          snippet?: string | null
-          created_at?: string | null
-        }
-        Update: {
-          id?: number
-          source?: string | null
-          snippet?: string | null
-          created_at?: string | null
-        }
-      }
       payments: {
         Row: {
           id: number
