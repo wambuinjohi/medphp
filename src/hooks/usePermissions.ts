@@ -132,32 +132,38 @@ export const usePermissions = () => {
 
   /**
    * Check if current user has a specific permission
+   * DISABLED: Role enforcement disabled - always returns true
    */
   const can = useCallback(
     (permission: Permission): boolean => {
-      return hasPermission(role, permission);
+      // Role enforcement disabled - allow all permissions
+      return true;
     },
-    [role]
+    []
   );
 
   /**
    * Check if current user has any of the specified permissions
+   * DISABLED: Role enforcement disabled - always returns true
    */
   const canAny = useCallback(
     (permissions: Permission[]): boolean => {
-      return hasAnyPermission(role, permissions);
+      // Role enforcement disabled - allow all permissions
+      return true;
     },
-    [role]
+    []
   );
 
   /**
    * Check if current user has all specified permissions
+   * DISABLED: Role enforcement disabled - always returns true
    */
   const canAll = useCallback(
     (permissions: Permission[]): boolean => {
-      return hasAllPermissions(role, permissions);
+      // Role enforcement disabled - allow all permissions
+      return true;
     },
-    [role]
+    []
   );
 
   /**
@@ -172,99 +178,50 @@ export const usePermissions = () => {
 
   /**
    * Check if user can delete a specific entity type
+   * DISABLED: Role enforcement disabled - always returns true
    */
   const canDelete = useCallback(
     (entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment'): boolean => {
-      const deletePermissionMap: Record<string, Permission> = {
-        quotation: 'delete_quotation',
-        invoice: 'delete_invoice',
-        credit_note: 'delete_credit_note',
-        proforma: 'delete_proforma',
-        customer: 'delete_customer',
-        inventory: 'delete_inventory',
-        delivery_note: 'delete_delivery_note',
-        lpo: 'delete_lpo',
-        remittance: 'delete_remittance',
-        payment: 'delete_payment',
-      };
-
-      const permission = deletePermissionMap[entityType];
-      return permission ? hasPermission(role, permission) : false;
+      // Role enforcement disabled - allow all delete operations
+      return true;
     },
-    [role]
+    []
   );
 
   /**
    * Check if user can create a specific entity type
+   * DISABLED: Role enforcement disabled - always returns true
    */
   const canCreate = useCallback(
     (entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment'): boolean => {
-      const createPermissionMap: Record<string, Permission> = {
-        quotation: 'create_quotation',
-        invoice: 'create_invoice',
-        credit_note: 'create_credit_note',
-        proforma: 'create_proforma',
-        customer: 'create_customer',
-        inventory: 'create_inventory',
-        delivery_note: 'create_delivery_note',
-        lpo: 'create_lpo',
-        remittance: 'create_remittance',
-        payment: 'create_payment',
-      };
-
-      const permission = createPermissionMap[entityType];
-      return permission ? hasPermission(role, permission) : false;
+      // Role enforcement disabled - allow all create operations
+      return true;
     },
-    [role]
+    []
   );
 
   /**
    * Check if user can edit a specific entity type
+   * DISABLED: Role enforcement disabled - always returns true
    */
   const canEdit = useCallback(
     (entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment'): boolean => {
-      const editPermissionMap: Record<string, Permission> = {
-        quotation: 'edit_quotation',
-        invoice: 'edit_invoice',
-        credit_note: 'edit_credit_note',
-        proforma: 'edit_proforma',
-        customer: 'edit_customer',
-        inventory: 'edit_inventory',
-        delivery_note: 'edit_delivery_note',
-        lpo: 'edit_lpo',
-        remittance: 'edit_remittance',
-        payment: 'edit_payment',
-      };
-
-      const permission = editPermissionMap[entityType];
-      return permission ? hasPermission(role, permission) : false;
+      // Role enforcement disabled - allow all edit operations
+      return true;
     },
-    [role]
+    []
   );
 
   /**
    * Check if user can view a specific entity type
+   * DISABLED: Role enforcement disabled - always returns true
    */
   const canView = useCallback(
     (entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment' | 'reports'): boolean => {
-      const viewPermissionMap: Record<string, Permission> = {
-        quotation: 'view_quotation',
-        invoice: 'view_invoice',
-        credit_note: 'view_credit_note',
-        proforma: 'view_proforma',
-        customer: 'view_customer',
-        inventory: 'view_inventory',
-        delivery_note: 'view_delivery_note',
-        lpo: 'view_lpo',
-        remittance: 'view_remittance',
-        payment: 'view_payment',
-        reports: 'view_reports',
-      };
-
-      const permission = viewPermissionMap[entityType];
-      return permission ? hasPermission(role, permission) : false;
+      // Role enforcement disabled - allow all view operations
+      return true;
     },
-    [role]
+    []
   );
 
   return {

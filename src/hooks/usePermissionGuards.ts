@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 /**
  * Hook to guard operations with permission checks
- * Returns permission checking utilities
+ * DISABLED: All permission checks pass - role enforcement is disabled
  */
 export const usePermissionGuards = () => {
   const { isAdmin } = useAuth();
@@ -13,68 +13,58 @@ export const usePermissionGuards = () => {
 
   /**
    * Check if user has permission and show error toast if not
+   * DISABLED: Always returns true - role enforcement disabled
    */
   const checkPermission = (permission: Permission, actionName: string): boolean => {
-    if (!can(permission)) {
-      toast.error(`You don't have permission to ${actionName}`);
-      return false;
-    }
+    // Role enforcement disabled - always allow
     return true;
   };
 
   /**
    * Check if user can delete an entity type
+   * DISABLED: Always returns true - role enforcement disabled
    */
   const checkCanDelete = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment',
     entityName?: string
   ): boolean => {
-    if (!canDelete(entityType)) {
-      toast.error(`You don't have permission to delete ${entityName || entityType.replace('_', ' ')}`);
-      return false;
-    }
+    // Role enforcement disabled - always allow
     return true;
   };
 
   /**
    * Check if user can create an entity type
+   * DISABLED: Always returns true - role enforcement disabled
    */
   const checkCanCreate = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment',
     entityName?: string
   ): boolean => {
-    if (!canCreate(entityType)) {
-      toast.error(`You don't have permission to create ${entityName || entityType.replace('_', ' ')}`);
-      return false;
-    }
+    // Role enforcement disabled - always allow
     return true;
   };
 
   /**
    * Check if user can edit an entity type
+   * DISABLED: Always returns true - role enforcement disabled
    */
   const checkCanEdit = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment',
     entityName?: string
   ): boolean => {
-    if (!canEdit(entityType)) {
-      toast.error(`You don't have permission to edit ${entityName || entityType.replace('_', ' ')}`);
-      return false;
-    }
+    // Role enforcement disabled - always allow
     return true;
   };
 
   /**
    * Check if user can view an entity type
+   * DISABLED: Always returns true - role enforcement disabled
    */
   const checkCanView = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment' | 'reports',
     entityName?: string
   ): boolean => {
-    if (!canView(entityType)) {
-      toast.error(`You don't have permission to view ${entityName || entityType.replace('_', ' ')}`);
-      return false;
-    }
+    // Role enforcement disabled - always allow
     return true;
   };
 
