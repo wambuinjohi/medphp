@@ -185,6 +185,7 @@ export default function CompanySettings() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('filename', fileName);
+    formData.append('action', 'upload_file');
 
     try {
       console.log(`🚀 Starting upload to: ${uploadUrl}`);
@@ -198,6 +199,7 @@ export default function CompanySettings() {
         method: 'POST',
         body: formData,
         signal: controller.signal,
+        credentials: 'include', // Include cookies for authentication
       });
 
       clearTimeout(timeoutId);
