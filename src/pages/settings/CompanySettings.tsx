@@ -692,127 +692,147 @@ export default function CompanySettings() {
                 <span>Company Information</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="company-name">Company Name *</Label>
-                  <Input
-                    id="company-name"
-                    value={companyData.name || ''}
-                    onChange={(e) => {
-                      setCompanyData(prev => ({ ...prev, name: e.target.value }));
-                      debouncedValidate({ ...companyData, name: e.target.value });
-                    }}
-                    placeholder="Enter company name"
-                    className={getFieldError('name') ? 'border-destructive' : ''}
-                  />
-                  {getFieldError('name') && (
-                    <div className="flex items-center gap-2 text-sm text-destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      {getFieldError('name')}
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    type="url"
-                    value={companyData.website || ''}
-                    onChange={(e) => {
-                      setCompanyData(prev => ({ ...prev, website: e.target.value }));
-                      debouncedValidate({ ...companyData, website: e.target.value });
-                    }}
-                    placeholder="https://yourcompany.com"
-                    className={getFieldError('website') ? 'border-destructive' : ''}
-                  />
-                  {getFieldError('website') && (
-                    <div className="flex items-center gap-2 text-sm text-destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      {getFieldError('website')}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="registration-number">Registration Number</Label>
-                  <Input
-                    id="registration-number"
-                    value={companyData.registration_number || ''}
-                    onChange={(e) => setCompanyData(prev => ({ ...prev, registration_number: e.target.value }))}
-                    placeholder="e.g., CR/2024/001"
-                  />
-                  <p className="text-xs text-muted-foreground">Company registration or incorporation number</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tax-number">Tax Number</Label>
-                  <Input
-                    id="tax-number"
-                    value={companyData.tax_number || ''}
-                    onChange={(e) => setCompanyData(prev => ({ ...prev, tax_number: e.target.value }))}
-                    placeholder="e.g., PIN-123456789"
-                  />
-                  <p className="text-xs text-muted-foreground">Tax identification or VAT number</p>
+            <CardContent className="space-y-6">
+              {/* Basic Information Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground">Basic Information</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="company-name">Company Name *</Label>
+                    <Input
+                      id="company-name"
+                      value={companyData.name || ''}
+                      onChange={(e) => {
+                        setCompanyData(prev => ({ ...prev, name: e.target.value }));
+                        debouncedValidate({ ...companyData, name: e.target.value });
+                      }}
+                      placeholder="Enter company name"
+                      className={getFieldError('name') ? 'border-destructive' : ''}
+                    />
+                    {getFieldError('name') && (
+                      <div className="flex items-center gap-2 text-sm text-destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        {getFieldError('name')}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      type="url"
+                      value={companyData.website || ''}
+                      onChange={(e) => {
+                        setCompanyData(prev => ({ ...prev, website: e.target.value }));
+                        debouncedValidate({ ...companyData, website: e.target.value });
+                      }}
+                      placeholder="https://yourcompany.com"
+                      className={getFieldError('website') ? 'border-destructive' : ''}
+                    />
+                    {getFieldError('website') && (
+                      <div className="flex items-center gap-2 text-sm text-destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        {getFieldError('website')}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Textarea
-                  id="address"
-                  value={companyData.address || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, address: e.target.value }))}
-                  rows={3}
-                />
+              <Separator />
+
+              {/* Registration & Tax Information Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground">Registration & Tax Information</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="registration-number">Registration Number</Label>
+                    <Input
+                      id="registration-number"
+                      value={companyData.registration_number || ''}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, registration_number: e.target.value }))}
+                      placeholder="e.g., CR/2024/001"
+                    />
+                    <p className="text-xs text-muted-foreground">Company registration or incorporation number</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="tax-number">Tax Number</Label>
+                    <Input
+                      id="tax-number"
+                      value={companyData.tax_number || ''}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, tax_number: e.target.value }))}
+                      placeholder="e.g., PIN-123456789"
+                    />
+                    <p className="text-xs text-muted-foreground">Tax identification or VAT number</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
+              <Separator />
+
+              {/* Location & Contact Section */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground">Location & Contact</h3>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={companyData.phone || ''}
-                    onChange={(e) => {
-                      setCompanyData(prev => ({ ...prev, phone: e.target.value }));
-                      debouncedValidate({ ...companyData, phone: e.target.value });
-                    }}
-                    className={getFieldError('phone') ? 'border-destructive' : ''}
+                  <Label htmlFor="address">Address</Label>
+                  <Textarea
+                    id="address"
+                    value={companyData.address || ''}
+                    onChange={(e) => setCompanyData(prev => ({ ...prev, address: e.target.value }))}
+                    rows={3}
+                    placeholder="Enter your company address"
                   />
-                  {getFieldError('phone') && (
-                    <div className="flex items-center gap-2 text-sm text-destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      {getFieldError('phone')}
-                    </div>
-                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={companyData.email || ''}
-                    onChange={(e) => {
-                      setCompanyData(prev => ({ ...prev, email: e.target.value }));
-                      debouncedValidate({ ...companyData, email: e.target.value });
-                    }}
-                    className={getFieldError('email') ? 'border-destructive' : ''}
-                  />
-                  {getFieldError('email') && (
-                    <div className="flex items-center gap-2 text-sm text-destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      {getFieldError('email')}
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    value={companyData.country || 'Kenya'}
-                    onChange={(e) => setCompanyData(prev => ({ ...prev, country: e.target.value }))}
-                  />
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      value={companyData.phone || ''}
+                      onChange={(e) => {
+                        setCompanyData(prev => ({ ...prev, phone: e.target.value }));
+                        debouncedValidate({ ...companyData, phone: e.target.value });
+                      }}
+                      placeholder="+1 (555) 123-4567"
+                      className={getFieldError('phone') ? 'border-destructive' : ''}
+                    />
+                    {getFieldError('phone') && (
+                      <div className="flex items-center gap-2 text-sm text-destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        {getFieldError('phone')}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={companyData.email || ''}
+                      onChange={(e) => {
+                        setCompanyData(prev => ({ ...prev, email: e.target.value }));
+                        debouncedValidate({ ...companyData, email: e.target.value });
+                      }}
+                      placeholder="contact@company.com"
+                      className={getFieldError('email') ? 'border-destructive' : ''}
+                    />
+                    {getFieldError('email') && (
+                      <div className="flex items-center gap-2 text-sm text-destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        {getFieldError('email')}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={companyData.country || 'Kenya'}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, country: e.target.value }))}
+                      placeholder="Kenya"
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
