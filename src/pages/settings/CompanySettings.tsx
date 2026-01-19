@@ -1097,11 +1097,10 @@ export default function CompanySettings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="postal-code-note" className="text-muted-foreground text-sm">
-                    Note: Country is set in General tab
-                  </Label>
-                  <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
-                    Your company is in: <strong>{companyData.country || 'Kenya'}</strong>
+                  <Label className="text-muted-foreground text-sm">Location Reference</Label>
+                  <div className="text-xs text-muted-foreground p-3 bg-muted rounded-md border border-border">
+                    <p className="mb-1"><strong>Current Country:</strong> {companyData.country || 'Kenya'}</p>
+                    <p className="text-xs">To change the country, go to the <strong>General</strong> tab</p>
                   </div>
                 </div>
               </div>
