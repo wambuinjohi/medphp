@@ -29,6 +29,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// Handle file uploads at /api/uploads
+if (strpos($_SERVER['REQUEST_URI'], '/api/uploads') === 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validate file upload
+    if (!isset($_FILES['file'])) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'No file provided']);
+        exit();
+    }
+
+    $file = $_FILES['file'];
+
+    // Validate upload
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'File upload error: ' . $file['error']]);
+        exit();
+    }
+
+    // Check file size (limit to 5MB)
+    $max_size = 5 * 1024 * 1024;
+    if ($file['size'] > $max_size) {
+        http_response_code(413);
+        echo json_encode(['status' => 'error', 'message' => 'File size exceeds 5MB limit']);
+        exit();
+    }
+
+    // Validate MIME type
+    $allowed_mimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+
+    if (!in_array($mime, $allowed_mimes)) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid file type. Only image files are allowed.']);
+        exit();
+    }
+
+    // Create uploads directory
+    $upload_dir = __DIR__ . '/uploads';
+    if (!is_dir($upload_dir)) {
+        if (!mkdir($upload_dir, 0755, true)) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to create uploads directory']);
+            exit();
+        }
+    }
+
+    // Generate unique filename
+    $filename = $_POST['filename'] ?? 'upload-' . time() . '-' . bin2hex(random_bytes(4)) . '.' . pathinfo($file['name'], PATHINFO_EXTENSION);
+    $safe_filename = preg_replace('/[^a-zA-Z0-9._-]/', '', basename($filename));
+    $file_path = $upload_dir . '/' . $safe_filename;
+
+    // Move uploaded file
+    if (!move_uploaded_file($file['tmp_name'], $file_path)) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to save uploaded file']);
+        exit();
+    }
+
+    // Generate URL for the uploaded file
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'];
+    $file_url = $protocol . '://' . $host . '/backend/uploads/' . $safe_filename;
+
+    echo json_encode([
+        'status' => 'success',
+        'url' => $file_url,
+        'file_url' => $file_url,
+        'filename' => $safe_filename,
+        'size' => $file['size']
+    ]);
+    exit();
+}
+
 // Database Configuration
 $db_host = $_ENV['DB_HOST'] ?? 'localhost';
 $db_user = $_ENV['DB_USER'] ?? 'wayrusc1_med';
