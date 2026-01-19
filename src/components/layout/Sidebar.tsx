@@ -111,11 +111,12 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Settings',
     icon: Settings,
+    allowedRoles: ['admin'],
     children: [
-      { title: 'Company Settings', icon: Building2, href: '/app/settings/company' },
-      { title: 'User Management', icon: Users, href: '/app/settings/users' },
-      { title: 'Payment Methods', icon: Banknote, href: '/app/settings/payment-methods' },
-      { title: 'Database & Roles', icon: Database, href: '/app/settings/database-roles' }
+      { title: 'Company Settings', icon: Building2, href: '/app/settings/company', allowedRoles: ['admin'] },
+      { title: 'User Management', icon: Users, href: '/app/settings/users', allowedRoles: ['admin'] },
+      { title: 'Payment Methods', icon: Banknote, href: '/app/settings/payment-methods', allowedRoles: ['admin'] },
+      { title: 'Database & Roles', icon: Database, href: '/app/settings/database-roles', allowedRoles: ['admin'] }
     ]
   }
 ];
