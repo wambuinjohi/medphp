@@ -124,15 +124,9 @@ export default function CompanySettings() {
         console.error('❌ Server upload failed:', uploadError);
         logError(uploadError, 'Logo Upload to Server');
 
-        // Only fall back to base64 for smaller files if server upload fails
-        if (file.size <= 1024 * 1024) { // 1MB limit for base64
-          console.warn('⚠️ Falling back to local base64 storage');
-          logoUrl = await convertToBase64(file);
-          console.log('✅ Base64 fallback successful');
-          // Don't show a warning toast for successful fallback, just a silent save
-        } else {
-          throw new Error('Server upload failed and file is too large for local storage. Please use a smaller image (max 1MB) or check server configuration.');
-        }
+        // Do NOT fall back to base64 - it causes issues with very large data URLs
+        // Instead, inform the user to contact admin
+        throw new Error('Logo upload failed. Please check your internet connection or contact your administrator. Local fallback is disabled to prevent performance issues.');
       }
 
       if (!logoUrl) {
@@ -154,13 +148,18 @@ export default function CompanySettings() {
       toast.success('Logo uploaded successfully! The preview updates below.');
 
     } catch (err: any) {
-      // Only show error if no fallback was attempted
-      if (!logoUrl) {
-        // Use centralized error parsing and logging for file upload
-        logError(err, 'Logo Upload');
-        let userMessage = getUserFriendlyMessage(err, 'Failed to upload logo');
-        toast.error(userMessage);
+      // Use centralized error parsing and logging for file upload
+      logError(err, 'Logo Upload');
+      let userMessage = getUserFriendlyMessage(err, 'Failed to upload logo');
+
+      // Provide helpful suggestions
+      if (userMessage.includes('Failed to fetch') || userMessage.includes('network')) {
+        userMessage += ' - Check your internet connection or try again later.';
+      } else if (userMessage.includes('CORS')) {
+        userMessage += ' - Contact your administrator about server CORS configuration.';
       }
+
+      toast.error(userMessage);
     } finally {
       setUploading(false);
       // Clear the file input
@@ -170,23 +169,11 @@ export default function CompanySettings() {
     }
   };
 
-  // Helper function to upload to external API
+  // Helper function to upload to remote backend API
   const uploadToExternalAPI = async (file: File, companyId: string): Promise<string> => {
-    // Determine the upload URL based on environment
-    let uploadUrl: string;
-
-    if (import.meta.env.DEV) {
-      // In development, use the vite proxy to upload to external API
-      // The vite proxy will forward /api/uploads to the external API
-      uploadUrl = '/api/uploads';
-      console.log('🚀 Dev mode - uploading via vite proxy to:', uploadUrl);
-      console.log('   (Vite will forward to external API: https://med.wayrus.co.ke/api/uploads)');
-    } else {
-      // In production, upload directly to external API
-      const externalApiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke';
-      uploadUrl = new URL('/api/uploads', externalApiUrl).toString();
-      console.log('📤 Production mode - uploading directly to external API:', uploadUrl);
-    }
+    // Always use the remote API for file uploads - even in dev
+    const remoteApiUrl = 'https://med.wayrus.co.ke/api.php?action=upload_file';
+    console.log('🚀 Uploading via remote API to:', remoteApiUrl);
 
     // Get file extension safely
     const fileNameParts = file.name.split('.');
@@ -199,14 +186,13 @@ export default function CompanySettings() {
     formData.append('filename', fileName);
 
     try {
-      console.log(`🚀 Starting upload to: ${uploadUrl}`);
+      console.log(`🚀 Starting upload to: ${remoteApiUrl}`);
       console.log(`📁 File: ${fileName} (${(file.size / 1024).toFixed(2)} KB)`);
-      console.log(`🔗 Full request URL: ${window.location.origin}${uploadUrl}`);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-      const response = await fetch(uploadUrl, {
+      const response = await fetch(remoteApiUrl, {
         method: 'POST',
         body: formData,
         signal: controller.signal,
@@ -764,18 +750,34 @@ export default function CompanySettings() {
                     {uploading ? 'Uploading...' : 'Upload Logo'}
                   </Button>
                   {companyData.logo_url && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setCompanyData(prev => ({ ...prev, logo_url: '' }));
-                        setLogoLoadError(false);
-                        toast.success('Logo removed. Click Save Settings to apply changes.');
-                      }}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      Remove Logo
-                    </Button>
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setCompanyData(prev => ({ ...prev, logo_url: '' }));
+                          setLogoLoadError(false);
+                          toast.success('Logo removed. Click Save Settings to apply changes.');
+                        }}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        Remove Logo
+                      </Button>
+                      {logoLoadError && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setCompanyData(prev => ({ ...prev, logo_url: '' }));
+                            setLogoLoadError(false);
+                            toast.info('Invalid logo cleared. Save to apply.');
+                          }}
+                          className="text-orange-600 hover:text-orange-700"
+                        >
+                          Clear Invalid Logo
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
                 {companyData.logo_url && (

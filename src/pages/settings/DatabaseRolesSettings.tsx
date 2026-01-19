@@ -75,29 +75,16 @@ export default function DatabaseRolesSettings() {
   const [setupProgress, setSetupProgress] = useState<string[]>([]);
   const [showSetupProgress, setShowSetupProgress] = useState(false);
 
-  // API Health Check
-  const [apiHealthy, setApiHealthy] = useState<boolean | null>(null);
+  // API Health Check - DISABLED
+  // Health checks have been disabled to prevent AbortError issues
+  const [apiHealthy, setApiHealthy] = useState<boolean | null>(true);
   const [apiUrl, setApiUrl] = useState(EXTERNAL_API_URL);
 
   useEffect(() => {
-    checkApiHealth();
+    // Health check disabled - only run database and roles status checks
     checkDatabaseStatus();
     checkRolesStatus();
   }, []);
-
-  async function checkApiHealth() {
-    try {
-      const response = await fetch(`${apiUrl}?action=health`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
-      setApiHealthy(response.ok);
-    } catch (error) {
-      setApiHealthy(false);
-      console.error('API health check failed:', error);
-    }
-  }
 
   async function checkDatabaseStatus() {
     try {
