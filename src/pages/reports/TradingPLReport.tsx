@@ -452,19 +452,19 @@ export default function TradingPLReport() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 bg-blue-50 rounded">
                       <p className="text-sm text-muted-foreground">Total Invoices</p>
-                      <p className="text-2xl font-bold">{metrics.invoiceCount}</p>
+                      <p className="text-2xl font-bold">{metrics?.invoiceCount ?? 0}</p>
                     </div>
                     <div className="p-3 bg-green-50 rounded">
                       <p className="text-sm text-muted-foreground">Unique Customers</p>
-                      <p className="text-2xl font-bold">{metrics.uniqueCustomers}</p>
+                      <p className="text-2xl font-bold">{metrics?.uniqueCustomers ?? 0}</p>
                     </div>
                     <div className="p-3 bg-orange-50 rounded">
                       <p className="text-sm text-muted-foreground">Avg Order Value</p>
-                      <p className="text-lg font-bold">{isFinite(metrics.averageOrderValue) ? formatCurrency(metrics.averageOrderValue) : 'N/A'}</p>
+                      <p className="text-lg font-bold">{formatCurrency(metrics?.averageOrderValue ?? 0)}</p>
                     </div>
                     <div className="p-3 bg-purple-50 rounded">
                       <p className="text-sm text-muted-foreground">Avg Margin</p>
-                      <p className="text-lg font-bold">{isFinite(metrics.averageGrossMargin) ? formatPercentage(metrics.averageGrossMargin) : 'N/A'}</p>
+                      <p className="text-lg font-bold">{formatPercentage(metrics?.averageGrossMargin ?? 0)}</p>
                     </div>
                   </div>
                 </CardContent>
