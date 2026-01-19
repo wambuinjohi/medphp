@@ -695,399 +695,427 @@ export default function CompanySettings() {
         </div>
       )}
 
-      <div className="grid gap-6">
-        {/* Company Information */}
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Building2 className="h-5 w-5" />
-              <span>Company Information</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="company-name">Company Name *</Label>
-                <Input
-                  id="company-name"
-                  value={companyData.name || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Enter company name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="website">Website</Label>
-                <Input
-                  id="website"
-                  type="url"
-                  value={companyData.website || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, website: e.target.value }))}
-                  placeholder="https://yourcompany.com"
-                />
-              </div>
-            </div>
+      <Tabs defaultValue="general" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="branding">Branding</TabsTrigger>
+          <TabsTrigger value="defaults">Defaults</TabsTrigger>
+          <TabsTrigger value="taxes">Taxes</TabsTrigger>
+          <TabsTrigger value="advanced">Advanced</TabsTrigger>
+        </TabsList>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="registration-number">Registration Number</Label>
-                <Input
-                  id="registration-number"
-                  value={companyData.registration_number || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, registration_number: e.target.value }))}
-                  placeholder="e.g., CR/2024/001"
-                />
-                <p className="text-xs text-muted-foreground">Company registration or incorporation number</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tax-number">Tax Number</Label>
-                <Input
-                  id="tax-number"
-                  value={companyData.tax_number || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, tax_number: e.target.value }))}
-                  placeholder="e.g., PIN-123456789"
-                />
-                <p className="text-xs text-muted-foreground">Tax identification or VAT number</p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Textarea
-                id="address"
-                value={companyData.address || ''}
-                onChange={(e) => setCompanyData(prev => ({ ...prev, address: e.target.value }))}
-                rows={3}
-              />
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={companyData.phone || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, phone: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={companyData.email || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, email: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
-                <Input
-                  id="country"
-                  value={companyData.country || 'Kenya'}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, country: e.target.value }))}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Logo & Branding */}
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle>Logo & Branding</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-start space-x-6">
-              <div className="w-24 h-24 bg-muted rounded-lg flex items-center justify-center overflow-hidden border-2 border-dashed border-muted-foreground/25 relative">
-                {uploading ? (
-                  <div className="flex flex-col items-center justify-center text-muted-foreground">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                    <span className="text-xs mt-1">Uploading...</span>
-                  </div>
-                ) : companyData.logo_url && !logoLoadError ? (
-                  <img
-                    key={logoRefreshKey}
-                    src={companyData.logo_url}
-                    alt="Company Logo"
-                    className="w-full h-full object-contain"
-                    onError={() => {
-                      console.error('❌ Logo failed to load:', companyData.logo_url);
-                      setLogoLoadError(true);
-                    }}
-                    onLoad={() => {
-                      console.log('✅ Logo loaded successfully:', companyData.logo_url);
-                      setLogoLoadError(false);
-                    }}
+        {/* General Tab - Company Information */}
+        <TabsContent value="general" className="space-y-4">
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Building2 className="h-5 w-5" />
+                <span>Company Information</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="company-name">Company Name *</Label>
+                  <Input
+                    id="company-name"
+                    value={companyData.name || ''}
+                    onChange={(e) => setCompanyData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter company name"
                   />
-                ) : logoLoadError ? (
-                  <div className="flex flex-col items-center justify-center text-muted-foreground">
-                    <svg className="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                    <span className="text-xs">Load Failed</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-muted-foreground">
-                    <Image className="h-6 w-6 mb-1" />
-                    <span className="text-xs">No Logo</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 space-y-3">
-                <div>
-                  <Label className="text-sm font-medium">Company Logo</Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Upload your company logo. Recommended size: 200x200px, max 5MB. Supports PNG, JPG, GIF, WebP.
-                  </p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    style={{ display: 'none' }}
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    type="url"
+                    value={companyData.website || ''}
+                    onChange={(e) => setCompanyData(prev => ({ ...prev, website: e.target.value }))}
+                    placeholder="https://yourcompany.com"
                   />
-                  <Button
-                    variant="outline"
-                    onClick={handleChooseFile}
-                    disabled={uploading}
-                    className="flex items-center gap-2"
-                  >
-                    <Upload className="h-4 w-4" />
-                    {uploading ? 'Uploading...' : 'Upload Logo'}
-                  </Button>
-                  {companyData.logo_url && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setCompanyData(prev => ({ ...prev, logo_url: '' }));
-                          setLogoLoadError(false);
-                          toast.success('Logo removed. Click Save Settings to apply changes.');
-                        }}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        Remove Logo
-                      </Button>
-                      {logoLoadError && (
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="registration-number">Registration Number</Label>
+                  <Input
+                    id="registration-number"
+                    value={companyData.registration_number || ''}
+                    onChange={(e) => setCompanyData(prev => ({ ...prev, registration_number: e.target.value }))}
+                    placeholder="e.g., CR/2024/001"
+                  />
+                  <p className="text-xs text-muted-foreground">Company registration or incorporation number</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tax-number">Tax Number</Label>
+                  <Input
+                    id="tax-number"
+                    value={companyData.tax_number || ''}
+                    onChange={(e) => setCompanyData(prev => ({ ...prev, tax_number: e.target.value }))}
+                    placeholder="e.g., PIN-123456789"
+                  />
+                  <p className="text-xs text-muted-foreground">Tax identification or VAT number</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Textarea
+                  id="address"
+                  value={companyData.address || ''}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, address: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    value={companyData.phone || ''}
+                    onChange={(e) => setCompanyData(prev => ({ ...prev, phone: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={companyData.email || ''}
+                    onChange={(e) => setCompanyData(prev => ({ ...prev, email: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    value={companyData.country || 'Kenya'}
+                    onChange={(e) => setCompanyData(prev => ({ ...prev, country: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Branding Tab - Logo & Brand Color */}
+        <TabsContent value="branding" className="space-y-4">
+          {/* Logo & Branding */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle>Logo & Branding</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start space-x-6">
+                <div className="w-24 h-24 bg-muted rounded-lg flex items-center justify-center overflow-hidden border-2 border-dashed border-muted-foreground/25 relative">
+                  {uploading ? (
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      <span className="text-xs mt-1">Uploading...</span>
+                    </div>
+                  ) : companyData.logo_url && !logoLoadError ? (
+                    <img
+                      key={logoRefreshKey}
+                      src={companyData.logo_url}
+                      alt="Company Logo"
+                      className="w-full h-full object-contain"
+                      onError={() => {
+                        console.error('❌ Logo failed to load:', companyData.logo_url);
+                        setLogoLoadError(true);
+                      }}
+                      onLoad={() => {
+                        console.log('✅ Logo loaded successfully:', companyData.logo_url);
+                        setLogoLoadError(false);
+                      }}
+                    />
+                  ) : logoLoadError ? (
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <svg className="h-6 w-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                      </svg>
+                      <span className="text-xs">Load Failed</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <Image className="h-6 w-6 mb-1" />
+                      <span className="text-xs">No Logo</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <Label className="text-sm font-medium">Company Logo</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Upload your company logo. Recommended size: 200x200px, max 5MB. Supports PNG, JPG, GIF, WebP.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      style={{ display: 'none' }}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={handleChooseFile}
+                      disabled={uploading}
+                      className="flex items-center gap-2"
+                    >
+                      <Upload className="h-4 w-4" />
+                      {uploading ? 'Uploading...' : 'Upload Logo'}
+                    </Button>
+                    {companyData.logo_url && (
+                      <>
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
                           onClick={() => {
                             setCompanyData(prev => ({ ...prev, logo_url: '' }));
                             setLogoLoadError(false);
-                            toast.info('Invalid logo cleared. Save to apply.');
+                            toast.success('Logo removed. Click Save Settings to apply changes.');
                           }}
-                          className="text-orange-600 hover:text-orange-700"
+                          className="text-destructive hover:text-destructive"
                         >
-                          Clear Invalid Logo
+                          Remove Logo
                         </Button>
-                      )}
-                    </>
+                        {logoLoadError && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setCompanyData(prev => ({ ...prev, logo_url: '' }));
+                              setLogoLoadError(false);
+                              toast.info('Invalid logo cleared. Save to apply.');
+                            }}
+                            className="text-orange-600 hover:text-orange-700"
+                          >
+                            Clear Invalid Logo
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  {companyData.logo_url && (
+                    <div className="space-y-2 pt-2">
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p>
+                          <span className="font-medium">Current URL:</span> {companyData.logo_url.startsWith('data:') ? 'Local storage (Base64)' : 'Remote server'}
+                        </p>
+                        {companyData.logo_url.startsWith('data:') && (
+                          <div className="bg-orange-50 border border-orange-200 rounded p-2 text-orange-700 space-y-1">
+                            <p>⚠️ <span className="font-medium">Corrupted Logo Detected:</span></p>
+                            <p>This logo is stored as Base64 data, which indicates a failed upload. Please re-upload your logo.</p>
+                            <div className="flex gap-2 mt-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setCompanyData(prev => ({ ...prev, logo_url: '' }));
+                                  setLogoLoadError(false);
+                                  toast.info('Invalid logo cleared. You can now upload a new one.');
+                                }}
+                                className="text-orange-600 hover:text-orange-700"
+                              >
+                                Clear & Re-upload
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        {logoLoadError && !companyData.logo_url.startsWith('data:') && (
+                          <div className="bg-red-50 border border-red-200 rounded p-2 text-red-700 space-y-1">
+                            <p>❌ <span className="font-medium">Failed to Load Logo:</span></p>
+                            <p>The logo URL exists but the image cannot be loaded. This may be a network or server issue.</p>
+                            <div className="flex gap-2 mt-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setLogoRefreshKey(prev => prev + 1)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                Retry Load
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setCompanyData(prev => ({ ...prev, logo_url: '' }));
+                                  setLogoLoadError(false);
+                                  toast.info('Logo URL cleared. Please save and re-upload.');
+                                }}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                Clear URL
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
-                {companyData.logo_url && (
-                  <div className="space-y-2 pt-2">
-                    <div className="text-xs text-muted-foreground space-y-1">
-                      <p>
-                        <span className="font-medium">Current URL:</span> {companyData.logo_url.startsWith('data:') ? 'Local storage (Base64)' : 'Remote server'}
-                      </p>
-                      {companyData.logo_url.startsWith('data:') && (
-                        <div className="bg-orange-50 border border-orange-200 rounded p-2 text-orange-700 space-y-1">
-                          <p>⚠️ <span className="font-medium">Corrupted Logo Detected:</span></p>
-                          <p>This logo is stored as Base64 data, which indicates a failed upload. Please re-upload your logo.</p>
-                          <div className="flex gap-2 mt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setCompanyData(prev => ({ ...prev, logo_url: '' }));
-                                setLogoLoadError(false);
-                                toast.info('Invalid logo cleared. You can now upload a new one.');
-                              }}
-                              className="text-orange-600 hover:text-orange-700"
-                            >
-                              Clear & Re-upload
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                      {logoLoadError && !companyData.logo_url.startsWith('data:') && (
-                        <div className="bg-red-50 border border-red-200 rounded p-2 text-red-700 space-y-1">
-                          <p>❌ <span className="font-medium">Failed to Load Logo:</span></p>
-                          <p>The logo URL exists but the image cannot be loaded. This may be a network or server issue.</p>
-                          <div className="flex gap-2 mt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setLogoRefreshKey(prev => prev + 1)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              Retry Load
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setCompanyData(prev => ({ ...prev, logo_url: '' }));
-                                setLogoLoadError(false);
-                                toast.info('Logo URL cleared. Please save and re-upload.');
-                              }}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              Clear URL
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Brand Color */}
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle>Brand Color</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="primary-color">Primary Color</Label>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    id="primary-color"
-                    value={companyData.primary_color || '#FF8C42'}
-                    onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color: e.target.value }))}
-                    className="h-12 w-20 rounded border-2 border-input cursor-pointer"
-                  />
-                  <Input
-                    type="text"
-                    value={companyData.primary_color || '#FF8C42'}
-                    onChange={(e) => {
-                      const color = e.target.value;
-                      if (/^#[0-9A-F]{6}$/i.test(color)) {
-                        setCompanyData(prev => ({ ...prev, primary_color: color }));
-                      }
-                    }}
-                    placeholder="#FF8C42"
-                    maxLength={7}
-                    className="font-mono text-sm w-24"
-                  />
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  {['#FF8C42', '#2563EB', '#DC2626', '#059669', '#7C3AED', '#1F2937'].map(color => (
-                    <button
-                      key={color}
-                      onClick={() => setCompanyData(prev => ({ ...prev, primary_color: color }))}
-                      className="h-8 w-8 rounded border-2 transition-all hover:scale-110"
-                      style={{
-                        backgroundColor: color,
-                        borderColor: companyData.primary_color === color ? '#000' : '#e5e7eb'
-                      }}
-                      title={color}
+          {/* Brand Color */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle>Brand Color</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="primary-color">Primary Color</Label>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      id="primary-color"
+                      value={companyData.primary_color || '#FF8C42'}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, primary_color: e.target.value }))}
+                      className="h-12 w-20 rounded border-2 border-input cursor-pointer"
                     />
-                  ))}
+                    <Input
+                      type="text"
+                      value={companyData.primary_color || '#FF8C42'}
+                      onChange={(e) => {
+                        const color = e.target.value;
+                        if (/^#[0-9A-F]{6}$/i.test(color)) {
+                          setCompanyData(prev => ({ ...prev, primary_color: color }));
+                        }
+                      }}
+                      placeholder="#FF8C42"
+                      maxLength={7}
+                      className="font-mono text-sm w-24"
+                    />
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {['#FF8C42', '#2563EB', '#DC2626', '#059669', '#7C3AED', '#1F2937'].map(color => (
+                      <button
+                        key={color}
+                        onClick={() => setCompanyData(prev => ({ ...prev, primary_color: color }))}
+                        className="h-8 w-8 rounded border-2 transition-all hover:scale-110"
+                        style={{
+                          backgroundColor: color,
+                          borderColor: companyData.primary_color === color ? '#000' : '#e5e7eb'
+                        }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This color will be applied to PDFs, buttons, and other UI elements throughout the application.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Defaults Tab - Default Settings */}
+        <TabsContent value="defaults" className="space-y-4">
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle>Default Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Default Currency</Label>
+                  <Input
+                    id="currency"
+                    value={companyData.currency || ''}
+                    onChange={(e) => setCompanyData(prev => ({ ...prev, currency: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="fiscal-year">Fiscal Year Start Month</Label>
+                  <select
+                    id="fiscal-year"
+                    value={companyData.fiscal_year_start || 1}
+                    onChange={(e) => setCompanyData(prev => ({ ...prev, fiscal_year_start: parseInt(e.target.value) || 1 }))}
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground">Select the month your fiscal year begins</p>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                This color will be applied to PDFs, buttons, and other UI elements throughout the application.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Default Settings */}
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle>Default Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="currency">Default Currency</Label>
-                <Input
-                  id="currency"
-                  value={companyData.currency || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, currency: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="fiscal-year">Fiscal Year Start Month</Label>
-                <select
-                  id="fiscal-year"
-                  value={companyData.fiscal_year_start || 1}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, fiscal_year_start: parseInt(e.target.value) || 1 }))}
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="1">January</option>
-                  <option value="2">February</option>
-                  <option value="3">March</option>
-                  <option value="4">April</option>
-                  <option value="5">May</option>
-                  <option value="6">June</option>
-                  <option value="7">July</option>
-                  <option value="8">August</option>
-                  <option value="9">September</option>
-                  <option value="10">October</option>
-                  <option value="11">November</option>
-                  <option value="12">December</option>
-                </select>
-                <p className="text-xs text-muted-foreground">Select the month your fiscal year begins</p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="city-default">City</Label>
-                <Input
-                  id="city-default"
-                  value={companyData.city || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, city: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="postal-code-note" className="text-muted-foreground text-sm">
-                  Note: Country is set in Company Information above
-                </Label>
-                <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
-                  Your company is in: <strong>{companyData.country || 'Kenya'}</strong>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="city-default">City</Label>
+                  <Input
+                    id="city-default"
+                    value={companyData.city || ''}
+                    onChange={(e) => setCompanyData(prev => ({ ...prev, city: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="postal-code-note" className="text-muted-foreground text-sm">
+                    Note: Country is set in General tab
+                  </Label>
+                  <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
+                    Your company is in: <strong>{companyData.country || 'Kenya'}</strong>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="state">State/Province</Label>
-                <Input
-                  id="state"
-                  value={companyData.state || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, state: e.target.value }))}
-                />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="state">State/Province</Label>
+                  <Input
+                    id="state"
+                    value={companyData.state || ''}
+                    onChange={(e) => setCompanyData(prev => ({ ...prev, state: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="postal-code">Postal Code</Label>
+                  <Input
+                    id="postal-code"
+                    value={companyData.postal_code || ''}
+                    onChange={(e) => setCompanyData(prev => ({ ...prev, postal_code: e.target.value }))}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="postal-code">Postal Code</Label>
-                <Input
-                  id="postal-code"
-                  value={companyData.postal_code || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, postal_code: e.target.value }))}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-        {/* Tax Settings - Force Implementation */}
-        {currentCompany && (
-          <ForceTaxSettings companyId={currentCompany.id} />
-        )}
+        {/* Taxes Tab */}
+        <TabsContent value="taxes" className="space-y-4">
+          {currentCompany && (
+            <ForceTaxSettings companyId={currentCompany.id} />
+          )}
+        </TabsContent>
 
-      </div>
+        {/* Advanced Tab - Placeholder for future use */}
+        <TabsContent value="advanced" className="space-y-4">
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle>Advanced Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">Advanced settings will be available soon.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
