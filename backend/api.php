@@ -200,23 +200,8 @@ if ($request_param && !$action) {
                 $data = $json_body;
             }
         }
-        // Handle sync endpoints (MUST come before table CRUD routes)
-        elseif (count($segments) >= 2 && $segments[1] === 'sync') {
-            if ($segments[0] === 'opportunities') {
-                $action = 'sync_opportunities';
-            } elseif ($segments[0] === 'discovery-leads' || $segments[0] === 'discovery_leads') {
-                $action = 'sync_discovery_leads';
-            }
-        }
-        // Handle cleanup endpoints (MUST come before table CRUD routes)
-        elseif (count($segments) >= 2 && $segments[1] === 'cleanup-duplicates') {
-            if ($segments[0] === 'web-leads' || $segments[0] === 'web_app_leads') {
-                $action = 'cleanup_duplicates';
-                $table = 'web_app_leads';
-            }
-        }
-        // Handle table CRUD routes (leads, contacts, quotations, portfolios, etc.)
-        elseif (in_array($segments[0], ['leads', 'contacts', 'quotations', 'portfolios', 'web_app_leads', 'web-leads', 'opportunities', 'discovery-leads', 'discovery_leads', 'logs'])) {
+        // Handle table CRUD routes (contacts, quotations, portfolios, etc.)
+        elseif (in_array($segments[0], ['contacts', 'quotations', 'portfolios', 'web_app_leads', 'web-leads', 'logs'])) {
             $table_name = $segments[0];
             if ($segments[0] === 'web-leads') $table_name = 'web_app_leads';
             if ($segments[0] === 'discovery-leads' || $segments[0] === 'discovery_leads') $table_name = 'leads';
