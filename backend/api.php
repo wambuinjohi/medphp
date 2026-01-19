@@ -610,6 +610,46 @@ try {
         return $decoded;
     }
 
+    // Helper function to check authorization for modifications (create, update, delete)
+    function requireAuthForModification($action, $table) {
+        // Get token from Authorization header
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+        $token = null;
+
+        if ($auth_header && preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
+            $token = $matches[1];
+        }
+
+        // Fallback to POST data for compatibility
+        if (!$token) {
+            $token = $_POST['token'] ?? null;
+        }
+
+        if (!$token) {
+            error_log("❌ [AUTH] $action on $table - No token provided");
+            http_response_code(403);
+            throw new Exception("You do not have permission to perform this action. Please make sure you are authenticated.");
+        }
+
+        // Verify token
+        $decoded = verifyJWT($token);
+        if (!$decoded) {
+            error_log("❌ [AUTH] $action on $table - Invalid or expired token");
+            http_response_code(403);
+            throw new Exception("Your authentication token is invalid or expired. Please sign in again.");
+        }
+
+        // Check if user is admin
+        if ($decoded['role'] !== 'admin') {
+            error_log("❌ [AUTH] $action on $table - User role is '{$decoded['role']}', requires 'admin'");
+            http_response_code(403);
+            throw new Exception("You do not have permission to update company settings.");
+        }
+
+        error_log("✅ [AUTH] $action on $table - Authorized as admin (email: {$decoded['email']})");
+        return $decoded;
+    }
+
     // Authentication
     if ($action === "login") {
         $email = $_POST['email'] ?? ($json_body['email'] ?? null);
@@ -699,6 +739,12 @@ try {
             throw new Exception("Missing data for insert");
         }
 
+        // Check authorization for modifications to protected tables
+        $protected_tables = ['companies', 'users', 'profiles', 'user_permissions', 'roles'];
+        if (in_array($table, $protected_tables)) {
+            $auth = requireAuthForModification($action, $table);
+        }
+
         $columns = [];
         $values = [];
 
@@ -767,6 +813,12 @@ try {
             throw new Exception("Missing table or where clause");
         }
 
+        // Check authorization for modifications to protected tables
+        $protected_tables = ['companies', 'users', 'profiles', 'user_permissions', 'roles'];
+        if (in_array($table, $protected_tables)) {
+            $auth = requireAuthForModification($action, $table);
+        }
+
         $sets = [];
         foreach ($data as $col => $val) {
             $sets[] = "`" . escape($conn, $col) . "`='" . escape($conn, $val) . "'";
@@ -803,6 +855,12 @@ try {
     elseif ($action === "delete") {
         if (!$table || !$where) {
             throw new Exception("Missing table or where clause");
+        }
+
+        // Check authorization for modifications to protected tables
+        $protected_tables = ['companies', 'users', 'profiles', 'user_permissions', 'roles'];
+        if (in_array($table, $protected_tables)) {
+            $auth = requireAuthForModification($action, $table);
         }
 
         $sql = "DELETE FROM `$table`";
