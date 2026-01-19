@@ -430,7 +430,12 @@ export default function TradingPLReport() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={[{ name: 'Amount', Revenue: metrics.revenue, COGS: metrics.cogs, 'Gross Profit': metrics.grossProfit }]}>
+                    <BarChart data={[{
+                      name: 'Amount',
+                      Revenue: metrics?.revenue ?? 0,
+                      COGS: metrics?.cogs ?? 0,
+                      'Gross Profit': metrics?.grossProfit ?? 0
+                    }]}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis />
