@@ -679,6 +679,12 @@ export default function OptimizedCustomers() {
             handleCreateInvoice(selectedCustomer);
           }
         }}
+        onCreateDirectReceipt={() => {
+          setShowViewModal(false);
+          if (selectedCustomer) {
+            handleCreateDirectReceipt(selectedCustomer);
+          }
+        }}
       />
 
       <EditCustomerModal
