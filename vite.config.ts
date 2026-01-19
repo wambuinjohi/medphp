@@ -63,6 +63,10 @@ export default defineConfig(({ mode }) => {
           target: apiUrl,
           changeOrigin: true,
           rewrite: (path) => {
+            // Don't rewrite file upload endpoints - keep them as /api/uploads
+            if (path.startsWith('/api/uploads')) {
+              return path;
+            }
             // Convert /api paths to /api.php paths for the external API
             // e.g., /api?action=health becomes /api.php?action=health
             if (path === '/api' || path.startsWith('/api?')) {
