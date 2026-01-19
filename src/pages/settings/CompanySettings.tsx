@@ -124,15 +124,9 @@ export default function CompanySettings() {
         console.error('❌ Server upload failed:', uploadError);
         logError(uploadError, 'Logo Upload to Server');
 
-        // Only fall back to base64 for smaller files if server upload fails
-        if (file.size <= 1024 * 1024) { // 1MB limit for base64
-          console.warn('⚠️ Falling back to local base64 storage');
-          logoUrl = await convertToBase64(file);
-          console.log('✅ Base64 fallback successful');
-          // Don't show a warning toast for successful fallback, just a silent save
-        } else {
-          throw new Error('Server upload failed and file is too large for local storage. Please use a smaller image (max 1MB) or check server configuration.');
-        }
+        // Do NOT fall back to base64 - it causes issues with very large data URLs
+        // Instead, inform the user to contact admin
+        throw new Error('Logo upload failed. Please check your internet connection or contact your administrator. Local fallback is disabled to prevent performance issues.');
       }
 
       if (!logoUrl) {
