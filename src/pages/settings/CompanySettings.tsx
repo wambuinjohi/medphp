@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { DatabaseSchemaInitializer } from '@/components/setup/DatabaseSchemaInitializer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Save, Upload, Plus, Trash2, Edit, Check, X, Image, AlertTriangle } from 'lucide-react';
+import { Building2, Save, Upload, Plus, Trash2, Edit, Check, X, Image, AlertTriangle, AlertCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -21,6 +21,25 @@ import { addCurrencyColumn, ADD_CURRENCY_COLUMN_SQL } from '@/utils/addCurrencyC
 import { getDatabaseProvider } from '@/integrations/database';
 import { validateLogoUrl, addCacheBustingParam, sanitizeLogoUrl } from '@/utils/logoUploadUtils';
 import { PermissionErrorHelper } from '@/components/PermissionErrorHelper';
+import {
+  validateCompanyName,
+  validateCompanyEmail,
+  validateCompanyPhone,
+  validateWebsite,
+  validateAddress,
+  validateCity,
+  validateState,
+  validatePostalCode,
+  validateCountry,
+  validateCurrency,
+  validateRegistrationNumber,
+  validateTaxNumber,
+  validateFiscalYearStart,
+  validateCompanyData,
+  getValidationErrors,
+  isValidCompanyData,
+  type CompanyDataValidation,
+} from '@/utils/companySettingsValidators';
 
 export default function CompanySettings() {
   const [editingTax, setEditingTax] = useState<string | null>(null);
