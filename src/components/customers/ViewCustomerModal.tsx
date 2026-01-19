@@ -259,7 +259,17 @@ export function ViewCustomerModal({ open, onOpenChange, customer, onEdit, onCrea
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
             </Button>
-            <Button 
+            {onCreateDirectReceipt && (
+              <Button
+                variant="outline"
+                onClick={onCreateDirectReceipt}
+                className="bg-success-light text-success border-success/20 hover:bg-success hover:text-success-foreground"
+              >
+                <Receipt className="h-4 w-4 mr-2" />
+                Direct Receipt
+              </Button>
+            )}
+            <Button
               variant="outline"
               onClick={onCreateInvoice}
               className="bg-primary-light text-primary border-primary/20 hover:bg-primary hover:text-primary-foreground"
