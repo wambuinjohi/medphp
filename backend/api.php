@@ -350,6 +350,74 @@ if ($action === "init_database") {
     }
 }
 
+// Handle proxy requests to external API to bypass CORS issues
+if ($action === "proxy_external_api") {
+    $external_api_url = $_POST['external_api_url'] ?? ($_GET['external_api_url'] ?? null);
+    $external_action = $_POST['external_action'] ?? ($_GET['external_action'] ?? null);
+    $external_table = $_POST['external_table'] ?? ($_GET['external_table'] ?? null);
+    $external_where = $_POST['external_where'] ?? ($_GET['external_where'] ?? null);
+    $external_data = $_POST['external_data'] ?? ($json_body ?? []);
+    $external_method = $_POST['external_method'] ?? ($_GET['external_method'] ?? 'POST');
+
+    if (!$external_api_url || !$external_action) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Missing external_api_url or external_action']);
+        exit();
+    }
+
+    // Build proxy request to external API
+    $proxy_params = [
+        'action' => $external_action
+    ];
+    if ($external_table) $proxy_params['table'] = $external_table;
+    if ($external_where) $proxy_params['where'] = $external_where;
+
+    $proxy_url = $external_api_url . '?' . http_build_query($proxy_params);
+
+    error_log('🔀 Proxying request to external API: ' . $proxy_url);
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => $external_method,
+            'header' => [
+                'Content-Type: application/json',
+                'Accept: application/json'
+            ],
+            'timeout' => 30
+        ]
+    ]);
+
+    if (!empty($external_data) && in_array($external_method, ['POST', 'PUT'])) {
+        stream_context_set_option($context, 'http', 'content', json_encode($external_data));
+    }
+
+    try {
+        $response = @file_get_contents($proxy_url, false, $context);
+
+        if ($response === false) {
+            http_response_code(503);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Unable to reach external API. The remote server may be unavailable.',
+                'url' => $external_api_url
+            ]);
+            exit();
+        }
+
+        // Forward the response from external API
+        header('Content-Type: application/json');
+        echo $response;
+        exit();
+    } catch (Exception $e) {
+        http_response_code(503);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Proxy error: ' . $e->getMessage()
+        ]);
+        exit();
+    }
+}
+
 try {
     // File upload endpoint - supports logo and branding uploads
     if ($action === "upload_file") {
