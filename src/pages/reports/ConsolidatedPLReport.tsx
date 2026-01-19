@@ -36,7 +36,7 @@ import {
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { useCurrentCompanyId } from '@/contexts/CompanyContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useSelect } from '@/hooks/useDatabase';
+import { useTransportFinance } from '@/hooks/useTransport';
 import { toast } from 'sonner';
 import {
   calculateTradingPLMetrics,
