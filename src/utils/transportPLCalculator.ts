@@ -381,17 +381,30 @@ export const calculateMonthlyTransportData = (transports: TransportFinance[]): M
  * Format currency to KES (Kenyan Shillings)
  */
 export const formatCurrency = (amount: number): string => {
+  // Handle NaN, Infinity, undefined, or null values
+  if (!isFinite(amount)) {
+    return 'Ksh 0';
+  }
+
+  const validAmount = typeof amount === 'number' ? amount : 0;
+
   return new Intl.NumberFormat('en-KE', {
     style: 'currency',
     currency: 'KES',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
-  }).format(amount);
+  }).format(validAmount);
 };
 
 /**
  * Format percentage to string
  */
 export const formatPercentage = (value: number, decimals: number = 2): string => {
-  return `${value.toFixed(decimals)}%`;
+  // Handle NaN, Infinity, undefined, or null values
+  if (!isFinite(value)) {
+    return '0%';
+  }
+
+  const validValue = typeof value === 'number' ? value : 0;
+  return `${validValue.toFixed(decimals)}%`;
 };
