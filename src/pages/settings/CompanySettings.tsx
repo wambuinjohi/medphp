@@ -139,11 +139,19 @@ export default function CompanySettings() {
         throw new Error('Failed to process logo upload');
       }
 
+      // Add cache-busting parameter if it's a URL (not base64)
+      const cachebustedUrl = logoUrl.startsWith('data:')
+        ? logoUrl
+        : `${logoUrl}?t=${Date.now()}`;
+
       // Update local state & persist using existing hook
-      setCompanyData(prev => ({ ...prev, logo_url: logoUrl }));
+      setCompanyData(prev => ({ ...prev, logo_url: cachebustedUrl }));
       setLogoLoadError(false);
+      setLogoRefreshKey(prev => prev + 1); // Force image re-render
+
+      // Persist to database
       await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: logoUrl } });
-      toast.success('Logo saved successfully! Click "Save Settings" to confirm all changes.');
+      toast.success('Logo uploaded successfully! The preview updates below.');
 
     } catch (err: any) {
       // Only show error if no fallback was attempted
