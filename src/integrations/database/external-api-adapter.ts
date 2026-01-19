@@ -19,15 +19,16 @@ export class ExternalAPIAdapter implements IDatabase {
   private authToken: string | null = null;
   private isProxyMode: boolean = true; // Always use proxy mode
 
-  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
+  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke') {
     // Store the actual external API URL for proxy forwarding
-    this.externalApiUrl = apiUrl;
+    // Remove trailing /api.php if present and normalize to base URL
+    this.externalApiUrl = apiUrl.replace(/\/api\.php$/, '');
 
-    // Always use proxy mode through local backend to avoid CORS issues
-    this.apiBase = '/api.php';
+    // Use the vite proxy for /api endpoint
+    this.apiBase = '/api';
 
-    console.log('✅ Using PROXY MODE for CORS bypass');
-    console.log('📡 External API:', apiUrl);
+    console.log('✅ Using LOCAL PROXY for CORS bypass');
+    console.log('📡 External API:', this.externalApiUrl);
     console.log('🔀 Local proxy endpoint:', this.apiBase);
 
     // Load token from localStorage if available
