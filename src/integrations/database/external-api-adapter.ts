@@ -652,7 +652,6 @@ export class ExternalAPIAdapter implements IDatabase {
         const response = await fetch(`${this.apiBase}?action=health`, {
           method: 'GET',
           signal: controller.signal,
-          credentials: 'include',
         });
 
         if (timeoutId) clearTimeout(timeoutId);
