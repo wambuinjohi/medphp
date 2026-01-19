@@ -58,10 +58,19 @@ export function EnhancedLogin() {
     }
 
     setSubmitting(true);
+    setCorsError(null); // Clear previous CORS errors
+
     const { error } = await signIn(formData.email, formData.password);
 
     if (error) {
       const errorInfo = handleAuthError(error);
+
+      // Detect CORS errors and provide helpful guidance
+      if (errorInfo.type === 'network_error' && error?.message?.toLowerCase().includes('cors')) {
+        setCorsError(
+          'The API server needs proper CORS configuration. Check CORS_SETUP_GUIDE.md or try using the Local Dev Server option below.'
+        );
+      }
 
       if (errorInfo.type === 'invalid_credentials') {
         setTimeout(() => {
@@ -69,6 +78,7 @@ export function EnhancedLogin() {
         }, 2000);
       }
     } else {
+      setCorsError(null);
       toast.success(`Welcome to ${companyName}!`);
       navigate('/app');
     }
