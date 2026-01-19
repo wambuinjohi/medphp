@@ -256,7 +256,7 @@ export function EnhancedLogin() {
             {/* Footer Message */}
             <div className="text-center space-y-2 border-t-2 border-gray-100 pt-4 sm:pt-6">
               <p className="text-xs sm:text-sm text-gray-600">
-                <span className="text-base sm:text-lg">💡</span> Having trouble logging in? Check the setup section above or contact your administrator.
+                <span className="text-base sm:text-lg">💡</span> Having trouble logging in? Contact your administrator for assistance.
               </p>
               <p className="text-xs text-gray-500 font-medium">
                 {companyName} © 2025 - Secure Login
