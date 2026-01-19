@@ -1125,7 +1125,6 @@ export const useCreateDirectReceipt = () => {
         total_amount: invoiceAmount,
         paid_amount: paidAmount,
         balance_due: balanceDue,
-        notes: `Auto-generated from direct receipt. Payment Method: ${paymentData.payment_method || 'cash'}${paymentData.reference_number ? `. Reference: ${paymentData.reference_number}` : ''}`,
         created_by: paymentData.created_by
       } as any;
 
