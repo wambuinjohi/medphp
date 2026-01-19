@@ -1083,11 +1083,13 @@ export default function CompanySettings() {
                   maxLength={3}
                   className={getFieldError('currency') ? 'border-destructive' : ''}
                 />
-                {getFieldError('currency') && (
+                {getFieldError('currency') ? (
                   <div className="flex items-center gap-2 text-sm text-destructive">
                     <AlertCircle className="h-4 w-4" />
                     {getFieldError('currency')}
                   </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">3-letter ISO 4217 currency code (e.g., USD, KES, EUR)</p>
                 )}
               </div>
                 <div className="space-y-2">
