@@ -616,6 +616,17 @@ export default function Customers() {
         preSelectedCustomer={selectedCustomer}
       />
 
+      <CreateDirectReceiptModal
+        open={showDirectReceiptModal}
+        onOpenChange={setShowDirectReceiptModal}
+        onSuccess={() => {
+          setShowDirectReceiptModal(false);
+          setSelectedCustomer(null);
+          retryCustomers();
+        }}
+        preSelectedCustomer={selectedCustomer}
+      />
+
       <DeleteCustomerModal
         open={showDeleteModal}
         onOpenChange={setShowDeleteModal}
