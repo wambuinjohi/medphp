@@ -187,7 +187,27 @@ export class ExternalAPIAdapter implements IDatabase {
 
       if (!response.ok) {
         const errorMsg = result.message || `HTTP ${response.status}`;
-        console.warn(`${logPrefix} - HTTP Error ${response.status}: ${errorMsg}`);
+
+        // Provide detailed logging for specific error codes
+        if (response.status === 403) {
+          console.error(`❌ ${logPrefix} - PERMISSION DENIED (403)`);
+          console.error('🔍 Troubleshooting 403 Forbidden Error:');
+          console.error('1. User Role/Permissions:');
+          console.error(`   - Current user token: ${this.authToken ? 'Present' : 'Missing'}`);
+          console.error(`   - Check if user has permission to ${action} on ${table || 'resource'}`);
+          console.error('2. Database:');
+          console.error(`   - Verify the ${table} table exists on the backend`);
+          console.error('3. API Setup:');
+          console.error('   - Check if the backend API has proper authorization checks');
+          console.error(`   - Verify the action "${action}" is supported for table "${table}"`);
+          console.error('Raw error from API:', result);
+        } else if (response.status === 401) {
+          console.error(`❌ ${logPrefix} - UNAUTHORIZED (401)`);
+          console.error('Your authentication token may be invalid or expired. Please log in again.');
+        } else {
+          console.warn(`${logPrefix} - HTTP Error ${response.status}: ${errorMsg}`);
+        }
+
         return {
           data: null as any,
           error: new Error(errorMsg),
