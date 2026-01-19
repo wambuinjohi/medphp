@@ -35,43 +35,11 @@ export function useDatabase(): UseDatabaseReturn {
   const provider = getDatabaseProvider();
 
   useEffect(() => {
-    async function checkHealth() {
-      try {
-        setIsLoading(true);
-        const healthy = await db.health();
-        setIsHealthy(healthy);
-        setLastHealthCheckTime(Date.now());
-
-        if (!healthy) {
-          setError(new Error(`Database service is temporarily unavailable.`));
-          console.warn('⚠️  Database health check failed. The app may continue to work if you have an active session.');
-
-          // Note: We don't show a toast for health check failures anymore
-          // because the app can continue to function with an active auth token.
-          // Users can still access data if they're authenticated.
-        } else {
-          setError(null);
-          errorToastShown = false;
-        }
-      } catch (err) {
-        const error = err as Error;
-        setError(error);
-        setIsHealthy(false);
-        console.warn('❌ Database health check error:', error.message);
-
-        // Note: We don't show a toast for health check failures
-        // The app will attempt real operations which will show appropriate errors if needed
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    checkHealth();
-
-    // Set up periodic health checks every 30 seconds (less frequent to reduce noise)
-    const healthCheckInterval = setInterval(checkHealth, 30000);
-
-    return () => clearInterval(healthCheckInterval);
+    // Health checks have been disabled to prevent AbortError issues
+    // The app will rely on real operations to detect API issues
+    setIsHealthy(true);
+    setIsLoading(false);
+    setError(null);
   }, [db, provider]);
 
   return {
