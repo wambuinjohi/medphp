@@ -118,6 +118,14 @@ export default function Payments() {
     setShowRecordModal(true);
   };
 
+  const handleCreateDirectReceipt = () => {
+    if (!canCreatePayment('create_payment')) {
+      toast.error('You do not have permission to create receipts');
+      return;
+    }
+    setShowDirectReceiptModal(true);
+  };
+
   const handleViewPayment = (payment: Payment) => {
     // Payment data is already in the correct format from the database
     setSelectedPayment(payment);
