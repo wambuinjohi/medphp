@@ -167,12 +167,12 @@ export default function CompanySettings() {
     let uploadUrl: string;
 
     if (import.meta.env.DEV) {
-      // In development, use local/dev endpoint
+      // In development, use proxy to local backend or external API
       uploadUrl = import.meta.env.VITE_UPLOAD_URL || `${window.location.origin}/api/uploads`;
       console.log('📤 Dev mode upload URL:', uploadUrl);
     } else {
-      // In production, use the configured endpoint
-      uploadUrl = import.meta.env.VITE_UPLOAD_URL || 'https://med.wayrus.co.ke/uploads';
+      // In production, use the configured API endpoint
+      uploadUrl = import.meta.env.VITE_UPLOAD_URL || 'https://med.wayrus.co.ke/api.php';
       console.log('📤 Prod mode upload URL:', uploadUrl);
     }
 
@@ -185,6 +185,7 @@ export default function CompanySettings() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('filename', fileName);
+    formData.append('action', 'upload');
 
     try {
       console.log(`🚀 Starting upload to: ${uploadUrl}`);
@@ -208,7 +209,7 @@ export default function CompanySettings() {
       }
 
       // Handle different response formats
-      const fileUrl = result.url || result.file_url || result.path || `${uploadUrl}/${fileName}`;
+      const fileUrl = result.url || result.file_url || result.path;
 
       if (!fileUrl) {
         throw new Error('No file URL returned from server');
