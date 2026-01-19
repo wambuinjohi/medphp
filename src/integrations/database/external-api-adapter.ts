@@ -148,8 +148,8 @@ export class ExternalAPIAdapter implements IDatabase {
 
         if (fetchError.name === 'AbortError') {
           if (isTimedOut) {
-            console.error(`⏱️ API request timeout after 30 seconds at ${this.apiBase}`);
-            throw new Error(`API request timeout. The server may be unresponsive or experiencing high load. Please try again.`);
+            console.error(`⏱️ API request timeout after 60 seconds at ${this.apiBase}`);
+            throw new Error(`API request timeout. The server is taking too long to respond. This may be due to high server load. Please try again.`);
           } else {
             // Signal was aborted for another reason (e.g., component unmount, network interruption)
             console.warn(`⚠️ API request was cancelled (aborted). This may indicate a network issue or the remote server is unreachable.`);
