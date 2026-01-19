@@ -41,7 +41,7 @@ import { parseErrorMessage } from '@/utils/errorHelpers';
 import { downloadInvoicePDF } from '@/utils/pdfGenerator';
 import { CreateDirectReceiptModalEnhanced } from '@/components/payments/CreateDirectReceiptModalEnhanced';
 import { ViewReceiptModal } from '@/components/payments/ViewReceiptModal';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 
 interface Receipt {
   id: string;
