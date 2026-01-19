@@ -58,17 +58,9 @@ export class ExternalAPIAdapter implements IDatabase {
     try {
       const params = new URLSearchParams();
 
-      // When using proxy mode, add proxy-specific parameters
-      if (this.isProxyMode) {
-        params.append('action', 'proxy_external_api');
-        params.append('external_api_url', this.externalApiUrl);
-        params.append('external_action', action);
-        params.append('external_method', method);
-        if (table) params.append('external_table', table);
-      } else {
-        params.append('action', action);
-        if (table) params.append('table', table);
-      }
+      // Always append the action directly - the vite proxy handles forwarding
+      params.append('action', action);
+      if (table) params.append('table', table);
 
       // Log the API call attempt
       const logPrefix = `📡 [${method.toUpperCase()}] ${action}${table ? ` on ${table}` : ''}`;
