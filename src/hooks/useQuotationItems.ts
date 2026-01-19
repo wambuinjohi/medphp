@@ -1153,8 +1153,7 @@ export const useCreateDirectReceipt = () => {
       const allocationInsertResult = await db.insert('payment_allocations', {
         payment_id: paymentData.id,
         invoice_id: invoiceData.id,
-        allocated_amount: paymentData.amount,
-        allocation_date: paymentData.payment_date
+        amount: paymentData.amount
       });
 
       if (allocationInsertResult.error) {
