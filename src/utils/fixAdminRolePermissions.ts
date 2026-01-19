@@ -15,25 +15,56 @@ export interface FixRolePermissionsResult {
 }
 
 /**
+ * Retry logic with exponential backoff for API calls
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxAttempts: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      if (attempt < maxAttempts) {
+        // Calculate delay with exponential backoff: 1s, 2s, 4s
+        const delay = baseDelay * Math.pow(2, attempt - 1);
+        console.warn(
+          `Attempt ${attempt} failed, retrying in ${delay}ms:`,
+          lastError.message
+        );
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
+/**
  * Fix admin role permissions - add missing permissions
  */
 export async function fixAdminRolePermissions(companyId: string): Promise<FixRolePermissionsResult> {
   try {
-    // Get the admin role
-    const { data: adminRole, error: fetchError } = await supabase
-      .from('roles')
-      .select('*')
-      .eq('name', 'admin')
-      .eq('company_id', companyId)
-      .maybeSingle();
+    // Fetch with retry logic to handle timeouts
+    const adminRole = await retryWithBackoff(async () => {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*')
+        .eq('name', 'admin')
+        .eq('company_id', companyId)
+        .maybeSingle();
 
-    if (fetchError) {
-      return {
-        success: false,
-        message: 'Failed to fetch admin role',
-        error: fetchError.message,
-      };
-    }
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    });
 
     if (!adminRole) {
       return {
@@ -70,26 +101,24 @@ export async function fixAdminRolePermissions(companyId: string): Promise<FixRol
       };
     }
 
-    // Add missing permissions
-    const updatedPermissions = [...currentPermissions, ...missingPermissions];
+    // Add missing permissions with retry logic
+    const updatedRole = await retryWithBackoff(async () => {
+      const { data, error } = await supabase
+        .from('roles')
+        .update({
+          permissions: [...currentPermissions, ...missingPermissions],
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', adminRole.id)
+        .select()
+        .single();
 
-    const { data: updatedRole, error: updateError } = await supabase
-      .from('roles')
-      .update({
-        permissions: updatedPermissions,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', adminRole.id)
-      .select()
-      .single();
+      if (error) {
+        throw error;
+      }
 
-    if (updateError) {
-      return {
-        success: false,
-        message: 'Failed to update admin role permissions',
-        error: updateError.message,
-      };
-    }
+      return data;
+    });
 
     return {
       success: true,
@@ -99,9 +128,16 @@ export async function fixAdminRolePermissions(companyId: string): Promise<FixRol
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Provide helpful guidance for timeout errors
+    let userMessage = 'Unexpected error while fixing admin role permissions';
+    if (errorMessage.includes('timeout') || errorMessage.includes('unresponsive')) {
+      userMessage = 'The server is taking too long to respond. This may be a temporary issue. Please try again.';
+    }
+
     return {
       success: false,
-      message: 'Unexpected error while fixing admin role permissions',
+      message: userMessage,
       error: errorMessage,
     };
   }
@@ -116,20 +152,21 @@ export async function checkAdminInventoryPermission(companyId: string): Promise<
   error?: string;
 }> {
   try {
-    const { data: adminRole, error } = await supabase
-      .from('roles')
-      .select('*')
-      .eq('name', 'admin')
-      .eq('company_id', companyId)
-      .maybeSingle();
+    // Fetch with retry logic
+    const adminRole = await retryWithBackoff(async () => {
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*')
+        .eq('name', 'admin')
+        .eq('company_id', companyId)
+        .maybeSingle();
 
-    if (error) {
-      return {
-        hasPermission: false,
-        role: null,
-        error: error.message,
-      };
-    }
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    });
 
     if (!adminRole) {
       return {
