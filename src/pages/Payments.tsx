@@ -142,6 +142,21 @@ export default function Payments() {
 
   const handleDownloadReceipt = (payment: Payment) => {
     try {
+      // Enrich payment allocations with invoice information
+      const enrichedPayment = {
+        ...payment,
+        payment_allocations: (payment.payment_allocations || []).map(allocation => {
+          // Find the corresponding invoice to get invoice_number and other details
+          const invoice = invoices.find(inv => inv.id === allocation.invoice_id || inv.invoice_number === allocation.invoice_number);
+          return {
+            ...allocation,
+            invoice_number: allocation.invoice_number || invoice?.invoice_number,
+            invoice_date: invoice?.invoice_date,
+            invoice_total: allocation.invoice_total || invoice?.total_amount,
+          };
+        }),
+      };
+
       // Use the utility function with company details
       const companyDetails = currentCompany ? {
         name: currentCompany.name,
@@ -154,7 +169,7 @@ export default function Payments() {
         logo_url: currentCompany.logo_url
       } : undefined;
 
-      generatePaymentReceiptPDF(payment, companyDetails);
+      generatePaymentReceiptPDF(enrichedPayment, companyDetails);
       toast.success(`Receipt downloaded for payment ${payment.payment_number}`);
     } catch (error) {
       console.error('Error downloading receipt:', error);
