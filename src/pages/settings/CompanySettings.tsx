@@ -189,15 +189,23 @@ export default function CompanySettings() {
 
     try {
       console.log(`🚀 Starting upload to: ${uploadUrl}`);
+      console.log(`📁 File: ${fileName} (${(file.size / 1024).toFixed(2)} KB)`);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
       const response = await fetch(uploadUrl, {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       console.log(`📊 Upload response status: ${response.status}`);
 
       if (!response.ok) {
-        throw new Error(`Upload failed: HTTP ${response.status}`);
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`Upload failed: HTTP ${response.status} - ${errorText.substring(0, 100)}`);
       }
 
       // Parse response - expecting { url: "https://..." } or similar
@@ -212,14 +220,25 @@ export default function CompanySettings() {
       const fileUrl = result.url || result.file_url || result.path;
 
       if (!fileUrl) {
-        throw new Error('No file URL returned from server');
+        console.error('❌ No file URL in response:', result);
+        throw new Error('Server did not return a file URL. Response: ' + JSON.stringify(result).substring(0, 100));
       }
 
       console.log('✅ Upload successful. File URL:', fileUrl);
       return fileUrl;
     } catch (error) {
-      console.error('❌ Upload error:', error);
-      throw error;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('❌ Upload error:', errorMsg);
+
+      // Provide helpful error messages
+      if (errorMsg.includes('Failed to fetch')) {
+        throw new Error('Upload failed: Cannot reach the upload server. Check CORS configuration.');
+      }
+      if (errorMsg.includes('AbortError')) {
+        throw new Error('Upload failed: Request timeout (> 30 seconds)');
+      }
+
+      throw new Error(`Upload failed: ${errorMsg}`);
     }
   };
 
