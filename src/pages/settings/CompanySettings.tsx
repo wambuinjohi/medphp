@@ -145,11 +145,13 @@ export default function CompanySettings() {
       await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: logoUrl } });
 
     } catch (err: any) {
-      // Use centralized error parsing and logging for file upload
-      logError(err, 'Logo Upload');
-      let userMessage = getUserFriendlyMessage(err, 'Failed to upload logo');
-
-      toast.error(userMessage);
+      // Only show error if no fallback was attempted
+      if (!logoUrl) {
+        // Use centralized error parsing and logging for file upload
+        logError(err, 'Logo Upload');
+        let userMessage = getUserFriendlyMessage(err, 'Failed to upload logo');
+        toast.error(userMessage);
+      }
     } finally {
       setUploading(false);
       // Clear the file input
