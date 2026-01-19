@@ -407,14 +407,33 @@ export default function CompanySettings() {
       // Use centralized error parsing and logging
       logError(error, 'Company Save');
       const userMessage = getUserFriendlyMessage(error, 'Failed to save company settings');
-
-      // Check if this is a schema error
       const errorString = String(error);
-      if (errorString.includes('currency') && (errorString.includes('column') || errorString.includes('schema cache'))) {
-        setSchemaError('currency column missing');
-      }
 
-      toast.error(userMessage);
+      // Check for permission error (403)
+      if (errorString.includes('403') || errorString.includes('Forbidden')) {
+        setPermissionError({
+          statusCode: 403,
+          message: userMessage,
+        });
+        toast.error(userMessage);
+      }
+      // Check for unauthorized error (401)
+      else if (errorString.includes('401') || errorString.includes('Unauthorized')) {
+        setPermissionError({
+          statusCode: 401,
+          message: userMessage,
+        });
+        toast.error(userMessage);
+      }
+      // Check if this is a schema error
+      else if (errorString.includes('currency') && (errorString.includes('column') || errorString.includes('schema cache'))) {
+        setSchemaError('currency column missing');
+        toast.error(userMessage);
+      }
+      // Other errors
+      else {
+        toast.error(userMessage);
+      }
     }
   };
 
