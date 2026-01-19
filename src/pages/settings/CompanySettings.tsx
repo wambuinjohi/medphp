@@ -381,6 +381,15 @@ export default function CompanySettings() {
       if (companyData.currency?.trim()) {
         sanitizedData.currency = companyData.currency.trim();
       }
+      if (companyData.registration_number?.trim()) {
+        sanitizedData.registration_number = companyData.registration_number.trim();
+      }
+      if (companyData.tax_number?.trim()) {
+        sanitizedData.tax_number = companyData.tax_number.trim();
+      }
+      if (companyData.fiscal_year_start) {
+        sanitizedData.fiscal_year_start = Math.max(1, Math.min(12, parseInt(companyData.fiscal_year_start) || 1));
+      }
 
       // Remove empty strings and convert to null for optional fields
       Object.keys(sanitizedData).forEach(key => {
