@@ -317,10 +317,19 @@ export class ExternalAPIAdapter implements IDatabase {
       const controller = new AbortController();
       let timeoutId: NodeJS.Timeout | null = null;
       let isTimedOut = false;
+      let requestCompleted = false;
 
       timeoutId = setTimeout(() => {
-        isTimedOut = true;
-        controller.abort();
+        // Only abort if the request hasn't completed yet
+        if (!requestCompleted && !isTimedOut) {
+          isTimedOut = true;
+          try {
+            controller.abort();
+          } catch (e) {
+            // Ignore errors from abort() - it may fail if already aborted
+            console.debug('Controller abort error (ignored):', e);
+          }
+        }
       }, 10000); // 10 second timeout
 
       try {
@@ -331,6 +340,7 @@ export class ExternalAPIAdapter implements IDatabase {
           signal: controller.signal,
         });
 
+        requestCompleted = true;
         if (timeoutId) clearTimeout(timeoutId);
 
         // Defensively parse JSON
