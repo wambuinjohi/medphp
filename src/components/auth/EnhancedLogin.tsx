@@ -23,6 +23,7 @@ export function EnhancedLogin() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [corsError, setCorsError] = useState<string | null>(null);
 
   // Log any company loading errors for debugging
   if (companyError) {
