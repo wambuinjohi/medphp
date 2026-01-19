@@ -53,10 +53,12 @@ export default defineConfig(({ mode }) => {
 
         // File upload requests - forward to main API
         '/api/uploads': {
-          target: apiUrl + '/api.php',
+          target: apiUrl,
           changeOrigin: true,
-          pathRewrite: {
-            '^/api/uploads': '', // Remove /api/uploads prefix
+          rewrite: (path) => {
+            // Forward /api/uploads to api.php with action=upload
+            // The FormData already includes action=upload
+            return '/api.php';
           },
         },
 
