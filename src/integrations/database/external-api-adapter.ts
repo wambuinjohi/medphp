@@ -361,6 +361,7 @@ export class ExternalAPIAdapter implements IDatabase {
 
         return { user: result, error: null };
       } catch (fetchError: any) {
+        requestCompleted = true;
         if (timeoutId) clearTimeout(timeoutId);
 
         if (fetchError.name === 'AbortError') {
