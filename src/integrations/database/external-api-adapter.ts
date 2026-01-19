@@ -78,7 +78,7 @@ export class ExternalAPIAdapter implements IDatabase {
             whereParts.push(`${key}=${value}`);
           }
         });
-        params.append(this.isProxyMode ? 'external_where' : 'where', whereParts.join(' AND '));
+        params.append('where', whereParts.join(' AND '));
       }
 
       const url = `${this.apiBase}?${params.toString()}`;
