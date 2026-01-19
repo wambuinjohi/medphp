@@ -169,12 +169,11 @@ export default function CompanySettings() {
     }
   };
 
-  // Helper function to upload to local backend API
+  // Helper function to upload to remote backend API
   const uploadToExternalAPI = async (file: File, companyId: string): Promise<string> => {
-    // Always use the local backend API for file uploads
-    // Vite serves public folder at root, so /api.php is the public/api.php file
-    const uploadUrl = '/api.php?action=upload_file';
-    console.log('🚀 Uploading via local backend to:', uploadUrl);
+    // Always use the remote API for file uploads - even in dev
+    const remoteApiUrl = 'https://med.wayrus.co.ke/api.php?action=upload_file';
+    console.log('🚀 Uploading via remote API to:', remoteApiUrl);
 
     // Get file extension safely
     const fileNameParts = file.name.split('.');
