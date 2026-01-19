@@ -19,10 +19,16 @@ if (file_exists(__DIR__ . '/.env')) {
 // CORS headers - allow credentials with dynamic origin
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
 header("Access-Control-Allow-Origin: $origin");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization");
+header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With");
 header("Access-Control-Allow-Credentials: true");
-header("Content-Type: application/json");
+header("Access-Control-Max-Age: 86400");
+
+// Don't force Content-Type for file uploads (multipart/form-data)
+$content_type = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
+if (strpos($content_type, 'multipart/form-data') === false) {
+    header("Content-Type: application/json");
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -104,6 +110,20 @@ $data = $_POST['data'] ?? ($json_body ?? []);
 $where = $_POST['where'] ?? ($_GET['where'] ?? null);
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
+
+// Handle file uploads endpoint
+$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+$path_info = $_SERVER['PATH_INFO'] ?? '';
+$request_param_check = $_GET['request'] ?? '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' &&
+    (preg_match('/\/api\/uploads?(?:\?|$)/i', $request_uri) ||
+     preg_match('/\/uploads?(?:\?|$)/i', $path_info) ||
+     preg_match('/uploads?/i', $request_param_check)) &&
+    isset($_FILES['file'])) {
+    $action = 'upload_file';
+    error_log('🔵 File upload detected - action set to upload_file');
+}
 
 // Debug logging for update operations
 if ($action === 'update') {
@@ -330,7 +350,201 @@ if ($action === "init_database") {
     }
 }
 
+// Handle proxy requests to external API to bypass CORS issues
+if ($action === "proxy_external_api") {
+    $external_api_url = $_POST['external_api_url'] ?? ($_GET['external_api_url'] ?? null);
+    $external_action = $_POST['external_action'] ?? ($_GET['external_action'] ?? null);
+    $external_table = $_POST['external_table'] ?? ($_GET['external_table'] ?? null);
+    $external_where = $_POST['external_where'] ?? ($_GET['external_where'] ?? null);
+    $external_method = $_POST['external_method'] ?? ($_GET['external_method'] ?? 'POST');
+
+    // For proxy requests, the body data comes from the JSON payload or POST
+    $external_data = $json_body ?? $_POST ?? [];
+
+    if (!$external_api_url || !$external_action) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Missing external_api_url or external_action']);
+        exit();
+    }
+
+    error_log('🔀 Proxying [' . $external_method . '] request to: ' . $external_api_url);
+    error_log('   Action: ' . $external_action . ($external_table ? ' | Table: ' . $external_table : ''));
+
+    // Build proxy request to external API
+    $proxy_params = [
+        'action' => $external_action
+    ];
+    if ($external_table) $proxy_params['table'] = $external_table;
+    if ($external_where) $proxy_params['where'] = $external_where;
+
+    $proxy_url = $external_api_url . '?' . http_build_query($proxy_params);
+
+    error_log('🔀 Proxy URL: ' . $proxy_url);
+
+    $headers = [
+        'Content-Type: application/json',
+        'Accept: application/json'
+    ];
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => $external_method,
+            'header' => $headers,
+            'timeout' => 30,
+            'follow_location' => true,
+            'max_redirects' => 5
+        ],
+        'ssl' => [
+            'verify_peer' => true,
+            'verify_peer_name' => true,
+        ]
+    ]);
+
+    $request_body = null;
+    if (!empty($external_data) && in_array($external_method, ['POST', 'PUT', 'PATCH'])) {
+        // Filter out non-JSON-serializable proxy parameters
+        $body_data = [];
+        foreach ($external_data as $key => $value) {
+            if (strpos($key, 'external_') !== 0) {
+                $body_data[$key] = $value;
+            }
+        }
+        if (!empty($body_data)) {
+            $request_body = json_encode($body_data);
+            stream_context_set_option($context, 'http', 'content', $request_body);
+            error_log('🔀 Request body size: ' . strlen($request_body) . ' bytes');
+        }
+    }
+
+    try {
+        $response = @file_get_contents($proxy_url, false, $context);
+
+        if ($response === false) {
+            $error = error_get_last();
+            error_log('❌ Proxy error: ' . ($error ? $error['message'] : 'Unknown error'));
+            http_response_code(503);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Unable to reach external API. The remote server may be unavailable.',
+                'url' => $external_api_url,
+                'error' => $error ? $error['message'] : 'Connection failed'
+            ]);
+            exit();
+        }
+
+        // Forward the response from external API
+        error_log('✅ Proxy request successful');
+        header('Content-Type: application/json');
+        echo $response;
+        exit();
+    } catch (Exception $e) {
+        error_log('❌ Proxy exception: ' . $e->getMessage());
+        http_response_code(503);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Proxy error: ' . $e->getMessage()
+        ]);
+        exit();
+    }
+}
+
 try {
+    // File upload endpoint - supports logo and branding uploads
+    if ($action === "upload_file") {
+        error_log('🎯 Processing file upload...');
+
+        if (!isset($_FILES['file'])) {
+            http_response_code(400);
+            throw new Exception("No file provided");
+        }
+
+        $file = $_FILES['file'];
+        $filename = $_POST['filename'] ?? $file['name'];
+
+        error_log('📁 File info - Name: ' . $file['name'] . ' | Size: ' . $file['size'] . ' | Type: ' . $file['type']);
+
+        // Validate file
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $error_messages = [
+                UPLOAD_ERR_INI_SIZE => 'File exceeds php.ini upload_max_filesize',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds form MAX_FILE_SIZE',
+                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                UPLOAD_ERR_EXTENSION => 'Extension not allowed',
+            ];
+            $error_msg = $error_messages[$file['error']] ?? 'Unknown upload error';
+            throw new Exception("File upload error: $error_msg");
+        }
+
+        // Validate file type
+        $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($file['type'], $allowed_types)) {
+            throw new Exception("Invalid file type. Only images are allowed. Got: " . $file['type']);
+        }
+
+        // Validate file size (5MB limit)
+        if ($file['size'] > 5 * 1024 * 1024) {
+            throw new Exception("File too large. Maximum size is 5MB. Got: " . ($file['size'] / 1024 / 1024) . "MB");
+        }
+
+        // Create uploads directory if it doesn't exist (in public folder)
+        $uploads_dir = dirname(__DIR__) . '/public/uploads';
+        if (!is_dir($uploads_dir)) {
+            error_log('📂 Creating uploads directory at: ' . $uploads_dir);
+            if (!mkdir($uploads_dir, 0755, true)) {
+                throw new Exception("Failed to create uploads directory at $uploads_dir");
+            }
+            error_log('✅ Uploads directory created');
+        } else {
+            error_log('✅ Uploads directory exists at: ' . $uploads_dir);
+        }
+
+        // Verify directory is writable
+        if (!is_writable($uploads_dir)) {
+            throw new Exception("Uploads directory is not writable. Check permissions.");
+        }
+
+        // Generate safe filename
+        $file_ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $safe_filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', pathinfo($filename, PATHINFO_FILENAME));
+        $safe_filename = $safe_filename . '-' . time() . '.' . $file_ext;
+
+        $upload_path = $uploads_dir . '/' . $safe_filename;
+
+        error_log('📝 Saving file to: ' . $upload_path);
+
+        // Move uploaded file
+        if (!move_uploaded_file($file['tmp_name'], $upload_path)) {
+            throw new Exception("Failed to save uploaded file to $upload_path");
+        }
+
+        error_log('✅ File saved successfully');
+
+        // Verify file was saved
+        if (!file_exists($upload_path)) {
+            throw new Exception("File was moved but cannot be found at $upload_path");
+        }
+
+        // Construct the public URL
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'];
+        $file_url = "$protocol://$host/uploads/$safe_filename";
+
+        error_log('🔗 File URL: ' . $file_url);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'File uploaded successfully',
+            'url' => $file_url,
+            'file_url' => $file_url,
+            'path' => "/uploads/$safe_filename",
+            'filename' => $safe_filename
+        ]);
+        exit();
+    }
+
     // Setup endpoint - create admin user
     if ($action === "setup") {
         $email = $_POST['email'] ?? $_GET['email'] ?? ($json_body['email'] ?? null);

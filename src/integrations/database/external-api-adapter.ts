@@ -15,21 +15,20 @@ import type {
 
 export class ExternalAPIAdapter implements IDatabase {
   private apiBase: string;
+  private externalApiUrl: string;
   private authToken: string | null = null;
-  private isProxyMode: boolean = false;
+  private isProxyMode: boolean = true; // Always use proxy mode
 
   constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
-    // Use proxy mode to bypass CORS issues
-    // In development, use /proxy which is forwarded to the actual API
-    if (typeof window !== 'undefined' && window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      this.apiBase = '/proxy/api.php';
-      this.isProxyMode = true;
-      console.log('✅ Using PROXY MODE for CORS bypass: /proxy/api.php');
-    } else {
-      this.apiBase = apiUrl;
-      this.isProxyMode = false;
-      console.log('🌐 Using DIRECT API URL:', apiUrl);
-    }
+    // Store the actual external API URL for proxy forwarding
+    this.externalApiUrl = apiUrl;
+
+    // Always use proxy mode through local backend to avoid CORS issues
+    this.apiBase = '/api.php';
+
+    console.log('✅ Using PROXY MODE for CORS bypass');
+    console.log('📡 External API:', apiUrl);
+    console.log('🔀 Local proxy endpoint:', this.apiBase);
 
     // Load token from localStorage if available
     const storedToken = localStorage.getItem('med_api_token');
@@ -57,12 +56,22 @@ export class ExternalAPIAdapter implements IDatabase {
   ): Promise<{ data: T; error: Error | null; status: number }> {
     try {
       const params = new URLSearchParams();
-      params.append('action', action);
-      if (table) params.append('table', table);
+
+      // When using proxy mode, add proxy-specific parameters
+      if (this.isProxyMode) {
+        params.append('action', 'proxy_external_api');
+        params.append('external_api_url', this.externalApiUrl);
+        params.append('external_action', action);
+        params.append('external_method', method);
+        if (table) params.append('external_table', table);
+      } else {
+        params.append('action', action);
+        if (table) params.append('table', table);
+      }
 
       // Log the API call attempt
       const logPrefix = `📡 [${method.toUpperCase()}] ${action}${table ? ` on ${table}` : ''}`;
-      console.log(`${logPrefix} - Starting request to ${this.apiBase}...`);
+      console.log(`${logPrefix} - Starting request...`);
 
       // For update and delete operations, backend expects 'where' parameter
       if ((action === 'update' || action === 'delete') && where && typeof where === 'object') {
@@ -76,7 +85,7 @@ export class ExternalAPIAdapter implements IDatabase {
             whereParts.push(`${key}=${value}`);
           }
         });
-        params.append('where', whereParts.join(' AND '));
+        params.append(this.isProxyMode ? 'external_where' : 'where', whereParts.join(' AND '));
       }
 
       const url = `${this.apiBase}?${params.toString()}`;
