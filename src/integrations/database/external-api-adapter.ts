@@ -24,11 +24,11 @@ export class ExternalAPIAdapter implements IDatabase {
     this.externalApiUrl = apiUrl;
 
     // Always use proxy mode through local backend to avoid CORS issues
-    this.apiBase = '/api.php?action=proxy_external_api';
+    this.apiBase = '/api.php';
 
     console.log('✅ Using PROXY MODE for CORS bypass');
     console.log('📡 External API:', apiUrl);
-    console.log('🔀 Proxy endpoint:', this.apiBase);
+    console.log('🔀 Local proxy endpoint:', this.apiBase);
 
     // Load token from localStorage if available
     const storedToken = localStorage.getItem('med_api_token');
