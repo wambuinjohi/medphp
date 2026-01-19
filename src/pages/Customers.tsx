@@ -49,6 +49,7 @@ import { ViewCustomerModal } from '@/components/customers/ViewCustomerModal';
 import { CreateCustomerModal } from '@/components/customers/CreateCustomerModal';
 import { DeleteCustomerModal } from '@/components/customers/DeleteCustomerModal';
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
+import { CreateDirectReceiptModal } from '@/components/payments/CreateDirectReceiptModal';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 
 interface Customer {
@@ -78,6 +79,7 @@ export default function Customers() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showDirectReceiptModal, setShowDirectReceiptModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [deleteRelatedCounts, setDeleteRelatedCounts] = useState<any>(null);
@@ -148,6 +150,11 @@ export default function Customers() {
   const handleCreateInvoice = (customer: Customer) => {
     setSelectedCustomer(customer);
     setShowInvoiceModal(true);
+  };
+
+  const handleCreateDirectReceipt = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setShowDirectReceiptModal(true);
   };
 
   const handleViewStatement = async (customer: Customer) => {
@@ -583,6 +590,12 @@ export default function Customers() {
             handleCreateInvoice(selectedCustomer);
           }
         }}
+        onCreateDirectReceipt={() => {
+          setShowViewModal(false);
+          if (selectedCustomer) {
+            handleCreateDirectReceipt(selectedCustomer);
+          }
+        }}
       />
 
       <EditCustomerModal
@@ -599,6 +612,17 @@ export default function Customers() {
           setShowInvoiceModal(false);
           setSelectedCustomer(null);
           toast.success('Invoice created successfully!');
+        }}
+        preSelectedCustomer={selectedCustomer}
+      />
+
+      <CreateDirectReceiptModal
+        open={showDirectReceiptModal}
+        onOpenChange={setShowDirectReceiptModal}
+        onSuccess={() => {
+          setShowDirectReceiptModal(false);
+          setSelectedCustomer(null);
+          retryCustomers();
         }}
         preSelectedCustomer={selectedCustomer}
       />

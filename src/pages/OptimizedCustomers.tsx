@@ -47,6 +47,7 @@ import { EditCustomerModal } from '@/components/customers/EditCustomerModal';
 import { ViewCustomerModal } from '@/components/customers/ViewCustomerModal';
 import { CreateCustomerModal } from '@/components/customers/CreateCustomerModal';
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
+import { CreateDirectReceiptModal } from '@/components/payments/CreateDirectReceiptModal';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 
 // Memoized customer row component for better performance
@@ -204,6 +205,7 @@ export default function OptimizedCustomers() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showDirectReceiptModal, setShowDirectReceiptModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<OptimizedCustomer | null>(null);
 
   // Data fetching
@@ -285,6 +287,11 @@ export default function OptimizedCustomers() {
   const handleCreateInvoice = useCallback((customer: OptimizedCustomer) => {
     setSelectedCustomer(customer);
     setShowInvoiceModal(true);
+  }, []);
+
+  const handleCreateDirectReceipt = useCallback((customer: OptimizedCustomer) => {
+    setSelectedCustomer(customer);
+    setShowDirectReceiptModal(true);
   }, []);
 
   const handleViewStatement = useCallback(async (customer: OptimizedCustomer) => {
@@ -672,6 +679,12 @@ export default function OptimizedCustomers() {
             handleCreateInvoice(selectedCustomer);
           }
         }}
+        onCreateDirectReceipt={() => {
+          setShowViewModal(false);
+          if (selectedCustomer) {
+            handleCreateDirectReceipt(selectedCustomer);
+          }
+        }}
       />
 
       <EditCustomerModal
@@ -692,6 +705,17 @@ export default function OptimizedCustomers() {
           setShowInvoiceModal(false);
           setSelectedCustomer(null);
           toast.success('Invoice created successfully!');
+        }}
+        preSelectedCustomer={selectedCustomer}
+      />
+
+      <CreateDirectReceiptModal
+        open={showDirectReceiptModal}
+        onOpenChange={setShowDirectReceiptModal}
+        onSuccess={() => {
+          setShowDirectReceiptModal(false);
+          setSelectedCustomer(null);
+          refetchCustomers();
         }}
         preSelectedCustomer={selectedCustomer}
       />

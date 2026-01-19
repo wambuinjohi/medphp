@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { RecordPaymentModal } from '@/components/payments/RecordPaymentModal';
+import { CreateDirectReceiptModal } from '@/components/payments/CreateDirectReceiptModal';
 import { ViewPaymentModal } from '@/components/payments/ViewPaymentModal';
 import { EditPaymentModal } from '@/components/payments/EditPaymentModal';
 import { DeletePaymentModal } from '@/components/payments/DeletePaymentModal';
@@ -90,6 +91,7 @@ function formatCurrency(amount: number) {
 export default function Payments() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showRecordModal, setShowRecordModal] = useState(false);
+  const [showDirectReceiptModal, setShowDirectReceiptModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -114,6 +116,14 @@ export default function Payments() {
       return;
     }
     setShowRecordModal(true);
+  };
+
+  const handleCreateDirectReceipt = () => {
+    if (!canCreatePayment('create_payment')) {
+      toast.error('You do not have permission to create receipts');
+      return;
+    }
+    setShowDirectReceiptModal(true);
   };
 
   const handleViewPayment = (payment: Payment) => {
@@ -142,6 +152,21 @@ export default function Payments() {
 
   const handleDownloadReceipt = (payment: Payment) => {
     try {
+      // Enrich payment allocations with invoice information
+      const enrichedPayment = {
+        ...payment,
+        payment_allocations: (payment.payment_allocations || []).map(allocation => {
+          // Find the corresponding invoice to get invoice_number and other details
+          const invoice = invoices.find(inv => inv.id === allocation.invoice_id || inv.invoice_number === allocation.invoice_number);
+          return {
+            ...allocation,
+            invoice_number: allocation.invoice_number || invoice?.invoice_number,
+            invoice_date: invoice?.invoice_date,
+            invoice_total: allocation.invoice_total || invoice?.total_amount,
+          };
+        }),
+      };
+
       // Use the utility function with company details
       const companyDetails = currentCompany ? {
         name: currentCompany.name,
@@ -154,7 +179,7 @@ export default function Payments() {
         logo_url: currentCompany.logo_url
       } : undefined;
 
-      generatePaymentReceiptPDF(payment, companyDetails);
+      generatePaymentReceiptPDF(enrichedPayment, companyDetails);
       toast.success(`Receipt downloaded for payment ${payment.payment_number}`);
     } catch (error) {
       console.error('Error downloading receipt:', error);
@@ -272,10 +297,16 @@ export default function Payments() {
             Track and manage customer payments (All amounts in KES)
           </p>
         </div>
-        <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleRecordPayment} disabled={!canCreatePayment('create_payment')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Record Payment
-        </Button>
+        <div className="flex gap-2">
+          <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleCreateDirectReceipt} disabled={!canCreatePayment('create_payment')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Direct Receipt
+          </Button>
+          <Button className="gradient-primary text-primary-foreground hover:opacity-90 shadow-card" size="lg" onClick={handleRecordPayment} disabled={!canCreatePayment('create_payment')}>
+            <Plus className="h-4 w-4 mr-2" />
+            Record Payment
+          </Button>
+        </div>
       </div>
 
       {/* System Status Check */}
@@ -463,7 +494,17 @@ export default function Payments() {
         invoice={undefined} // For standalone payment recording
       />
 
-
+      {/* Create Direct Receipt Modal */}
+      <CreateDirectReceiptModal
+        open={showDirectReceiptModal}
+        onOpenChange={setShowDirectReceiptModal}
+        onSuccess={() => {
+          setShowDirectReceiptModal(false);
+          // Refresh payments list to show new data
+          retryPayments();
+          toast.success('Direct receipt created successfully!');
+        }}
+      />
 
       {/* View Payment Modal */}
       <ViewPaymentModal

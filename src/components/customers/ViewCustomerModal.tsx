@@ -20,7 +20,8 @@ import {
   Calendar,
   FileText,
   DollarSign,
-  Activity
+  Activity,
+  Receipt
 } from 'lucide-react';
 import { useCustomerInvoices, useCustomerPayments } from '@/hooks/useDatabase';
 
@@ -45,9 +46,10 @@ interface ViewCustomerModalProps {
   customer: Customer | null;
   onEdit: () => void;
   onCreateInvoice: () => void;
+  onCreateDirectReceipt?: () => void;
 }
 
-export function ViewCustomerModal({ open, onOpenChange, customer, onEdit, onCreateInvoice }: ViewCustomerModalProps) {
+export function ViewCustomerModal({ open, onOpenChange, customer, onEdit, onCreateInvoice, onCreateDirectReceipt }: ViewCustomerModalProps) {
   // Fetch real customer data (hooks called unconditionally to preserve hook order)
   const { data: invoices } = useCustomerInvoices(customer?.id);
   const { data: payments } = useCustomerPayments(customer?.id);
@@ -257,7 +259,17 @@ export function ViewCustomerModal({ open, onOpenChange, customer, onEdit, onCrea
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
             </Button>
-            <Button 
+            {onCreateDirectReceipt && (
+              <Button
+                variant="outline"
+                onClick={onCreateDirectReceipt}
+                className="bg-success-light text-success border-success/20 hover:bg-success hover:text-success-foreground"
+              >
+                <Receipt className="h-4 w-4 mr-2" />
+                Direct Receipt
+              </Button>
+            )}
+            <Button
               variant="outline"
               onClick={onCreateInvoice}
               className="bg-primary-light text-primary border-primary/20 hover:bg-primary hover:text-primary-foreground"
