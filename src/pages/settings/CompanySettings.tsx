@@ -174,7 +174,7 @@ export default function CompanySettings() {
   const uploadToExternalAPI = async (file: File, companyId: string): Promise<string> => {
     // Always use the local backend API for file uploads
     // Vite serves public folder at root, so /api.php is the public/api.php file
-    const uploadUrl = '/api.php';
+    const uploadUrl = '/api.php?action=upload_file';
     console.log('🚀 Uploading via local backend to:', uploadUrl);
 
     // Get file extension safely
@@ -186,7 +186,6 @@ export default function CompanySettings() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('filename', fileName);
-    formData.append('action', 'upload_file');
 
     try {
       console.log(`🚀 Starting upload to: ${uploadUrl}`);
