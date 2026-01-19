@@ -102,7 +102,7 @@ export class ExternalAPIAdapter implements IDatabase {
         body = where;
       }
 
-      // Add timeout for fetch requests
+      // Add timeout for fetch requests - extended to 30 seconds for slow APIs
       const controller = new AbortController();
       let timeoutId: NodeJS.Timeout | null = null;
       let isTimedOut = false;
@@ -119,7 +119,7 @@ export class ExternalAPIAdapter implements IDatabase {
             console.debug('Controller abort error (ignored):', e);
           }
         }
-      }, 10000); // 10 second timeout
+      }, 30000); // 30 second timeout (increased from 10s)
 
       let response: Response;
       let result: any;
@@ -148,10 +148,12 @@ export class ExternalAPIAdapter implements IDatabase {
 
         if (fetchError.name === 'AbortError') {
           if (isTimedOut) {
-            throw new Error(`API request timeout (${this.apiBase}). The server may be unresponsive.`);
+            console.error(`⏱️ API request timeout after 30 seconds at ${this.apiBase}`);
+            throw new Error(`API request timeout. The server may be unresponsive or experiencing high load. Please try again.`);
           } else {
-            // Signal was aborted for another reason (e.g., component unmount)
-            throw new Error(`API request was cancelled. Please try again.`);
+            // Signal was aborted for another reason (e.g., component unmount, network interruption)
+            console.warn(`⚠️ API request was cancelled (aborted). This may indicate a network issue or the remote server is unreachable.`);
+            throw new Error(`API request was cancelled. Please check your connection and try again. Server: ${this.apiBase}`);
           }
         }
 

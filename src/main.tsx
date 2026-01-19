@@ -16,13 +16,18 @@ enableResizeObserverErrorSuppression();
 // Initialize database in background (non-blocking)
 const initializeAppBackground = () => {
   try {
+    const provider = import.meta.env.VITE_DATABASE_PROVIDER || 'external-api';
     const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-    console.log(`🔧 Initializing app with external API provider`);
-    console.log(`📍 Using external API: ${apiUrl}`);
 
+    console.log(`🔧 Initializing app with ${provider} provider`);
+    console.log(`📍 Using API: ${apiUrl}`);
+
+    // Initialize database with proper provider selection
     // Call without awaiting to make it non-blocking
-    initializeDatabase({ provider: 'external-api' as any }).catch((error) => {
-      console.error('❌ Database initialization failed:', error);
+    initializeDatabase({ provider: provider as any }).then(() => {
+      console.log(`✅ Database initialized successfully with ${provider} provider`);
+    }).catch((error) => {
+      console.error('⚠️  Database initialization error:', error);
     });
   } catch (error) {
     console.error('❌ Database initialization error:', error);

@@ -58,6 +58,27 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path, // Keep the path as-is so the backend recognizes it as upload
         },
 
+        // Logo/file upload endpoint
+        '/api/upload_file': {
+          target: apiUrl,
+          changeOrigin: true,
+          pathRewrite: {
+            '^/api/upload_file': '/api.php?action=upload_file', // Rewrite to backend endpoint
+          },
+          secure: false,
+          configure: (proxy, options) => {
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              console.log(`📤 [UPLOAD] ${req.method} ${req.url}`);
+            });
+            proxy.on('proxyRes', (proxyRes, req, res) => {
+              console.log(`✅ [UPLOAD] Response: ${proxyRes.statusCode}`);
+            });
+            proxy.on('error', (err, req, res) => {
+              console.error(`❌ [UPLOAD] Proxy error: ${err.message}`);
+            });
+          }
+        },
+
         // Proxy API requests to external backend or local server
         '/api': {
           target: apiUrl,

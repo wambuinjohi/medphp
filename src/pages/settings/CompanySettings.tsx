@@ -18,6 +18,7 @@ import { parseErrorMessage } from '@/utils/errorHelpers';
 import { QuickSchemaFix } from '@/components/QuickSchemaFix';
 import { addCurrencyColumn, ADD_CURRENCY_COLUMN_SQL } from '@/utils/addCurrencyColumn';
 import { getDatabaseProvider } from '@/integrations/database';
+import { validateLogoUrl, addCacheBustingParam, sanitizeLogoUrl } from '@/utils/logoUploadUtils';
 
 export default function CompanySettings() {
   const [editingTax, setEditingTax] = useState<string | null>(null);
@@ -133,31 +134,52 @@ export default function CompanySettings() {
         throw new Error('Failed to process logo upload');
       }
 
-      // Add cache-busting parameter if it's a URL (not base64)
-      const cachebustedUrl = logoUrl.startsWith('data:')
-        ? logoUrl
-        : `${logoUrl}?t=${Date.now()}`;
+      // Validate the returned URL before persisting
+      const urlValidation = validateLogoUrl(logoUrl);
+      if (!urlValidation.valid) {
+        throw new Error(urlValidation.error || 'Invalid logo URL returned from server');
+      }
+
+      // Add cache-busting parameter for safe URLs
+      const cachebustedUrl = addCacheBustingParam(logoUrl);
 
       // Update local state & persist using existing hook
       setCompanyData(prev => ({ ...prev, logo_url: cachebustedUrl }));
       setLogoLoadError(false);
       setLogoRefreshKey(prev => prev + 1); // Force image re-render
 
-      // Persist to database
-      await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: logoUrl } });
+      // Persist to database (use sanitized URL without cache-busting in DB)
+      const dbUrl = sanitizeLogoUrl(logoUrl);
+      await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: dbUrl } });
       toast.success('Logo uploaded successfully! The preview updates below.');
 
     } catch (err: any) {
       // Use centralized error parsing and logging for file upload
       logError(err, 'Logo Upload');
+
+      const errorMsg = err instanceof Error ? err.message : String(err);
       let userMessage = getUserFriendlyMessage(err, 'Failed to upload logo');
 
-      // Provide helpful suggestions
-      if (userMessage.includes('Failed to fetch') || userMessage.includes('network')) {
-        userMessage += ' - Check your internet connection or try again later.';
-      } else if (userMessage.includes('CORS')) {
-        userMessage += ' - Contact your administrator about server CORS configuration.';
+      // Provide helpful suggestions based on error type
+      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('network')) {
+        userMessage = 'Cannot reach the upload server. Please check your internet connection and try again.';
+      } else if (errorMsg.includes('CORS')) {
+        userMessage = 'Server configuration issue (CORS). Please contact your administrator.';
+      } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout')) {
+        userMessage = 'Upload took too long. Please try again with a smaller file or faster connection.';
+      } else if (errorMsg.includes('Invalid response')) {
+        userMessage = 'The server returned an invalid response. The upload may have failed. Please try again.';
+      } else if (errorMsg.includes('No file URL')) {
+        userMessage = 'Upload may have failed. The server did not return a valid file URL. Please try again.';
+      } else if (errorMsg.includes('URL')) {
+        userMessage = 'The uploaded file URL is invalid. Please try uploading again.';
       }
+
+      console.error('🔴 Logo upload error:', {
+        message: errorMsg,
+        userMessage,
+        timestamp: new Date().toISOString()
+      });
 
       toast.error(userMessage);
     } finally {
@@ -169,11 +191,11 @@ export default function CompanySettings() {
     }
   };
 
-  // Helper function to upload to remote backend API
+  // Helper function to upload to remote backend API via proxy
   const uploadToExternalAPI = async (file: File, companyId: string): Promise<string> => {
-    // Always use the remote API for file uploads - even in dev
-    const remoteApiUrl = 'https://med.wayrus.co.ke/api.php?action=upload_file';
-    console.log('🚀 Uploading via remote API to:', remoteApiUrl);
+    // Use Vite proxy endpoint instead of direct URL to avoid CORS issues
+    const proxyUrl = '/api/upload_file';
+    console.log('🚀 Uploading via proxy endpoint to:', proxyUrl);
 
     // Get file extension safely
     const fileNameParts = file.name.split('.');
@@ -186,13 +208,13 @@ export default function CompanySettings() {
     formData.append('filename', fileName);
 
     try {
-      console.log(`🚀 Starting upload to: ${remoteApiUrl}`);
+      console.log(`🚀 Starting upload to: ${proxyUrl}`);
       console.log(`📁 File: ${fileName} (${(file.size / 1024).toFixed(2)} KB)`);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-      const response = await fetch(remoteApiUrl, {
+      const response = await fetch(proxyUrl, {
         method: 'POST',
         body: formData,
         signal: controller.signal,
@@ -230,10 +252,10 @@ export default function CompanySettings() {
 
       // Provide helpful error messages
       if (errorMsg.includes('Failed to fetch')) {
-        throw new Error('Upload failed: Cannot reach the upload server. Check CORS configuration.');
+        throw new Error('Upload failed: Cannot reach the upload server. Check your connection or CORS configuration.');
       }
       if (errorMsg.includes('AbortError')) {
-        throw new Error('Upload failed: Request timeout (> 30 seconds)');
+        throw new Error('Upload failed: Request timeout (> 30 seconds). The server may be slow.');
       }
 
       throw new Error(`Upload failed: ${errorMsg}`);
@@ -781,15 +803,60 @@ export default function CompanySettings() {
                   )}
                 </div>
                 {companyData.logo_url && (
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">
-                      Current: {companyData.logo_url.startsWith('data:') ? 'Local storage (Base64)' : 'Cloud storage'}
-                    </p>
-                    {companyData.logo_url.startsWith('data:') && (
-                      <div className="text-xs text-orange-600 space-y-1">
-                        <p>Note: Logo is stored locally (Base64). For production, upload to the server.</p>
-                      </div>
-                    )}
+                  <div className="space-y-2 pt-2">
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>
+                        <span className="font-medium">Current URL:</span> {companyData.logo_url.startsWith('data:') ? 'Local storage (Base64)' : 'Remote server'}
+                      </p>
+                      {companyData.logo_url.startsWith('data:') && (
+                        <div className="bg-orange-50 border border-orange-200 rounded p-2 text-orange-700 space-y-1">
+                          <p>⚠️ <span className="font-medium">Corrupted Logo Detected:</span></p>
+                          <p>This logo is stored as Base64 data, which indicates a failed upload. Please re-upload your logo.</p>
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setCompanyData(prev => ({ ...prev, logo_url: '' }));
+                                setLogoLoadError(false);
+                                toast.info('Invalid logo cleared. You can now upload a new one.');
+                              }}
+                              className="text-orange-600 hover:text-orange-700"
+                            >
+                              Clear & Re-upload
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      {logoLoadError && !companyData.logo_url.startsWith('data:') && (
+                        <div className="bg-red-50 border border-red-200 rounded p-2 text-red-700 space-y-1">
+                          <p>❌ <span className="font-medium">Failed to Load Logo:</span></p>
+                          <p>The logo URL exists but the image cannot be loaded. This may be a network or server issue.</p>
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setLogoRefreshKey(prev => prev + 1)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Retry Load
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setCompanyData(prev => ({ ...prev, logo_url: '' }));
+                                setLogoLoadError(false);
+                                toast.info('Logo URL cleared. Please save and re-upload.');
+                              }}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Clear URL
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

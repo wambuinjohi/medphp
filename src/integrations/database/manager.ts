@@ -81,9 +81,18 @@ class DatabaseManager {
    */
   getDatabase(): IDatabase {
     if (!this.adapter) {
-      // Auto-initialize with default provider if not already initialized
-      console.warn('Database not initialized. Using default Supabase adapter.');
-      this.adapter = new SupabaseAdapter();
+      // Auto-initialize with configured provider if not already initialized
+      const provider = this.getProvider();
+      console.warn(`Database not initialized. Auto-initializing with ${provider} adapter.`);
+
+      if (provider === 'external-api') {
+        const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+        this.adapter = new ExternalAPIAdapter(apiUrl);
+      } else if (provider === 'mysql') {
+        this.adapter = new MySQLAdapter();
+      } else {
+        this.adapter = new SupabaseAdapter();
+      }
     }
     return this.adapter;
   }
