@@ -101,7 +101,28 @@ export function parseError(error: any): ParsedError {
  */
 export function getUserFriendlyMessage(error: any, context?: string): string {
   const parsed = parseError(error);
-  
+  const errorMsg = parsed.message.toLowerCase();
+
+  // Handle HTTP 403 Forbidden (permission denied on API)
+  if (errorMsg.includes('403') || errorMsg.includes('forbidden')) {
+    return 'You do not have permission to perform this action. Please contact your administrator to grant the necessary permissions.';
+  }
+
+  // Handle HTTP 401 Unauthorized
+  if (errorMsg.includes('401') || errorMsg.includes('unauthorized') || errorMsg.includes('not authenticated')) {
+    return 'Your session has expired. Please log in again.';
+  }
+
+  // Handle HTTP 404 Not Found
+  if (errorMsg.includes('404') || errorMsg.includes('not found')) {
+    return 'The requested resource was not found. Please check your input and try again.';
+  }
+
+  // Handle HTTP 500 Server Error
+  if (errorMsg.includes('500') || errorMsg.includes('server error')) {
+    return 'The server is experiencing an error. Please try again later or contact support.';
+  }
+
   // Handle specific error patterns
   if (parsed.type === 'database') {
     if (parsed.message.includes('companies') && parsed.message.includes('does not exist')) {
