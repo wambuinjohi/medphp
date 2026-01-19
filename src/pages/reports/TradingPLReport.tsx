@@ -347,7 +347,7 @@ export default function TradingPLReport() {
                   <DollarSign className="h-8 w-8 text-success" />
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Revenue</p>
-                    <p className="text-lg font-bold text-success">{formatCurrency(metrics.revenue)}</p>
+                    <p className="text-lg font-bold text-success">{formatCurrency(metrics?.revenue ?? 0)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -359,7 +359,7 @@ export default function TradingPLReport() {
                   <TrendingDown className="h-8 w-8 text-orange-500" />
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">COGS</p>
-                    <p className="text-lg font-bold text-orange-500">{formatCurrency(metrics.cogs)}</p>
+                    <p className="text-lg font-bold text-orange-500">{formatCurrency(metrics?.cogs ?? 0)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -371,7 +371,7 @@ export default function TradingPLReport() {
                   <TrendingUp className="h-8 w-8 text-primary" />
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Gross Profit</p>
-                    <p className="text-lg font-bold text-primary">{formatCurrency(metrics.grossProfit)}</p>
+                    <p className="text-lg font-bold text-primary">{formatCurrency(metrics?.grossProfit ?? 0)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -383,7 +383,7 @@ export default function TradingPLReport() {
                   <BarChart3 className="h-8 w-8 text-success" />
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Margin %</p>
-                    <p className="text-lg font-bold text-success">{formatPercentage(metrics.grossMarginPercentage)}</p>
+                    <p className="text-lg font-bold text-success">{formatPercentage(metrics?.grossMarginPercentage ?? 0)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -395,7 +395,7 @@ export default function TradingPLReport() {
                   <Package className="h-8 w-8 text-info" />
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Invoices</p>
-                    <p className="text-lg font-bold text-info">{metrics.invoiceCount}</p>
+                    <p className="text-lg font-bold text-info">{metrics?.invoiceCount ?? 0}</p>
                   </div>
                 </div>
               </CardContent>
