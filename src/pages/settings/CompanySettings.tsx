@@ -169,11 +169,11 @@ export default function CompanySettings() {
     }
   };
 
-  // Helper function to upload to remote backend API
+  // Helper function to upload to remote backend API via proxy
   const uploadToExternalAPI = async (file: File, companyId: string): Promise<string> => {
-    // Always use the remote API for file uploads - even in dev
-    const remoteApiUrl = 'https://med.wayrus.co.ke/api.php?action=upload_file';
-    console.log('🚀 Uploading via remote API to:', remoteApiUrl);
+    // Use Vite proxy endpoint instead of direct URL to avoid CORS issues
+    const proxyUrl = '/api/upload_file';
+    console.log('🚀 Uploading via proxy endpoint to:', proxyUrl);
 
     // Get file extension safely
     const fileNameParts = file.name.split('.');
@@ -186,13 +186,13 @@ export default function CompanySettings() {
     formData.append('filename', fileName);
 
     try {
-      console.log(`🚀 Starting upload to: ${remoteApiUrl}`);
+      console.log(`🚀 Starting upload to: ${proxyUrl}`);
       console.log(`📁 File: ${fileName} (${(file.size / 1024).toFixed(2)} KB)`);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-      const response = await fetch(remoteApiUrl, {
+      const response = await fetch(proxyUrl, {
         method: 'POST',
         body: formData,
         signal: controller.signal,
@@ -230,10 +230,10 @@ export default function CompanySettings() {
 
       // Provide helpful error messages
       if (errorMsg.includes('Failed to fetch')) {
-        throw new Error('Upload failed: Cannot reach the upload server. Check CORS configuration.');
+        throw new Error('Upload failed: Cannot reach the upload server. Check your connection or CORS configuration.');
       }
       if (errorMsg.includes('AbortError')) {
-        throw new Error('Upload failed: Request timeout (> 30 seconds)');
+        throw new Error('Upload failed: Request timeout (> 30 seconds). The server may be slow.');
       }
 
       throw new Error(`Upload failed: ${errorMsg}`);
