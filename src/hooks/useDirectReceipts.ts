@@ -60,7 +60,7 @@ export const useDirectReceipts = (companyId?: string) => {
             )
           `)
           .eq('company_id', companyId)
-          .like('notes', '%Direct receipt%')
+          .ilike('notes', '%Direct receipt%')
           .order('invoice_date', { ascending: false });
 
         if (invoicesError) throw invoicesError;
