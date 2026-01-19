@@ -15,7 +15,6 @@ dist-ssr
 # Uploaded files (but keep the directory structure)
 public/uploads/*
 !public/uploads/.gitkeep
-!public/uploads/.htaccess
 
 # Editor directories and files
 .vscode/*

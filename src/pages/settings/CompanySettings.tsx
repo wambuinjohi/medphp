@@ -119,7 +119,6 @@ export default function CompanySettings() {
       try {
         logoUrl = await uploadToExternalAPI(file, currentCompany.id);
         console.log('✅ Server upload successful:', logoUrl);
-        toast.success('Logo uploaded to server successfully!');
       } catch (uploadError) {
         console.error('❌ Server upload failed:', uploadError);
         logError(uploadError, 'Logo Upload to Server');
@@ -129,7 +128,7 @@ export default function CompanySettings() {
           console.warn('⚠️ Falling back to local base64 storage');
           logoUrl = await convertToBase64(file);
           console.log('✅ Base64 fallback successful');
-          toast.warning('Logo saved locally (server upload failed). Consider checking your upload configuration.');
+          // Don't show a warning toast for successful fallback, just a silent save
         } else {
           throw new Error('Server upload failed and file is too large for local storage. Please use a smaller image (max 1MB) or check server configuration.');
         }
@@ -143,13 +142,16 @@ export default function CompanySettings() {
       setCompanyData(prev => ({ ...prev, logo_url: logoUrl }));
       setLogoLoadError(false);
       await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: logoUrl } });
+      toast.success('Logo saved successfully! Click "Save Settings" to confirm all changes.');
 
     } catch (err: any) {
-      // Use centralized error parsing and logging for file upload
-      logError(err, 'Logo Upload');
-      let userMessage = getUserFriendlyMessage(err, 'Failed to upload logo');
-
-      toast.error(userMessage);
+      // Only show error if no fallback was attempted
+      if (!logoUrl) {
+        // Use centralized error parsing and logging for file upload
+        logError(err, 'Logo Upload');
+        let userMessage = getUserFriendlyMessage(err, 'Failed to upload logo');
+        toast.error(userMessage);
+      }
     } finally {
       setUploading(false);
       // Clear the file input
@@ -162,15 +164,16 @@ export default function CompanySettings() {
   // Helper function to upload to external API
   const uploadToExternalAPI = async (file: File, companyId: string): Promise<string> => {
     // Determine the upload URL based on environment
+    // Always use /api/uploads so the backend can detect file uploads
     let uploadUrl: string;
 
     if (import.meta.env.DEV) {
-      // In development, use local/dev endpoint
+      // In development, use proxy to external API
       uploadUrl = import.meta.env.VITE_UPLOAD_URL || `${window.location.origin}/api/uploads`;
       console.log('📤 Dev mode upload URL:', uploadUrl);
     } else {
-      // In production, use the configured endpoint
-      uploadUrl = import.meta.env.VITE_UPLOAD_URL || 'https://med.wayrus.co.ke/uploads';
+      // In production, use /api/uploads on the same domain
+      uploadUrl = import.meta.env.VITE_UPLOAD_URL || `${window.location.origin}/api/uploads`;
       console.log('📤 Prod mode upload URL:', uploadUrl);
     }
 
@@ -206,7 +209,7 @@ export default function CompanySettings() {
       }
 
       // Handle different response formats
-      const fileUrl = result.url || result.file_url || result.path || `${uploadUrl}/${fileName}`;
+      const fileUrl = result.url || result.file_url || result.path;
 
       if (!fileUrl) {
         throw new Error('No file URL returned from server');
