@@ -26,7 +26,32 @@ export default defineConfig(({ mode }) => {
       port: 8080,
       hmr: false,
       proxy: {
-        // Proxy file upload requests (keep these as-is)
+        // ===== CRITICAL: Proxy all /proxy routes to bypass CORS =====
+        // This acts as a bridge between frontend and backend
+        '/proxy': {
+          target: apiUrl,
+          changeOrigin: true,
+          pathRewrite: {
+            '^/proxy': '', // Remove /proxy prefix to make clean request to backend
+          },
+          secure: false,
+          ws: false,
+          configure: (proxy, options) => {
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              // Add debugging
+              console.log(`🔗 Proxying: ${req.method} ${req.url} → ${apiUrl}${req.url.replace('/proxy', '')}`);
+            });
+            proxy.on('proxyRes', (proxyRes, req, res) => {
+              // Log response
+              console.log(`✅ Proxy response: ${proxyRes.statusCode}`);
+            });
+            proxy.on('error', (err, req, res) => {
+              console.error(`❌ Proxy error: ${err.message}`);
+            });
+          }
+        },
+
+        // File upload requests
         '/api/upload': {
           target: apiUrl,
           changeOrigin: true,
@@ -37,6 +62,7 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path,
         },
+
         // Proxy API requests to external backend or local server
         '/api': {
           target: apiUrl,
@@ -46,6 +72,7 @@ export default defineConfig(({ mode }) => {
             return path;
           },
         },
+
         '/api/db': {
           target: apiUrl,
           changeOrigin: true,

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { toast } from 'sonner';
 import { handleAuthError } from '@/utils/authErrorHandler';
@@ -22,6 +22,7 @@ export function EnhancedLogin() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [corsError, setCorsError] = useState<string | null>(null);
 
   // Log any company loading errors for debugging
   if (companyError) {
@@ -56,10 +57,19 @@ export function EnhancedLogin() {
     }
 
     setSubmitting(true);
+    setCorsError(null); // Clear previous CORS errors
+
     const { error } = await signIn(formData.email, formData.password);
 
     if (error) {
       const errorInfo = handleAuthError(error);
+
+      // Detect CORS errors and provide helpful guidance
+      if (errorInfo.type === 'network_error' && error?.message?.toLowerCase().includes('cors')) {
+        setCorsError(
+          'The API server needs proper CORS configuration. Check CORS_SETUP_GUIDE.md or try using the Local Dev Server option below.'
+        );
+      }
 
       if (errorInfo.type === 'invalid_credentials') {
         setTimeout(() => {
@@ -67,6 +77,7 @@ export function EnhancedLogin() {
         }, 2000);
       }
     } else {
+      setCorsError(null);
       toast.success(`Welcome to ${companyName}!`);
       navigate('/app');
     }
@@ -220,6 +231,26 @@ export function EnhancedLogin() {
                 </Button>
               </div>
             </form>
+
+            {/* CORS Error Alert */}
+            {corsError && (
+              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 space-y-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-red-800">API Connection Error (CORS)</p>
+                    <p className="text-xs text-red-700 mt-2 leading-relaxed">{corsError}</p>
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs text-red-700 font-medium">Quick fix options:</p>
+                      <ol className="text-xs text-red-700 space-y-1 ml-4 list-decimal">
+                        <li>Use the <strong>"Use Local Dev Server"</strong> option below (works offline)</li>
+                        <li>Backend team: Add CORS headers to api.php (see CORS_SETUP_GUIDE.md)</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Setup Instructions Section */}
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border-2 border-purple-200 space-y-3">

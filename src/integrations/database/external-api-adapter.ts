@@ -16,9 +16,21 @@ import type {
 export class ExternalAPIAdapter implements IDatabase {
   private apiBase: string;
   private authToken: string | null = null;
+  private isProxyMode: boolean = false;
 
   constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
-    this.apiBase = apiUrl;
+    // Use proxy mode to bypass CORS issues
+    // In development, use /proxy which is forwarded to the actual API
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      this.apiBase = '/proxy/api.php';
+      this.isProxyMode = true;
+      console.log('✅ Using PROXY MODE for CORS bypass: /proxy/api.php');
+    } else {
+      this.apiBase = apiUrl;
+      this.isProxyMode = false;
+      console.log('🌐 Using DIRECT API URL:', apiUrl);
+    }
+
     // Load token from localStorage if available
     const storedToken = localStorage.getItem('med_api_token');
     if (storedToken) {
@@ -107,6 +119,7 @@ export class ExternalAPIAdapter implements IDatabase {
           headers,
           body: body ? JSON.stringify(body) : undefined,
           signal: controller.signal,
+          credentials: 'include', // Include credentials for CORS
         });
 
         if (timeoutId) clearTimeout(timeoutId);
@@ -130,9 +143,29 @@ export class ExternalAPIAdapter implements IDatabase {
           }
         }
 
-        // Network errors
-        if (fetchError instanceof TypeError && fetchError.message === 'Failed to fetch') {
-          throw new Error(`Unable to reach API endpoint: ${this.apiBase}. This could be a CORS issue, network problem, or the server may be down. Please check your internet connection and ensure the API endpoint is accessible.`);
+        // Network errors - provide detailed diagnostics
+        if (fetchError instanceof TypeError) {
+          const errorMessage = fetchError.message || '';
+
+          // Check if this might be a CORS error (very common with cross-origin requests)
+          if (errorMessage.includes('Failed to fetch') || errorMessage.includes('fetch')) {
+            console.error(`❌ Network Error for ${action} on ${table || 'API'}:`, errorMessage);
+            console.error(`API Endpoint: ${this.apiBase}`);
+            console.error('🔍 Troubleshooting:');
+            console.error('1. CORS Issue (Most Common):');
+            console.error('   - Backend needs: Access-Control-Allow-Origin header');
+            console.error('   - Backend needs to allow methods: GET, POST, PUT, DELETE, OPTIONS');
+            console.error('2. Network/Connectivity:');
+            console.error('   - Check if API endpoint is reachable');
+            console.error('   - Verify internet connection');
+            console.error('3. Firewall/Proxy:');
+            console.error('   - Check if network firewall blocks requests');
+            console.error('   - Check if corporate proxy is interfering');
+
+            throw new Error(`Unable to reach API: ${this.apiBase}. This is commonly a CORS issue. Please ensure the backend has proper CORS headers configured. Error: ${errorMessage}`);
+          }
+
+          throw new Error(`Network error: ${errorMessage}`);
         }
 
         throw fetchError;
@@ -163,48 +196,71 @@ export class ExternalAPIAdapter implements IDatabase {
     try {
       console.log(`🔐 Attempting login with external API: ${this.apiBase}?action=login`);
 
-      const response = await fetch(`${this.apiBase}?action=login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      const loginUrl = `${this.apiBase}?action=login`;
 
-      // Defensively parse JSON
-      const result = await response.json().catch(() => {
-        if (!response.ok) {
-          throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+      try {
+        const response = await fetch(loginUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+          credentials: 'include', // Include cookies for CORS
+        });
+
+        // Defensively parse JSON
+        const result = await response.json().catch(() => {
+          if (!response.ok) {
+            throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+          }
+          throw new Error('Invalid response from server: Expected valid JSON');
+        });
+        console.log('📝 Login response status:', response.status, 'Result:', result);
+
+        if (!response.ok || result.status === 'error') {
+          const errorMsg = result.message || result.error || `Login failed with status ${response.status}`;
+          console.error('❌ Login error:', errorMsg);
+          return {
+            token: '',
+            user: null,
+            error: new Error(errorMsg),
+          };
         }
-        throw new Error('Invalid response from server: Expected valid JSON');
-      });
-      console.log('📝 Login response status:', response.status, 'Result:', result);
 
-      if (!response.ok || result.status === 'error') {
-        const errorMsg = result.message || result.error || `Login failed with status ${response.status}`;
-        console.error('❌ Login error:', errorMsg);
+        if (result.token) {
+          this.setAuthToken(result.token);
+          console.log('✅ Token stored successfully');
+
+          // Store user info in localStorage for consistent access
+          if (result.user && result.user.id) {
+            localStorage.setItem('med_api_user_id', result.user.id);
+            localStorage.setItem('med_api_user_email', email);
+            console.log('✅ User info stored:', { id: result.user.id, email });
+          }
+        }
+
         return {
-          token: '',
-          user: null,
-          error: new Error(errorMsg),
+          token: result.token || '',
+          user: result.user,
+          error: null,
         };
-      }
+      } catch (fetchError: any) {
+        // Enhanced error handling for login-specific issues
+        if (fetchError instanceof TypeError && fetchError.message.includes('Failed to fetch')) {
+          console.error('❌ Login failed - Network/CORS error:');
+          console.error('API Endpoint:', loginUrl);
+          console.error('This is likely a CORS issue.');
+          console.error('💡 Solution: Backend needs to configure CORS headers:');
+          console.error('   Access-Control-Allow-Origin: * (or specific domain)');
+          console.error('   Access-Control-Allow-Methods: POST, OPTIONS');
+          console.error('   Access-Control-Allow-Headers: Content-Type');
 
-      if (result.token) {
-        this.setAuthToken(result.token);
-        console.log('✅ Token stored successfully');
-
-        // Store user info in localStorage for consistent access
-        if (result.user && result.user.id) {
-          localStorage.setItem('med_api_user_id', result.user.id);
-          localStorage.setItem('med_api_user_email', email);
-          console.log('✅ User info stored:', { id: result.user.id, email });
+          return {
+            token: '',
+            user: null,
+            error: new Error(`Unable to connect to login endpoint: ${loginUrl}. This is likely a CORS issue. Please check the browser console for details.`),
+          };
         }
+        throw fetchError;
       }
-
-      return {
-        token: result.token || '',
-        user: result.user,
-        error: null,
-      };
     } catch (error) {
       console.error('❌ Login exception:', error);
       return {
@@ -220,28 +276,30 @@ export class ExternalAPIAdapter implements IDatabase {
       const response = await fetch(`${this.apiBase}?action=logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
 
       if (!response.ok) {
         // Defensively parse JSON
         const result = await response.json().catch(() => ({}));
-        return { error: new Error(result.message || 'Logout failed') };
+        console.warn('⚠️  Logout API returned error:', result.message || 'Logout failed');
       }
 
+      // Always clear tokens locally, even if API fails
       this.clearAuthToken();
-
-      // Also clear user info from localStorage
       localStorage.removeItem('med_api_user_id');
       localStorage.removeItem('med_api_user_email');
 
+      console.log('✅ Local logout complete');
       return { error: null };
     } catch (error) {
+      console.warn('⚠️  Logout error (clearing locally anyway):', error);
       // Clear tokens even if logout fails
       this.clearAuthToken();
       localStorage.removeItem('med_api_user_id');
       localStorage.removeItem('med_api_user_email');
 
-      return { error: error as Error };
+      return { error: null }; // Return no error since we cleared locally
     }
   }
 
@@ -596,16 +654,25 @@ export class ExternalAPIAdapter implements IDatabase {
         const response = await fetch(`${this.apiBase}?action=health`, {
           method: 'GET',
           signal: controller.signal,
+          credentials: 'include',
         });
 
         if (timeoutId) clearTimeout(timeoutId);
-        return response.ok;
+
+        if (!response.ok) {
+          console.warn(`🔗 External API health check returned HTTP ${response.status}:`, this.apiBase);
+          return false;
+        }
+
+        console.log('✅ External API health check passed:', this.apiBase);
+        return true;
       } catch (fetchError: any) {
         if (timeoutId) clearTimeout(timeoutId);
 
         if (fetchError.name === 'AbortError') {
           if (isTimedOut) {
-            console.warn('🔗 External API health check timeout:', this.apiBase);
+            console.warn('⏱️  External API health check timeout (5s):', this.apiBase);
+            console.warn('💡 The server may be slow or unresponsive. Check your connection and API endpoint.');
           } else {
             console.warn('🔗 External API health check was cancelled:', this.apiBase);
           }
@@ -615,8 +682,13 @@ export class ExternalAPIAdapter implements IDatabase {
         // Handle all TypeError cases (network errors, CORS issues, etc.)
         if (fetchError instanceof TypeError) {
           const errorMessage = fetchError.message || '';
-          if (errorMessage.includes('Failed to fetch') || errorMessage.includes('fetch')) {
-            console.warn('🔗 External API unreachable (network/CORS issue):', this.apiBase, errorMessage);
+          if (errorMessage.includes('Failed to fetch')) {
+            console.warn('🔗 Failed to fetch from External API:', this.apiBase);
+            console.warn('💡 Common causes:');
+            console.warn('   1. CORS: Backend needs Access-Control-Allow-Origin headers');
+            console.warn('   2. Network: Check if the API endpoint is reachable');
+            console.warn('   3. DNS: Verify the domain can be resolved');
+            console.warn('   4. Firewall: Check if your network blocks external requests');
             return false;
           }
           console.warn('🔗 External API fetch error:', this.apiBase, errorMessage);

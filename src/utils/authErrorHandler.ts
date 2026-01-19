@@ -74,11 +74,21 @@ export function analyzeAuthError(error: Error | any): AuthErrorInfo {
     };
   }
 
-  if (message.includes('network') || message.includes('fetch')) {
+  if (message.includes('network') || message.includes('fetch') || message.includes('cors')) {
+    // Provide more specific guidance for CORS errors
+    if (message.includes('cors') || message.includes('unable to reach api')) {
+      return {
+        type: 'network_error',
+        message: 'API Server Connection Error (CORS)',
+        action: 'The API server may not be configured for cross-origin requests. Check the CORS_SETUP_GUIDE.md or contact your administrator.',
+        retry: true
+      };
+    }
+
     return {
       type: 'network_error',
       message: 'Network connection error',
-      action: 'Check your internet connection and try again',
+      action: 'Check your internet connection and try again. If the problem persists, the API server may be down.',
       retry: true
     };
   }
