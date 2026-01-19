@@ -275,7 +275,6 @@ export class ExternalAPIAdapter implements IDatabase {
       const response = await fetch(`${this.apiBase}?action=logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
       });
 
       if (!response.ok) {
