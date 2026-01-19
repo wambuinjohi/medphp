@@ -29,8 +29,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// Parse multipart form data to get action if needed
+$upload_action = $_POST['action'] ?? null;
+
 // Handle file uploads at /api/uploads or via action=upload
-if ((strpos($_SERVER['REQUEST_URI'], '/api/uploads') === 0 || $_POST['action'] === 'upload') && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if (($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file']) && ($upload_action === 'upload' || strpos($_SERVER['REQUEST_URI'], '/api/uploads') === 0))) {
     // Validate file upload
     if (!isset($_FILES['file'])) {
         http_response_code(400);
