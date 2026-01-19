@@ -605,22 +605,30 @@ export class ExternalAPIAdapter implements IDatabase {
 
         if (fetchError.name === 'AbortError') {
           if (isTimedOut) {
-            console.warn('External API health check timeout:', this.apiBase);
+            console.warn('🔗 External API health check timeout:', this.apiBase);
           } else {
-            console.warn('External API health check was cancelled:', this.apiBase);
+            console.warn('🔗 External API health check was cancelled:', this.apiBase);
           }
           return false;
         }
 
-        if (fetchError instanceof TypeError && fetchError.message === 'Failed to fetch') {
-          console.warn('External API unreachable:', this.apiBase);
+        // Handle all TypeError cases (network errors, CORS issues, etc.)
+        if (fetchError instanceof TypeError) {
+          const errorMessage = fetchError.message || '';
+          if (errorMessage.includes('Failed to fetch') || errorMessage.includes('fetch')) {
+            console.warn('🔗 External API unreachable (network/CORS issue):', this.apiBase, errorMessage);
+            return false;
+          }
+          console.warn('🔗 External API fetch error:', this.apiBase, errorMessage);
           return false;
         }
 
-        throw fetchError;
+        // For any other error type, return false instead of throwing
+        console.warn('🔗 External API health check error:', this.apiBase, fetchError);
+        return false;
       }
     } catch (error) {
-      console.error('External API health check failed:', error);
+      console.warn('🔗 External API health check failed:', error);
       return false;
     }
   }
