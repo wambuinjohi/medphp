@@ -787,15 +787,60 @@ export default function CompanySettings() {
                   )}
                 </div>
                 {companyData.logo_url && (
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">
-                      Current: {companyData.logo_url.startsWith('data:') ? 'Local storage (Base64)' : 'Cloud storage'}
-                    </p>
-                    {companyData.logo_url.startsWith('data:') && (
-                      <div className="text-xs text-orange-600 space-y-1">
-                        <p>Note: Logo is stored locally (Base64). For production, upload to the server.</p>
-                      </div>
-                    )}
+                  <div className="space-y-2 pt-2">
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>
+                        <span className="font-medium">Current URL:</span> {companyData.logo_url.startsWith('data:') ? 'Local storage (Base64)' : 'Remote server'}
+                      </p>
+                      {companyData.logo_url.startsWith('data:') && (
+                        <div className="bg-orange-50 border border-orange-200 rounded p-2 text-orange-700 space-y-1">
+                          <p>⚠️ <span className="font-medium">Corrupted Logo Detected:</span></p>
+                          <p>This logo is stored as Base64 data, which indicates a failed upload. Please re-upload your logo.</p>
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setCompanyData(prev => ({ ...prev, logo_url: '' }));
+                                setLogoLoadError(false);
+                                toast.info('Invalid logo cleared. You can now upload a new one.');
+                              }}
+                              className="text-orange-600 hover:text-orange-700"
+                            >
+                              Clear & Re-upload
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      {logoLoadError && !companyData.logo_url.startsWith('data:') && (
+                        <div className="bg-red-50 border border-red-200 rounded p-2 text-red-700 space-y-1">
+                          <p>❌ <span className="font-medium">Failed to Load Logo:</span></p>
+                          <p>The logo URL exists but the image cannot be loaded. This may be a network or server issue.</p>
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setLogoRefreshKey(prev => prev + 1)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Retry Load
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setCompanyData(prev => ({ ...prev, logo_url: '' }));
+                                setLogoLoadError(false);
+                                toast.info('Logo URL cleared. Please save and re-upload.');
+                              }}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Clear URL
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
