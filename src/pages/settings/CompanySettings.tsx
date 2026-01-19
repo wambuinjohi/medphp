@@ -709,15 +709,16 @@ export default function CompanySettings() {
                   </div>
                 ) : companyData.logo_url && !logoLoadError ? (
                   <img
+                    key={logoRefreshKey}
                     src={companyData.logo_url}
                     alt="Company Logo"
                     className="w-full h-full object-contain"
                     onError={() => {
-                      console.error('Logo failed to load:', companyData.logo_url);
+                      console.error('❌ Logo failed to load:', companyData.logo_url);
                       setLogoLoadError(true);
                     }}
                     onLoad={() => {
-                      console.log('Logo loaded successfully');
+                      console.log('✅ Logo loaded successfully:', companyData.logo_url);
                       setLogoLoadError(false);
                     }}
                   />
