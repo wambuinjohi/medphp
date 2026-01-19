@@ -119,7 +119,7 @@ export default function CompanySettings() {
       try {
         logoUrl = await uploadToExternalAPI(file, currentCompany.id);
         console.log('✅ Server upload successful:', logoUrl);
-        toast.success('Logo uploaded to server successfully!');
+        toast.success('Logo uploaded successfully!');
       } catch (uploadError) {
         console.error('❌ Server upload failed:', uploadError);
         logError(uploadError, 'Logo Upload to Server');
@@ -129,7 +129,7 @@ export default function CompanySettings() {
           console.warn('⚠️ Falling back to local base64 storage');
           logoUrl = await convertToBase64(file);
           console.log('✅ Base64 fallback successful');
-          toast.warning('Logo saved locally (server upload failed). Consider checking your upload configuration.');
+          // Don't show a warning toast for successful fallback, just a silent save
         } else {
           throw new Error('Server upload failed and file is too large for local storage. Please use a smaller image (max 1MB) or check server configuration.');
         }
