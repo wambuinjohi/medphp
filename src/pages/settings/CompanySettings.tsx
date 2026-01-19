@@ -748,18 +748,34 @@ export default function CompanySettings() {
                     {uploading ? 'Uploading...' : 'Upload Logo'}
                   </Button>
                   {companyData.logo_url && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setCompanyData(prev => ({ ...prev, logo_url: '' }));
-                        setLogoLoadError(false);
-                        toast.success('Logo removed. Click Save Settings to apply changes.');
-                      }}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      Remove Logo
-                    </Button>
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setCompanyData(prev => ({ ...prev, logo_url: '' }));
+                          setLogoLoadError(false);
+                          toast.success('Logo removed. Click Save Settings to apply changes.');
+                        }}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        Remove Logo
+                      </Button>
+                      {logoLoadError && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setCompanyData(prev => ({ ...prev, logo_url: '' }));
+                            setLogoLoadError(false);
+                            toast.info('Invalid logo cleared. Save to apply.');
+                          }}
+                          className="text-orange-600 hover:text-orange-700"
+                        >
+                          Clear Invalid Logo
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
                 {companyData.logo_url && (
