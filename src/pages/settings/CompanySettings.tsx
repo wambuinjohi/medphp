@@ -19,6 +19,7 @@ import { QuickSchemaFix } from '@/components/QuickSchemaFix';
 import { addCurrencyColumn, ADD_CURRENCY_COLUMN_SQL } from '@/utils/addCurrencyColumn';
 import { getDatabaseProvider } from '@/integrations/database';
 import { validateLogoUrl, addCacheBustingParam, sanitizeLogoUrl } from '@/utils/logoUploadUtils';
+import { PermissionErrorHelper } from '@/components/PermissionErrorHelper';
 
 export default function CompanySettings() {
   const [editingTax, setEditingTax] = useState<string | null>(null);
