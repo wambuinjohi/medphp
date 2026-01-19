@@ -51,13 +51,11 @@ export default defineConfig(({ mode }) => {
           }
         },
 
-        // File upload requests - forward to main API
+        // File upload requests - forward to main API (preserve path for upload detection)
         '/api/uploads': {
           target: apiUrl,
           changeOrigin: true,
-          pathRewrite: {
-            '^/api/uploads': '/api.php', // Rewrite to api.php
-          },
+          rewrite: (path) => path, // Keep the path as-is so the backend recognizes it as upload
         },
 
         // Proxy API requests to external backend or local server
