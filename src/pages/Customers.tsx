@@ -590,6 +590,12 @@ export default function Customers() {
             handleCreateInvoice(selectedCustomer);
           }
         }}
+        onCreateDirectReceipt={() => {
+          setShowViewModal(false);
+          if (selectedCustomer) {
+            handleCreateDirectReceipt(selectedCustomer);
+          }
+        }}
       />
 
       <EditCustomerModal
