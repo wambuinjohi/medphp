@@ -774,8 +774,18 @@ export default function CompanySettings() {
                   <Input
                     id="phone"
                     value={companyData.phone || ''}
-                    onChange={(e) => setCompanyData(prev => ({ ...prev, phone: e.target.value }))}
+                    onChange={(e) => {
+                      setCompanyData(prev => ({ ...prev, phone: e.target.value }));
+                      debouncedValidate({ ...companyData, phone: e.target.value });
+                    }}
+                    className={getFieldError('phone') ? 'border-destructive' : ''}
                   />
+                  {getFieldError('phone') && (
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      {getFieldError('phone')}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
