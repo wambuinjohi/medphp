@@ -233,6 +233,19 @@ export function EnhancedLogin() {
               </div>
             </form>
 
+            {/* CORS Error Alert */}
+            {corsError && (
+              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-red-800">Connection Error</p>
+                    <p className="text-xs text-red-700 mt-1">{corsError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Setup Instructions Section */}
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border-2 border-purple-200 space-y-3">
               <p className="text-xs sm:text-sm font-bold text-purple-900 flex items-center gap-2">
