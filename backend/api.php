@@ -739,6 +739,12 @@ try {
             throw new Exception("Missing data for insert");
         }
 
+        // Check authorization for modifications to protected tables
+        $protected_tables = ['companies', 'users', 'profiles', 'user_permissions', 'roles'];
+        if (in_array($table, $protected_tables)) {
+            $auth = requireAuthForModification($action, $table);
+        }
+
         $columns = [];
         $values = [];
 
