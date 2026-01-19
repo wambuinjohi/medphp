@@ -719,9 +719,19 @@ export default function CompanySettings() {
                     id="website"
                     type="url"
                     value={companyData.website || ''}
-                    onChange={(e) => setCompanyData(prev => ({ ...prev, website: e.target.value }))}
+                    onChange={(e) => {
+                      setCompanyData(prev => ({ ...prev, website: e.target.value }));
+                      debouncedValidate({ ...companyData, website: e.target.value });
+                    }}
                     placeholder="https://yourcompany.com"
+                    className={getFieldError('website') ? 'border-destructive' : ''}
                   />
+                  {getFieldError('website') && (
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      {getFieldError('website')}
+                    </div>
+                  )}
                 </div>
               </div>
 
