@@ -133,30 +133,8 @@ export const initializeAuth = async () => {
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second max for background retry
 
     try {
-      // Quick connectivity test first
-      const connectivityCheck = new Promise((resolve) => {
-        // Simple fetch to test basic connectivity to the API
-        const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-        fetch(apiUrl + '?action=health', {
-          method: 'GET',
-          signal: controller.signal
-        })
-          .then(() => resolve(true))
-          .catch(() => resolve(false));
-      });
-
-      // Don't wait too long for connectivity
-      const connectivityTimeout = new Promise((resolve) => {
-        setTimeout(() => resolve(false), 2000);
-      });
-
-      const hasConnectivity = await Promise.race([connectivityCheck, connectivityTimeout]);
-
-      if (!hasConnectivity) {
-        logWarning('🌐 No connectivity to API, skipping auth', 'No connectivity', { context: 'initializeAuth' });
-        clearTimeout(timeoutId);
-        return { session: null, error: new Error('No connectivity') };
-      }
+      // Health checks have been disabled to prevent AbortError issues
+      // Go directly to session check - real operations will detect API issues
 
       // Get current session with abort signal
       const sessionResult = await apiClient.auth.getSession();
