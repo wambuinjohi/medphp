@@ -323,7 +323,27 @@ export default function CompanySettings() {
     if (data.currency && data.currency.length > 3) {
       errors.push('Currency code must be 3 characters or less');
     }
+    if (data.currency && data.currency.length > 0 && !data.currency.match(/^[A-Z]{3}$/i)) {
+      errors.push('Currency code must be exactly 3 letters (e.g., USD, KES, EUR)');
+    }
 
+    // Registration number validation
+    if (data.registration_number && data.registration_number.length > 100) {
+      errors.push('Registration number must be less than 100 characters');
+    }
+
+    // Tax number validation
+    if (data.tax_number && data.tax_number.length > 100) {
+      errors.push('Tax number must be less than 100 characters');
+    }
+
+    // Fiscal year start validation
+    if (data.fiscal_year_start) {
+      const fiscalYear = parseInt(data.fiscal_year_start);
+      if (isNaN(fiscalYear) || fiscalYear < 1 || fiscalYear > 12) {
+        errors.push('Fiscal year start must be between 1 (January) and 12 (December)');
+      }
+    }
 
     return errors;
   };
