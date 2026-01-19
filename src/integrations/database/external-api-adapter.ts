@@ -121,7 +121,6 @@ export class ExternalAPIAdapter implements IDatabase {
           headers,
           body: body ? JSON.stringify(body) : undefined,
           signal: controller.signal,
-          credentials: 'include', // Include credentials for CORS
         });
 
         if (timeoutId) clearTimeout(timeoutId);
