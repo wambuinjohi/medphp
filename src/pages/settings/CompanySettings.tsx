@@ -134,18 +134,23 @@ export default function CompanySettings() {
         throw new Error('Failed to process logo upload');
       }
 
-      // Add cache-busting parameter if it's a URL (not base64)
-      const cachebustedUrl = logoUrl.startsWith('data:')
-        ? logoUrl
-        : `${logoUrl}?t=${Date.now()}`;
+      // Validate the returned URL before persisting
+      const urlValidation = validateLogoUrl(logoUrl);
+      if (!urlValidation.valid) {
+        throw new Error(urlValidation.error || 'Invalid logo URL returned from server');
+      }
+
+      // Add cache-busting parameter for safe URLs
+      const cachebustedUrl = addCacheBustingParam(logoUrl);
 
       // Update local state & persist using existing hook
       setCompanyData(prev => ({ ...prev, logo_url: cachebustedUrl }));
       setLogoLoadError(false);
       setLogoRefreshKey(prev => prev + 1); // Force image re-render
 
-      // Persist to database
-      await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: logoUrl } });
+      // Persist to database (use sanitized URL without cache-busting in DB)
+      const dbUrl = sanitizeLogoUrl(logoUrl);
+      await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: dbUrl } });
       toast.success('Logo uploaded successfully! The preview updates below.');
 
     } catch (err: any) {
