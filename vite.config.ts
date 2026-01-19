@@ -63,7 +63,11 @@ export default defineConfig(({ mode }) => {
           target: apiUrl,
           changeOrigin: true,
           rewrite: (path) => {
-            // Pass through as-is for /api/* routes
+            // Convert /api paths to /api.php paths for the external API
+            // e.g., /api?action=health becomes /api.php?action=health
+            if (path === '/api' || path.startsWith('/api?')) {
+              return '/api.php' + path.slice(4);
+            }
             return path;
           },
         },
