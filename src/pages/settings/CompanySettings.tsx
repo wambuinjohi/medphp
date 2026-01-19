@@ -783,8 +783,18 @@ export default function CompanySettings() {
                     id="email"
                     type="email"
                     value={companyData.email || ''}
-                    onChange={(e) => setCompanyData(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) => {
+                      setCompanyData(prev => ({ ...prev, email: e.target.value }));
+                      debouncedValidate({ ...companyData, email: e.target.value });
+                    }}
+                    className={getFieldError('email') ? 'border-destructive' : ''}
                   />
+                  {getFieldError('email') && (
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      {getFieldError('email')}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="country">Country</Label>
