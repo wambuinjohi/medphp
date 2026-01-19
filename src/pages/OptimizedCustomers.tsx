@@ -47,6 +47,7 @@ import { EditCustomerModal } from '@/components/customers/EditCustomerModal';
 import { ViewCustomerModal } from '@/components/customers/ViewCustomerModal';
 import { CreateCustomerModal } from '@/components/customers/CreateCustomerModal';
 import { CreateInvoiceModal } from '@/components/invoices/CreateInvoiceModal';
+import { CreateDirectReceiptModal } from '@/components/payments/CreateDirectReceiptModal';
 import { generateCustomerStatementPDF } from '@/utils/pdfGenerator';
 
 // Memoized customer row component for better performance
