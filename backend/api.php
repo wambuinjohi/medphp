@@ -356,14 +356,19 @@ if ($action === "proxy_external_api") {
     $external_action = $_POST['external_action'] ?? ($_GET['external_action'] ?? null);
     $external_table = $_POST['external_table'] ?? ($_GET['external_table'] ?? null);
     $external_where = $_POST['external_where'] ?? ($_GET['external_where'] ?? null);
-    $external_data = $_POST['external_data'] ?? ($json_body ?? []);
     $external_method = $_POST['external_method'] ?? ($_GET['external_method'] ?? 'POST');
+
+    // For proxy requests, the body data comes from the JSON payload or POST
+    $external_data = $json_body ?? $_POST ?? [];
 
     if (!$external_api_url || !$external_action) {
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'Missing external_api_url or external_action']);
         exit();
     }
+
+    error_log('🔀 Proxying [' . $external_method . '] request to: ' . $external_api_url);
+    error_log('   Action: ' . $external_action . ($external_table ? ' | Table: ' . $external_table : ''));
 
     // Build proxy request to external API
     $proxy_params = [
@@ -374,41 +379,66 @@ if ($action === "proxy_external_api") {
 
     $proxy_url = $external_api_url . '?' . http_build_query($proxy_params);
 
-    error_log('🔀 Proxying request to external API: ' . $proxy_url);
+    error_log('🔀 Proxy URL: ' . $proxy_url);
+
+    $headers = [
+        'Content-Type: application/json',
+        'Accept: application/json'
+    ];
 
     $context = stream_context_create([
         'http' => [
             'method' => $external_method,
-            'header' => [
-                'Content-Type: application/json',
-                'Accept: application/json'
-            ],
-            'timeout' => 30
+            'header' => $headers,
+            'timeout' => 30,
+            'follow_location' => true,
+            'max_redirects' => 5
+        ],
+        'ssl' => [
+            'verify_peer' => true,
+            'verify_peer_name' => true,
         ]
     ]);
 
-    if (!empty($external_data) && in_array($external_method, ['POST', 'PUT'])) {
-        stream_context_set_option($context, 'http', 'content', json_encode($external_data));
+    $request_body = null;
+    if (!empty($external_data) && in_array($external_method, ['POST', 'PUT', 'PATCH'])) {
+        // Filter out non-JSON-serializable proxy parameters
+        $body_data = [];
+        foreach ($external_data as $key => $value) {
+            if (strpos($key, 'external_') !== 0) {
+                $body_data[$key] = $value;
+            }
+        }
+        if (!empty($body_data)) {
+            $request_body = json_encode($body_data);
+            stream_context_set_option($context, 'http', 'content', $request_body);
+            error_log('🔀 Request body size: ' . strlen($request_body) . ' bytes');
+        }
     }
 
     try {
         $response = @file_get_contents($proxy_url, false, $context);
 
         if ($response === false) {
+            $error = error_get_last();
+            error_log('❌ Proxy error: ' . ($error ? $error['message'] : 'Unknown error'));
             http_response_code(503);
             echo json_encode([
                 'status' => 'error',
                 'message' => 'Unable to reach external API. The remote server may be unavailable.',
-                'url' => $external_api_url
+                'url' => $external_api_url,
+                'error' => $error ? $error['message'] : 'Connection failed'
             ]);
             exit();
         }
 
         // Forward the response from external API
+        error_log('✅ Proxy request successful');
         header('Content-Type: application/json');
         echo $response;
         exit();
     } catch (Exception $e) {
+        error_log('❌ Proxy exception: ' . $e->getMessage());
         http_response_code(503);
         echo json_encode([
             'status' => 'error',
