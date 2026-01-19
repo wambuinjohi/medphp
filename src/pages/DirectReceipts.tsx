@@ -136,7 +136,7 @@ export default function DirectReceipts() {
           )
         `)
         .eq('company_id', currentCompany.id)
-        .like('notes', '%Direct receipt%')
+        .ilike('notes', '%Direct receipt%')
         .order('invoice_date', { ascending: false });
 
       if (invoicesError) throw invoicesError;
