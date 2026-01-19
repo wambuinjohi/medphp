@@ -801,11 +801,13 @@ export default function CompanySettings() {
                       placeholder="+1 (555) 123-4567"
                       className={getFieldError('phone') ? 'border-destructive' : ''}
                     />
-                    {getFieldError('phone') && (
+                    {getFieldError('phone') ? (
                       <div className="flex items-center gap-2 text-sm text-destructive">
                         <AlertCircle className="h-4 w-4" />
                         {getFieldError('phone')}
                       </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Primary contact phone number</p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -821,11 +823,13 @@ export default function CompanySettings() {
                       placeholder="contact@company.com"
                       className={getFieldError('email') ? 'border-destructive' : ''}
                     />
-                    {getFieldError('email') && (
+                    {getFieldError('email') ? (
                       <div className="flex items-center gap-2 text-sm text-destructive">
                         <AlertCircle className="h-4 w-4" />
                         {getFieldError('email')}
                       </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Primary contact email address</p>
                     )}
                   </div>
                   <div className="space-y-2">
