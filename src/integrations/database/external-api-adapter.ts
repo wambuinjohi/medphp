@@ -599,13 +599,21 @@ export class ExternalAPIAdapter implements IDatabase {
         });
 
         if (timeoutId) clearTimeout(timeoutId);
-        return response.ok;
+
+        if (!response.ok) {
+          console.warn(`🔗 External API health check returned HTTP ${response.status}:`, this.apiBase);
+          return false;
+        }
+
+        console.log('✅ External API health check passed:', this.apiBase);
+        return true;
       } catch (fetchError: any) {
         if (timeoutId) clearTimeout(timeoutId);
 
         if (fetchError.name === 'AbortError') {
           if (isTimedOut) {
-            console.warn('🔗 External API health check timeout:', this.apiBase);
+            console.warn('⏱️  External API health check timeout (5s):', this.apiBase);
+            console.warn('💡 The server may be slow or unresponsive. Check your connection and API endpoint.');
           } else {
             console.warn('🔗 External API health check was cancelled:', this.apiBase);
           }
@@ -615,8 +623,13 @@ export class ExternalAPIAdapter implements IDatabase {
         // Handle all TypeError cases (network errors, CORS issues, etc.)
         if (fetchError instanceof TypeError) {
           const errorMessage = fetchError.message || '';
-          if (errorMessage.includes('Failed to fetch') || errorMessage.includes('fetch')) {
-            console.warn('🔗 External API unreachable (network/CORS issue):', this.apiBase, errorMessage);
+          if (errorMessage.includes('Failed to fetch')) {
+            console.warn('🔗 Failed to fetch from External API:', this.apiBase);
+            console.warn('💡 Common causes:');
+            console.warn('   1. CORS: Backend needs Access-Control-Allow-Origin headers');
+            console.warn('   2. Network: Check if the API endpoint is reachable');
+            console.warn('   3. DNS: Verify the domain can be resolved');
+            console.warn('   4. Firewall: Check if your network blocks external requests');
             return false;
           }
           console.warn('🔗 External API fetch error:', this.apiBase, errorMessage);
