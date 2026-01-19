@@ -1182,3 +1182,206 @@ export const useCreateDirectReceipt = () => {
     },
   });
 };
+
+// Create direct receipt with line items
+export const useCreateDirectReceiptWithItems = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      payment,
+      invoiceAmount,
+      subtotal,
+      taxAmount,
+      companyId,
+      customerId,
+      invoiceNumber,
+      items
+    }: {
+      payment: any;
+      invoiceAmount: number;
+      subtotal: number;
+      taxAmount: number;
+      companyId: string;
+      customerId: string;
+      invoiceNumber?: string;
+      items: any[];
+    }) => {
+      const db = getDatabase();
+
+      // Ensure created_by references the authenticated user
+      let cleanPayment = { ...payment } as any;
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const authUserId = userData?.user?.id || null;
+        if (authUserId) {
+          cleanPayment.created_by = authUserId;
+        } else if (typeof cleanPayment.created_by === 'undefined') {
+          cleanPayment.created_by = null;
+        }
+      } catch {
+        if (typeof cleanPayment.created_by === 'undefined') {
+          cleanPayment.created_by = null;
+        }
+      }
+
+      // Ensure payment has required fields
+      cleanPayment.company_id = companyId;
+      cleanPayment.customer_id = customerId;
+      if (!cleanPayment.payment_date) {
+        cleanPayment.payment_date = new Date().toISOString().split('T')[0];
+      }
+      if (!cleanPayment.payment_method) {
+        cleanPayment.payment_method = 'cash';
+      }
+
+      // Create the payment
+      const paymentInsertResult = await db.insert('payments', cleanPayment);
+      if (paymentInsertResult.error) {
+        if (String(paymentInsertResult.error.message || '').includes('created_by')) {
+          const retryPayload = { ...cleanPayment, created_by: null };
+          const retryResult = await db.insert('payments', retryPayload);
+          if (retryResult.error) throw retryResult.error;
+          if (!retryResult.id) throw new Error('Failed to create payment: no ID returned');
+        } else {
+          throw paymentInsertResult.error;
+        }
+      }
+
+      if (!paymentInsertResult.id) throw new Error('Failed to create payment: no ID returned');
+
+      // Fetch the created payment
+      const paymentSelectResult = await db.selectOne('payments', paymentInsertResult.id);
+      if (paymentSelectResult.error) throw paymentSelectResult.error;
+      if (!paymentSelectResult.data) throw new Error('Failed to fetch created payment');
+
+      const paymentData = paymentSelectResult.data as any;
+
+      // Determine invoice status based on payment amount vs invoice total
+      let invoiceStatus = 'draft';
+      let paidAmount = 0;
+      let balanceDue = invoiceAmount;
+
+      if (paymentData.amount >= invoiceAmount) {
+        invoiceStatus = 'paid';
+        paidAmount = invoiceAmount;
+        balanceDue = 0;
+      } else if (paymentData.amount > 0) {
+        invoiceStatus = 'partial';
+        paidAmount = paymentData.amount;
+        balanceDue = invoiceAmount - paymentData.amount;
+      }
+
+      // Generate invoice number if not provided
+      let finalInvoiceNumber = invoiceNumber;
+      if (!finalInvoiceNumber) {
+        try {
+          const { useGenerateDocumentNumber } = await import('@/hooks/useDatabase');
+          const generator = useGenerateDocumentNumber();
+          finalInvoiceNumber = await generator.mutateAsync({
+            companyId: companyId,
+            type: 'invoice'
+          });
+        } catch (e) {
+          finalInvoiceNumber = `INV-${Date.now()}`;
+        }
+      }
+
+      // Create auto invoice for the receipt
+      let cleanInvoice = {
+        company_id: companyId,
+        customer_id: customerId,
+        invoice_number: finalInvoiceNumber,
+        invoice_date: paymentData.payment_date,
+        due_date: paymentData.payment_date,
+        status: invoiceStatus,
+        subtotal: subtotal,
+        tax_amount: taxAmount,
+        total_amount: invoiceAmount,
+        paid_amount: paidAmount,
+        balance_due: balanceDue,
+        notes: `Direct receipt created with line items. Payment Method: ${paymentData.payment_method || 'cash'}${paymentData.reference_number ? `. Reference: ${paymentData.reference_number}` : ''}`,
+        created_by: paymentData.created_by
+      } as any;
+
+      const invoiceInsertResult = await db.insert('invoices', cleanInvoice);
+      if (invoiceInsertResult.error) {
+        if (String(invoiceInsertResult.error.message || '').includes('created_by')) {
+          const retryPayload = { ...cleanInvoice, created_by: null };
+          const retryResult = await db.insert('invoices', retryPayload);
+          if (retryResult.error) throw retryResult.error;
+          if (!retryResult.id) throw new Error('Failed to create invoice: no ID returned');
+        } else {
+          throw invoiceInsertResult.error;
+        }
+      }
+
+      if (!invoiceInsertResult.id) throw new Error('Failed to create invoice: no ID returned');
+
+      // Fetch the created invoice
+      const invoiceSelectResult = await db.selectOne('invoices', invoiceInsertResult.id);
+      if (invoiceSelectResult.error) throw invoiceSelectResult.error;
+      if (!invoiceSelectResult.data) throw new Error('Failed to fetch created invoice');
+
+      const invoiceData = invoiceSelectResult.data;
+
+      // Create invoice items
+      const invoiceItemsResult = await Promise.all(
+        items.map((item, index) =>
+          db.insert('invoice_items', {
+            invoice_id: invoiceData.id,
+            product_id: item.product_id || null,
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            discount_percentage: item.discount_percentage || 0,
+            discount_before_vat: item.discount_before_vat || 0,
+            tax_percentage: item.tax_percentage || 0,
+            tax_amount: item.tax_amount || 0,
+            tax_inclusive: item.tax_inclusive || false,
+            line_total: item.line_total,
+            sort_order: index + 1
+          })
+        )
+      );
+
+      // Check for errors in item creation
+      for (const result of invoiceItemsResult) {
+        if (result.error) {
+          console.warn('Error creating invoice item:', result.error);
+        }
+      }
+
+      // Create payment allocation linking payment to invoice
+      const allocationInsertResult = await db.insert('payment_allocations', {
+        payment_id: paymentData.id,
+        invoice_id: invoiceData.id,
+        allocated_amount: paymentData.amount,
+        allocation_date: paymentData.payment_date
+      });
+
+      if (allocationInsertResult.error) {
+        console.warn('Failed to create payment allocation:', allocationInsertResult.error);
+      }
+
+      return {
+        payment: paymentData,
+        invoice: invoiceData,
+        items: invoiceItemsResult,
+        allocation: allocationInsertResult.error ? null : { id: allocationInsertResult.id }
+      };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['payment_allocations'] });
+      queryClient.invalidateQueries({ queryKey: ['directReceipts'] });
+      toast.success(`Receipt created successfully with invoice ${data.invoice.invoice_number}`);
+    },
+    onError: (error) => {
+      const errorMessage = parseErrorMessageWithCodes(error, 'create direct receipt with items');
+      console.error('Error creating direct receipt with items:', errorMessage);
+      toast.error(`Failed to create receipt: ${errorMessage}`);
+    },
+  });
+};
