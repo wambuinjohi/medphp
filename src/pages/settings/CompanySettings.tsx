@@ -148,13 +148,18 @@ export default function CompanySettings() {
       toast.success('Logo uploaded successfully! The preview updates below.');
 
     } catch (err: any) {
-      // Only show error if no fallback was attempted
-      if (!logoUrl) {
-        // Use centralized error parsing and logging for file upload
-        logError(err, 'Logo Upload');
-        let userMessage = getUserFriendlyMessage(err, 'Failed to upload logo');
-        toast.error(userMessage);
+      // Use centralized error parsing and logging for file upload
+      logError(err, 'Logo Upload');
+      let userMessage = getUserFriendlyMessage(err, 'Failed to upload logo');
+
+      // Provide helpful suggestions
+      if (userMessage.includes('Failed to fetch') || userMessage.includes('network')) {
+        userMessage += ' - Check your internet connection or try again later.';
+      } else if (userMessage.includes('CORS')) {
+        userMessage += ' - Contact your administrator about server CORS configuration.';
       }
+
+      toast.error(userMessage);
     } finally {
       setUploading(false);
       // Clear the file input
