@@ -201,6 +201,7 @@ export default function CompanySettings() {
     try {
       console.log(`🚀 Starting upload to: ${uploadUrl}`);
       console.log(`📁 File: ${fileName} (${(file.size / 1024).toFixed(2)} KB)`);
+      console.log(`🔗 Full request URL: ${window.location.origin}${uploadUrl}`);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
