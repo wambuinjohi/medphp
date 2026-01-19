@@ -23,9 +23,19 @@ export function usePublicCompany(): UsePublicCompanyReturn {
 
       try {
         const data = await fetchPublicCompanyData();
+        if (data) {
+          console.log('✅ Company data loaded:', {
+            id: data.id,
+            name: data.name,
+            hasLogo: !!data.logo_url,
+            logoPreview: data.logo_url ? data.logo_url.substring(0, 50) + '...' : 'none'
+          });
+        }
         setCompany(data);
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to load company'));
+        const errorMsg = err instanceof Error ? err.message : 'Failed to load company';
+        console.error('❌ Failed to load company:', errorMsg);
+        setError(err instanceof Error ? err : new Error(errorMsg));
       } finally {
         setIsLoading(false);
       }
