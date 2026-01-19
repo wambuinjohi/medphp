@@ -303,71 +303,26 @@ export default function CompanySettings() {
   };
 
 
-  const validateCompanyData = (data: any) => {
-    const errors = [];
+  // Real-time validation with debounce
+  const performValidation = useCallback((data: any) => {
+    const validation = validateCompanyData(data);
+    setValidationErrors(validation);
+  }, []);
 
-    // Required fields
-    if (!data.name || !data.name.trim()) {
-      errors.push('Company name is required');
-    } else if (data.name.length > 255) {
-      errors.push('Company name must be less than 255 characters');
-    }
-
-    // Email validation
-    if (data.email && data.email.trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(data.email)) {
-        errors.push('Please enter a valid email address');
-      } else if (data.email.length > 255) {
-        errors.push('Email must be less than 255 characters');
-      }
+  // Debounced validation on field change
+  const debouncedValidate = useCallback((data: any) => {
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
     }
 
-    // Length validations for other fields
-    if (data.website && data.website.length > 255) {
-      errors.push('Website URL must be less than 255 characters');
-    }
-    if (data.phone && data.phone.length > 50) {
-      errors.push('Phone number must be less than 50 characters');
-    }
-    if (data.city && data.city.length > 100) {
-      errors.push('City must be less than 100 characters');
-    }
-    if (data.state && data.state.length > 100) {
-      errors.push('State must be less than 100 characters');
-    }
-    if (data.postal_code && data.postal_code.length > 20) {
-      errors.push('Postal code must be less than 20 characters');
-    }
-    if (data.country && data.country.length > 100) {
-      errors.push('Country must be less than 100 characters');
-    }
-    if (data.currency && data.currency.length > 3) {
-      errors.push('Currency code must be 3 characters or less');
-    }
-    if (data.currency && data.currency.length > 0 && !data.currency.match(/^[A-Z]{3}$/i)) {
-      errors.push('Currency code must be exactly 3 letters (e.g., USD, KES, EUR)');
-    }
+    validationTimeoutRef.current = setTimeout(() => {
+      performValidation(data);
+    }, 500); // Validate after 500ms of no changes
+  }, [performValidation]);
 
-    // Registration number validation
-    if (data.registration_number && data.registration_number.length > 100) {
-      errors.push('Registration number must be less than 100 characters');
-    }
-
-    // Tax number validation
-    if (data.tax_number && data.tax_number.length > 100) {
-      errors.push('Tax number must be less than 100 characters');
-    }
-
-    // Fiscal year start validation
-    if (data.fiscal_year_start) {
-      const fiscalYear = parseInt(data.fiscal_year_start);
-      if (isNaN(fiscalYear) || fiscalYear < 1 || fiscalYear > 12) {
-        errors.push('Fiscal year start must be between 1 (January) and 12 (December)');
-      }
-    }
-
-    return errors;
+  // Get field error message
+  const getFieldError = (fieldName: keyof CompanyDataValidation): string | undefined => {
+    return validationErrors?.[fieldName]?.error;
   };
 
 
