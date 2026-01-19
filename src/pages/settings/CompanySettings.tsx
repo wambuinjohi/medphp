@@ -709,11 +709,13 @@ export default function CompanySettings() {
                       placeholder="Enter company name"
                       className={getFieldError('name') ? 'border-destructive' : ''}
                     />
-                    {getFieldError('name') && (
+                    {getFieldError('name') ? (
                       <div className="flex items-center gap-2 text-sm text-destructive">
                         <AlertCircle className="h-4 w-4" />
                         {getFieldError('name')}
                       </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">The official name of your company (max 255 characters)</p>
                     )}
                   </div>
                   <div className="space-y-2">
