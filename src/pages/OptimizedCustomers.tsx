@@ -289,6 +289,11 @@ export default function OptimizedCustomers() {
     setShowInvoiceModal(true);
   }, []);
 
+  const handleCreateDirectReceipt = useCallback((customer: OptimizedCustomer) => {
+    setSelectedCustomer(customer);
+    setShowDirectReceiptModal(true);
+  }, []);
+
   const handleViewStatement = useCallback(async (customer: OptimizedCustomer) => {
     try {
       // Fetch real invoices and payments for this customer
