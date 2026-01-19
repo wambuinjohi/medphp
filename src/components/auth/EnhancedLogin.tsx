@@ -10,7 +10,6 @@ import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { toast } from 'sonner';
 import { handleAuthError } from '@/utils/authErrorHandler';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
 
 export function EnhancedLogin() {
   const { signIn, loading } = useAuth();
