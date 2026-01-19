@@ -88,7 +88,7 @@ export class ExternalAPIAdapter implements IDatabase {
         params.append(this.isProxyMode ? 'external_where' : 'where', whereParts.join(' AND '));
       }
 
-      const url = `${this.apiBase}&${params.toString()}`;
+      const url = `${this.apiBase}?${params.toString()}`;
 
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
