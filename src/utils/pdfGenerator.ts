@@ -1025,11 +1025,19 @@ export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyD
 };
 
 // Specific function for invoice PDF generation
-export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' | 'PROFORMA' = 'INVOICE', company?: CompanyDetails) => {
+export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' | 'PROFORMA' | 'RECEIPT' = 'INVOICE', company?: CompanyDetails) => {
+  let docType: 'proforma' | 'invoice' | 'receipt' = 'invoice';
+
+  if (documentType === 'PROFORMA') {
+    docType = 'proforma';
+  } else if (documentType === 'RECEIPT') {
+    docType = 'receipt';
+  }
+
   const documentData: DocumentData = {
-    type: documentType === 'PROFORMA' ? 'proforma' : 'invoice',
-    number: invoice.invoice_number,
-    date: invoice.invoice_date,
+    type: docType,
+    number: invoice.number || invoice.payment_number || invoice.invoice_number,
+    date: invoice.date || invoice.payment_date || invoice.invoice_date,
     due_date: invoice.due_date,
     lpo_number: invoice.lpo_number,
     company: company, // Pass company details
