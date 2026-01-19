@@ -51,7 +51,9 @@ export default function CompanySettings() {
   const [logoLoadError, setLogoLoadError] = useState(false);
   const [logoRefreshKey, setLogoRefreshKey] = useState(0); // Force re-render of logo image
   const [permissionError, setPermissionError] = useState<{ statusCode: number; message: string } | null>(null);
+  const [validationErrors, setValidationErrors] = useState<CompanyDataValidation | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [companyData, setCompanyData] = useState({
     name: '',
     email: '',
