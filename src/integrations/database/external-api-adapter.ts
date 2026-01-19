@@ -16,9 +16,21 @@ import type {
 export class ExternalAPIAdapter implements IDatabase {
   private apiBase: string;
   private authToken: string | null = null;
+  private isProxyMode: boolean = false;
 
   constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
-    this.apiBase = apiUrl;
+    // Use proxy mode to bypass CORS issues
+    // In development, use /proxy which is forwarded to the actual API
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      this.apiBase = '/proxy/api.php';
+      this.isProxyMode = true;
+      console.log('✅ Using PROXY MODE for CORS bypass: /proxy/api.php');
+    } else {
+      this.apiBase = apiUrl;
+      this.isProxyMode = false;
+      console.log('🌐 Using DIRECT API URL:', apiUrl);
+    }
+
     // Load token from localStorage if available
     const storedToken = localStorage.getItem('med_api_token');
     if (storedToken) {
