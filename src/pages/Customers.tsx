@@ -152,6 +152,11 @@ export default function Customers() {
     setShowInvoiceModal(true);
   };
 
+  const handleCreateDirectReceipt = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setShowDirectReceiptModal(true);
+  };
+
   const handleViewStatement = async (customer: Customer) => {
     try {
       // Fetch real invoices and payments for this customer
