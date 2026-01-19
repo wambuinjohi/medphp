@@ -156,14 +156,30 @@ export default function CompanySettings() {
     } catch (err: any) {
       // Use centralized error parsing and logging for file upload
       logError(err, 'Logo Upload');
+
+      const errorMsg = err instanceof Error ? err.message : String(err);
       let userMessage = getUserFriendlyMessage(err, 'Failed to upload logo');
 
-      // Provide helpful suggestions
-      if (userMessage.includes('Failed to fetch') || userMessage.includes('network')) {
-        userMessage += ' - Check your internet connection or try again later.';
-      } else if (userMessage.includes('CORS')) {
-        userMessage += ' - Contact your administrator about server CORS configuration.';
+      // Provide helpful suggestions based on error type
+      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('network')) {
+        userMessage = 'Cannot reach the upload server. Please check your internet connection and try again.';
+      } else if (errorMsg.includes('CORS')) {
+        userMessage = 'Server configuration issue (CORS). Please contact your administrator.';
+      } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout')) {
+        userMessage = 'Upload took too long. Please try again with a smaller file or faster connection.';
+      } else if (errorMsg.includes('Invalid response')) {
+        userMessage = 'The server returned an invalid response. The upload may have failed. Please try again.';
+      } else if (errorMsg.includes('No file URL')) {
+        userMessage = 'Upload may have failed. The server did not return a valid file URL. Please try again.';
+      } else if (errorMsg.includes('URL')) {
+        userMessage = 'The uploaded file URL is invalid. Please try uploading again.';
       }
+
+      console.error('🔴 Logo upload error:', {
+        message: errorMsg,
+        userMessage,
+        timestamp: new Date().toISOString()
+      });
 
       toast.error(userMessage);
     } finally {
