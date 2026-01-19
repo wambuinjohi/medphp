@@ -46,9 +46,10 @@ interface ViewCustomerModalProps {
   customer: Customer | null;
   onEdit: () => void;
   onCreateInvoice: () => void;
+  onCreateDirectReceipt?: () => void;
 }
 
-export function ViewCustomerModal({ open, onOpenChange, customer, onEdit, onCreateInvoice }: ViewCustomerModalProps) {
+export function ViewCustomerModal({ open, onOpenChange, customer, onEdit, onCreateInvoice, onCreateDirectReceipt }: ViewCustomerModalProps) {
   // Fetch real customer data (hooks called unconditionally to preserve hook order)
   const { data: invoices } = useCustomerInvoices(customer?.id);
   const { data: payments } = useCustomerPayments(customer?.id);
