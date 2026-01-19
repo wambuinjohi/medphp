@@ -196,9 +196,8 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async login(email: string, password: string): Promise<{ token: string; user: any; error: Error | null }> {
     try {
-      console.log(`🔐 Attempting login with external API: ${this.apiBase}?action=login`);
-
       const loginUrl = `${this.apiBase}?action=login`;
+      console.log(`🔐 Attempting login: ${loginUrl}`);
 
       try {
         const response = await fetch(loginUrl, {
