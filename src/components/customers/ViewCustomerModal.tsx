@@ -20,7 +20,8 @@ import {
   Calendar,
   FileText,
   DollarSign,
-  Activity
+  Activity,
+  Receipt
 } from 'lucide-react';
 import { useCustomerInvoices, useCustomerPayments } from '@/hooks/useDatabase';
 
