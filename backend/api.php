@@ -872,41 +872,6 @@ try {
 
         echo json_encode(['status' => 'success', 'message' => 'Table dropped']);
     }
-    elseif ($action === "sync_opportunities") {
-        // Sync opportunities - placeholder that just returns success
-        // In a real implementation, this would scrape from external sources
-        // For now, we just acknowledge the sync request
-        echo json_encode([
-            'status' => 'success',
-            'message' => 'Opportunities sync completed',
-            'synced' => 0,
-            'total' => 0
-        ]);
-    }
-    elseif ($action === "sync_discovery_leads") {
-        // Sync discovery leads - placeholder that just returns success
-        // In a real implementation, this would discover leads from APIs
-        // For now, we just acknowledge the sync request
-        echo json_encode([
-            'status' => 'success',
-            'message' => 'Discovery leads sync completed',
-            'discovered' => 0,
-            'total' => 0
-        ]);
-    }
-    elseif ($action === "cleanup_duplicates") {
-        // Cleanup duplicates in web_app_leads
-        if (!$table) {
-            throw new Exception("Missing table");
-        }
-
-        // Just return success - actual deduplication would be complex
-        echo json_encode([
-            'status' => 'success',
-            'message' => 'Cleanup completed',
-            'deleted' => 0
-        ]);
-    }
     elseif ($action === "health") {
         echo json_encode([
             'status' => 'success',
