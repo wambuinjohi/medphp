@@ -185,7 +185,6 @@ export default function CompanySettings() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('filename', fileName);
-    formData.append('action', 'upload');
 
     try {
       console.log(`🚀 Starting upload to: ${uploadUrl}`);
