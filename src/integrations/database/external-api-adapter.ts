@@ -102,7 +102,7 @@ export class ExternalAPIAdapter implements IDatabase {
         body = where;
       }
 
-      // Add timeout for fetch requests - extended to 30 seconds for slow APIs
+      // Add timeout for fetch requests - extended to 60 seconds for slow APIs
       const controller = new AbortController();
       let timeoutId: NodeJS.Timeout | null = null;
       let isTimedOut = false;
@@ -119,7 +119,7 @@ export class ExternalAPIAdapter implements IDatabase {
             console.debug('Controller abort error (ignored):', e);
           }
         }
-      }, 30000); // 30 second timeout (increased from 10s)
+      }, 60000); // 60 second timeout (increased from 30s to handle slower servers)
 
       let response: Response;
       let result: any;
@@ -148,8 +148,8 @@ export class ExternalAPIAdapter implements IDatabase {
 
         if (fetchError.name === 'AbortError') {
           if (isTimedOut) {
-            console.error(`⏱️ API request timeout after 30 seconds at ${this.apiBase}`);
-            throw new Error(`API request timeout. The server may be unresponsive or experiencing high load. Please try again.`);
+            console.error(`⏱️ API request timeout after 60 seconds at ${this.apiBase}`);
+            throw new Error(`API request timeout. The server is taking too long to respond. This may be due to high server load. Please try again.`);
           } else {
             // Signal was aborted for another reason (e.g., component unmount, network interruption)
             console.warn(`⚠️ API request was cancelled (aborted). This may indicate a network issue or the remote server is unreachable.`);
@@ -187,7 +187,27 @@ export class ExternalAPIAdapter implements IDatabase {
 
       if (!response.ok) {
         const errorMsg = result.message || `HTTP ${response.status}`;
-        console.warn(`${logPrefix} - HTTP Error ${response.status}: ${errorMsg}`);
+
+        // Provide detailed logging for specific error codes
+        if (response.status === 403) {
+          console.error(`❌ ${logPrefix} - PERMISSION DENIED (403)`);
+          console.error('🔍 Troubleshooting 403 Forbidden Error:');
+          console.error('1. User Role/Permissions:');
+          console.error(`   - Current user token: ${this.authToken ? 'Present' : 'Missing'}`);
+          console.error(`   - Check if user has permission to ${action} on ${table || 'resource'}`);
+          console.error('2. Database:');
+          console.error(`   - Verify the ${table} table exists on the backend`);
+          console.error('3. API Setup:');
+          console.error('   - Check if the backend API has proper authorization checks');
+          console.error(`   - Verify the action "${action}" is supported for table "${table}"`);
+          console.error('Raw error from API:', result);
+        } else if (response.status === 401) {
+          console.error(`❌ ${logPrefix} - UNAUTHORIZED (401)`);
+          console.error('Your authentication token may be invalid or expired. Please log in again.');
+        } else {
+          console.warn(`${logPrefix} - HTTP Error ${response.status}: ${errorMsg}`);
+        }
+
         return {
           data: null as any,
           error: new Error(errorMsg),

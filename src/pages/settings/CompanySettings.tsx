@@ -19,6 +19,7 @@ import { QuickSchemaFix } from '@/components/QuickSchemaFix';
 import { addCurrencyColumn, ADD_CURRENCY_COLUMN_SQL } from '@/utils/addCurrencyColumn';
 import { getDatabaseProvider } from '@/integrations/database';
 import { validateLogoUrl, addCacheBustingParam, sanitizeLogoUrl } from '@/utils/logoUploadUtils';
+import { PermissionErrorHelper } from '@/components/PermissionErrorHelper';
 
 export default function CompanySettings() {
   const [editingTax, setEditingTax] = useState<string | null>(null);
@@ -29,6 +30,7 @@ export default function CompanySettings() {
   const [fixingCurrency, setFixingCurrency] = useState(false);
   const [logoLoadError, setLogoLoadError] = useState(false);
   const [logoRefreshKey, setLogoRefreshKey] = useState(0); // Force re-render of logo image
+  const [permissionError, setPermissionError] = useState<{ statusCode: number; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [companyData, setCompanyData] = useState({
     name: '',
@@ -321,7 +323,27 @@ export default function CompanySettings() {
     if (data.currency && data.currency.length > 3) {
       errors.push('Currency code must be 3 characters or less');
     }
+    if (data.currency && data.currency.length > 0 && !data.currency.match(/^[A-Z]{3}$/i)) {
+      errors.push('Currency code must be exactly 3 letters (e.g., USD, KES, EUR)');
+    }
 
+    // Registration number validation
+    if (data.registration_number && data.registration_number.length > 100) {
+      errors.push('Registration number must be less than 100 characters');
+    }
+
+    // Tax number validation
+    if (data.tax_number && data.tax_number.length > 100) {
+      errors.push('Tax number must be less than 100 characters');
+    }
+
+    // Fiscal year start validation
+    if (data.fiscal_year_start) {
+      const fiscalYear = parseInt(data.fiscal_year_start);
+      if (isNaN(fiscalYear) || fiscalYear < 1 || fiscalYear > 12) {
+        errors.push('Fiscal year start must be between 1 (January) and 12 (December)');
+      }
+    }
 
     return errors;
   };
@@ -379,6 +401,15 @@ export default function CompanySettings() {
       if (companyData.currency?.trim()) {
         sanitizedData.currency = companyData.currency.trim();
       }
+      if (companyData.registration_number?.trim()) {
+        sanitizedData.registration_number = companyData.registration_number.trim();
+      }
+      if (companyData.tax_number?.trim()) {
+        sanitizedData.tax_number = companyData.tax_number.trim();
+      }
+      if (companyData.fiscal_year_start) {
+        sanitizedData.fiscal_year_start = Math.max(1, Math.min(12, parseInt(companyData.fiscal_year_start) || 1));
+      }
 
       // Remove empty strings and convert to null for optional fields
       Object.keys(sanitizedData).forEach(key => {
@@ -405,14 +436,33 @@ export default function CompanySettings() {
       // Use centralized error parsing and logging
       logError(error, 'Company Save');
       const userMessage = getUserFriendlyMessage(error, 'Failed to save company settings');
-
-      // Check if this is a schema error
       const errorString = String(error);
-      if (errorString.includes('currency') && (errorString.includes('column') || errorString.includes('schema cache'))) {
-        setSchemaError('currency column missing');
-      }
 
-      toast.error(userMessage);
+      // Check for permission error (403)
+      if (errorString.includes('403') || errorString.includes('Forbidden')) {
+        setPermissionError({
+          statusCode: 403,
+          message: userMessage,
+        });
+        toast.error(userMessage);
+      }
+      // Check for unauthorized error (401)
+      else if (errorString.includes('401') || errorString.includes('Unauthorized')) {
+        setPermissionError({
+          statusCode: 401,
+          message: userMessage,
+        });
+        toast.error(userMessage);
+      }
+      // Check if this is a schema error
+      else if (errorString.includes('currency') && (errorString.includes('column') || errorString.includes('schema cache'))) {
+        setSchemaError('currency column missing');
+        toast.error(userMessage);
+      }
+      // Other errors
+      else {
+        toast.error(userMessage);
+      }
     }
   };
 
@@ -609,6 +659,16 @@ export default function CompanySettings() {
         </div>
       </div>
 
+      {/* Permission Error Helper - Show when user lacks permissions */}
+      {permissionError && (
+        <PermissionErrorHelper
+          statusCode={permissionError.statusCode}
+          errorMessage={permissionError.message}
+          operation="update"
+          resource="company settings"
+        />
+      )}
+
       {/* Simple Currency Column Fix - Show when schema errors are detected */}
       {schemaError && !companiesError && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
@@ -646,11 +706,12 @@ export default function CompanySettings() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="company-name">Company Name</Label>
+                <Label htmlFor="company-name">Company Name *</Label>
                 <Input
                   id="company-name"
                   value={companyData.name || ''}
                   onChange={(e) => setCompanyData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter company name"
                 />
               </div>
               <div className="space-y-2">
@@ -662,6 +723,29 @@ export default function CompanySettings() {
                   onChange={(e) => setCompanyData(prev => ({ ...prev, website: e.target.value }))}
                   placeholder="https://yourcompany.com"
                 />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="registration-number">Registration Number</Label>
+                <Input
+                  id="registration-number"
+                  value={companyData.registration_number || ''}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, registration_number: e.target.value }))}
+                  placeholder="e.g., CR/2024/001"
+                />
+                <p className="text-xs text-muted-foreground">Company registration or incorporation number</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tax-number">Tax Number</Label>
+                <Input
+                  id="tax-number"
+                  value={companyData.tax_number || ''}
+                  onChange={(e) => setCompanyData(prev => ({ ...prev, tax_number: e.target.value }))}
+                  placeholder="e.g., PIN-123456789"
+                />
+                <p className="text-xs text-muted-foreground">Tax identification or VAT number</p>
               </div>
             </div>
 
@@ -933,34 +1017,46 @@ export default function CompanySettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="fiscal-year">Fiscal Year Start (Month)</Label>
-                <Input
+                <Label htmlFor="fiscal-year">Fiscal Year Start Month</Label>
+                <select
                   id="fiscal-year"
-                  type="number"
-                  min="1"
-                  max="12"
                   value={companyData.fiscal_year_start || 1}
                   onChange={(e) => setCompanyData(prev => ({ ...prev, fiscal_year_start: parseInt(e.target.value) || 1 }))}
-                />
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="1">January</option>
+                  <option value="2">February</option>
+                  <option value="3">March</option>
+                  <option value="4">April</option>
+                  <option value="5">May</option>
+                  <option value="6">June</option>
+                  <option value="7">July</option>
+                  <option value="8">August</option>
+                  <option value="9">September</option>
+                  <option value="10">October</option>
+                  <option value="11">November</option>
+                  <option value="12">December</option>
+                </select>
+                <p className="text-xs text-muted-foreground">Select the month your fiscal year begins</p>
               </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
+                <Label htmlFor="city-default">City</Label>
                 <Input
-                  id="city"
+                  id="city-default"
                   value={companyData.city || ''}
                   onChange={(e) => setCompanyData(prev => ({ ...prev, city: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
-                <Input
-                  id="country"
-                  value={companyData.country || ''}
-                  onChange={(e) => setCompanyData(prev => ({ ...prev, country: e.target.value }))}
-                />
+                <Label htmlFor="postal-code-note" className="text-muted-foreground text-sm">
+                  Note: Country is set in Company Information above
+                </Label>
+                <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
+                  Your company is in: <strong>{companyData.country || 'Kenya'}</strong>
+                </div>
               </div>
             </div>
 
