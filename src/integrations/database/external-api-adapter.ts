@@ -113,7 +113,7 @@ export class ExternalAPIAdapter implements IDatabase {
         if (!requestCompleted && !isTimedOut) {
           isTimedOut = true;
           try {
-            controller.abort();
+            controller.abort(new Error('Request timeout: 60 second limit exceeded'));
           } catch (e) {
             // Ignore errors from abort() - it may fail if already aborted
             console.debug('Controller abort error (ignored):', e);
