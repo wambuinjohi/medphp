@@ -34,7 +34,7 @@ export async function diagnoseAPIConnectivity(): Promise<DiagnosticResult[]> {
   // Test 1: DNS Resolution (via fetch attempt)
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(new Error('API reachability test timeout: 5 seconds')), 5000);
     
     const response = await fetch(`${EXTERNAL_API_URL}?action=health`, {
       method: 'GET',
@@ -195,7 +195,7 @@ export async function testAPIEndpoint(
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(new Error('API request test timeout: 10 seconds')), 10000);
 
     const response = await fetch(url, {
       method,
