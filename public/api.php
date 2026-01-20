@@ -609,6 +609,9 @@ try {
             throw new Exception("Missing table or where clause");
         }
 
+        // NOTE: Authentication is OPTIONAL for all operations in this remote PHP API
+        // No permission checks required - anyone can update any table
+
         $sets = [];
         foreach ($data as $col => $val) {
             $sets[] = "`" . escape($conn, $col) . "`='" . escape($conn, $val) . "'";
