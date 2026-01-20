@@ -46,9 +46,24 @@ export function Layout({ children }: LayoutProps) {
     }
   }, [isAuthenticated, loading]);
 
-  // Allow public access - skip auth loading check
+  // Only show sidebar and header for authenticated users
+  if (!isAuthenticated && !loading) {
+    return (
+      <>
+        <div className="flex h-screen bg-background">
+          <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
+              <Suspense fallback={null}>
+                {children}
+              </Suspense>
+            </main>
+          </div>
+        </div>
+      </>
+    );
+  }
 
-  // Show authenticated layout
+  // Show full authenticated layout with sidebar
   return (
     <>
       <AdminInventoryPermissionFix />
