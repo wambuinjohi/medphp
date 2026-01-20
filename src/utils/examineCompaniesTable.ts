@@ -5,12 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export async function examineCompaniesTable() {
   console.log('🏢 Examining companies table...');
-  
+
   try {
     // 1. Check if companies table exists and is accessible
-    const { data: companies, error: companiesError } = await supabase
-      .from('companies')
-      .select('*');
+    const { getDatabase } = await import('@/integrations/database');
+    const db = getDatabase();
+    const { data: companies, error: companiesError } = await db.select('companies');
 
     if (companiesError) {
       return {
