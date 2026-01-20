@@ -133,6 +133,88 @@ try {
     if ($action === "health") {
         echo json_encode(['status' => 'success', 'message' => 'API is healthy']);
     }
+    elseif ($action === "login") {
+        // LOGIN ENDPOINT
+        $json_body = json_decode(file_get_contents('php://input'), true) ?? [];
+        $email = $_POST['email'] ?? ($json_body['email'] ?? null);
+        $password = $_POST['password'] ?? ($json_body['password'] ?? null);
+
+        if (!$email || !$password) {
+            http_response_code(400);
+            throw new Exception("Missing email or password");
+        }
+
+        $email = escape($conn, $email);
+        $sql = "SELECT id, email, password, role FROM users WHERE email = '$email' LIMIT 1";
+        $result = $conn->query($sql);
+
+        if (!$result || $result->num_rows === 0) {
+            http_response_code(401);
+            throw new Exception("Invalid email or password");
+        }
+
+        $user = $result->fetch_assoc();
+
+        // Support both bcrypt and MD5 hashes for backwards compatibility
+        $passwordMatch = verifyPassword($password, $user['password']) ||
+                        ($user['password'] === md5($password)) ||
+                        ($user['password'] === $password);
+
+        if (!$passwordMatch) {
+            http_response_code(401);
+            throw new Exception("Invalid email or password");
+        }
+
+        // Create JWT token
+        $token = createJWT($user['id'], $user['email'], $user['role']);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Login successful',
+            'token' => $token,
+            'user' => [
+                'id' => $user['id'],
+                'email' => $user['email'],
+                'role' => $user['role']
+            ]
+        ]);
+    }
+    elseif ($action === "logout") {
+        // LOGOUT ENDPOINT
+        echo json_encode(['status' => 'success', 'message' => 'Logout successful']);
+    }
+    elseif ($action === "check_auth") {
+        // CHECK AUTH ENDPOINT
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+        $token = null;
+
+        if ($auth_header && preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
+            $token = $matches[1];
+        }
+
+        // Fallback to POST data for compatibility
+        if (!$token) {
+            $token = $_POST['token'] ?? null;
+        }
+
+        if (!$token) {
+            http_response_code(401);
+            throw new Exception("Not authenticated");
+        }
+
+        $decoded = verifyJWT($token);
+        if (!$decoded) {
+            http_response_code(401);
+            throw new Exception("Not authenticated");
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'id' => $decoded['sub'],
+            'email' => $decoded['email'],
+            'role' => $decoded['role']
+        ]);
+    }
     elseif ($action === "upload_file") {
         // FILE UPLOAD - No authentication required
         if (!isset($_FILES['file'])) {
