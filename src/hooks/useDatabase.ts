@@ -768,7 +768,10 @@ export function useCreateCustomer() {
  * @param customerId - Customer ID
  */
 export function useCustomerInvoices(customerId?: string) {
-  const filter = customerId ? { customer_id: customerId } : undefined;
+  const filter = useMemo(() =>
+    customerId ? { customer_id: customerId } : undefined,
+    [customerId]
+  );
   return useSelect('invoices', filter);
 }
 
@@ -777,7 +780,10 @@ export function useCustomerInvoices(customerId?: string) {
  * @param customerId - Customer ID
  */
 export function useCustomerPayments(customerId?: string) {
-  const filter = customerId ? { customer_id: customerId } : undefined;
+  const filter = useMemo(() =>
+    customerId ? { customer_id: customerId } : undefined,
+    [customerId]
+  );
   return useSelect('payments', filter);
 }
 
