@@ -478,19 +478,33 @@ export default function CompanySettings() {
 
       // Check for permission error (403)
       if (errorString.includes('403') || errorString.includes('Forbidden')) {
+        // Provide specific guidance based on authorization status
+        let detailedMessage = userMessage;
+
+        if (!currentUser?.role?.toLowerCase().includes('admin')) {
+          detailedMessage = 'You do not have permission to update company settings. Your account must have an admin role.';
+        } else if (currentUser?.status !== 'active') {
+          detailedMessage = 'Your account is not active. Contact your administrator to activate it.';
+        } else if (!currentUser?.company_id) {
+          detailedMessage = 'Your account is not assigned to a company. Contact your administrator to assign you to a company.';
+        } else if (currentCompany?.id && currentUser?.company_id !== currentCompany.id) {
+          detailedMessage = `Company ID mismatch. You are assigned to company ${currentUser.company_id} but trying to edit company ${currentCompany.id}.`;
+        }
+
         setPermissionError({
           statusCode: 403,
-          message: userMessage,
+          message: detailedMessage,
         });
-        toast.error(userMessage);
+        toast.error(detailedMessage);
       }
       // Check for unauthorized error (401)
       else if (errorString.includes('401') || errorString.includes('Unauthorized')) {
+        const detailedMessage = 'Your authentication token is invalid or expired. Please log out and log in again.';
         setPermissionError({
           statusCode: 401,
-          message: userMessage,
+          message: detailedMessage,
         });
-        toast.error(userMessage);
+        toast.error(detailedMessage);
       }
       // Check if this is a schema error
       else if (errorString.includes('currency') && (errorString.includes('column') || errorString.includes('schema cache'))) {
