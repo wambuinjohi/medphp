@@ -242,7 +242,7 @@ export default function SalesReports() {
   const calculateStats = () => {
     const filteredInvoices = getFilteredInvoices();
     const allInvoices = invoices || [];
-    
+
     if (!allInvoices.length) return { dailySales: 0, monthlySales: 0, yearlySales: 0, totalInvoices: 0 };
 
     const now = new Date();
@@ -253,15 +253,15 @@ export default function SalesReports() {
     // For daily/monthly/yearly stats, use all invoices (not filtered by date range)
     const dailySales = allInvoices
       .filter(inv => new Date(inv.invoice_date) >= today)
-      .reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+      .reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0);
 
     const monthlySales = allInvoices
       .filter(inv => new Date(inv.invoice_date) >= thirtyDaysAgo)
-      .reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+      .reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0);
 
     const yearlySales = allInvoices
       .filter(inv => new Date(inv.invoice_date) >= yearStart)
-      .reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+      .reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0);
 
     return {
       dailySales,
