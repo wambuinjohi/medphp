@@ -60,17 +60,15 @@ export const useUserManagement = () => {
 
     try {
       console.log('Fetching users for company:', currentUser?.company_id);
-      const query = supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const db = getDatabase();
 
-      // If admin belongs to a company, limit to that company. Super-admins without company can fetch all users.
+      // Build filter based on company_id if user has one
+      let filter: Record<string, any> = {};
       if (currentUser?.company_id) {
-        query.eq('company_id', currentUser.company_id);
+        filter.company_id = currentUser.company_id;
       }
 
-      const { data, error } = await query;
+      const { data, error } = await db.select('profiles', filter);
 
       if (error) {
         console.error('Error fetching users:', error);
@@ -78,7 +76,7 @@ export const useUserManagement = () => {
       }
 
       console.log('Fetched users:', data?.length || 0, 'users');
-      setUsers(data || []);
+      setUsers((data || []) as UserProfile[]);
     } catch (err) {
       console.error('Error fetching users:', err);
       let errorMessage = 'Unknown error occurred';
