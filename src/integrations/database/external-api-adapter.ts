@@ -83,6 +83,18 @@ export class ExternalAPIAdapter implements IDatabase {
 
       const url = `${this.apiBase}?${params.toString()}`;
 
+      // Log for companies update debugging
+      if (action === 'update' && table === 'companies') {
+        console.log(`🔗 API Request for company update:`, {
+          url: url.substring(0, 100), // Truncate for readability
+          method,
+          action,
+          table,
+          authTokenPresent: !!this.authToken,
+          bodyDataKeys: data ? Object.keys(data as any) : [],
+        });
+      }
+
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
@@ -203,7 +215,16 @@ export class ExternalAPIAdapter implements IDatabase {
           console.error('3. API Setup:');
           console.error('   - Check if the backend API has proper authorization checks');
           console.error(`   - Verify the action "${action}" is supported for table "${table}"`);
-          console.error('Raw error from API:', result);
+          console.error('Backend response details:', {
+            status: response.status,
+            statusText: response.statusText,
+            message: result?.message,
+            error: result?.error,
+            details: result?.details,
+            hint: result?.hint,
+            code: result?.code,
+            fullResponse: result,
+          });
         } else if (response.status === 401) {
           console.error(`❌ ${logPrefix} - UNAUTHORIZED (401)`);
           console.error('Your authentication token may be invalid or expired. Please log in again.');
@@ -500,9 +521,20 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async update<T>(table: string, id: string, data: Partial<T>): Promise<UpdateResult> {
     try {
+      console.log(`📝 Updating ${table} record:`, {
+        table,
+        id,
+        dataKeys: Object.keys(data as any || {}),
+        authTokenPresent: !!this.authToken,
+        dataSize: JSON.stringify(data).length,
+      });
       const { error } = await this.apiCall('PUT', 'update', table, data, { id });
+      if (error) {
+        console.error(`❌ Update error for ${table}/${id}:`, error.message);
+      }
       return { error };
     } catch (error) {
+      console.error(`❌ Update exception for ${table}/${id}:`, error);
       return { error: error as Error };
     }
   }

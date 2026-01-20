@@ -15,6 +15,7 @@ import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ForceTaxSettings } from '@/components/ForceTaxSettings';
+import { CompanySettingsDiagnostics } from '@/components/CompanySettingsDiagnostics';
 import { getUserFriendlyMessage, logError } from '@/utils/errorParser';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { QuickSchemaFix } from '@/components/QuickSchemaFix';
@@ -119,12 +120,27 @@ export default function CompanySettings() {
 
   // Debug logging and schema check
   useEffect(() => {
+    console.log('=== Company Settings Debug Info ===');
+    console.log('Current user:', {
+      email: currentUser?.email,
+      role: currentUser?.role,
+      company_id: currentUser?.company_id,
+      status: currentUser?.status,
+    });
     console.log('Current company:', currentCompany);
     console.log('Companies loading:', companiesLoading);
     console.log('Companies error:', companiesError);
     console.log('Tax settings:', taxSettings);
     console.log('Tax settings loading:', taxSettingsLoading);
     console.log('Tax settings error:', taxSettingsError);
+
+    // Check for company_id mismatch
+    if (currentCompany && currentUser?.company_id && currentCompany.id !== currentUser.company_id) {
+      console.warn('⚠️ COMPANY ID MISMATCH:', {
+        userCompanyId: currentUser.company_id,
+        editingCompanyId: currentCompany.id,
+      });
+    }
 
     // Check for schema errors in the companies query
     if (companiesError) {
@@ -311,15 +327,17 @@ export default function CompanySettings() {
       console.log('✅ Upload successful. File URL:', fileUrl);
       return fileUrl;
     } catch (error) {
+      // Handle DOMException (AbortError from AbortController)
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new Error('Upload failed: Request timeout (> 30 seconds). The server may be slow.');
+      }
+
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.error('❌ Upload error:', errorMsg);
 
       // Provide helpful error messages
       if (errorMsg.includes('Failed to fetch')) {
         throw new Error('Upload failed: Cannot reach the upload server. Check your connection or CORS configuration.');
-      }
-      if (errorMsg.includes('AbortError')) {
-        throw new Error('Upload failed: Request timeout (> 30 seconds). The server may be slow.');
       }
 
       throw new Error(`Upload failed: ${errorMsg}`);
@@ -460,19 +478,45 @@ export default function CompanySettings() {
 
       // Check for permission error (403)
       if (errorString.includes('403') || errorString.includes('Forbidden')) {
+        // Log detailed info for debugging
+        console.error('🔍 403 Permission Denied Details:', {
+          userRole: currentUser?.role,
+          userStatus: currentUser?.status,
+          userCompanyId: currentUser?.company_id,
+          editingCompanyId: currentCompany?.id,
+          editingCompanyName: currentCompany?.name,
+          authTokenPresent: !!localStorage.getItem('med_api_token'),
+        });
+
+        // Provide specific guidance based on authorization status
+        let detailedMessage = userMessage;
+
+        if (!currentUser?.role?.toLowerCase().includes('admin')) {
+          detailedMessage = 'You do not have permission to update company settings. Your account must have an admin role. Current role: ' + (currentUser?.role || 'Not set');
+        } else if (currentUser?.status !== 'active') {
+          detailedMessage = 'Your account is not active. Current status: ' + (currentUser?.status || 'Not set') + '. Contact your administrator to activate it.';
+        } else if (!currentUser?.company_id) {
+          detailedMessage = 'Your account is not assigned to a company. Contact your administrator to assign you to a company.';
+        } else if (currentCompany?.id && currentUser?.company_id !== currentCompany.id) {
+          detailedMessage = `Company ID mismatch. You are assigned to company ${currentUser.company_id} but trying to edit company ${currentCompany.id}. Contact your administrator to verify your company assignment.`;
+        } else {
+          detailedMessage = `Authorization failed while updating company "${currentCompany?.name}". This may be a backend authorization issue. Please check the browser console for more details and contact your administrator if the issue persists.`;
+        }
+
         setPermissionError({
           statusCode: 403,
-          message: userMessage,
+          message: detailedMessage,
         });
-        toast.error(userMessage);
+        toast.error(detailedMessage);
       }
       // Check for unauthorized error (401)
       else if (errorString.includes('401') || errorString.includes('Unauthorized')) {
+        const detailedMessage = 'Your authentication token is invalid or expired. Please log out and log in again.';
         setPermissionError({
           statusCode: 401,
-          message: userMessage,
+          message: detailedMessage,
         });
-        toast.error(userMessage);
+        toast.error(detailedMessage);
       }
       // Check if this is a schema error
       else if (errorString.includes('currency') && (errorString.includes('column') || errorString.includes('schema cache'))) {
@@ -681,12 +725,24 @@ export default function CompanySettings() {
 
       {/* Permission Error Helper - Show when user lacks permissions */}
       {permissionError && (
-        <PermissionErrorHelper
-          statusCode={permissionError.statusCode}
-          errorMessage={permissionError.message}
-          operation="update"
-          resource="company settings"
-        />
+        <>
+          <PermissionErrorHelper
+            statusCode={permissionError.statusCode}
+            errorMessage={permissionError.message}
+            operation="update"
+            resource="company settings"
+          />
+          <div className="mt-4">
+            <CompanySettingsDiagnostics currentCompany={currentCompany} />
+          </div>
+        </>
+      )}
+
+      {/* Diagnostic Info - Always show for debugging */}
+      {!permissionError && (
+        <div className="mb-4">
+          <CompanySettingsDiagnostics currentCompany={currentCompany} />
+        </div>
       )}
 
       {/* Simple Currency Column Fix - Show when schema errors are detected */}

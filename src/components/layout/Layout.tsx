@@ -46,8 +46,8 @@ export function Layout({ children }: LayoutProps) {
     }
   }, [isAuthenticated, loading]);
 
-  // Only show sidebar and header for authenticated users
-  if (!isAuthenticated && !loading) {
+  // Show unauthenticated layout (no sidebar) for non-authenticated users or while loading
+  if (!isAuthenticated) {
     return (
       <>
         <div className="flex h-screen bg-background">
@@ -63,7 +63,7 @@ export function Layout({ children }: LayoutProps) {
     );
   }
 
-  // Show full authenticated layout with sidebar
+  // Show full authenticated layout with sidebar only for authenticated users
   return (
     <>
       <AdminInventoryPermissionFix />
