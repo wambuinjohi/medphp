@@ -351,13 +351,23 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      console.log('Attempting to update user:', { userId, userData });
+
+      const response = await supabase
         .from('profiles')
         .update(userData)
-        .eq('id', userId);
+        .eq('id', userId)
+        .select();
 
-      if (error) {
-        throw error;
+      console.log('Supabase update response:', response);
+
+      if (response.error) {
+        console.error('Supabase returned error:', response.error);
+        throw response.error;
+      }
+
+      if (!response.data || response.data.length === 0) {
+        throw new Error('Update failed: No rows were updated. This may indicate a permissions issue (RLS policy) or the user ID does not exist.');
       }
 
       toast.success('User updated successfully');
@@ -366,6 +376,7 @@ export const useUserManagement = () => {
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'user update');
       console.error('Error updating user:', err);
+      console.error('Full error object:', JSON.stringify(err, null, 2));
       toast.error(`Failed to update user: ${errorMessage}`);
       return { success: false, error: errorMessage };
     } finally {
