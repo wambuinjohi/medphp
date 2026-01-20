@@ -45,6 +45,7 @@ import { useCurrentCompanyId } from '@/contexts/CompanyContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTransportFinance } from '@/hooks/useTransport';
 import { toast } from 'sonner';
+import { Document, Packer, Table as DocTable, TableCell as DocTableCell, TableRow as DocTableRow, Paragraph, AlignmentType, BorderStyle } from 'docx';
 import {
   calculateTradingPLMetrics,
   calculateMonthlySalesData,
