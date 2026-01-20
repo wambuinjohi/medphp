@@ -43,11 +43,7 @@ export function Layout({ children }: LayoutProps) {
     }
   }, [isAuthenticated, loading]);
 
-  // Show login if not authenticated
-  if (!loading && !isAuthenticated) {
-    return <EnhancedLogin />;
-  }
-
+  // Skip loading check for non-authenticated users (allow public access)
   if (loading && isAuthenticated) {
     return (
       <div className="min-h-screen bg-background p-6">
