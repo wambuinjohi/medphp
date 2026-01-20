@@ -18,8 +18,9 @@ export interface UploadResult {
   message?: string;
 }
 
-const UPLOAD_BASE_URL = 'https://med.wayrus.co.ke/uploads';
-const API_URL = 'https://med.wayrus.co.ke/api.php';
+// Use proxy endpoints to avoid CORS issues
+const UPLOAD_BASE_URL = '/api/uploads';
+const API_URL = '/api';
 
 /**
  * Upload a file directly to the server
