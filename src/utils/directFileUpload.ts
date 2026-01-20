@@ -167,7 +167,8 @@ export function getPublicUrl(path: string): string {
  */
 export async function deleteFile(path: string): Promise<UploadResult> {
   try {
-    const response = await fetch(`${API_URL}?action=delete_file`, {
+    // Use proxy endpoint to avoid CORS issues
+    const response = await fetch(`/api?action=delete_file`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
