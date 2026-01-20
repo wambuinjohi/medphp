@@ -11,8 +11,6 @@ import { handleAuthError } from '@/utils/authErrorHandler';
 
 export function SimpleLogin() {
   const { signIn, loading } = useAuth();
-  const { currentCompany } = useCurrentCompany();
-  const companyName = currentCompany?.name || '>> Medical Supplies';
 
   const [formData, setFormData] = useState({
     email: '',
