@@ -155,7 +155,7 @@ class ExternalAPIAuthHandler {
     }
 
     try {
-      const response = await fetch(`${this.apiUrl}?action=check_auth`, {
+      const response = await fetch(`${this.fetchUrl}?action=check_auth`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -202,7 +202,7 @@ class ExternalAPIAuthHandler {
     }
 
     try {
-      const response = await fetch(`${this.apiUrl}?action=create&table=users`, {
+      const response = await fetch(`${this.fetchUrl}?action=create&table=users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -239,7 +239,7 @@ class ExternalAPIAuthHandler {
     }
 
     try {
-      const response = await fetch(`${this.apiUrl}?action=update&table=users`, {
+      const response = await fetch(`${this.fetchUrl}?action=update&table=users`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -274,7 +274,7 @@ class ExternalAPIAuthHandler {
    */
   async setupAdmin(email: string, password: string): Promise<{ user?: any; error?: Error }> {
     try {
-      const response = await fetch(`${this.apiUrl}?action=setup`, {
+      const response = await fetch(`${this.fetchUrl}?action=setup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
