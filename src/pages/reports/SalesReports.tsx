@@ -141,7 +141,7 @@ export default function SalesReports() {
         return invoiceDate >= monthStart && invoiceDate <= monthEnd;
       });
 
-      const monthlySales = monthInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+      const monthlySales = monthInvoices.reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0);
       const uniqueCustomers = new Set(monthInvoices.map(inv => inv.customer_id)).size;
 
       last6Months.push({
@@ -167,7 +167,7 @@ export default function SalesReports() {
         invoice.invoice_items.forEach((item: any) => {
           const productId = item.product_id;
           const productName = products.find(p => p.id === productId)?.name || 'Unknown Product';
-          const itemTotal = (item.quantity || 0) * (item.unit_price || 0);
+          const itemTotal = (parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0);
 
           if (productSales.has(productId)) {
             productSales.set(productId, {
@@ -206,18 +206,19 @@ export default function SalesReports() {
     filteredInvoices.forEach(invoice => {
       const customerId = invoice.customer_id;
       const customerName = customers.find(c => c.id === customerId)?.name || 'Unknown Customer';
+      const totalAmount = parseFloat(invoice.total_amount) || 0;
 
       if (customerSales.has(customerId)) {
         const existing = customerSales.get(customerId);
         customerSales.set(customerId, {
           name: customerName,
-          sales: existing.sales + (invoice.total_amount || 0),
+          sales: existing.sales + totalAmount,
           invoices: existing.invoices + 1
         });
       } else {
         customerSales.set(customerId, {
           name: customerName,
-          sales: invoice.total_amount || 0,
+          sales: totalAmount,
           invoices: 1
         });
       }
@@ -241,7 +242,7 @@ export default function SalesReports() {
   const calculateStats = () => {
     const filteredInvoices = getFilteredInvoices();
     const allInvoices = invoices || [];
-    
+
     if (!allInvoices.length) return { dailySales: 0, monthlySales: 0, yearlySales: 0, totalInvoices: 0 };
 
     const now = new Date();
@@ -252,15 +253,15 @@ export default function SalesReports() {
     // For daily/monthly/yearly stats, use all invoices (not filtered by date range)
     const dailySales = allInvoices
       .filter(inv => new Date(inv.invoice_date) >= today)
-      .reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+      .reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0);
 
     const monthlySales = allInvoices
       .filter(inv => new Date(inv.invoice_date) >= thirtyDaysAgo)
-      .reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+      .reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0);
 
     const yearlySales = allInvoices
       .filter(inv => new Date(inv.invoice_date) >= yearStart)
-      .reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+      .reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0);
 
     return {
       dailySales,
@@ -731,7 +732,7 @@ export default function SalesReports() {
                 <span className="text-sm text-muted-foreground">Average Order Value</span>
                 <span className="font-medium">
                   {formatCurrency(invoices && invoices.length > 0
-                    ? (invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0) / invoices.length)
+                    ? (invoices.reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0) / invoices.length)
                     : 0
                   )}
                 </span>
