@@ -210,10 +210,14 @@ export async function createUserViaAPI(
     options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
   const { onProgress } = options;
 
+  // Use proxy for default API, direct URL for custom APIs
+  const isDefaultApi = !apiUrl || apiUrl.includes('med.wayrus.co.ke') || apiUrl === import.meta.env.VITE_EXTERNAL_API_URL;
+  const fetchUrl = isDefaultApi ? '/api' : apiUrl.replace(/\/api\.php$/, '') + '/api.php';
+
   try {
     onProgress?.(`Creating user: ${email}`);
 
-    const response = await fetch(`${apiUrl}?action=create&table=users`, {
+    const response = await fetch(`${fetchUrl}?action=create&table=users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
