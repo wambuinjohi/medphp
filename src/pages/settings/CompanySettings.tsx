@@ -119,12 +119,27 @@ export default function CompanySettings() {
 
   // Debug logging and schema check
   useEffect(() => {
+    console.log('=== Company Settings Debug Info ===');
+    console.log('Current user:', {
+      email: currentUser?.email,
+      role: currentUser?.role,
+      company_id: currentUser?.company_id,
+      status: currentUser?.status,
+    });
     console.log('Current company:', currentCompany);
     console.log('Companies loading:', companiesLoading);
     console.log('Companies error:', companiesError);
     console.log('Tax settings:', taxSettings);
     console.log('Tax settings loading:', taxSettingsLoading);
     console.log('Tax settings error:', taxSettingsError);
+
+    // Check for company_id mismatch
+    if (currentCompany && currentUser?.company_id && currentCompany.id !== currentUser.company_id) {
+      console.warn('⚠️ COMPANY ID MISMATCH:', {
+        userCompanyId: currentUser.company_id,
+        editingCompanyId: currentCompany.id,
+      });
+    }
 
     // Check for schema errors in the companies query
     if (companiesError) {
