@@ -2,7 +2,6 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { CompanyProvider } from '@/contexts/CompanyContext';
 import { AuthErrorBoundary } from '@/components/auth/AuthErrorBoundary';
 import { AuthStatusIndicator } from '@/components/auth/AuthStatusIndicator';
 import { enableResizeObserverErrorSuppression } from '@/utils/resizeObserverErrorHandler';
