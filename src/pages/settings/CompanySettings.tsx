@@ -311,15 +311,17 @@ export default function CompanySettings() {
       console.log('✅ Upload successful. File URL:', fileUrl);
       return fileUrl;
     } catch (error) {
+      // Handle DOMException (AbortError from AbortController)
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new Error('Upload failed: Request timeout (> 30 seconds). The server may be slow.');
+      }
+
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.error('❌ Upload error:', errorMsg);
 
       // Provide helpful error messages
       if (errorMsg.includes('Failed to fetch')) {
         throw new Error('Upload failed: Cannot reach the upload server. Check your connection or CORS configuration.');
-      }
-      if (errorMsg.includes('AbortError')) {
-        throw new Error('Upload failed: Request timeout (> 30 seconds). The server may be slow.');
       }
 
       throw new Error(`Upload failed: ${errorMsg}`);
