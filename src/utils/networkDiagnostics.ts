@@ -117,11 +117,16 @@ export async function testCORSPreflight(apiUrl: string = '/api'): Promise<Diagno
       };
     }
   } catch (error: any) {
+    let errorMessage = error.message;
+    if (error.name === 'AbortError') {
+      const abortReason = error.reason?.message || 'timeout';
+      errorMessage = `Timeout: ${abortReason}`;
+    }
     return {
       test: 'CORS Preflight',
       status: 'failed',
       message: '❌ CORS preflight failed',
-      details: { error: error.message },
+      details: { error: errorMessage },
     };
   }
 }
