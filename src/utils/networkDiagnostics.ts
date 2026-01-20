@@ -48,8 +48,10 @@ export async function testAPIConnectivity(apiUrl: string = '/api'): Promise<Diag
     let details: any = { url: apiUrl };
 
     if (error.name === 'AbortError') {
-      message = '❌ API request timed out (5 seconds) - Backend may be slow or unreachable';
+      const abortReason = error.reason?.message || error.message || 'timeout';
+      message = `❌ API request timed out (5 seconds) - Backend may be slow or unreachable. Reason: ${abortReason}`;
       details.reason = 'timeout';
+      details.abortReason = abortReason;
     } else if (error instanceof TypeError && error.message === 'Failed to fetch') {
       message = '❌ Failed to fetch - Check firewall, corporate proxy, or network connectivity';
       details.reason = 'failed_to_fetch';
