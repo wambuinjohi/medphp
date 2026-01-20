@@ -46,6 +46,7 @@ import AdminInitExternal from "./pages/AdminInitExternal";
 import DatabaseManagementAdmin from "./pages/DatabaseManagementAdmin";
 import { APIDiagnosticsPage } from "./pages/APIDiagnosticsPage";
 import PaymentMethods from "./pages/settings/PaymentMethods";
+import Login from "./pages/Login";
 
 const App = () => {
 
@@ -69,6 +70,9 @@ const App = () => {
         <Route path="/debug/database" element={<DatabaseDebug />} />
         <Route path="/debug/api" element={<APIDiagnosticsPage />} />
 
+        {/* Login route - Accessible without authentication */}
+        <Route path="/login" element={<Login />} />
+
         {/* All other routes wrapped in Layout */}
         <Route
           path="*"
@@ -83,7 +87,7 @@ const App = () => {
                 <Route
                   path="/app"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Index />
                     </ProtectedRoute>
                   }
@@ -93,7 +97,7 @@ const App = () => {
                 <Route
                   path="/app/quotations"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Quotations />
                     </ProtectedRoute>
                   }
@@ -101,7 +105,7 @@ const App = () => {
                 <Route
                   path="/app/quotations/new"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Quotations />
                     </ProtectedRoute>
                   }
@@ -109,7 +113,7 @@ const App = () => {
                 <Route
                   path="/app/customers"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Customers />
                     </ProtectedRoute>
                   }
@@ -117,7 +121,7 @@ const App = () => {
                 <Route
                   path="/app/customers/new"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Customers />
                     </ProtectedRoute>
                   }
@@ -127,7 +131,7 @@ const App = () => {
                 <Route
                   path="/app/invoices"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Invoices />
                     </ProtectedRoute>
                   }
@@ -135,7 +139,7 @@ const App = () => {
                 <Route
                   path="/app/invoices/new"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Invoices />
                     </ProtectedRoute>
                   }
@@ -143,7 +147,7 @@ const App = () => {
                 <Route
                   path="/app/direct-receipts"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <DirectReceipts />
                     </ProtectedRoute>
                   }
@@ -151,7 +155,7 @@ const App = () => {
                 <Route
                   path="/app/direct-receipts/new"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <DirectReceipts />
                     </ProtectedRoute>
                   }
@@ -159,7 +163,7 @@ const App = () => {
                 <Route
                   path="/app/payments"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Payments />
                     </ProtectedRoute>
                   }
@@ -167,7 +171,7 @@ const App = () => {
                 <Route
                   path="/app/payments/new"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Payments />
                     </ProtectedRoute>
                   }
@@ -175,7 +179,7 @@ const App = () => {
                 <Route
                   path="/app/credit-notes"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <CreditNotes />
                     </ProtectedRoute>
                   }
@@ -183,7 +187,7 @@ const App = () => {
                 <Route
                   path="/app/credit-notes/new"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <CreditNotes />
                     </ProtectedRoute>
                   }
@@ -191,7 +195,7 @@ const App = () => {
                 <Route
                   path="/app/proforma"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Proforma />
                     </ProtectedRoute>
                   }
@@ -200,7 +204,7 @@ const App = () => {
                 <Route
                   path="/app/admin/audit-logs"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true} requiredRole="admin">
                       <AuditLogs />
                     </ProtectedRoute>
                   }
@@ -209,7 +213,7 @@ const App = () => {
                 <Route
                   path="/app/admin/database"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true} requiredRole="admin">
                       <DatabaseManagementAdmin />
                     </ProtectedRoute>
                   }
@@ -219,7 +223,7 @@ const App = () => {
                 <Route
                   path="/app/lpos"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <LPOs />
                     </ProtectedRoute>
                   }
@@ -227,7 +231,7 @@ const App = () => {
                 <Route
                   path="/app/lpos/new"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <LPOs />
                     </ProtectedRoute>
                   }
@@ -235,7 +239,7 @@ const App = () => {
                 <Route
                   path="/app/suppliers"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Suppliers />
                     </ProtectedRoute>
                   }
@@ -243,7 +247,7 @@ const App = () => {
                 <Route
                   path="/app/inventory"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Inventory />
                     </ProtectedRoute>
                   }
@@ -251,7 +255,7 @@ const App = () => {
                 <Route
                   path="/app/inventory/new"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Inventory />
                     </ProtectedRoute>
                   }
@@ -259,7 +263,7 @@ const App = () => {
                 <Route
                   path="/app/stock-movements"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <StockMovements />
                     </ProtectedRoute>
                   }
@@ -267,7 +271,7 @@ const App = () => {
                 <Route
                   path="/app/delivery-notes"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <DeliveryNotes />
                     </ProtectedRoute>
                   }
@@ -277,7 +281,7 @@ const App = () => {
                 <Route
                   path="/app/transport"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Transport />
                     </ProtectedRoute>
                   }
@@ -285,7 +289,7 @@ const App = () => {
                 <Route
                   path="/app/transport/drivers"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Transport initialTab="drivers" />
                     </ProtectedRoute>
                   }
@@ -293,7 +297,7 @@ const App = () => {
                 <Route
                   path="/app/transport/vehicles"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Transport initialTab="vehicles" />
                     </ProtectedRoute>
                   }
@@ -301,7 +305,7 @@ const App = () => {
                 <Route
                   path="/app/transport/materials"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Transport initialTab="materials" />
                     </ProtectedRoute>
                   }
@@ -309,7 +313,7 @@ const App = () => {
                 <Route
                   path="/app/transport/finance"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <Transport initialTab="finance" />
                     </ProtectedRoute>
                   }
@@ -319,7 +323,7 @@ const App = () => {
                 <Route
                   path="/app/remittance"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <RemittanceAdvice />
                     </ProtectedRoute>
                   }
@@ -329,7 +333,7 @@ const App = () => {
                 <Route
                   path="/app/reports/sales"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <SalesReports />
                     </ProtectedRoute>
                   }
@@ -337,7 +341,7 @@ const App = () => {
                 <Route
                   path="/app/reports/inventory"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <InventoryReports />
                     </ProtectedRoute>
                   }
@@ -345,7 +349,7 @@ const App = () => {
                 <Route
                   path="/app/reports/statements"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <StatementOfAccounts />
                     </ProtectedRoute>
                   }
@@ -353,7 +357,7 @@ const App = () => {
                 <Route
                   path="/app/reports/trading-pl"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <TradingPLReport />
                     </ProtectedRoute>
                   }
@@ -361,7 +365,7 @@ const App = () => {
                 <Route
                   path="/app/reports/transport-pl"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <TransportPLReport />
                     </ProtectedRoute>
                   }
@@ -369,7 +373,7 @@ const App = () => {
                 <Route
                   path="/app/reports/consolidated-pl"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <ConsolidatedPLReport />
                     </ProtectedRoute>
                   }
@@ -379,7 +383,7 @@ const App = () => {
                 <Route
                   path="/app/web-manager"
                   element={
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requireAuth={true} requiredRole="admin">
                       <WebManager />
                     </ProtectedRoute>
                   }
@@ -389,7 +393,7 @@ const App = () => {
                 <Route
                   path="/app/settings/company"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <CompanySettings />
                     </ProtectedRoute>
                   }
@@ -397,7 +401,7 @@ const App = () => {
                 <Route
                   path="/app/settings/users"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <UserManagement />
                     </ProtectedRoute>
                   }
@@ -405,7 +409,7 @@ const App = () => {
                 <Route
                   path="/app/settings/payment-methods"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <PaymentMethods />
                     </ProtectedRoute>
                   }
@@ -413,7 +417,7 @@ const App = () => {
                 <Route
                   path="/app/settings/database-roles"
                   element={
-                    <ProtectedRoute requiredRole="admin">
+                    <ProtectedRoute requireAuth={true} requiredRole="admin">
                       <DatabaseRolesSettings />
                     </ProtectedRoute>
                   }
@@ -422,7 +426,7 @@ const App = () => {
                 <Route
                   path="/app/setup-test"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <SetupAndTest />
                     </ProtectedRoute>
                   }
@@ -438,7 +442,7 @@ const App = () => {
                 <Route
                   path="/app/optimized-inventory"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <OptimizedInventory />
                     </ProtectedRoute>
                   }
@@ -451,7 +455,7 @@ const App = () => {
                 <Route
                   path="/app/optimized-customers"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute requireAuth={true}>
                       <OptimizedCustomers />
                     </ProtectedRoute>
                   }
