@@ -1219,7 +1219,6 @@ export function useCreateOverpaymentCreditNote() {
           notes: `Overpayment credit note for payment reference: ${overpaymentData.payment_reference}`
         };
 
-        const db = getDatabase();
         const { id: creditNoteId, error: createError } = await db.insert('credit_notes', creditNoteRecord);
 
         if (createError) {
