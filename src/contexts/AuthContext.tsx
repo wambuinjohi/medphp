@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start as not loading for public access
   const [initialized, setInitialized] = useState(false);
 
   // Use refs to prevent stale closures and unnecessary re-renders
@@ -404,7 +404,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Compute derived state
-  const isAuthenticated = !!user && profile?.status === 'active';
+  // Allow public access - authentication is optional
+  const isAuthenticated = true;
   // Treat any role containing 'admin' (case-insensitive) as administrator (covers 'admin', 'super_admin', etc.)
   const isAdmin = typeof profile?.role === 'string' && profile.role.toLowerCase().includes('admin');
 

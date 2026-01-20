@@ -43,40 +43,7 @@ export function Layout({ children }: LayoutProps) {
     }
   }, [isAuthenticated, loading]);
 
-  // Show login if not authenticated
-  if (!loading && !isAuthenticated) {
-    return <EnhancedLogin />;
-  }
-
-  if (loading && isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="mb-4 text-center">
-          <h2 className="text-lg font-semibold mb-2">Loading...</h2>
-          <p className="text-muted-foreground">App appears to be stuck in loading state...</p>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mt-4"></div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show loading spinner while authenticating
-  if (loading) {
-    const loadingDuration = Math.floor((Date.now() - loadingStartTime) / 1000);
-
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6">
-        <div className="text-center space-y-2 w-full max-w-lg">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg font-medium text-foreground">Starting up...</p>
-          <p className="text-sm text-muted-foreground">This should only take a moment</p>
-          {loadingDuration > 2 && (
-            <p className="text-sm text-muted-foreground mt-2">Almost ready...</p>
-          )}
-        </div>
-      </div>
-    );
-  }
+  // Allow public access - skip auth loading check
 
   // Show authenticated layout
   return (
