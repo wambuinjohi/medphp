@@ -184,22 +184,6 @@ if ($request_param && !$action) {
                 }
             }
         }
-        // Handle /chat endpoint
-        elseif ($segments[0] === 'chat' && $method === 'POST') {
-            $action = 'create';
-            $table = 'chat_messages';
-            if ($json_body) {
-                $data = $json_body;
-            }
-        }
-        // Handle /newsletter endpoint
-        elseif ($segments[0] === 'newsletter' && $method === 'POST') {
-            $action = 'create';
-            $table = 'newsletter';
-            if ($json_body) {
-                $data = $json_body;
-            }
-        }
         // Handle table CRUD routes (contacts, quotations, portfolios, etc.)
         elseif (in_array($segments[0], ['contacts', 'quotations', 'portfolios', 'web_app_leads', 'web-leads', 'logs'])) {
             $table_name = $segments[0];
