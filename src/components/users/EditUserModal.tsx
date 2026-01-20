@@ -100,6 +100,7 @@ export function EditUserModal({
   const handleClose = () => {
     onOpenChange(false);
     setFormErrors({});
+    setSubmitError('');
   };
 
   const handleInputChange = (field: keyof UpdateUserData) => (
