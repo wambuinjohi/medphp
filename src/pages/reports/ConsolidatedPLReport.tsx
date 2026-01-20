@@ -19,8 +19,15 @@ import {
   DollarSign,
   Lock,
   TrendingDown,
-  Activity
+  Activity,
+  ChevronDown
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   BarChart,
   Bar,
