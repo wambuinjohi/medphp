@@ -923,10 +923,8 @@ export function useDeletePaymentMethod() {
 
   return useMutation({
     mutationFn: async (id: string | number) => {
-      const { error } = await supabase
-        .from('payment_methods')
-        .delete()
-        .eq('id', id);
+      const db = getDatabase();
+      const { error } = await db.delete('payment_methods', String(id));
 
       if (error) throw error;
       return { success: true };
