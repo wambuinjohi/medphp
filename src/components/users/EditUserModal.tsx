@@ -45,6 +45,7 @@ export function EditUserModal({
     position: '',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string>('');
 
   // Update form data when user changes
   useEffect(() => {
