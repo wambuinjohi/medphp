@@ -377,7 +377,10 @@ export function useUpdateProduct() {
  * @param companyId - Optional company ID for filtering
  */
 export function useUnitsOfMeasure(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('units_of_measure', filter);
 }
 
@@ -520,7 +523,10 @@ export function useAllSuppliersAndCustomers(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useSuppliers(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('suppliers', filter);
 }
 
@@ -632,7 +638,10 @@ export function useUpdateLPOWithItems() {
  * @param companyId - Optional company ID for filtering
  */
 export function useStockMovements(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('stock_movements', filter);
 }
 
@@ -641,7 +650,10 @@ export function useStockMovements(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useRemittanceAdvice(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('remittance_advice', filter);
 }
 
@@ -756,7 +768,10 @@ export function useCreateCustomer() {
  * @param customerId - Customer ID
  */
 export function useCustomerInvoices(customerId?: string) {
-  const filter = customerId ? { customer_id: customerId } : undefined;
+  const filter = useMemo(() =>
+    customerId ? { customer_id: customerId } : undefined,
+    [customerId]
+  );
   return useSelect('invoices', filter);
 }
 
@@ -765,7 +780,10 @@ export function useCustomerInvoices(customerId?: string) {
  * @param customerId - Customer ID
  */
 export function useCustomerPayments(customerId?: string) {
-  const filter = customerId ? { customer_id: customerId } : undefined;
+  const filter = useMemo(() =>
+    customerId ? { customer_id: customerId } : undefined,
+    [customerId]
+  );
   return useSelect('payments', filter);
 }
 
@@ -834,7 +852,10 @@ export function useDeleteLPO() {
  * @param companyId - Optional company ID for filtering
  */
 export function usePaymentMethods(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('payment_methods', filter);
 }
 
@@ -852,11 +873,8 @@ export function useCreatePaymentMethod() {
       company_id?: string;
       icon_name?: string;
     }) => {
-      const { data, error } = await supabase
-        .from('payment_methods')
-        .insert(paymentMethod)
-        .select()
-        .single();
+      const db = getDatabase();
+      const { data, error } = await db.insert('payment_methods', paymentMethod);
 
       if (error) throw error;
       return data;
@@ -880,12 +898,8 @@ export function useUpdatePaymentMethod() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
-      const { data: result, error } = await supabase
-        .from('payment_methods')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
+      const db = getDatabase();
+      const { data: result, error } = await db.update('payment_methods', String(id), data);
 
       if (error) throw error;
       return result;
@@ -909,10 +923,8 @@ export function useDeletePaymentMethod() {
 
   return useMutation({
     mutationFn: async (id: string | number) => {
-      const { error } = await supabase
-        .from('payment_methods')
-        .delete()
-        .eq('id', id);
+      const db = getDatabase();
+      const { error } = await db.delete('payment_methods', String(id));
 
       if (error) throw error;
       return { success: true };

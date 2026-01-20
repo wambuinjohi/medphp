@@ -590,18 +590,23 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Date</TableHead>
-                        <TableHead>Vehicle</TableHead>
+                        <TableHead>Vehicle ID</TableHead>
+                        <TableHead>Material</TableHead>
+                        <TableHead className="text-right">Buying Price</TableHead>
+                        <TableHead className="text-right">Fuel Cost</TableHead>
+                        <TableHead className="text-right">Driver Fees</TableHead>
+                        <TableHead className="text-right">Other Expenses</TableHead>
+                        <TableHead className="text-right">Selling Price</TableHead>
+                        <TableHead className="text-right">Profit</TableHead>
+                        <TableHead>Payment Status</TableHead>
                         <TableHead>Customer</TableHead>
-                        <TableHead className="text-right">Trip Amount</TableHead>
-                        <TableHead className="text-right">Profit/Loss</TableHead>
-                        <TableHead className="text-right">Payment Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredFinances.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                          <TableCell colSpan={12} className="text-center py-4 text-muted-foreground">
                             No trips found
                           </TableCell>
                         </TableRow>
@@ -610,12 +615,16 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                           <TableRow key={finance.id}>
                             <TableCell className="text-sm">{finance.date || '-'}</TableCell>
                             <TableCell className="font-medium">{finance.vehicle_number || '-'}</TableCell>
-                            <TableCell>{finance.customer_name || '-'}</TableCell>
+                            <TableCell>{finance.materials || '-'}</TableCell>
+                            <TableCell className="text-right">{(finance.buying_price || 0).toLocaleString()}</TableCell>
+                            <TableCell className="text-right">{(finance.fuel_cost || 0).toLocaleString()}</TableCell>
+                            <TableCell className="text-right">{(finance.driver_fees || 0).toLocaleString()}</TableCell>
+                            <TableCell className="text-right">{(finance.other_expenses || 0).toLocaleString()}</TableCell>
                             <TableCell className="text-right font-medium">{(finance.selling_price || 0).toLocaleString()}</TableCell>
                             <TableCell className={`text-right font-medium ${(finance.profit_loss ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                               {finance.profit_loss?.toLocaleString() || '-'}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell>
                               <Badge
                                 variant={finance.payment_status === 'paid' ? 'default' : 'secondary'}
                                 className={finance.payment_status === 'paid' ? 'bg-green-600' : finance.payment_status === 'unpaid' ? 'bg-red-600' : 'bg-yellow-600'}
@@ -623,6 +632,7 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
                                 {finance.payment_status}
                               </Badge>
                             </TableCell>
+                            <TableCell>{finance.customer_name || '-'}</TableCell>
                             <TableCell>
                               <div className="flex gap-2">
                                 <Button

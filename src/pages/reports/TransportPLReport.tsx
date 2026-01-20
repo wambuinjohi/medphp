@@ -166,18 +166,28 @@ export default function TransportPLReport() {
     const headers = [
       'Date',
       'Vehicle ID',
-      'Revenue',
+      'Material',
+      'Buying Price',
+      'Fuel Cost',
       'Driver Fees',
       'Other Expenses',
-      'Profit'
+      'Selling Price',
+      'Profit',
+      'Payment Status',
+      'Customer'
     ];
     const rows = filteredTransports.map(t => [
       new Date(t.date).toLocaleDateString(),
       t.vehicle_id || 'Unknown',
-      formatCurrency(t.selling_price || 0),
+      t.materials || '-',
+      formatCurrency(t.buying_price || 0),
+      formatCurrency(t.fuel_cost || 0),
       formatCurrency(t.driver_fees || 0),
       formatCurrency(t.other_expenses || 0),
-      formatCurrency((t.selling_price || 0) - (t.driver_fees || 0) - (t.other_expenses || 0))
+      formatCurrency(t.selling_price || 0),
+      formatCurrency((t.selling_price || 0) - (t.buying_price || 0) - (t.fuel_cost || 0) - (t.driver_fees || 0) - (t.other_expenses || 0)),
+      t.payment_status || '-',
+      t.customer_name || '-'
     ]);
 
     const csvContent = [headers, ...rows]
