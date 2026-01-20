@@ -350,25 +350,17 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      console.log('Attempting to update user:', { userId, userData });
+      console.log('Attempting to update user via external API:', { userId, userData });
 
-      const response = await supabase
-        .from('profiles')
-        .update(userData)
-        .eq('id', userId)
-        .select();
+      const db = getDatabase();
+      const { error } = await db.update('profiles', userId, userData);
 
-      console.log('Supabase update response:', response);
-
-      if (response.error) {
-        console.error('Supabase returned error:', response.error);
-        throw response.error;
+      if (error) {
+        console.error('Database returned error:', error);
+        throw error;
       }
 
-      if (!response.data || response.data.length === 0) {
-        throw new Error('Update failed: No rows were updated. This may indicate a permissions issue (RLS policy) or the user ID does not exist.');
-      }
-
+      console.log('User updated successfully');
       toast.success('User updated successfully');
       await fetchUsers();
       return { success: true };
