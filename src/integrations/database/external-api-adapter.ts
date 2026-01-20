@@ -83,6 +83,18 @@ export class ExternalAPIAdapter implements IDatabase {
 
       const url = `${this.apiBase}?${params.toString()}`;
 
+      // Log for companies update debugging
+      if (action === 'update' && table === 'companies') {
+        console.log(`🔗 API Request for company update:`, {
+          url: url.substring(0, 100), // Truncate for readability
+          method,
+          action,
+          table,
+          authTokenPresent: !!this.authToken,
+          bodyDataKeys: data ? Object.keys(data as any) : [],
+        });
+      }
+
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
