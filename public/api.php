@@ -528,7 +528,7 @@ try {
             'role' => $decoded['role']
         ]);
     }
-    // CRUD Operations
+    // CRUD Operations - All operations are now auth-optional (no permission checks required)
     elseif ($action === "create") {
         if (!$table) {
             throw new Exception("Missing table");
@@ -537,6 +537,9 @@ try {
         if (empty($data)) {
             throw new Exception("Missing data for insert");
         }
+
+        // NOTE: Authentication is OPTIONAL for all operations in this remote PHP API
+        // No requireAuthForModification check is performed
 
         $columns = [];
         $values = [];
