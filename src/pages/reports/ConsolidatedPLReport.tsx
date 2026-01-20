@@ -194,7 +194,36 @@ export default function ConsolidatedPLReport() {
     return Array.from(mergedMap.values());
   }, [invoices, transportData]);
 
-  const handleExport = () => {
+  const getReportData = () => {
+    const data: any[] = [];
+
+    if (metrics?.tradingMetrics) {
+      data.push(['TRADING OPERATIONS', '', '']);
+      data.push(['Revenue', formatCurrency(metrics.tradingMetrics.revenue), '100%']);
+      data.push(['Cost of Goods Sold', formatCurrency(metrics.tradingMetrics.cogs), formatPercentage(metrics.tradingMetrics.cogs / metrics.tradingMetrics.revenue * 100)]);
+      data.push(['Gross Profit', formatCurrency(metrics.tradingMetrics.grossProfit), formatPercentage(metrics.tradingMetrics.grossMarginPercentage)]);
+      data.push(['', '', '']);
+    }
+
+    if (metrics?.transportMetrics) {
+      data.push(['TRANSPORT OPERATIONS', '', '']);
+      data.push(['Revenue', formatCurrency(metrics.transportMetrics.revenue), '100%']);
+      data.push(['Operating Expenses', formatCurrency(metrics.transportMetrics.totalExpenses), formatPercentage(metrics.transportMetrics.totalExpenses / metrics.transportMetrics.revenue * 100)]);
+      data.push(['Operating Profit', formatCurrency(metrics.transportMetrics.operatingProfit), formatPercentage(metrics.transportMetrics.operatingMarginPercentage)]);
+      data.push(['', '', '']);
+    }
+
+    data.push(['CONSOLIDATED', '', '']);
+    data.push(['Total Revenue', formatCurrency(metrics?.totalRevenue || 0), '100%']);
+    data.push(['Total COGS', formatCurrency(metrics?.totalCOGS || 0), formatPercentage((metrics?.totalCOGS || 0) / (metrics?.totalRevenue || 1) * 100)]);
+    data.push(['Gross Profit', formatCurrency(metrics?.totalGrossProfit || 0), formatPercentage(metrics?.grossMarginPercentage || 0)]);
+    data.push(['Transport Expenses', formatCurrency(metrics?.transportExpenses || 0), formatPercentage((metrics?.transportExpenses || 0) / (metrics?.totalRevenue || 1) * 100)]);
+    data.push(['Net Operating Profit', formatCurrency(metrics?.operatingProfit || 0), formatPercentage(metrics?.netMarginPercentage || 0)]);
+
+    return data;
+  };
+
+  const handleExportCSV = () => {
     if (!metrics) return;
 
     const headers = [
@@ -202,36 +231,13 @@ export default function ConsolidatedPLReport() {
       'Amount',
       'Percentage of Revenue'
     ];
-    
-    const rows: any[] = [];
-    
-    if (metrics.tradingMetrics) {
-      rows.push(['TRADING OPERATIONS', '', '']);
-      rows.push(['Revenue', formatCurrency(metrics.tradingMetrics.revenue), '100%']);
-      rows.push(['Cost of Goods Sold', formatCurrency(metrics.tradingMetrics.cogs), formatPercentage(metrics.tradingMetrics.cogs / metrics.tradingMetrics.revenue * 100)]);
-      rows.push(['Gross Profit', formatCurrency(metrics.tradingMetrics.grossProfit), formatPercentage(metrics.tradingMetrics.grossMarginPercentage)]);
-      rows.push(['', '', '']);
-    }
 
-    if (metrics.transportMetrics) {
-      rows.push(['TRANSPORT OPERATIONS', '', '']);
-      rows.push(['Revenue', formatCurrency(metrics.transportMetrics.revenue), '100%']);
-      rows.push(['Operating Expenses', formatCurrency(metrics.transportMetrics.totalExpenses), formatPercentage(metrics.transportMetrics.totalExpenses / metrics.transportMetrics.revenue * 100)]);
-      rows.push(['Operating Profit', formatCurrency(metrics.transportMetrics.operatingProfit), formatPercentage(metrics.transportMetrics.operatingMarginPercentage)]);
-      rows.push(['', '', '']);
-    }
-
-    rows.push(['CONSOLIDATED', '', '']);
-    rows.push(['Total Revenue', formatCurrency(metrics.totalRevenue), '100%']);
-    rows.push(['Total COGS', formatCurrency(metrics.totalCOGS), formatPercentage(metrics.totalCOGS / metrics.totalRevenue * 100)]);
-    rows.push(['Gross Profit', formatCurrency(metrics.totalGrossProfit), formatPercentage(metrics.grossMarginPercentage)]);
-    rows.push(['Transport Expenses', formatCurrency(metrics.transportExpenses), formatPercentage(metrics.transportExpenses / metrics.totalRevenue * 100)]);
-    rows.push(['Net Operating Profit', formatCurrency(metrics.operatingProfit), formatPercentage(metrics.netMarginPercentage)]);
+    const rows = getReportData();
 
     const csvContent = [headers, ...rows]
       .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
       .join('\n');
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -242,7 +248,85 @@ export default function ConsolidatedPLReport() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    toast.success('Consolidated P&L report exported successfully!');
+    toast.success('CSV report exported successfully!');
+  };
+
+  const handleExportWord = async () => {
+    if (!metrics) return;
+
+    const rows = getReportData();
+    const headerRow = new DocTableRow({
+      children: [
+        new DocTableCell({
+          children: [new Paragraph('Category')],
+          shading: { fill: '4472C4' }
+        }),
+        new DocTableCell({
+          children: [new Paragraph('Amount')],
+          shading: { fill: '4472C4' }
+        }),
+        new DocTableCell({
+          children: [new Paragraph('Percentage of Revenue')],
+          shading: { fill: '4472C4' }
+        })
+      ]
+    });
+
+    const tableRows = [headerRow, ...rows.map(row =>
+      new DocTableRow({
+        children: row.map(cell =>
+          new DocTableCell({
+            children: [new Paragraph(String(cell))],
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+              bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+              left: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+              right: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' }
+            }
+          })
+        )
+      })
+    )];
+
+    const table = new DocTable({
+      rows: tableRows,
+      width: { size: 100, type: 'pct' }
+    });
+
+    const dateRangeText = dateRange === 'custom' && startDate && endDate
+      ? `${startDate} to ${endDate}`
+      : dateRange.replace('_', ' ');
+
+    const doc = new Document({
+      sections: [{
+        children: [
+          new Paragraph({
+            text: 'Consolidated P&L Report',
+            heading: 'Heading1',
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 }
+          }),
+          new Paragraph({
+            text: `Period: ${dateRangeText}`,
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 }
+          }),
+          table
+        ]
+      }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `consolidated-pl-report-${dateRange}-${new Date().toISOString().split('T')[0]}.docx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success('Word document exported successfully!');
   };
 
   const handleDateRangeChange = (value: string) => {
