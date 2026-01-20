@@ -699,12 +699,24 @@ export default function CompanySettings() {
 
       {/* Permission Error Helper - Show when user lacks permissions */}
       {permissionError && (
-        <PermissionErrorHelper
-          statusCode={permissionError.statusCode}
-          errorMessage={permissionError.message}
-          operation="update"
-          resource="company settings"
-        />
+        <>
+          <PermissionErrorHelper
+            statusCode={permissionError.statusCode}
+            errorMessage={permissionError.message}
+            operation="update"
+            resource="company settings"
+          />
+          <div className="mt-4">
+            <CompanySettingsDiagnostics currentCompany={currentCompany} />
+          </div>
+        </>
+      )}
+
+      {/* Diagnostic Info - Always show for debugging */}
+      {!permissionError && (
+        <div className="mb-4">
+          <CompanySettingsDiagnostics currentCompany={currentCompany} />
+        </div>
       )}
 
       {/* Simple Currency Column Fix - Show when schema errors are detected */}
