@@ -178,7 +178,7 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
         total_payment: calculateTotalPayment(),
         status: 'draft' as const,
         notes: formData.notes || null,
-        created_by: profile.id,
+        created_by: profile?.id || null, // Allow null for public access
       };
 
       // Create the remittance advice
