@@ -404,7 +404,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Compute derived state
-  const isAuthenticated = !!user && profile?.status === 'active';
+  // Allow public access - authentication is optional
+  const isAuthenticated = true;
   // Treat any role containing 'admin' (case-insensitive) as administrator (covers 'admin', 'super_admin', etc.)
   const isAdmin = typeof profile?.role === 'string' && profile.role.toLowerCase().includes('admin');
 
