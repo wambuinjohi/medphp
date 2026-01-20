@@ -71,15 +71,11 @@ export async function examineCompaniesTable() {
  */
 export async function createDefaultCompany() {
   console.log('🏗️ Creating default company...');
-  
+
   try {
-    // Get current user for email
-    const { data: { user } } = await supabase.auth.getUser();
-    const userEmail = user?.email || 'admin@company.com';
-    
     const defaultCompanyData = {
       name: 'My Company',
-      email: userEmail,
+      email: 'admin@company.com',
       phone: '+254700000000',
       address: 'Nairobi, Kenya',
       city: 'Nairobi',
@@ -93,15 +89,17 @@ export async function createDefaultCompany() {
       description: 'Default company created automatically'
     };
 
-    const { data: newCompany, error: createError } = await supabase
-      .from('companies')
-      .insert([defaultCompanyData])
-      .select()
-      .single();
+    const { getDatabase } = await import('@/integrations/database');
+    const db = getDatabase();
+    const { data: createResult, error: createError } = await db.insert('companies', defaultCompanyData);
 
     if (createError) {
       throw new Error(`Failed to create company: ${createError.message}`);
     }
+
+    // Fetch the created company
+    const { data: companies } = await db.select('companies', { id: createResult.id });
+    const newCompany = companies?.[0];
 
     console.log('✅ Default company created:', newCompany);
 
