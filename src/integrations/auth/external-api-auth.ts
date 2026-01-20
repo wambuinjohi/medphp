@@ -83,7 +83,7 @@ class ExternalAPIAuthHandler {
       // Notify backend about logout (optional, for logging)
       const token = this.getToken();
       if (token) {
-        await fetch(`${this.apiUrl}?action=logout`, {
+        await fetch(`${this.fetchUrl}?action=logout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
