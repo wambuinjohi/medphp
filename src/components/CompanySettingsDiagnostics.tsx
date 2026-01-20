@@ -108,6 +108,12 @@ export function CompanySettingsDiagnostics({ currentCompany }: CompanySettingsDi
                 <span className="text-muted-foreground">Company ID:</span>
                 <span>{currentCompany?.id || 'Loading...'}</span>
               </div>
+              {currentCompany?.id && (
+                <div className="flex justify-between items-center font-mono text-xs border-t pt-2 mt-2">
+                  <span className="text-muted-foreground">Status:</span>
+                  <span>{currentCompany?.status || 'N/A'}</span>
+                </div>
+              )}
             </div>
           </div>
 
