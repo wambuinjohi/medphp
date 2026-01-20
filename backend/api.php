@@ -639,11 +639,19 @@ try {
             throw new Exception("Your authentication token is invalid or expired. Please sign in again.");
         }
 
-        // Check if user is admin
+        // For companies table, allow any authenticated user (not just admins)
+        // For other protected tables, require admin role
+        if ($table === 'companies') {
+            // Any authenticated user can edit company info
+            error_log("✅ [AUTH] $action on $table - Authorized as authenticated user (email: {$decoded['email']}, role: {$decoded['role']})");
+            return $decoded;
+        }
+
+        // For other protected tables, check if user is admin
         if ($decoded['role'] !== 'admin') {
             error_log("❌ [AUTH] $action on $table - User role is '{$decoded['role']}', requires 'admin'");
             http_response_code(403);
-            throw new Exception("You do not have permission to update company settings.");
+            throw new Exception("You do not have permission to perform this action. Admin access required.");
         }
 
         error_log("✅ [AUTH] $action on $table - Authorized as admin (email: {$decoded['email']})");
