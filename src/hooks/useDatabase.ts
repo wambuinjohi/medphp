@@ -873,11 +873,8 @@ export function useCreatePaymentMethod() {
       company_id?: string;
       icon_name?: string;
     }) => {
-      const { data, error } = await supabase
-        .from('payment_methods')
-        .insert(paymentMethod)
-        .select()
-        .single();
+      const db = getDatabase();
+      const { data, error } = await db.insert('payment_methods', paymentMethod);
 
       if (error) throw error;
       return data;
