@@ -54,6 +54,7 @@ export const useUserManagement = () => {
   // Fetch all users in the same company
   const fetchUsers = async () => {
     if (!isAdmin) {
+      console.log('fetchUsers: User is not admin, skipping fetch');
       return;
     }
 
@@ -61,6 +62,7 @@ export const useUserManagement = () => {
     setError(null);
 
     try {
+      console.log('Fetching users for company:', currentUser?.company_id);
       const query = supabase
         .from('profiles')
         .select('*')
@@ -74,9 +76,11 @@ export const useUserManagement = () => {
       const { data, error } = await query;
 
       if (error) {
+        console.error('Error fetching users:', error);
         throw error;
       }
 
+      console.log('Fetched users:', data?.length || 0, 'users');
       setUsers(data || []);
     } catch (err) {
       console.error('Error fetching users:', err);
