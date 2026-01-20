@@ -54,7 +54,7 @@ export async function uploadFile(
     formData.append('record_id', options?.recordId || '');
 
     // Upload to API
-    const response = await fetch(`${API_URL}?action=upload`, {
+    const response = await fetch(`${API_URL}?action=upload_file`, {
       method: 'POST',
       body: formData,
       headers: {
