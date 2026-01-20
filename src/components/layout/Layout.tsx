@@ -52,11 +52,12 @@ export function Layout({ children }: LayoutProps) {
   return (
     <>
       <AdminInventoryPermissionFix />
+      <APIUnavailableBanner visible={!isConnected} onRetry={retry} />
       <div className="flex h-screen bg-background">
         <Sidebar isOpen={isMobileMenuOpen} onClose={closeMobileMenu} />
         <div className="flex flex-1 flex-col overflow-hidden min-w-0">
           <Header onMenuToggle={toggleMobileMenu} isMobileMenuOpen={isMobileMenuOpen} />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar" style={{ paddingBottom: !isConnected ? '200px' : undefined }}>
             <Suspense fallback={null}>
               {children}
             </Suspense>
