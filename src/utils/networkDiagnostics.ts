@@ -80,7 +80,7 @@ export async function testCORSPreflight(apiUrl: string = '/api'): Promise<Diagno
     console.log(`🔍 Testing CORS preflight to: ${apiUrl}`);
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(new Error('CORS preflight test timeout: 5 seconds')), 5000);
 
     const response = await fetch(apiUrl, {
       method: 'OPTIONS',
