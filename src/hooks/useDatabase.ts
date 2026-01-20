@@ -834,7 +834,10 @@ export function useDeleteLPO() {
  * @param companyId - Optional company ID for filtering
  */
 export function usePaymentMethods(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('payment_methods', filter);
 }
 
