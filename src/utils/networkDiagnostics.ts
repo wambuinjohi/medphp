@@ -16,9 +16,9 @@ interface DiagnosticResult {
 export async function testAPIConnectivity(apiUrl: string = '/api'): Promise<DiagnosticResult> {
   try {
     console.log(`🔍 Testing API connectivity to: ${apiUrl}`);
-    
+
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(new Error('Connectivity test timeout: 5 seconds')), 5000);
 
     const response = await fetch(`${apiUrl}?action=health`, {
       method: 'GET',
