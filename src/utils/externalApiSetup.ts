@@ -261,9 +261,13 @@ export async function getDatabaseInfo(options: SetupOptions = {}): Promise<any> 
   const apiUrl =
     options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
 
+  // Use proxy for default API, direct URL for custom APIs
+  const isDefaultApi = !apiUrl || apiUrl.includes('med.wayrus.co.ke') || apiUrl === import.meta.env.VITE_EXTERNAL_API_URL;
+  const fetchUrl = isDefaultApi ? '/api' : apiUrl.replace(/\/api\.php$/, '') + '/api.php';
+
   try {
     // Try to read users table to verify connection
-    const response = await fetch(`${apiUrl}?action=read&table=users`, {
+    const response = await fetch(`${fetchUrl}?action=read&table=users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ where: {} }),
