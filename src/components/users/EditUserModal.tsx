@@ -152,6 +152,11 @@ export function EditUserModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {submitError && (
+            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 text-sm text-destructive">
+              {submitError}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="full_name">Full Name *</Label>
             <div className="relative">
