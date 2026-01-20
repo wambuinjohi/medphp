@@ -611,6 +611,7 @@ try {
     }
 
     // Helper function to check authorization for modifications (create, update, delete)
+    // Authentication is OPTIONAL - if a token is provided, it will be verified, but requests without auth are allowed
     function requireAuthForModification($action, $table) {
         // Get token from Authorization header
         $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
@@ -625,36 +626,21 @@ try {
             $token = $_POST['token'] ?? null;
         }
 
+        // If no token provided, allow access (auth is optional for remote PHP API)
         if (!$token) {
-            error_log("❌ [AUTH] $action on $table - No token provided");
-            http_response_code(403);
-            throw new Exception("You do not have permission to perform this action. Please make sure you are authenticated.");
+            error_log("⚠️ [AUTH] $action on $table - No token provided (auth optional for remote API)");
+            return ['email' => 'unauthenticated', 'role' => 'guest'];
         }
 
-        // Verify token
+        // Verify token if provided
         $decoded = verifyJWT($token);
         if (!$decoded) {
-            error_log("❌ [AUTH] $action on $table - Invalid or expired token");
-            http_response_code(403);
-            throw new Exception("Your authentication token is invalid or expired. Please sign in again.");
+            error_log("⚠️ [AUTH] $action on $table - Invalid or expired token (but auth is optional)");
+            // Allow the request even with invalid token - auth is optional
+            return ['email' => 'unauthenticated', 'role' => 'guest'];
         }
 
-        // For companies table, allow any authenticated user (not just admins)
-        // For other protected tables, require admin role
-        if ($table === 'companies') {
-            // Any authenticated user can edit company info
-            error_log("✅ [AUTH] $action on $table - Authorized as authenticated user (email: {$decoded['email']}, role: {$decoded['role']})");
-            return $decoded;
-        }
-
-        // For other protected tables, check if user is admin
-        if ($decoded['role'] !== 'admin') {
-            error_log("❌ [AUTH] $action on $table - User role is '{$decoded['role']}', requires 'admin'");
-            http_response_code(403);
-            throw new Exception("You do not have permission to perform this action. Admin access required.");
-        }
-
-        error_log("✅ [AUTH] $action on $table - Authorized as admin (email: {$decoded['email']})");
+        error_log("✅ [AUTH] $action on $table - Authorized with token (email: {$decoded['email']}, role: {$decoded['role']})");
         return $decoded;
     }
 
