@@ -1220,11 +1220,8 @@ export function useCreateOverpaymentCreditNote() {
           notes: `Overpayment credit note for payment reference: ${overpaymentData.payment_reference}`
         };
 
-        const { data: creditNote, error: createError } = await supabase
-          .from('credit_notes')
-          .insert(creditNoteRecord)
-          .select()
-          .single();
+        const db = getDatabase();
+        const { id: creditNoteId, error: createError } = await db.insert('credit_notes', creditNoteRecord);
 
         if (createError) {
           throw createError;
@@ -1233,7 +1230,7 @@ export function useCreateOverpaymentCreditNote() {
         return {
           success: true,
           credit_note_number: finalCreditNoteNumber,
-          credit_note_id: creditNote.id
+          credit_note_id: creditNoteId
         };
       } catch (error: any) {
         console.error('Error creating overpayment credit note:', error);
