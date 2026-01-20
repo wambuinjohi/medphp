@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getDatabase } from '@/integrations/database';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth, UserProfile, UserRole, UserStatus } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { parseErrorMessage, parseErrorMessageWithCodes } from '@/utils/errorHelpers';
