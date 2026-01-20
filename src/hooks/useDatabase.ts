@@ -1074,47 +1074,46 @@ export function useUpdatePayment() {
       };
       oldAmount: number;
     }) => {
+      const db = getDatabase();
+
       // 1. Get payment allocations to know which invoices to update
-      const { data: allocations, error: allocError } = await supabase
-        .from('payment_allocations')
-        .select('invoice_id, allocated_amount')
-        .eq('payment_id', paymentId);
+      const { data: allocations, error: allocError } = await db.selectBy('payment_allocations', {
+        payment_id: paymentId
+      });
 
       if (allocError) {
         console.warn('Could not fetch payment allocations:', allocError?.message);
       }
 
       // 2. Update the payment record
-      const { data: updatedPayment, error: updateError } = await supabase
-        .from('payments')
-        .update({
-          amount: paymentData.amount,
-          payment_date: paymentData.payment_date,
-          payment_method: paymentData.payment_method,
-          reference_number: paymentData.reference_number,
-          notes: paymentData.notes,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', paymentId)
-        .select()
-        .single();
+      const updateResult = await db.update('payments', paymentId, {
+        amount: paymentData.amount,
+        payment_date: paymentData.payment_date,
+        payment_method: paymentData.payment_method,
+        reference_number: paymentData.reference_number,
+        notes: paymentData.notes,
+        updated_at: new Date().toISOString()
+      });
 
-      if (updateError) {
-        throw updateError;
+      if (updateResult.error) {
+        throw updateResult.error;
+      }
+
+      // Fetch the updated payment record
+      const { data: updatedPayment, error: fetchError } = await db.selectOne('payments', paymentId);
+
+      if (fetchError) {
+        throw fetchError;
       }
 
       // 3. If amount changed, update invoice balances
       if (Math.abs(oldAmount - paymentData.amount) > 0.01 && allocations && allocations.length > 0) {
         const amountDifference = paymentData.amount - oldAmount;
 
-        for (const allocation of allocations) {
+        for (const allocation of allocations as any[]) {
           try {
             // Get current invoice data
-            const { data: invoice, error: invoiceError } = await supabase
-              .from('invoices')
-              .select('id, total_amount, paid_amount, balance_due, status')
-              .eq('id', allocation.invoice_id)
-              .single();
+            const { data: invoice, error: invoiceError } = await db.selectOne('invoices', allocation.invoice_id);
 
             if (invoiceError) {
               console.warn(`Could not fetch invoice ${allocation.invoice_id}:`, invoiceError?.message);
@@ -1138,18 +1137,15 @@ export function useUpdatePayment() {
             }
 
             // Update invoice
-            const { error: invoiceUpdateError } = await supabase
-              .from('invoices')
-              .update({
-                paid_amount: Math.max(0, newPaidAmount),
-                balance_due: Math.max(0, newBalanceDue),
-                status: newStatus,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', allocation.invoice_id);
+            const invoiceUpdateResult = await db.update('invoices', allocation.invoice_id, {
+              paid_amount: Math.max(0, newPaidAmount),
+              balance_due: Math.max(0, newBalanceDue),
+              status: newStatus,
+              updated_at: new Date().toISOString()
+            });
 
-            if (invoiceUpdateError) {
-              console.warn(`Could not update invoice ${allocation.invoice_id}:`, invoiceUpdateError?.message);
+            if (invoiceUpdateResult.error) {
+              console.warn(`Could not update invoice ${allocation.invoice_id}:`, invoiceUpdateResult.error?.message);
             }
           } catch (error: any) {
             console.warn(`Error updating invoice ${allocation.invoice_id}:`, error?.message);
