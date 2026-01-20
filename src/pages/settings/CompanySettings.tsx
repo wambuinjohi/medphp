@@ -478,17 +478,29 @@ export default function CompanySettings() {
 
       // Check for permission error (403)
       if (errorString.includes('403') || errorString.includes('Forbidden')) {
+        // Log detailed info for debugging
+        console.error('🔍 403 Permission Denied Details:', {
+          userRole: currentUser?.role,
+          userStatus: currentUser?.status,
+          userCompanyId: currentUser?.company_id,
+          editingCompanyId: currentCompany?.id,
+          editingCompanyName: currentCompany?.name,
+          authTokenPresent: !!localStorage.getItem('med_api_token'),
+        });
+
         // Provide specific guidance based on authorization status
         let detailedMessage = userMessage;
 
         if (!currentUser?.role?.toLowerCase().includes('admin')) {
-          detailedMessage = 'You do not have permission to update company settings. Your account must have an admin role.';
+          detailedMessage = 'You do not have permission to update company settings. Your account must have an admin role. Current role: ' + (currentUser?.role || 'Not set');
         } else if (currentUser?.status !== 'active') {
-          detailedMessage = 'Your account is not active. Contact your administrator to activate it.';
+          detailedMessage = 'Your account is not active. Current status: ' + (currentUser?.status || 'Not set') + '. Contact your administrator to activate it.';
         } else if (!currentUser?.company_id) {
           detailedMessage = 'Your account is not assigned to a company. Contact your administrator to assign you to a company.';
         } else if (currentCompany?.id && currentUser?.company_id !== currentCompany.id) {
-          detailedMessage = `Company ID mismatch. You are assigned to company ${currentUser.company_id} but trying to edit company ${currentCompany.id}.`;
+          detailedMessage = `Company ID mismatch. You are assigned to company ${currentUser.company_id} but trying to edit company ${currentCompany.id}. Contact your administrator to verify your company assignment.`;
+        } else {
+          detailedMessage = `Authorization failed while updating company "${currentCompany?.name}". This may be a backend authorization issue. Please check the browser console for more details and contact your administrator if the issue persists.`;
         }
 
         setPermissionError({
