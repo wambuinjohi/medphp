@@ -188,7 +188,6 @@ if ($request_param && !$action) {
         elseif (in_array($segments[0], ['contacts', 'quotations', 'portfolios', 'web_app_leads', 'web-leads', 'logs'])) {
             $table_name = $segments[0];
             if ($segments[0] === 'web-leads') $table_name = 'web_app_leads';
-            if ($segments[0] === 'discovery-leads' || $segments[0] === 'discovery_leads') $table_name = 'leads';
 
             $table = $table_name;
 
