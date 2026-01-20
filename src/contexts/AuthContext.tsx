@@ -47,6 +47,7 @@ export interface AuthContextType {
   profile: UserProfile | null;
   session: Session | null;
   loading: boolean;
+  initialized: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
@@ -76,7 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(false); // Start as not loading for public access
+  const [loading, setLoading] = useState(true); // Start as loading until auth is confirmed
   const [initialized, setInitialized] = useState(false);
 
   // Use refs to prevent stale closures and unnecessary re-renders
@@ -151,10 +152,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializingRef.current = true;
     mountedRef.current = true;
 
-    // Start app immediately - don't block on auth
-    setLoading(false);
+    // Wait for auth to restore before showing app
+    setLoading(true);
     setInitialized(true);
-    console.log('🏁 App started immediately (auth will continue in background)');
+    console.log('🏁 Waiting for auth restoration before showing app...');
 
     // Try to restore auth session in background
     const restoreAuthInBackground = async () => {
@@ -191,6 +192,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               context: 'backgroundProfileFetch'
             });
           }
+        } else {
+          // No valid session found - user is not authenticated
+          console.log('ℹ️ No valid session found, user is unauthenticated');
+        }
+
+        // Auth restoration complete - stop showing loading screen
+        if (mountedRef.current) {
+          setLoading(false);
+          console.log('✅ Auth restoration complete, app ready to show');
         }
       } catch (error) {
         console.warn('⚠️ Auth restoration failed:', error);
@@ -202,6 +212,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.warn('🧹 Clearing invalid tokens');
             clearAuthTokens();
           }
+        }
+
+        // Auth restoration failed - stop showing loading screen
+        if (mountedRef.current) {
+          setLoading(false);
+          console.log('⚠️ Auth restoration failed, showing app without auth');
         }
       }
     };
@@ -326,7 +342,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Force a reload to ensure the app clears any cached auth state/UI
         try {
           // Use replace so browser history isn't cluttered
-          window.location.replace('/');
+          window.location.replace('/login');
           return;
         } catch (reloadErr) {
           console.warn('Could not reload after sign out:', reloadErr);
@@ -404,16 +420,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Compute derived state
-  // Allow public access - authentication is optional
-  const isAuthenticated = true;
+  // Check if user is actually authenticated (has valid user or session)
+  const isAuthenticated = !!(user || session);
   // Treat any role containing 'admin' (case-insensitive) as administrator (covers 'admin', 'super_admin', etc.)
-  const isAdmin = typeof profile?.role === 'string' && profile.role.toLowerCase().includes('admin');
+  const isAdmin = isAuthenticated && typeof profile?.role === 'string' && profile.role.toLowerCase().includes('admin');
 
   const value: AuthContextType = {
     user,
     profile,
     session,
-    loading: loading && !forceCompletedRef.current,
+    loading,
     signIn,
     signUp,
     signOut,
@@ -423,6 +439,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAdmin,
     refreshProfile,
     clearTokens,
+    initialized,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
