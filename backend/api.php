@@ -639,11 +639,19 @@ try {
             throw new Exception("Your authentication token is invalid or expired. Please sign in again.");
         }
 
-        // Check if user is admin
+        // For companies table, allow any authenticated user (not just admins)
+        // For other protected tables, require admin role
+        if ($table === 'companies') {
+            // Any authenticated user can edit company info
+            error_log("✅ [AUTH] $action on $table - Authorized as authenticated user (email: {$decoded['email']}, role: {$decoded['role']})");
+            return $decoded;
+        }
+
+        // For other protected tables, check if user is admin
         if ($decoded['role'] !== 'admin') {
             error_log("❌ [AUTH] $action on $table - User role is '{$decoded['role']}', requires 'admin'");
             http_response_code(403);
-            throw new Exception("You do not have permission to update company settings.");
+            throw new Exception("You do not have permission to perform this action. Admin access required.");
         }
 
         error_log("✅ [AUTH] $action on $table - Authorized as admin (email: {$decoded['email']})");
@@ -883,6 +891,176 @@ try {
             'status' => 'success',
             'message' => 'Record deleted',
             'affected_rows' => $conn->affected_rows
+        ]);
+    }
+    elseif ($action === "copy_record") {
+        // Copy a database record with optional field modifications
+        if (!$table || !$where) {
+            throw new Exception("Missing table or where clause");
+        }
+
+        // Check authorization for modifications to protected tables
+        $protected_tables = ['companies', 'users', 'profiles', 'user_permissions', 'roles'];
+        if (in_array($table, $protected_tables)) {
+            $auth = requireAuthForModification($action, $table);
+        }
+
+        // Fetch the source record
+        $sql = "SELECT * FROM `$table`";
+        $conditions = [];
+
+        if (is_array($where)) {
+            foreach ($where as $col => $val) {
+                $conditions[] = "`" . escape($conn, $col) . "`='" . escape($conn, $val) . "'";
+            }
+        } else {
+            $conditions[] = $where;
+        }
+
+        $sql .= " WHERE " . implode(" AND ", $conditions);
+
+        $result = $conn->query($sql);
+        if (!$result || $result->num_rows === 0) {
+            throw new Exception("Source record not found");
+        }
+
+        $source_record = $result->fetch_assoc();
+
+        // Prepare data for the new record
+        $new_record = $source_record;
+
+        // Remove id to allow auto-generation
+        unset($new_record['id']);
+
+        // Apply any field overrides from the request
+        if (!empty($data) && is_array($data)) {
+            foreach ($data as $key => $value) {
+                if ($key !== 'id') {
+                    $new_record[$key] = $value;
+                }
+            }
+        }
+
+        // Reset timestamps
+        $new_record['created_at'] = date('Y-m-d H:i:s');
+        if (isset($new_record['updated_at'])) {
+            $new_record['updated_at'] = date('Y-m-d H:i:s');
+        }
+
+        // Build INSERT query
+        $columns = [];
+        $values = [];
+
+        foreach ($new_record as $col => $val) {
+            if ($val !== null) {
+                $columns[] = "`" . escape($conn, $col) . "`";
+                $values[] = "'" . escape($conn, $val) . "'";
+            }
+        }
+
+        $sql = "INSERT INTO `$table` (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $values) . ")";
+
+        error_log("SQL COPY: " . $sql);
+
+        if (!$conn->query($sql)) {
+            error_log("MySQL Error: " . $conn->error . " | SQL: " . $sql);
+            throw new Exception("Copy failed: " . $conn->error);
+        }
+
+        $new_id = $conn->insert_id;
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Record copied successfully',
+            'original_id' => $source_record['id'],
+            'new_id' => $new_id,
+            'data' => array_merge($new_record, ['id' => $new_id])
+        ]);
+    }
+    elseif ($action === "copy_file") {
+        // Copy a file from one location to another
+        $source_file = $_POST['source_file'] ?? ($_GET['source_file'] ?? null);
+        $destination_name = $_POST['destination_name'] ?? ($_GET['destination_name'] ?? null);
+
+        if (!$source_file) {
+            throw new Exception("Missing source_file parameter");
+        }
+
+        // Validate that source file path doesn't contain directory traversal attempts
+        $source_file = str_replace(['../', '..\\', '\\'], '/', $source_file);
+        if (strpos($source_file, '/') === 0) {
+            $source_file = ltrim($source_file, '/');
+        }
+
+        // Build full source path
+        $uploads_dir = dirname(__DIR__) . '/public/uploads';
+        $full_source_path = $uploads_dir . '/' . $source_file;
+
+        // Verify the source file exists and is within uploads directory
+        $real_uploads_dir = realpath($uploads_dir);
+        $real_source_path = realpath($full_source_path);
+
+        if (!$real_source_path || !file_exists($real_source_path)) {
+            throw new Exception("Source file not found: $source_file");
+        }
+
+        // Ensure file is within uploads directory (security check)
+        if (strpos($real_source_path, $real_uploads_dir) !== 0) {
+            throw new Exception("Access denied: File is outside allowed directory");
+        }
+
+        // Validate file is readable
+        if (!is_readable($real_source_path)) {
+            throw new Exception("Source file is not readable");
+        }
+
+        // Generate destination filename
+        if (!$destination_name) {
+            // Generate from source filename
+            $source_info = pathinfo($real_source_path);
+            $base_name = $source_info['filename'];
+            $extension = $source_info['extension'];
+            $destination_name = $base_name . '-copy-' . time() . '.' . $extension;
+        } else {
+            // Sanitize destination name
+            $destination_name = preg_replace('/[^a-zA-Z0-9._-]/', '_', $destination_name);
+        }
+
+        $destination_path = $uploads_dir . '/' . $destination_name;
+
+        // Verify destination doesn't exist
+        if (file_exists($destination_path)) {
+            throw new Exception("Destination file already exists");
+        }
+
+        error_log("📋 Copying file: $full_source_path -> $destination_path");
+
+        // Copy the file
+        if (!copy($real_source_path, $destination_path)) {
+            throw new Exception("Failed to copy file");
+        }
+
+        // Verify copy was successful
+        if (!file_exists($destination_path) || filesize($destination_path) !== filesize($real_source_path)) {
+            @unlink($destination_path); // Clean up if verification fails
+            throw new Exception("File copy verification failed");
+        }
+
+        // Construct the public URL
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'];
+        $file_url = "$protocol://$host/uploads/$destination_name";
+
+        error_log('✅ File copied successfully: ' . $file_url);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'File copied successfully',
+            'url' => $file_url,
+            'file_url' => $file_url,
+            'path' => "/uploads/$destination_name",
+            'filename' => $destination_name,
+            'source_filename' => basename($real_source_path)
         ]);
     }
     elseif ($action === "create_table") {
