@@ -43,10 +43,10 @@ import {
 } from '@/utils/companySettingsValidators';
 
 export default function CompanySettings() {
-  const { isAdmin, profile: currentUser } = useAuth();
+  const { isAuthenticated, profile: currentUser } = useAuth();
 
-  // Check admin access
-  if (!isAdmin) {
+  // Check authentication (all authenticated users can edit company settings)
+  if (!isAuthenticated) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -64,7 +64,7 @@ export default function CompanySettings() {
               <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
               <p className="text-muted-foreground mb-4">
-                You need administrator privileges to access company settings.
+                You need to be logged in to access company settings.
               </p>
               {currentUser && (
                 <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-900 rounded text-left text-sm space-y-3">
