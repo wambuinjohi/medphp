@@ -78,7 +78,8 @@ const App = () => {
         <Route
           path="*"
           element={
-            <Layout>
+            <CompanyProvider>
+              <Layout>
               <Routes>
                 {/* Redirect root to app dashboard */}
                 <Route path="/" element={<Navigate to="/app" replace />} />
@@ -468,7 +469,8 @@ const App = () => {
                 {/* 404 Page */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </Layout>
+              </Layout>
+            </CompanyProvider>
           }
         />
       </Routes>
