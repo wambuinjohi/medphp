@@ -650,7 +650,10 @@ export function useStockMovements(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useRemittanceAdvice(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('remittance_advice', filter);
 }
 
