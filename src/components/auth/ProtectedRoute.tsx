@@ -8,28 +8,30 @@ interface ProtectedRouteProps {
   children: ReactNode;
   fallback?: ReactNode;
   requireAuth?: boolean;
+  requiredRole?: string;
 }
 
 export function ProtectedRoute({
   children,
   fallback,
   requireAuth = false,
+  requiredRole,
 }: ProtectedRouteProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, profile } = useAuth();
 
-  // Skip loading state check - allow public access
-  // if (loading) {
-  //   return (
-  //     <div className="flex items-center justify-center min-h-[400px]">
-  //       <div className="text-center">
-  //         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
-  //         <p className="text-muted-foreground">Loading...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  // Show loading state while auth is being confirmed
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Check authentication
+  // Check authentication - if requireAuth is true and user is not authenticated, deny access
   if (requireAuth && !isAuthenticated) {
     return fallback || (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -40,8 +42,28 @@ export function ProtectedRoute({
             <p className="text-muted-foreground mb-4">
               Please sign in to access this page.
             </p>
-            <Button onClick={() => window.location.reload()}>
+            <Button onClick={() => window.location.href = '/login'}>
               Sign In
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check role-based access control - if requiredRole is specified, user must have that role
+  if (requiredRole && (!profile?.role || !profile.role.toLowerCase().includes(requiredRole.toLowerCase()))) {
+    return fallback || (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="pt-6">
+            <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
+            <p className="text-muted-foreground mb-4">
+              You do not have the required permissions ({requiredRole}) to access this page.
+            </p>
+            <Button onClick={() => window.location.href = '/app'}>
+              Go to Dashboard
             </Button>
           </CardContent>
         </Card>
