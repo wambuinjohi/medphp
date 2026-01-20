@@ -206,18 +206,19 @@ export default function SalesReports() {
     filteredInvoices.forEach(invoice => {
       const customerId = invoice.customer_id;
       const customerName = customers.find(c => c.id === customerId)?.name || 'Unknown Customer';
+      const totalAmount = parseFloat(invoice.total_amount) || 0;
 
       if (customerSales.has(customerId)) {
         const existing = customerSales.get(customerId);
         customerSales.set(customerId, {
           name: customerName,
-          sales: existing.sales + (invoice.total_amount || 0),
+          sales: existing.sales + totalAmount,
           invoices: existing.invoices + 1
         });
       } else {
         customerSales.set(customerId, {
           name: customerName,
-          sales: invoice.total_amount || 0,
+          sales: totalAmount,
           invoices: 1
         });
       }
