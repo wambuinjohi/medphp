@@ -898,12 +898,8 @@ export function useUpdatePaymentMethod() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string | number; data: any }) => {
-      const { data: result, error } = await supabase
-        .from('payment_methods')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
+      const db = getDatabase();
+      const { data: result, error } = await db.update('payment_methods', String(id), data);
 
       if (error) throw error;
       return result;
