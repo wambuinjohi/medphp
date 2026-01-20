@@ -732,7 +732,7 @@ export default function SalesReports() {
                 <span className="text-sm text-muted-foreground">Average Order Value</span>
                 <span className="font-medium">
                   {formatCurrency(invoices && invoices.length > 0
-                    ? (invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0) / invoices.length)
+                    ? (invoices.reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0) / invoices.length)
                     : 0
                   )}
                 </span>
