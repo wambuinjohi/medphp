@@ -377,7 +377,10 @@ export function useUpdateProduct() {
  * @param companyId - Optional company ID for filtering
  */
 export function useUnitsOfMeasure(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('units_of_measure', filter);
 }
 
