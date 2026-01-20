@@ -82,15 +82,18 @@ export function EditUserModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError('');
 
     if (!user || !validateForm()) {
       return;
     }
 
     const result = await onUpdateUser(user.id, formData);
-    
+
     if (result.success) {
       handleClose();
+    } else {
+      setSubmitError(result.error || 'Failed to update user');
     }
   };
 
