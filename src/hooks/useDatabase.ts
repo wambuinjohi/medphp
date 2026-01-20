@@ -523,7 +523,10 @@ export function useAllSuppliersAndCustomers(companyId?: string) {
  * @param companyId - Optional company ID for filtering
  */
 export function useSuppliers(companyId?: string) {
-  const filter = companyId ? { company_id: companyId } : undefined;
+  const filter = useMemo(() =>
+    companyId ? { company_id: companyId } : undefined,
+    [companyId]
+  );
   return useSelect('suppliers', filter);
 }
 
