@@ -184,10 +184,27 @@ if ($request_param && !$action) {
                 }
             }
         }
+        // Handle /chat endpoint
+        elseif ($segments[0] === 'chat' && $method === 'POST') {
+            $action = 'create';
+            $table = 'chat_messages';
+            if ($json_body) {
+                $data = $json_body;
+            }
+        }
+        // Handle /newsletter endpoint
+        elseif ($segments[0] === 'newsletter' && $method === 'POST') {
+            $action = 'create';
+            $table = 'newsletter';
+            if ($json_body) {
+                $data = $json_body;
+            }
+        }
         // Handle table CRUD routes (contacts, quotations, portfolios, etc.)
         elseif (in_array($segments[0], ['contacts', 'quotations', 'portfolios', 'web_app_leads', 'web-leads', 'logs'])) {
             $table_name = $segments[0];
             if ($segments[0] === 'web-leads') $table_name = 'web_app_leads';
+            if ($segments[0] === 'discovery-leads' || $segments[0] === 'discovery_leads') $table_name = 'leads';
 
             $table = $table_name;
 
@@ -239,8 +256,12 @@ function ensureTables($conn) {
         'users' => 'id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(255) UNIQUE, password TEXT, role VARCHAR(50), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
         'profiles' => 'id INT PRIMARY KEY, email VARCHAR(255) NOT NULL, full_name VARCHAR(255), avatar_url TEXT, role VARCHAR(50) DEFAULT "user", status VARCHAR(50) DEFAULT "pending", phone VARCHAR(20), company_id INT, department VARCHAR(255), position VARCHAR(255), invited_by INT, invited_at TIMESTAMP NULL, last_login TIMESTAMP NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
         'contacts' => 'id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), email VARCHAR(255), phone VARCHAR(20), subject VARCHAR(255), message TEXT, status VARCHAR(50) DEFAULT "new", reply_notes TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+        'newsletter' => 'id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(255) UNIQUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
+        'leads' => 'id INT AUTO_INCREMENT PRIMARY KEY, business_name VARCHAR(255), contact_person VARCHAR(255), phone VARCHAR(20), email VARCHAR(255), business_category VARCHAR(255), location VARCHAR(255), website_url VARCHAR(255), website_status VARCHAR(50), lead_source VARCHAR(50), expressed_need TEXT, notes TEXT, status VARCHAR(50), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
         'quotations' => 'id INT AUTO_INCREMENT PRIMARY KEY, portfolio_id INT, customer_name VARCHAR(255), customer_email VARCHAR(255), customer_phone VARCHAR(20), project_description TEXT, budget_range VARCHAR(100), timeline VARCHAR(100), status VARCHAR(50) DEFAULT "new", notes TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
         'portfolios' => 'id INT AUTO_INCREMENT PRIMARY KEY, admin_id INT, title VARCHAR(255), description TEXT, website_url VARCHAR(255) UNIQUE, screenshot_url VARCHAR(255), status VARCHAR(50) DEFAULT "pending", created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+        'opportunities' => 'id INT AUTO_INCREMENT PRIMARY KEY, source VARCHAR(2048), snippet TEXT, url VARCHAR(2048), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
+        'discovery_leads' => 'id INT AUTO_INCREMENT PRIMARY KEY, business_name VARCHAR(255), location VARCHAR(255), phone VARCHAR(20), email VARCHAR(255), website_url VARCHAR(255), website_status VARCHAR(50), notes TEXT, status VARCHAR(50) DEFAULT "new", created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
         'logs' => 'id INT AUTO_INCREMENT PRIMARY KEY, message TEXT, level VARCHAR(50), source VARCHAR(255), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
     ];
 
@@ -589,6 +610,40 @@ try {
         return $decoded;
     }
 
+    // Helper function to check authorization for modifications (create, update, delete)
+    // Authentication is OPTIONAL - if a token is provided, it will be verified, but requests without auth are allowed
+    function requireAuthForModification($action, $table) {
+        // Get token from Authorization header
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+        $token = null;
+
+        if ($auth_header && preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
+            $token = $matches[1];
+        }
+
+        // Fallback to POST data for compatibility
+        if (!$token) {
+            $token = $_POST['token'] ?? null;
+        }
+
+        // If no token provided, allow access (auth is optional for remote PHP API)
+        if (!$token) {
+            error_log("⚠️ [AUTH] $action on $table - No token provided (auth optional for remote API)");
+            return ['email' => 'unauthenticated', 'role' => 'guest'];
+        }
+
+        // Verify token if provided
+        $decoded = verifyJWT($token);
+        if (!$decoded) {
+            error_log("⚠️ [AUTH] $action on $table - Invalid or expired token (but auth is optional)");
+            // Allow the request even with invalid token - auth is optional
+            return ['email' => 'unauthenticated', 'role' => 'guest'];
+        }
+
+        error_log("✅ [AUTH] $action on $table - Authorized with token (email: {$decoded['email']}, role: {$decoded['role']})");
+        return $decoded;
+    }
+
     // Authentication
     if ($action === "login") {
         $email = $_POST['email'] ?? ($json_body['email'] ?? null);
@@ -678,6 +733,12 @@ try {
             throw new Exception("Missing data for insert");
         }
 
+        // Check authorization for modifications to protected tables
+        $protected_tables = ['companies', 'users', 'profiles', 'user_permissions', 'roles'];
+        if (in_array($table, $protected_tables)) {
+            $auth = requireAuthForModification($action, $table);
+        }
+
         $columns = [];
         $values = [];
 
@@ -746,6 +807,12 @@ try {
             throw new Exception("Missing table or where clause");
         }
 
+        // Check authorization for modifications to protected tables
+        $protected_tables = ['companies', 'users', 'profiles', 'user_permissions', 'roles'];
+        if (in_array($table, $protected_tables)) {
+            $auth = requireAuthForModification($action, $table);
+        }
+
         $sets = [];
         foreach ($data as $col => $val) {
             $sets[] = "`" . escape($conn, $col) . "`='" . escape($conn, $val) . "'";
@@ -784,6 +851,12 @@ try {
             throw new Exception("Missing table or where clause");
         }
 
+        // Check authorization for modifications to protected tables
+        $protected_tables = ['companies', 'users', 'profiles', 'user_permissions', 'roles'];
+        if (in_array($table, $protected_tables)) {
+            $auth = requireAuthForModification($action, $table);
+        }
+
         $sql = "DELETE FROM `$table`";
 
         if (is_array($where)) {
@@ -810,6 +883,12 @@ try {
         // Copy a database record with optional field modifications
         if (!$table || !$where) {
             throw new Exception("Missing table or where clause");
+        }
+
+        // Check authorization for modifications to protected tables
+        $protected_tables = ['companies', 'users', 'profiles', 'user_permissions', 'roles'];
+        if (in_array($table, $protected_tables)) {
+            $auth = requireAuthForModification($action, $table);
         }
 
         // Fetch the source record
@@ -1005,6 +1084,112 @@ try {
             'status' => 'success',
             'message' => 'API is healthy'
         ]);
+    }
+    elseif ($action === "proxy_external_api") {
+        // Forward requests to external API (e.g., https://med.wayrus.co.ke/api.php)
+        $external_api_url = $_POST['external_api_url'] ?? ($_GET['external_api_url'] ?? null);
+        $external_action = $_POST['external_action'] ?? ($_GET['external_action'] ?? null);
+        $external_method = $_POST['external_method'] ?? ($_GET['external_method'] ?? 'POST');
+        $external_table = $_POST['external_table'] ?? ($_GET['external_table'] ?? null);
+        $external_where = $_POST['external_where'] ?? ($_GET['external_where'] ?? null);
+
+        if (!$external_api_url || !$external_action) {
+            throw new Exception("Missing required proxy parameters: external_api_url and external_action");
+        }
+
+        // Build the external API URL
+        $external_params = [
+            'action' => $external_action
+        ];
+
+        if ($external_table) {
+            $external_params['table'] = $external_table;
+        }
+
+        if ($external_where) {
+            $external_params['where'] = $external_where;
+        }
+
+        $external_url = $external_api_url . '?' . http_build_query($external_params);
+
+        // Prepare headers for the external API call
+        $headers = [
+            'Content-Type: application/json',
+            'Accept: application/json'
+        ];
+
+        // Include authorization header if available
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+        if ($auth_header) {
+            $headers[] = 'Authorization: ' . $auth_header;
+        }
+
+        // Prepare request body (data)
+        $request_body = null;
+        if ($json_body && is_array($json_body)) {
+            $request_body = json_encode($json_body);
+        }
+
+        // Initialize cURL for external API call
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $external_url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_CUSTOMREQUEST => strtoupper($external_method),
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+        ]);
+
+        // Add body if present
+        if ($request_body) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $request_body);
+        }
+
+        // Execute the request
+        $external_response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
+        curl_close($ch);
+
+        // Check for cURL errors
+        if ($curl_error) {
+            http_response_code(502);
+            echo json_encode([
+                'status' => 'error',
+                'message' => "Failed to reach external API: $curl_error"
+            ]);
+            exit();
+        }
+
+        // Ensure we have a valid response
+        if (!$external_response) {
+            http_response_code(502);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Empty response from external API'
+            ]);
+            exit();
+        }
+
+        // Try to decode the external API response
+        $decoded_response = json_decode($external_response, true);
+        if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
+            http_response_code(502);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Invalid JSON response from external API'
+            ]);
+            exit();
+        }
+
+        // Pass through the HTTP status code from external API
+        http_response_code($http_code);
+
+        // Return the external API response as-is
+        echo is_string($external_response) ? $external_response : json_encode($decoded_response);
     }
     else {
         throw new Exception("Unknown action: $action");

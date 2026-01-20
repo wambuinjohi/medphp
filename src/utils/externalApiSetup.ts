@@ -32,10 +32,14 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
   const adminEmail = email || 'admin@mail.com';
   const adminPassword = password || 'Pass123';
 
+  // Determine if we should use the proxy (for default API) or direct URL (for custom APIs)
+  const isDefaultApi = !apiUrl || apiUrl.includes('med.wayrus.co.ke') || apiUrl === import.meta.env.VITE_EXTERNAL_API_URL;
+  const fetchUrl = isDefaultApi ? '/api' : apiUrl.replace(/\/api\.php$/, '') + '/api.php';
+
   try {
     // Step 1: Test API connectivity
     onProgress?.('Testing API connectivity...');
-    const healthCheck = await fetch(`${apiUrl}?action=health`, {
+    const healthCheck = await fetch(`${fetchUrl}?action=health`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     }).catch(err => {
@@ -54,7 +58,7 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
     onProgress?.(`Creating admin user: ${adminEmail}`);
 
     // The setup endpoint expects email and password as JSON POST data
-    const setupResponse = await fetch(`${apiUrl}?action=setup`, {
+    const setupResponse = await fetch(`${fetchUrl}?action=setup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -100,7 +104,7 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
     onProgress?.('Verifying authentication...');
 
     // The login endpoint expects email and password as JSON POST data
-    const loginResponse = await fetch(`${apiUrl}?action=login`, {
+    const loginResponse = await fetch(`${fetchUrl}?action=login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -169,8 +173,12 @@ export async function checkAdminExists(options: SetupOptions = {}): Promise<bool
   const email = options.email || 'admin@mail.com';
   const password = options.password || 'Pass123';
 
+  // Use proxy for default API, direct URL for custom APIs
+  const isDefaultApi = !apiUrl || apiUrl.includes('med.wayrus.co.ke') || apiUrl === import.meta.env.VITE_EXTERNAL_API_URL;
+  const fetchUrl = isDefaultApi ? '/api' : apiUrl.replace(/\/api\.php$/, '') + '/api.php';
+
   try {
-    const response = await fetch(`${apiUrl}?action=login`, {
+    const response = await fetch(`${fetchUrl}?action=login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -202,10 +210,14 @@ export async function createUserViaAPI(
     options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
   const { onProgress } = options;
 
+  // Use proxy for default API, direct URL for custom APIs
+  const isDefaultApi = !apiUrl || apiUrl.includes('med.wayrus.co.ke') || apiUrl === import.meta.env.VITE_EXTERNAL_API_URL;
+  const fetchUrl = isDefaultApi ? '/api' : apiUrl.replace(/\/api\.php$/, '') + '/api.php';
+
   try {
     onProgress?.(`Creating user: ${email}`);
 
-    const response = await fetch(`${apiUrl}?action=create&table=users`, {
+    const response = await fetch(`${fetchUrl}?action=create&table=users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -249,9 +261,13 @@ export async function getDatabaseInfo(options: SetupOptions = {}): Promise<any> 
   const apiUrl =
     options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
 
+  // Use proxy for default API, direct URL for custom APIs
+  const isDefaultApi = !apiUrl || apiUrl.includes('med.wayrus.co.ke') || apiUrl === import.meta.env.VITE_EXTERNAL_API_URL;
+  const fetchUrl = isDefaultApi ? '/api' : apiUrl.replace(/\/api\.php$/, '') + '/api.php';
+
   try {
     // Try to read users table to verify connection
-    const response = await fetch(`${apiUrl}?action=read&table=users`, {
+    const response = await fetch(`${fetchUrl}?action=read&table=users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ where: {} }),

@@ -17,33 +17,48 @@ async function tableExists(table: string): Promise<boolean> {
   try {
     const result = await apiClient.select(table);
     return !result.error;
-  } catch {
+  } catch (error) {
+    // Log network errors for diagnostics
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      console.warn('❌ Network error: Cannot reach API. Backend may be unreachable or blocked by firewall/proxy.');
+    }
     return false;
   }
 }
 
 export async function ensureAuditLogSchema(): Promise<void> {
-  const exists = await tableExists('audit_logs');
-  if (exists) return;
+  try {
+    const exists = await tableExists('audit_logs');
+    if (exists) return;
 
-  const sql = `
-  create table if not exists audit_logs (
-    id uuid primary key default gen_random_uuid(),
-    created_at timestamptz not null default now(),
-    action text not null,
-    entity_type text not null,
-    record_id uuid,
-    company_id uuid,
-    actor_user_id uuid,
-    actor_email text,
-    details jsonb
-  );
-  create index if not exists idx_audit_logs_entity on audit_logs(entity_type, record_id);
-  create index if not exists idx_audit_logs_company on audit_logs(company_id);
-  create index if not exists idx_audit_logs_action on audit_logs(action);
-  `;
+    const sql = `
+    create table if not exists audit_logs (
+      id uuid primary key default gen_random_uuid(),
+      created_at timestamptz not null default now(),
+      action text not null,
+      entity_type text not null,
+      record_id uuid,
+      company_id uuid,
+      actor_user_id uuid,
+      actor_email text,
+      details jsonb
+    );
+    create index if not exists idx_audit_logs_entity on audit_logs(entity_type, record_id);
+    create index if not exists idx_audit_logs_company on audit_logs(company_id);
+    create index if not exists idx_audit_logs_action on audit_logs(action);
+    `;
 
-  await executeSQL(sql);
+    await executeSQL(sql);
+  } catch (error) {
+    // Silently fail - audit logs are non-critical
+    // Log only for debugging purposes
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      console.debug('⚠️ Audit log schema check skipped: API unreachable');
+    } else {
+      console.debug('⚠️ Audit log schema ensure failed:', error);
+    }
+    // Don't throw - allow app to continue
+  }
 }
 
 async function getActorInfo(): Promise<{ user_id: string | null; email: string | null }> {

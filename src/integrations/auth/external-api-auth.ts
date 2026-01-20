@@ -15,11 +15,16 @@ export interface AuthToken {
 
 class ExternalAPIAuthHandler {
   private apiUrl: string;
+  private fetchUrl: string;
   private tokenKey = 'med_api_auth_token';
   private userKey = 'med_api_auth_user';
 
   constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
     this.apiUrl = apiUrl;
+
+    // Determine if we should use proxy (for default API) or direct URL (for custom APIs)
+    const isDefaultApi = !apiUrl || apiUrl.includes('med.wayrus.co.ke') || apiUrl === import.meta.env.VITE_EXTERNAL_API_URL;
+    this.fetchUrl = isDefaultApi ? '/api' : apiUrl.replace(/\/api\.php$/, '') + '/api.php';
   }
 
   /**
@@ -27,7 +32,7 @@ class ExternalAPIAuthHandler {
    */
   async login(email: string, password: string): Promise<{ token?: string; user?: any; error?: Error }> {
     try {
-      const response = await fetch(`${this.apiUrl}?action=login`, {
+      const response = await fetch(`${this.fetchUrl}?action=login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -78,7 +83,7 @@ class ExternalAPIAuthHandler {
       // Notify backend about logout (optional, for logging)
       const token = this.getToken();
       if (token) {
-        await fetch(`${this.apiUrl}?action=logout`, {
+        await fetch(`${this.fetchUrl}?action=logout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -150,7 +155,7 @@ class ExternalAPIAuthHandler {
     }
 
     try {
-      const response = await fetch(`${this.apiUrl}?action=check_auth`, {
+      const response = await fetch(`${this.fetchUrl}?action=check_auth`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -197,7 +202,7 @@ class ExternalAPIAuthHandler {
     }
 
     try {
-      const response = await fetch(`${this.apiUrl}?action=create&table=users`, {
+      const response = await fetch(`${this.fetchUrl}?action=create&table=users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -234,7 +239,7 @@ class ExternalAPIAuthHandler {
     }
 
     try {
-      const response = await fetch(`${this.apiUrl}?action=update&table=users`, {
+      const response = await fetch(`${this.fetchUrl}?action=update&table=users`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -269,7 +274,7 @@ class ExternalAPIAuthHandler {
    */
   async setupAdmin(email: string, password: string): Promise<{ user?: any; error?: Error }> {
     try {
-      const response = await fetch(`${this.apiUrl}?action=setup`, {
+      const response = await fetch(`${this.fetchUrl}?action=setup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
