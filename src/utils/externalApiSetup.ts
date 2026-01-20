@@ -173,8 +173,12 @@ export async function checkAdminExists(options: SetupOptions = {}): Promise<bool
   const email = options.email || 'admin@mail.com';
   const password = options.password || 'Pass123';
 
+  // Use proxy for default API, direct URL for custom APIs
+  const isDefaultApi = !apiUrl || apiUrl.includes('med.wayrus.co.ke') || apiUrl === import.meta.env.VITE_EXTERNAL_API_URL;
+  const fetchUrl = isDefaultApi ? '/api' : apiUrl.replace(/\/api\.php$/, '') + '/api.php';
+
   try {
-    const response = await fetch(`${apiUrl}?action=login`, {
+    const response = await fetch(`${fetchUrl}?action=login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
