@@ -344,6 +344,7 @@ export const useUserManagement = () => {
   // Update user (admin only)
   const updateUser = async (userId: string, userData: UpdateUserData): Promise<{ success: boolean; error?: string }> => {
     if (!isAdmin) {
+      toast.error('You do not have permission to update users');
       return { success: false, error: 'Unauthorized' };
     }
 
