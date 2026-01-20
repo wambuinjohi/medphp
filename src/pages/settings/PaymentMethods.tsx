@@ -122,7 +122,6 @@ export default function PaymentMethods() {
         name: formData.name,
         code: formData.code,
         description: formData.description || undefined,
-        icon_name: formData.icon_name,
         company_id: activeCompanyId,
       });
       setShowCreateModal(false);
@@ -154,7 +153,6 @@ export default function PaymentMethods() {
           name: formData.name,
           code: formData.code,
           description: formData.description || undefined,
-          icon_name: formData.icon_name,
           is_active: formData.is_active,
         },
       });
