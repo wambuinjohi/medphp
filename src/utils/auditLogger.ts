@@ -17,7 +17,11 @@ async function tableExists(table: string): Promise<boolean> {
   try {
     const result = await apiClient.select(table);
     return !result.error;
-  } catch {
+  } catch (error) {
+    // Log network errors for diagnostics
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      console.warn('❌ Network error: Cannot reach API. Backend may be unreachable or blocked by firewall/proxy.');
+    }
     return false;
   }
 }
