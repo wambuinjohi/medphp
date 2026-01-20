@@ -77,6 +77,58 @@ if (!$action) {
     exit();
 }
 
+// ============================================
+// Authentication Helper Functions
+// ============================================
+
+// Hash password using PHP's built-in function
+function hashPassword($password) {
+    return password_hash($password, PASSWORD_BCRYPT);
+}
+
+// Verify password
+function verifyPassword($password, $hash) {
+    return password_verify($password, $hash);
+}
+
+// Create JWT token
+function createJWT($user_id, $user_email, $user_role) {
+    $secret = $_ENV['JWT_SECRET'] ?? 'wayrus-secret-key-2024';
+    $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
+    $payload = base64_encode(json_encode([
+        'sub' => $user_id,
+        'email' => $user_email,
+        'role' => $user_role,
+        'iat' => time(),
+        'exp' => time() + (24 * 60 * 60) // 24 hours
+    ]));
+    $signature = base64_encode(hash_hmac('sha256', "$header.$payload", $secret, true));
+    return "$header.$payload.$signature";
+}
+
+// Verify JWT token
+function verifyJWT($token) {
+    if (!$token) return null;
+    $secret = $_ENV['JWT_SECRET'] ?? 'wayrus-secret-key-2024';
+    $parts = explode('.', $token);
+    if (count($parts) !== 3) return null;
+
+    list($header, $payload, $signature) = $parts;
+
+    // Verify signature
+    $expected_signature = base64_encode(hash_hmac('sha256', "$header.$payload", $secret, true));
+    if ($signature !== $expected_signature) return null;
+
+    // Decode payload
+    $decoded = json_decode(base64_decode($payload), true);
+    if (!$decoded) return null;
+
+    // Check expiration
+    if ($decoded['exp'] < time()) return null;
+
+    return $decoded;
+}
+
 try {
     if ($action === "health") {
         echo json_encode(['status' => 'success', 'message' => 'API is healthy']);
