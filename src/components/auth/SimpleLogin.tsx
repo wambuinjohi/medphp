@@ -48,7 +48,7 @@ export function SimpleLogin() {
     if (error) {
       handleAuthError(error);
     } else {
-      toast.success(`Welcome to ${companyName}!`);
+      toast.success('Welcome!');
     }
   };
 
