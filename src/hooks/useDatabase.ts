@@ -987,32 +987,32 @@ export function useCreatePayment() {
       } catch (rpcError: any) {
         console.warn('RPC function record_payment_with_allocation not available, using fallback:', rpcError?.message);
 
-        // Fallback: Insert payment directly
+        // Fallback: Insert payment directly via database adapter
         try {
-          const { data: paymentData, error: insertError } = await supabase
-            .from('payments')
-            .insert(paymentRecord)
-            .select()
-            .single();
+          const db = getDatabase();
+          const { data: paymentResult, error: insertError } = await db.insert('payments', paymentRecord);
 
           if (insertError) {
             throw insertError;
+          }
+
+          // Fetch the created payment record
+          const { data: paymentData, error: fetchError } = await db.selectOne('payments', paymentResult.id);
+
+          if (fetchError) {
+            throw fetchError;
           }
 
           // Try to create payment allocation
           let allocation_failed = false;
           try {
             // Check if payment_allocations table exists
-            const { error: allocError } = await supabase
-              .from('payment_allocations')
-              .insert({
-                payment_id: paymentData.id,
-                invoice_id: paymentRecord.invoice_id,
-                allocated_amount: paymentRecord.amount,
-                allocation_date: paymentRecord.payment_date,
-              })
-              .select()
-              .single();
+            const { error: allocError } = await db.insert('payment_allocations', {
+              payment_id: paymentData.id,
+              invoice_id: paymentRecord.invoice_id,
+              allocated_amount: paymentRecord.amount,
+              allocation_date: paymentRecord.payment_date,
+            });
 
             if (allocError) {
               console.warn('Failed to create payment allocation:', allocError?.message);
