@@ -45,11 +45,9 @@ root.render(
     <AuthErrorBoundary>
       <AuthProvider>
         <AuthStatusIndicator />
-        <CompanyProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
-        </CompanyProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
       </AuthProvider>
     </AuthErrorBoundary>
   </QueryClientProvider>
