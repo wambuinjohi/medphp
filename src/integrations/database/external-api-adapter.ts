@@ -509,9 +509,20 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async update<T>(table: string, id: string, data: Partial<T>): Promise<UpdateResult> {
     try {
+      console.log(`📝 Updating ${table} record:`, {
+        table,
+        id,
+        dataKeys: Object.keys(data as any || {}),
+        authTokenPresent: !!this.authToken,
+        dataSize: JSON.stringify(data).length,
+      });
       const { error } = await this.apiCall('PUT', 'update', table, data, { id });
+      if (error) {
+        console.error(`❌ Update error for ${table}/${id}:`, error.message);
+      }
       return { error };
     } catch (error) {
+      console.error(`❌ Update exception for ${table}/${id}:`, error);
       return { error: error as Error };
     }
   }
