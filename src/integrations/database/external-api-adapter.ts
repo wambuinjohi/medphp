@@ -203,7 +203,16 @@ export class ExternalAPIAdapter implements IDatabase {
           console.error('3. API Setup:');
           console.error('   - Check if the backend API has proper authorization checks');
           console.error(`   - Verify the action "${action}" is supported for table "${table}"`);
-          console.error('Raw error from API:', result);
+          console.error('Backend response details:', {
+            status: response.status,
+            statusText: response.statusText,
+            message: result?.message,
+            error: result?.error,
+            details: result?.details,
+            hint: result?.hint,
+            code: result?.code,
+            fullResponse: result,
+          });
         } else if (response.status === 401) {
           console.error(`❌ ${logPrefix} - UNAUTHORIZED (401)`);
           console.error('Your authentication token may be invalid or expired. Please log in again.');
