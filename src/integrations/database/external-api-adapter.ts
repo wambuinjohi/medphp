@@ -113,7 +113,7 @@ export class ExternalAPIAdapter implements IDatabase {
         if (!requestCompleted && !isTimedOut) {
           isTimedOut = true;
           try {
-            controller.abort();
+            controller.abort(new Error('Request timeout: 60 second limit exceeded'));
           } catch (e) {
             // Ignore errors from abort() - it may fail if already aborted
             console.debug('Controller abort error (ignored):', e);
@@ -147,12 +147,15 @@ export class ExternalAPIAdapter implements IDatabase {
         if (timeoutId) clearTimeout(timeoutId);
 
         if (fetchError.name === 'AbortError') {
-          if (isTimedOut) {
+          // Get the abort reason if available
+          const abortReason = fetchError.reason?.message || fetchError.message || '';
+
+          if (isTimedOut || abortReason.includes('timeout')) {
             console.error(`⏱️ API request timeout after 60 seconds at ${this.apiBase}`);
             throw new Error(`API request timeout. The server is taking too long to respond. This may be due to high server load. Please try again.`);
           } else {
             // Signal was aborted for another reason (e.g., component unmount, network interruption)
-            console.warn(`⚠️ API request was cancelled (aborted). This may indicate a network issue or the remote server is unreachable.`);
+            console.warn(`⚠️ API request was cancelled (aborted). Reason: ${abortReason || 'unknown'}`);
             throw new Error(`API request was cancelled. Please check your connection and try again. Server: ${this.apiBase}`);
           }
         }

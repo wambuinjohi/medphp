@@ -8,7 +8,7 @@ interface CompanyContextType {
   isReady: boolean;
 }
 
-const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
+export const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const { data: companies, isLoading, error } = useCompanies();

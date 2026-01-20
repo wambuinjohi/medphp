@@ -16,9 +16,9 @@ interface DiagnosticResult {
 export async function testAPIConnectivity(apiUrl: string = '/api'): Promise<DiagnosticResult> {
   try {
     console.log(`🔍 Testing API connectivity to: ${apiUrl}`);
-    
+
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(new Error('Connectivity test timeout: 5 seconds')), 5000);
 
     const response = await fetch(`${apiUrl}?action=health`, {
       method: 'GET',
@@ -48,8 +48,10 @@ export async function testAPIConnectivity(apiUrl: string = '/api'): Promise<Diag
     let details: any = { url: apiUrl };
 
     if (error.name === 'AbortError') {
-      message = '❌ API request timed out (5 seconds) - Backend may be slow or unreachable';
+      const abortReason = error.reason?.message || error.message || 'timeout';
+      message = `❌ API request timed out (5 seconds) - Backend may be slow or unreachable. Reason: ${abortReason}`;
       details.reason = 'timeout';
+      details.abortReason = abortReason;
     } else if (error instanceof TypeError && error.message === 'Failed to fetch') {
       message = '❌ Failed to fetch - Check firewall, corporate proxy, or network connectivity';
       details.reason = 'failed_to_fetch';
@@ -80,7 +82,7 @@ export async function testCORSPreflight(apiUrl: string = '/api'): Promise<Diagno
     console.log(`🔍 Testing CORS preflight to: ${apiUrl}`);
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(new Error('CORS preflight test timeout: 5 seconds')), 5000);
 
     const response = await fetch(apiUrl, {
       method: 'OPTIONS',
@@ -115,11 +117,16 @@ export async function testCORSPreflight(apiUrl: string = '/api'): Promise<Diagno
       };
     }
   } catch (error: any) {
+    let errorMessage = error.message;
+    if (error.name === 'AbortError') {
+      const abortReason = error.reason?.message || 'timeout';
+      errorMessage = `Timeout: ${abortReason}`;
+    }
     return {
       test: 'CORS Preflight',
       status: 'failed',
       message: '❌ CORS preflight failed',
-      details: { error: error.message },
+      details: { error: errorMessage },
     };
   }
 }

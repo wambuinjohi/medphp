@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,8 +11,6 @@ import { handleAuthError } from '@/utils/authErrorHandler';
 
 export function SimpleLogin() {
   const { signIn, loading } = useAuth();
-  const { currentCompany } = useCurrentCompany();
-  const companyName = currentCompany?.name || '>> Medical Supplies';
 
   const [formData, setFormData] = useState({
     email: '',
@@ -51,7 +48,7 @@ export function SimpleLogin() {
     if (error) {
       handleAuthError(error);
     } else {
-      toast.success(`Welcome to ${companyName}!`);
+      toast.success('Welcome!');
     }
   };
 

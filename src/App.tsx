@@ -6,6 +6,7 @@ import { enableResizeObserverErrorSuppression } from "@/utils/resizeObserverErro
 import { useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { CompanyProvider } from "@/contexts/CompanyContext";
 import Index from "./pages/Index";
 import Quotations from "./pages/Quotations";
 import Invoices from "./pages/Invoices";
@@ -77,7 +78,8 @@ const App = () => {
         <Route
           path="*"
           element={
-            <Layout>
+            <CompanyProvider>
+              <Layout>
               <Routes>
                 {/* Redirect root to app dashboard */}
                 <Route path="/" element={<Navigate to="/app" replace />} />
@@ -467,7 +469,8 @@ const App = () => {
                 {/* 404 Page */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </Layout>
+              </Layout>
+            </CompanyProvider>
           }
         />
       </Routes>

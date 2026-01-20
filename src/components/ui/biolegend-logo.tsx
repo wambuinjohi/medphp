@@ -9,7 +9,8 @@ interface BiolegendLogoProps {
   companyName?: string;
 }
 
-import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { useContext } from 'react';
+import { CompanyContext } from '@/contexts/CompanyContext';
 
 export function BiolegendLogo({
   className,
@@ -18,7 +19,9 @@ export function BiolegendLogo({
   logoUrl: propLogoUrl,
   companyName: propCompanyName
 }: BiolegendLogoProps) {
-  const { currentCompany } = useCurrentCompany();
+  // Safely try to get company context (won't throw if provider is missing)
+  const context = useContext(CompanyContext);
+  const currentCompany = context?.currentCompany;
 
   const sizeClasses = {
     sm: "h-10 w-10",
@@ -32,7 +35,7 @@ export function BiolegendLogo({
     lg: "text-2xl"
   };
 
-  // Use passed-in data first, then fall back to context
+  // Use passed-in data first, then fall back to context, then use defaults
   const logoSrc = propLogoUrl || currentCompany?.logo_url || '/placeholder.svg';
   const companyName = propCompanyName || currentCompany?.name || 'MEDPLUS';
 

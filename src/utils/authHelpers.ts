@@ -130,7 +130,7 @@ export const initializeAuth = async () => {
 
     // Very short timeout for background calls
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second max for background retry
+    const timeoutId = setTimeout(() => controller.abort(new Error('Auth initialization timeout: 8 seconds')), 8000); // 8 second max for background retry
 
     try {
       // Health checks have been disabled to prevent AbortError issues
