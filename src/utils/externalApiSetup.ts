@@ -104,7 +104,7 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
     onProgress?.('Verifying authentication...');
 
     // The login endpoint expects email and password as JSON POST data
-    const loginResponse = await fetch(`${apiUrl}?action=login`, {
+    const loginResponse = await fetch(`${fetchUrl}?action=login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
