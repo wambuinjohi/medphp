@@ -141,7 +141,7 @@ export default function SalesReports() {
         return invoiceDate >= monthStart && invoiceDate <= monthEnd;
       });
 
-      const monthlySales = monthInvoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
+      const monthlySales = monthInvoices.reduce((sum, inv) => sum + (parseFloat(inv.total_amount) || 0), 0);
       const uniqueCustomers = new Set(monthInvoices.map(inv => inv.customer_id)).size;
 
       last6Months.push({
