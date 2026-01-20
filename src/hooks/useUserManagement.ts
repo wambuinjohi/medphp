@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
+import { getDatabase } from '@/integrations/database';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth, UserProfile, UserRole, UserStatus } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { parseErrorMessage, parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { logUserCreation, logUserApproval } from '@/utils/auditLogger';
-
-// Supabase URL - same as used in client initialization
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://klifzjcfnlaxminytmyh.supabase.co';
 
 export interface UserInvitation {
   id: string;
@@ -54,6 +52,7 @@ export const useUserManagement = () => {
   // Fetch all users in the same company
   const fetchUsers = async () => {
     if (!isAdmin) {
+      console.log('fetchUsers: User is not admin, skipping fetch');
       return;
     }
 
@@ -61,23 +60,24 @@ export const useUserManagement = () => {
     setError(null);
 
     try {
-      const query = supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      console.log('Fetching users for company:', currentUser?.company_id);
+      const db = getDatabase();
 
-      // If admin belongs to a company, limit to that company. Super-admins without company can fetch all users.
+      // Build filter based on company_id if user has one
+      let filter: Record<string, any> = {};
       if (currentUser?.company_id) {
-        query.eq('company_id', currentUser.company_id);
+        filter.company_id = currentUser.company_id;
       }
 
-      const { data, error } = await query;
+      const { data, error } = await db.select('profiles', filter);
 
       if (error) {
+        console.error('Error fetching users:', error);
         throw error;
       }
 
-      setUsers(data || []);
+      console.log('Fetched users:', data?.length || 0, 'users');
+      setUsers((data || []) as UserProfile[]);
     } catch (err) {
       console.error('Error fetching users:', err);
       let errorMessage = 'Unknown error occurred';
@@ -344,27 +344,31 @@ export const useUserManagement = () => {
   // Update user (admin only)
   const updateUser = async (userId: string, userData: UpdateUserData): Promise<{ success: boolean; error?: string }> => {
     if (!isAdmin) {
+      toast.error('You do not have permission to update users');
       return { success: false, error: 'Unauthorized' };
     }
 
     setLoading(true);
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update(userData)
-        .eq('id', userId);
+      console.log('Attempting to update user via external API:', { userId, userData });
+
+      const db = getDatabase();
+      const { error } = await db.update('profiles', userId, userData);
 
       if (error) {
+        console.error('Database returned error:', error);
         throw error;
       }
 
+      console.log('User updated successfully');
       toast.success('User updated successfully');
       await fetchUsers();
       return { success: true };
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'user update');
       console.error('Error updating user:', err);
+      console.error('Full error object:', JSON.stringify(err, null, 2));
       toast.error(`Failed to update user: ${errorMessage}`);
       return { success: false, error: errorMessage };
     } finally {
