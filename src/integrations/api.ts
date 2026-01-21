@@ -474,7 +474,7 @@ export const supabaseCompat = {
       const userId = localStorage.getItem('med_api_user_id');
       if (userId) {
         // Try to fetch the profile from the database
-        const result = await apiAdapter.selectOne('profiles', userId);
+        const result = await getAdapterInstance().selectOne('profiles', userId);
         if (result.data) {
           return {
             data: {
