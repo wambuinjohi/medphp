@@ -324,12 +324,15 @@ if ($action === 'update' && $table === 'companies') {
 
 ## Debug Steps (in order)
 
-1. Run `TokenDebugDiagnostics` button in frontend to verify JWT token is valid
-2. Run `SQL Authorization Diagnostics` button to see backend diagnostic results
-3. Check browser console for detailed error messages
-4. Run the SQL queries above to verify database state
-5. Check backend API logs for authorization failures
-6. Verify JWT_SECRET matches between frontend and backend
+1. ✅ Run `TokenDebugDiagnostics` button in frontend - Token is valid
+2. ✅ Run `SQL Authorization Diagnostics` button - User is authorized
+3. ⚠️ **But companies table update still fails** - This means table-specific rules are blocking it
+4. Check backend API code for `companies` table authorization handler
+5. Look for special authorization logic that only applies to companies table
+6. Check if companies table has row-level security that blocks the update
+7. Verify admin role has permission to update companies (might need specific permission name)
+8. Check backend API logs when attempting company update (look for table-specific messages)
+9. Verify JWT_SECRET matches between frontend and backend
 
 ---
 
