@@ -106,10 +106,9 @@ export class ExternalAPIAdapter implements IDatabase {
         'Content-Type': 'application/json',
       };
 
-      // ALWAYS prioritize localStorage token to ensure we get the most recent one
-      // This is critical for updates that happen after login
-      const localStorageToken = localStorage.getItem('med_api_token');
-      const currentToken = localStorageToken || this.authToken;
+      // ALWAYS read token fresh from localStorage to ensure we get the most recent one
+      // This is critical for updates that happen after login (especially after page refresh)
+      const currentToken = this.getAuthToken();
 
       if (currentToken) {
         headers['Authorization'] = `Bearer ${currentToken}`;
@@ -118,11 +117,10 @@ export class ExternalAPIAdapter implements IDatabase {
       // Log token status for debugging (especially for company updates)
       if (action === 'update' && table === 'companies') {
         console.log(`🔐 [Company Update] Token check:`, {
-          hasInstanceToken: !!this.authToken,
-          hasLocalStorageToken: !!localStorageToken,
+          hasLocalStorageToken: !!currentToken,
           willSendAuthHeader: !!currentToken,
           authHeaderValue: currentToken ? `Bearer ${currentToken.substring(0, 20)}...` : 'NONE',
-          prioritizingLocalStorage: true,
+          readingFreshFromLocalStorage: true,
         });
       }
 
