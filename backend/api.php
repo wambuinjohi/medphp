@@ -613,6 +613,8 @@ try {
     // Helper function to check authorization for modifications (create, update, delete)
     // Authentication is OPTIONAL - if a token is provided, it will be verified, but requests without auth are allowed
     function requireAuthForModification($action, $table) {
+        global $conn;
+
         // Get token from Authorization header
         $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
         $token = null;
@@ -626,22 +628,86 @@ try {
             $token = $_POST['token'] ?? null;
         }
 
-        // If no token provided, allow access (auth is optional for remote PHP API)
+        // If no token provided, deny access
         if (!$token) {
-            error_log("⚠️ [AUTH] $action on $table - No token provided (auth optional for remote API)");
-            return ['email' => 'unauthenticated', 'role' => 'guest'];
+            http_response_code(401);
+            error_log("🔴 [AUTH] $action on $table - No token provided (DENIED)");
+            throw new Exception("Authentication required for $action on $table");
         }
 
-        // Verify token if provided
+        // Verify token
         $decoded = verifyJWT($token);
         if (!$decoded) {
-            error_log("⚠️ [AUTH] $action on $table - Invalid or expired token (but auth is optional)");
-            // Allow the request even with invalid token - auth is optional
-            return ['email' => 'unauthenticated', 'role' => 'guest'];
+            http_response_code(401);
+            error_log("🔴 [AUTH] $action on $table - Invalid or expired token (DENIED)");
+            throw new Exception("Invalid or expired authentication token");
         }
 
-        error_log("✅ [AUTH] $action on $table - Authorized with token (email: {$decoded['email']}, role: {$decoded['role']})");
-        return $decoded;
+        // Get full user info from database to check status and company_id
+        $user_id = $decoded['id'] ?? null;
+        if (!$user_id) {
+            http_response_code(401);
+            error_log("🔴 [AUTH] $action on $table - No user ID in token (DENIED)");
+            throw new Exception("Invalid token - no user ID");
+        }
+
+        $sql = "SELECT id, email, role, status, company_id FROM profiles WHERE id = ? LIMIT 1";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            http_response_code(500);
+            throw new Exception("Database error: " . $conn->error);
+        }
+
+        $stmt->bind_param("s", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        $stmt->close();
+
+        if (!$user) {
+            http_response_code(401);
+            error_log("🔴 [AUTH] $action on $table - User not found in profiles (DENIED) - email: {$decoded['email']}");
+            throw new Exception("User not found");
+        }
+
+        // Check if user is active
+        if ($user['status'] !== 'active') {
+            http_response_code(403);
+            error_log("🔴 [AUTH] $action on $table - User is not active (status: {$user['status']}) - email: {$user['email']} (DENIED)");
+            throw new Exception("User account is not active. Status: " . $user['status']);
+        }
+
+        // Check if user is admin
+        $is_admin = stripos($user['role'], 'admin') !== false || $user['role'] === 'super_admin';
+        if (!$is_admin) {
+            http_response_code(403);
+            error_log("🔴 [AUTH] $action on $table - User is not admin (role: {$user['role']}) - email: {$user['email']} (DENIED)");
+            throw new Exception("Insufficient permissions. User role must be admin to perform $action.");
+        }
+
+        error_log("✅ [AUTH] $action on $table - Authorization passed for user {$user['email']} (role: {$user['role']}, status: {$user['status']})");
+        return $user;
+    }
+
+    /**
+     * Check if user can manage a specific company
+     * Used for company-specific authorization checks
+     */
+    function canManageCompany($user, $company_id) {
+        global $conn;
+
+        // Super admins can manage any company
+        if ($user['role'] === 'super_admin') {
+            return true;
+        }
+
+        // Regular admins can only manage their own company
+        if ($user['company_id'] === $company_id) {
+            return true;
+        }
+
+        error_log("🔴 [AUTH] User {$user['email']} cannot manage company $company_id (user's company: {$user['company_id']})");
+        return false;
     }
 
     // Authentication
