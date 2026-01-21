@@ -162,42 +162,42 @@ export const apiClient = {
    * Direct methods
    */
   select: async (table: string, filter?: Record<string, any>) => {
-    const result = await apiAdapter.selectBy(table, filter || {});
+    const result = await getAdapterInstance().selectBy(table, filter || {});
     return { data: result.data, error: result.error };
   },
 
   selectOne: async (table: string, id: string) => {
-    const result = await apiAdapter.selectOne(table, id);
+    const result = await getAdapterInstance().selectOne(table, id);
     return { data: result.data, error: result.error };
   },
 
   insert: async (table: string, data: any) => {
-    const result = await apiAdapter.insert(table, data);
+    const result = await getAdapterInstance().insert(table, data);
     return { data: result.id, error: result.error };
   },
 
   insertMany: async (table: string, data: any[]) => {
-    const result = await apiAdapter.insertMany(table, data);
+    const result = await getAdapterInstance().insertMany(table, data);
     return { data: result.id, error: result.error };
   },
 
   update: async (table: string, id: string, data: any) => {
-    const result = await apiAdapter.update(table, id, data);
+    const result = await getAdapterInstance().update(table, id, data);
     return { data: null, error: result.error };
   },
 
   updateMany: async (table: string, filter: Record<string, any>, data: any) => {
-    const result = await apiAdapter.updateMany(table, filter, data);
+    const result = await getAdapterInstance().updateMany(table, filter, data);
     return { data: null, error: result.error };
   },
 
   delete: async (table: string, id: string) => {
-    const result = await apiAdapter.delete(table, id);
+    const result = await getAdapterInstance().delete(table, id);
     return { data: null, error: result.error };
   },
 
   deleteMany: async (table: string, filter: Record<string, any>) => {
-    const result = await apiAdapter.deleteMany(table, filter);
+    const result = await getAdapterInstance().deleteMany(table, filter);
     return { data: null, error: result.error };
   },
 
@@ -205,12 +205,12 @@ export const apiClient = {
    * Authentication
    */
   auth: {
-    login: (email: string, password: string) => apiAdapter.login(email, password),
-    logout: () => apiAdapter.logout(),
-    checkAuth: () => apiAdapter.checkAuth(),
+    login: (email: string, password: string) => getAdapterInstance().login(email, password),
+    logout: () => getAdapterInstance().logout(),
+    checkAuth: () => getAdapterInstance().checkAuth(),
     getToken: () => localStorage.getItem('med_api_token'),
-    setToken: (token: string) => apiAdapter.setAuthToken(token),
-    clearToken: () => apiAdapter.clearAuthToken(),
+    setToken: (token: string) => getAdapterInstance().setAuthToken(token),
+    clearToken: () => getAdapterInstance().clearAuthToken(),
     getSession: async () => {
       const token = localStorage.getItem('med_api_token');
       const userId = localStorage.getItem('med_api_user_id');
