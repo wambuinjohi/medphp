@@ -644,7 +644,7 @@ try {
         }
 
         // Get full user info from database to check status and company_id
-        $user_id = $decoded['id'] ?? null;
+        $user_id = $decoded['id'] ?? $decoded['sub'] ?? null;
         if (!$user_id) {
             http_response_code(401);
             error_log("🔴 [AUTH] $action on $table - No user ID in token (DENIED)");
