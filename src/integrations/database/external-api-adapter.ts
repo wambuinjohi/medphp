@@ -215,9 +215,16 @@ export class ExternalAPIAdapter implements IDatabase {
           console.error(`   - Check if user has permission to ${action} on ${table || 'resource'}`);
           console.error('2. Database:');
           console.error(`   - Verify the ${table} table exists on the backend`);
+          console.error(`   - Verify user is assigned to the correct company_id`);
           console.error('3. API Setup:');
           console.error('   - Check if the backend API has proper authorization checks');
           console.error(`   - Verify the action "${action}" is supported for table "${table}"`);
+          console.error(`   - Verify user's role is configured in the backend roles table`);
+          console.error('4. Request Details:');
+          console.error(`   - URL: ${url}`);
+          console.error(`   - Method: ${method}`);
+          console.error(`   - Action: ${action}`);
+          console.error(`   - Table: ${table}`);
           console.error('Backend response details:', {
             status: response.status,
             statusText: response.statusText,
