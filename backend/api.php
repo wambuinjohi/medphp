@@ -573,13 +573,15 @@ try {
     }
 
     // Helper function to create JWT token
-    function createJWT($user_id, $user_email, $user_role) {
+    function createJWT($user_id, $user_email, $user_role, $company_id = null, $status = 'active') {
         $secret = $_ENV['JWT_SECRET'] ?? 'wayrus-secret-key-2024';
         $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
         $payload = base64_encode(json_encode([
             'sub' => $user_id,
             'email' => $user_email,
             'role' => $user_role,
+            'company_id' => $company_id,
+            'status' => $status,
             'iat' => time(),
             'exp' => time() + (24 * 60 * 60) // 24 hours
         ]));
