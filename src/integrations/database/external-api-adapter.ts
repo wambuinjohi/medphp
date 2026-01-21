@@ -99,9 +99,11 @@ export class ExternalAPIAdapter implements IDatabase {
         'Content-Type': 'application/json',
       };
 
-      // Always check localStorage for the most current token
-      // This ensures we get the token even if the instance was created before login
-      const currentToken = this.authToken || localStorage.getItem('med_api_token');
+      // ALWAYS prioritize localStorage token to ensure we get the most recent one
+      // This is critical for updates that happen after login
+      const localStorageToken = localStorage.getItem('med_api_token');
+      const currentToken = localStorageToken || this.authToken;
+
       if (currentToken) {
         headers['Authorization'] = `Bearer ${currentToken}`;
       }
@@ -110,9 +112,10 @@ export class ExternalAPIAdapter implements IDatabase {
       if (action === 'update' && table === 'companies') {
         console.log(`🔐 [Company Update] Token check:`, {
           hasInstanceToken: !!this.authToken,
-          hasLocalStorageToken: !!localStorage.getItem('med_api_token'),
+          hasLocalStorageToken: !!localStorageToken,
           willSendAuthHeader: !!currentToken,
           authHeaderValue: currentToken ? `Bearer ${currentToken.substring(0, 20)}...` : 'NONE',
+          prioritizingLocalStorage: true,
         });
       }
 
