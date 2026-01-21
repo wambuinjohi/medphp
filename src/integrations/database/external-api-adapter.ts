@@ -425,6 +425,8 @@ export class ExternalAPIAdapter implements IDatabase {
             console.warn('⚠️ Emergency token refresh failed:', refreshError);
           }
 
+          // Clear token if refresh failed or wasn't possible
+          this.clearAuthToken();
           console.error('Your authentication token is invalid. Please log in again.');
         } else {
           console.warn(`${logPrefix} - HTTP Error ${response.status}: ${errorMsg}`);
