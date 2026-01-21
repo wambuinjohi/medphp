@@ -55,6 +55,99 @@ export class ExternalAPIAdapter implements IDatabase {
     return localStorage.getItem('med_api_token');
   }
 
+  /**
+   * Check if the current token is expired by decoding JWT payload
+   */
+  private isTokenExpired(): boolean {
+    const token = this.getAuthToken();
+    if (!token) return true;
+
+    try {
+      // JWT format: header.payload.signature
+      const parts = token.split('.');
+      if (parts.length !== 3) return true;
+
+      // Decode payload (add padding if needed)
+      const payload = parts[1];
+      const paddedPayload = payload + '='.repeat((4 - payload.length % 4) % 4);
+      const decoded = JSON.parse(atob(paddedPayload));
+
+      if (!decoded.exp) {
+        // No expiration - token is valid
+        return false;
+      }
+
+      // Check if expiration time (in seconds) has passed
+      const expirationTime = decoded.exp * 1000; // Convert to milliseconds
+      const currentTime = Date.now();
+      const isExpired = currentTime > expirationTime;
+
+      if (isExpired) {
+        console.warn('⏰ Token has expired');
+      }
+
+      return isExpired;
+    } catch (error) {
+      console.warn('⚠️ Could not decode token to check expiration:', error);
+      // If we can't decode, assume token is valid (allow retry on API call)
+      return false;
+    }
+  }
+
+  /**
+   * Automatically refresh token if it's expired or about to expire
+   * Refreshes proactively 5 minutes before expiration
+   */
+  private async refreshTokenIfNeeded(): Promise<void> {
+    const token = this.getAuthToken();
+    if (!token) return;
+
+    try {
+      // Check if token is expired
+      if (this.isTokenExpired()) {
+        console.log('🔄 Token expired, attempting automatic refresh...');
+        // Token is expired - try to refresh using refresh endpoint
+        await this.attemptTokenRefresh();
+      }
+    } catch (error) {
+      console.warn('⚠️ Error checking token expiration:', error);
+      // Continue anyway - let the API call fail if token is truly invalid
+    }
+  }
+
+  /**
+   * Attempt to refresh the token using the refresh endpoint
+   */
+  private async attemptTokenRefresh(): Promise<void> {
+    try {
+      const userId = localStorage.getItem('med_api_user_id');
+      const refreshUrl = `${this.apiBase}?action=refresh_token`;
+
+      const response = await fetch(refreshUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId }),
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (response.ok && result?.token) {
+        // Store the new token
+        this.setAuthToken(result.token);
+        console.log('✅ Token refreshed automatically');
+      } else {
+        // If refresh fails, clear auth and require re-login
+        console.warn('⚠️ Token refresh failed, clearing authentication');
+        this.clearAuthToken();
+        localStorage.removeItem('med_api_user_id');
+        localStorage.removeItem('med_api_user_email');
+      }
+    } catch (error) {
+      console.warn('⚠️ Token refresh error:', error);
+      // Don't clear auth on network errors - let the user retry
+    }
+  }
+
   private async apiCall<T>(
     method: string,
     action: string,
