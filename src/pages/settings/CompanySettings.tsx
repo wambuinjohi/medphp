@@ -495,13 +495,19 @@ export default function CompanySettings() {
       // Check for permission error (403)
       if (errorString.includes('403') || errorString.includes('Forbidden')) {
         // Log detailed info for debugging
-        console.error('🔍 403 Permission Denied Details:', {
+        const token = localStorage.getItem('med_api_token');
+        const tokenPreview = token ? `${token.substring(0, 20)}...${token.substring(token.length - 20)}` : 'MISSING';
+
+        console.error('🔍 403 Permission Denied - Full Debug Info:', {
           userRole: currentUser?.role,
           userStatus: currentUser?.status,
           userCompanyId: currentUser?.company_id,
           editingCompanyId: currentCompany?.id,
           editingCompanyName: currentCompany?.name,
-          authTokenPresent: !!localStorage.getItem('med_api_token'),
+          authTokenPresent: !!token,
+          tokenPreview: tokenPreview,
+          errorMessage: errorString.substring(0, 200),
+          fullError: error,
         });
 
         // Provide specific guidance based on authorization status
