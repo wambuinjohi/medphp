@@ -150,6 +150,16 @@ export class ExternalAPIAdapter implements IDatabase {
       let result: any;
 
       try {
+        // Log headers being sent (for debugging company update issues)
+        if (action === 'update' && table === 'companies') {
+          console.log(`📤 [Company Update] Sending request with headers:`, {
+            url: url.substring(0, 100),
+            method,
+            headerKeys: Object.keys(headers),
+            hasAuthorizationHeader: 'Authorization' in headers,
+          });
+        }
+
         response = await fetch(url, {
           method,
           headers,
