@@ -8,20 +8,15 @@ import type { IDatabase, DatabaseConfig, DatabaseProvider } from './types';
 import { SupabaseAdapter } from './supabase-adapter';
 import { MySQLAdapter } from './mysql-adapter';
 import { ExternalAPIAdapter } from './external-api-adapter';
-
-// Import the shared apiAdapter instance instead of creating new ones
-let sharedExternalAdapter: ExternalAPIAdapter | null = null;
+import { getApiAdapter } from '../api';
 
 /**
- * Get or create the shared ExternalAPIAdapter instance
+ * Get the shared ExternalAPIAdapter instance from api.ts
  * This ensures all parts of the app use the same authenticated adapter
  */
 function getSharedExternalAdapter(): ExternalAPIAdapter {
-  if (!sharedExternalAdapter) {
-    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-    sharedExternalAdapter = new ExternalAPIAdapter(apiUrl);
-  }
-  return sharedExternalAdapter;
+  // Use the adapter from api.ts which is the auth entry point
+  return getApiAdapter();
 }
 
 class DatabaseManager {
