@@ -134,19 +134,19 @@ export class QueryBuilder {
   }
 
   async single() {
-    const result = await apiAdapter.selectBy(this.table, this.filters);
+    const result = await getAdapterInstance().selectBy(this.table, this.filters);
     const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
     return { data, error: result.error };
   }
 
   async maybeSingle() {
-    const result = await apiAdapter.selectBy(this.table, this.filters);
+    const result = await getAdapterInstance().selectBy(this.table, this.filters);
     const data = Array.isArray(result.data) ? result.data[0] || null : result.data || null;
     return { data, error: result.error };
   }
 
   async execute() {
-    const result = await apiAdapter.selectBy(this.table, this.filters);
+    const result = await getAdapterInstance().selectBy(this.table, this.filters);
     return { data: result.data, error: result.error };
   }
 }
