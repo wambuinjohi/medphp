@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { ForceTaxSettings } from '@/components/ForceTaxSettings';
 import { CompanySettingsDiagnostics } from '@/components/CompanySettingsDiagnostics';
 import { AuthorizationDiagnostics } from '@/components/AuthorizationDiagnostics';
+import { TokenDebugDiagnostics } from '@/components/TokenDebugDiagnostics';
 import { getUserFriendlyMessage, logError } from '@/utils/errorParser';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { QuickSchemaFix } from '@/components/QuickSchemaFix';
@@ -755,6 +756,7 @@ export default function CompanySettings() {
           />
           <div className="mt-4 space-y-4">
             <CompanySettingsDiagnostics currentCompany={currentCompany} />
+            <TokenDebugDiagnostics />
             <AuthorizationDiagnostics />
           </div>
         </>
@@ -764,6 +766,7 @@ export default function CompanySettings() {
       {!permissionError && (
         <div className="mb-4 space-y-4">
           <CompanySettingsDiagnostics currentCompany={currentCompany} />
+          <TokenDebugDiagnostics />
           <AuthorizationDiagnostics />
         </div>
       )}
