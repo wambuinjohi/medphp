@@ -495,6 +495,9 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async checkAuth(): Promise<{ user: any; error: Error | null }> {
     try {
+      // Automatically refresh token if needed before checking auth
+      await this.refreshTokenIfNeeded();
+
       const controller = new AbortController();
       let timeoutId: NodeJS.Timeout | null = null;
       let isTimedOut = false;
