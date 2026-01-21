@@ -666,9 +666,16 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async rpcList<T>(functionName: string, params?: Record<string, any>): Promise<{ data: T[]; error: Error | null; count?: number }> {
     try {
+      const currentToken = this.authToken || localStorage.getItem('med_api_token');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (currentToken) {
+        headers['Authorization'] = `Bearer ${currentToken}`;
+      }
       const response = await fetch(`${this.apiBase}?action=rpc`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ function: functionName, params: params || {} }),
       });
 
