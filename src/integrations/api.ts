@@ -413,7 +413,7 @@ export const supabaseCompat = {
     },
 
     signInWithPassword: async (credentials: { email: string; password: string }) => {
-      const result = await apiAdapter.login(credentials.email, credentials.password);
+      const result = await getAdapterInstance().login(credentials.email, credentials.password);
       if (result.error) {
         return { error: result.error, data: null };
       }
