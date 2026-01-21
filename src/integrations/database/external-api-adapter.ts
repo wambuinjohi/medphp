@@ -16,7 +16,6 @@ import type {
 export class ExternalAPIAdapter implements IDatabase {
   private apiBase: string;
   private externalApiUrl: string;
-  private authToken: string | null = null;
   private isProxyMode: boolean = true; // Always use proxy mode
 
   constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke') {
@@ -31,21 +30,29 @@ export class ExternalAPIAdapter implements IDatabase {
     console.log('📡 External API:', this.externalApiUrl);
     console.log('🔀 Local proxy endpoint:', this.apiBase);
 
-    // Load token from localStorage if available
-    const storedToken = localStorage.getItem('med_api_token');
-    if (storedToken) {
-      this.authToken = storedToken;
-    }
+    // NOTE: We no longer cache the token on construction.
+    // This prevents timing/initialization issues where the adapter
+    // might be created before the token is available in localStorage.
+    // All methods now read the token fresh from localStorage.
   }
 
   setAuthToken(token: string) {
-    this.authToken = token;
+    // Always store in localStorage (never cache in instance variable)
     localStorage.setItem('med_api_token', token);
   }
 
   clearAuthToken() {
-    this.authToken = null;
+    // Always remove from localStorage (instance variable removed)
     localStorage.removeItem('med_api_token');
+  }
+
+  /**
+   * Get the current auth token from localStorage
+   * Always reads fresh to ensure we get the most recent token
+   * This is critical for updates that happen after login
+   */
+  private getAuthToken(): string | null {
+    return localStorage.getItem('med_api_token');
   }
 
   private async apiCall<T>(
