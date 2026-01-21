@@ -156,6 +156,10 @@ export class ExternalAPIAdapter implements IDatabase {
     where?: any
   ): Promise<{ data: T; error: Error | null; status: number }> {
     try {
+      // Automatically refresh token if needed before making API call
+      // This prevents 401 errors due to token expiration
+      await this.refreshTokenIfNeeded();
+
       const params = new URLSearchParams();
 
       // Always append the action directly - the vite proxy handles forwarding
