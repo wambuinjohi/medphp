@@ -367,7 +367,7 @@ export const supabaseCompat = {
       insert: (data: any) => ({
         select: () => ({
           single: async () => {
-            const result = await apiAdapter.insert(table, data);
+            const result = await getAdapterInstance().insert(table, data);
             return { data: result.id, error: result.error };
           },
         }),
@@ -375,11 +375,11 @@ export const supabaseCompat = {
       update: (data: any) => ({
         eq: (column: string, value: any) => ({
           select: async () => {
-            const result = await apiAdapter.update(table, String(value), data);
+            const result = await getAdapterInstance().update(table, String(value), data);
             return { data: null, error: result.error };
           },
           execute: async () => {
-            const result = await apiAdapter.update(table, String(value), data);
+            const result = await getAdapterInstance().update(table, String(value), data);
             return { data: null, error: result.error };
           },
         }),
@@ -387,7 +387,7 @@ export const supabaseCompat = {
       delete: () => ({
         eq: (column: string, value: any) => ({
           execute: async () => {
-            const result = await apiAdapter.delete(table, String(value));
+            const result = await getAdapterInstance().delete(table, String(value));
             return { data: null, error: result.error };
           },
         }),
