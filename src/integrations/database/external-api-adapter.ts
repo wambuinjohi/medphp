@@ -16,7 +16,6 @@ import type {
 export class ExternalAPIAdapter implements IDatabase {
   private apiBase: string;
   private externalApiUrl: string;
-  private authToken: string | null = null;
   private isProxyMode: boolean = true; // Always use proxy mode
 
   constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke') {
@@ -31,21 +30,29 @@ export class ExternalAPIAdapter implements IDatabase {
     console.log('📡 External API:', this.externalApiUrl);
     console.log('🔀 Local proxy endpoint:', this.apiBase);
 
-    // Load token from localStorage if available
-    const storedToken = localStorage.getItem('med_api_token');
-    if (storedToken) {
-      this.authToken = storedToken;
-    }
+    // NOTE: We no longer cache the token on construction.
+    // This prevents timing/initialization issues where the adapter
+    // might be created before the token is available in localStorage.
+    // All methods now read the token fresh from localStorage.
   }
 
   setAuthToken(token: string) {
-    this.authToken = token;
+    // Always store in localStorage (never cache in instance variable)
     localStorage.setItem('med_api_token', token);
   }
 
   clearAuthToken() {
-    this.authToken = null;
+    // Always remove from localStorage (instance variable removed)
     localStorage.removeItem('med_api_token');
+  }
+
+  /**
+   * Get the current auth token from localStorage
+   * Always reads fresh to ensure we get the most recent token
+   * This is critical for updates that happen after login
+   */
+  private getAuthToken(): string | null {
+    return localStorage.getItem('med_api_token');
   }
 
   private async apiCall<T>(
@@ -99,10 +106,9 @@ export class ExternalAPIAdapter implements IDatabase {
         'Content-Type': 'application/json',
       };
 
-      // ALWAYS prioritize localStorage token to ensure we get the most recent one
-      // This is critical for updates that happen after login
-      const localStorageToken = localStorage.getItem('med_api_token');
-      const currentToken = localStorageToken || this.authToken;
+      // ALWAYS read token fresh from localStorage to ensure we get the most recent one
+      // This is critical for updates that happen after login (especially after page refresh)
+      const currentToken = this.getAuthToken();
 
       if (currentToken) {
         headers['Authorization'] = `Bearer ${currentToken}`;
@@ -111,11 +117,10 @@ export class ExternalAPIAdapter implements IDatabase {
       // Log token status for debugging (especially for company updates)
       if (action === 'update' && table === 'companies') {
         console.log(`🔐 [Company Update] Token check:`, {
-          hasInstanceToken: !!this.authToken,
-          hasLocalStorageToken: !!localStorageToken,
+          hasLocalStorageToken: !!currentToken,
           willSendAuthHeader: !!currentToken,
           authHeaderValue: currentToken ? `Bearer ${currentToken.substring(0, 20)}...` : 'NONE',
-          prioritizingLocalStorage: true,
+          readingFreshFromLocalStorage: true,
         });
       }
 
@@ -415,7 +420,7 @@ export class ExternalAPIAdapter implements IDatabase {
         const response = await fetch(`${this.apiBase}?action=check_auth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: this.authToken }),
+          body: JSON.stringify({ token: this.getAuthToken() }),
           signal: controller.signal,
         });
 
@@ -623,7 +628,7 @@ export class ExternalAPIAdapter implements IDatabase {
   async raw<T>(sql: string, params?: any[]): Promise<ListQueryResult<T>> {
     try {
       const url = `${this.apiBase}?action=raw`;
-      const currentToken = this.authToken || localStorage.getItem('med_api_token');
+      const currentToken = this.getAuthToken();
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
