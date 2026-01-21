@@ -4,21 +4,16 @@
  * Replaces all Supabase calls
  */
 
-import { ExternalAPIAdapter } from './database/external-api-adapter';
-
-// Create a singleton instance
-// This instance is lazily loaded to ensure it's initialized after other modules
-let apiAdapterInstance: ExternalAPIAdapter | null = null;
+// Import the shared adapter from the database manager
+// This ensures all API operations use the same authenticated instance
+import { getSharedExternalAdapter } from './database/shared-adapter';
 
 /**
- * Get or create the API adapter instance
- * This ensures we always use the same authenticated adapter across the app
+ * Get the shared API adapter instance
+ * Uses the same instance for all parts of the application
  */
-function getAdapterInstance(): ExternalAPIAdapter {
-  if (!apiAdapterInstance) {
-    apiAdapterInstance = new ExternalAPIAdapter();
-  }
-  return apiAdapterInstance;
+function getAdapterInstance() {
+  return getSharedExternalAdapter();
 }
 
 export const api = {
