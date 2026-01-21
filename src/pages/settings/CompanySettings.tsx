@@ -731,7 +731,13 @@ export default function CompanySettings() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="primary-gradient" size="lg" onClick={handleSaveCompany}>
+          <Button
+            variant="primary-gradient"
+            size="lg"
+            onClick={handleSaveCompany}
+            disabled={rolesLoading || !role || !role.permissions.includes('access_settings')}
+            title={rolesLoading ? 'Loading permissions...' : (!role || !role.permissions.includes('access_settings')) ? 'You do not have permission to update company settings' : ''}
+          >
             <Save className="h-4 w-4" />
             Save Settings
           </Button>
