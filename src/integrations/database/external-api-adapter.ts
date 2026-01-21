@@ -363,7 +363,40 @@ export class ExternalAPIAdapter implements IDatabase {
           });
         } else if (response.status === 401) {
           console.error(`❌ ${logPrefix} - UNAUTHORIZED (401)`);
-          console.error('Your authentication token may be invalid or expired. Please log in again.');
+          console.error('⚠️ Token appears invalid or expired. Attempting emergency token refresh...');
+
+          // Try to refresh token as a backup mechanism
+          try {
+            await this.attemptTokenRefresh();
+
+            // If refresh succeeded, retry the request once
+            const newToken = this.getAuthToken();
+            if (newToken) {
+              console.log('🔄 Retrying request with refreshed token...');
+              headers['Authorization'] = `Bearer ${newToken}`;
+
+              const retryResponse = await fetch(url, {
+                method,
+                headers,
+                body: body ? JSON.stringify(body) : undefined,
+                signal: controller.signal,
+              });
+
+              const retryResult = await retryResponse.json().catch(() => ({}));
+
+              if (retryResponse.ok) {
+                console.log(`✅ ${logPrefix} - Success after token refresh`);
+                return { data: retryResult.data || retryResult, error: null, status: retryResponse.status };
+              } else {
+                // Still failed after refresh
+                console.error(`❌ ${logPrefix} - Still failed after token refresh`);
+              }
+            }
+          } catch (refreshError) {
+            console.warn('⚠️ Emergency token refresh failed:', refreshError);
+          }
+
+          console.error('Your authentication token is invalid. Please log in again.');
         } else {
           console.warn(`${logPrefix} - HTTP Error ${response.status}: ${errorMsg}`);
         }
