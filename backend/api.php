@@ -999,21 +999,35 @@ try {
         }
 
         // Check authorization for modifications to protected tables
-        // NOTE: 'companies' table removed from protected list - allows public updates
-        $protected_tables = ['users', 'profiles', 'user_permissions', 'roles'];
+        $protected_tables = ['users', 'profiles', 'user_permissions', 'roles', 'companies'];
         $auth = null;
         if (in_array($table, $protected_tables)) {
             $auth = requireAuthForModification($action, $table);
-        } else if ($table === 'companies') {
-            // Allow company updates without any authentication
-            error_log("⚠️ [BYPASS] Company update allowed without authentication check");
         }
 
         // Additional authorization check for company updates
-        // BYPASSED: Allow any user to update any company (public API mode)
-        if ($table === 'companies') {
-            error_log("⚠️ [BYPASS] Allowing company update without company-specific permission check");
-            // Skipping canManageCompany check - allows any user to update any company
+        if ($table === 'companies' && $auth) {
+            // Extract company ID from where clause
+            $company_id = null;
+            if (is_array($where) && isset($where['id'])) {
+                $company_id = $where['id'];
+            } elseif (is_array($where) && isset($where['company_id'])) {
+                $company_id = $where['company_id'];
+            }
+
+            if (!$company_id) {
+                http_response_code(400);
+                throw new Exception("Cannot determine company ID for authorization check");
+            }
+
+            // Check if user can manage this specific company
+            if (!canManageCompany($auth, $company_id)) {
+                http_response_code(403);
+                error_log("🔴 [AUTH] Denying company update: User {$auth['email']} cannot manage company {$company_id}");
+                throw new Exception("You do not have permission to update this company.");
+            }
+
+            error_log("✅ [AUTH] Company update authorized for {$auth['email']} on company {$company_id}");
         }
 
         $sets = [];
