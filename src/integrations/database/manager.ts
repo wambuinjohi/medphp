@@ -9,6 +9,21 @@ import { SupabaseAdapter } from './supabase-adapter';
 import { MySQLAdapter } from './mysql-adapter';
 import { ExternalAPIAdapter } from './external-api-adapter';
 
+// Import the shared apiAdapter instance instead of creating new ones
+let sharedExternalAdapter: ExternalAPIAdapter | null = null;
+
+/**
+ * Get or create the shared ExternalAPIAdapter instance
+ * This ensures all parts of the app use the same authenticated adapter
+ */
+function getSharedExternalAdapter(): ExternalAPIAdapter {
+  if (!sharedExternalAdapter) {
+    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+    sharedExternalAdapter = new ExternalAPIAdapter(apiUrl);
+  }
+  return sharedExternalAdapter;
+}
+
 class DatabaseManager {
   private adapter: IDatabase | null = null;
   private config: DatabaseConfig | null = null;
@@ -38,8 +53,8 @@ class DatabaseManager {
     let shouldFallback = false;
 
     if (provider === 'external-api') {
-      const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-      adapterToTry = new ExternalAPIAdapter(apiUrl);
+      // Use the shared instance so authentication is preserved
+      adapterToTry = getSharedExternalAdapter();
       shouldFallback = true; // Fallback to Supabase if external API fails
     } else if (provider === 'mysql') {
       adapterToTry = new MySQLAdapter();
