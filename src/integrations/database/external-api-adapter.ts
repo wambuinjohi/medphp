@@ -420,7 +420,7 @@ export class ExternalAPIAdapter implements IDatabase {
         const response = await fetch(`${this.apiBase}?action=check_auth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: this.authToken }),
+          body: JSON.stringify({ token: this.getAuthToken() }),
           signal: controller.signal,
         });
 
