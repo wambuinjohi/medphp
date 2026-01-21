@@ -632,8 +632,7 @@ try {
         if (!$token) {
             http_response_code(401);
             error_log("🔴 [AUTH] $action on $table - No token provided (DENIED)");
-            error_log("📋 [DEBUG] Authorization header: " . ($auth_header ? "present" : "missing"));
-            error_log("📋 [DEBUG] Headers present: " . implode(", ", array_keys($_SERVER)));
+            error_log("📋 [DEBUG] Authorization header present: " . ($auth_header ? "yes" : "no"));
             throw new Exception("Authentication required. Missing authorization token.");
         }
 
