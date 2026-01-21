@@ -260,9 +260,39 @@ id | name            | status
 
 ---
 
+## Companies Table Specific Authorization
+
+Since other tables (like `profiles`) can be updated successfully, but the `companies` table is blocked, the issue is likely:
+
+1. **Backend has stricter authorization for companies table** - The update authorization logic for companies is different/stricter than for other tables
+2. **Company update requires specific permission** - Maybe `update_company_settings` instead of just `admin` role
+3. **Company ID matching is stricter** - Backend might require exact match between user's company_id and company being updated
+4. **Soft delete or company status** - Company might be marked as deleted or archived
+
+**To debug this, check your backend code for:**
+```php
+// Look for these patterns in your API handler
+if ($table === 'companies') {
+  // Is there a special authorization check here?
+  // Is it checking something different than other tables?
+}
+
+// Or look for a specific action handler
+if ($action === 'update' && $table === 'companies') {
+  // Special logic for companies table updates
+}
+```
+
+---
+
 ## Most Common Causes (in order of likelihood)
 
-1. **User role is case-sensitive mismatch**
+1. **Companies table has stricter authorization**
+   - Backend has separate authorization logic for companies table
+   - Check if there's a `authorizeCompaniesUpdate()` function or similar
+   - **Fix:** Review and fix the authorization logic for companies table
+
+2. **User role is case-sensitive mismatch**
    - Frontend sends: `admin`
    - Backend checks for: `Admin` (capital A)
    - **Fix:** Make backend check case-insensitive: `strtolower($user['role']) === 'admin'`
