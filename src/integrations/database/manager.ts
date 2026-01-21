@@ -9,36 +9,22 @@ import { SupabaseAdapter } from './supabase-adapter';
 import { MySQLAdapter } from './mysql-adapter';
 import { ExternalAPIAdapter } from './external-api-adapter';
 
-// We'll get the shared adapter lazily from the api module when needed
-// This avoids circular dependencies since api.ts doesn't import from manager
-let apiInstance: any = null;
+// We'll create a shared adapter instance that both api.ts and this manager use
+// Using lazy initialization to ensure it's created fresh
+let sharedExternalAdapter: ExternalAPIAdapter | null = null;
 
 /**
- * Get the shared ExternalAPIAdapter instance
- * This ensures all parts of the app use the same authenticated adapter
- * The adapter is obtained from the api module which is the entry point for auth
+ * Get or create the shared External API Adapter instance
+ * This is the single source of truth for all database operations
+ * The adapter will be used by both api.ts and DatabaseManager
  */
 function getSharedExternalAdapter(): ExternalAPIAdapter {
-  // Lazy import to avoid circular dependency
-  if (!apiInstance) {
-    // Try to get from api module's getAdapterInstance function
-    try {
-      const apiModule = require('../api');
-      if (apiModule.getApiAdapter && typeof apiModule.getApiAdapter === 'function') {
-        // Use the adapter from api.ts if available
-        return apiModule.getApiAdapter();
-      }
-    } catch (e) {
-      // If import fails, fall back to creating our own
-    }
-  }
-
-  // Fallback: create our own if api module isn't available
-  if (!apiInstance) {
+  if (!sharedExternalAdapter) {
     const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-    apiInstance = new ExternalAPIAdapter(apiUrl);
+    sharedExternalAdapter = new ExternalAPIAdapter(apiUrl);
+    console.log('🎯 Created shared ExternalAPIAdapter instance for all database operations');
   }
-  return apiInstance;
+  return sharedExternalAdapter;
 }
 
 class DatabaseManager {
