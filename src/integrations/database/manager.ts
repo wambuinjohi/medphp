@@ -101,8 +101,8 @@ class DatabaseManager {
       console.warn(`Database not initialized. Auto-initializing with ${provider} adapter.`);
 
       if (provider === 'external-api') {
-        const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-        this.adapter = new ExternalAPIAdapter(apiUrl);
+        // Use the shared instance so authentication is preserved
+        this.adapter = getSharedExternalAdapter();
       } else if (provider === 'mysql') {
         this.adapter = new MySQLAdapter();
       } else {
