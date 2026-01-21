@@ -284,7 +284,7 @@ class QueryChain {
   async maybeSingle() {
     try {
       const finalFilters = this.buildFinalFilters();
-      const result = await apiAdapter.selectBy(this.table, finalFilters);
+      const result = await getAdapterInstance().selectBy(this.table, finalFilters);
       const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
       return { data, error: result.error };
     } catch (error) {
@@ -295,7 +295,7 @@ class QueryChain {
   async single() {
     try {
       const finalFilters = this.buildFinalFilters();
-      const result = await apiAdapter.selectBy(this.table, finalFilters);
+      const result = await getAdapterInstance().selectBy(this.table, finalFilters);
       const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
       return { data, error: result.error };
     } catch (error) {
@@ -306,7 +306,7 @@ class QueryChain {
   async execute() {
     try {
       const finalFilters = this.buildFinalFilters();
-      const result = await apiAdapter.selectBy(this.table, finalFilters);
+      const result = await getAdapterInstance().selectBy(this.table, finalFilters);
       return { data: result.data, error: result.error };
     } catch (error) {
       return { data: null, error: error as Error };
