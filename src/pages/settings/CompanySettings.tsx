@@ -47,7 +47,7 @@ import {
 
 export default function CompanySettings() {
   const { isAuthenticated, profile: currentUser } = useAuth();
-  const { role, loading: rolesLoading } = usePermissions();
+  const { role, loading } = usePermissions();
 
   // Check authentication (all authenticated users can edit company settings)
   if (!isAuthenticated) {
