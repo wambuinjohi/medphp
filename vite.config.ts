@@ -84,23 +84,14 @@ export default defineConfig(({ mode }) => {
           target: apiUrl,
           changeOrigin: true,
           rewrite: (path) => {
-            // Don't rewrite file upload endpoints
+            // Don't rewrite file upload endpoints - keep them as /api/uploads
             if (path.startsWith('/api/uploads')) {
               return path;
             }
-            // For /api?action=X, convert to /api.php?action=X
-            // For /api/upload_file, convert to /api.php?action=upload_file
-            if (path.startsWith('/api?')) {
-              return '/api.php' + path.substring(4); // Replace /api with /api.php, keep query string
-            }
-            if (path === '/api') {
-              return '/api.php';
-            }
-            // For /api/upload_file paths
-            if (path.startsWith('/api/')) {
-              return '/api.php' + path.substring(4); // Replace /api with /api.php
-            }
-            return path;
+            // Convert /api to /api.php (preserves query strings automatically)
+            // /api?action=login → /api.php?action=login
+            // /api/upload_file → /api.php/upload_file
+            return path.replace(/^\/api(?=\?|\/|$)/, '/api.php');
           },
         },
 
