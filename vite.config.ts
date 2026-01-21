@@ -81,15 +81,26 @@ export default defineConfig(({ mode }) => {
 
         // Proxy API requests to external backend or local server
         '/api': {
-          target: `${apiUrl}/api.php`,
+          target: apiUrl,
           changeOrigin: true,
-          pathRewrite: {
-            '^/api': '', // Strip /api from the path since target already includes /api.php
-          },
-          configure: (proxy, options) => {
-            proxy.on('proxyReq', (proxyReq, req, res) => {
-              console.log(`🔗 Proxying: ${req.method} ${req.url} → ${apiUrl}/api.php`);
-            });
+          rewrite: (path) => {
+            // Don't rewrite file upload endpoints
+            if (path.startsWith('/api/uploads')) {
+              return path;
+            }
+            // For /api?action=X, convert to /api.php?action=X
+            // For /api/upload_file, convert to /api.php?action=upload_file
+            if (path.startsWith('/api?')) {
+              return '/api.php' + path.substring(4); // Replace /api with /api.php, keep query string
+            }
+            if (path === '/api') {
+              return '/api.php';
+            }
+            // For /api/upload_file paths
+            if (path.startsWith('/api/')) {
+              return '/api.php' + path.substring(4); // Replace /api with /api.php
+            }
+            return path;
           },
         },
 
