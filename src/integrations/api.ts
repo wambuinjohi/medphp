@@ -4,22 +4,29 @@
  * Replaces all Supabase calls
  */
 
-import { ExternalAPIAdapter } from './database/external-api-adapter';
+// Import the shared adapter from the database manager
+// This ensures all API operations use the same authenticated instance
+import { getSharedExternalAdapter } from './database/shared-adapter';
 
-// Create a singleton instance
-const apiAdapter = new ExternalAPIAdapter();
+/**
+ * Get the shared API adapter instance
+ * Uses the same instance for all parts of the application
+ */
+function getAdapterInstance() {
+  return getSharedExternalAdapter();
+}
 
 export const api = {
   /**
    * Authentication methods
    */
   auth: {
-    login: (email: string, password: string) => apiAdapter.login(email, password),
-    logout: () => apiAdapter.logout(),
-    checkAuth: () => apiAdapter.checkAuth(),
+    login: (email: string, password: string) => getAdapterInstance().login(email, password),
+    logout: () => getAdapterInstance().logout(),
+    checkAuth: () => getAdapterInstance().checkAuth(),
     getAuthToken: () => localStorage.getItem('med_api_token'),
-    setAuthToken: (token: string) => apiAdapter.setAuthToken(token),
-    clearAuthToken: () => apiAdapter.clearAuthToken(),
+    setAuthToken: (token: string) => getAdapterInstance().setAuthToken(token),
+    clearAuthToken: () => getAdapterInstance().clearAuthToken(),
   },
 
   /**
@@ -28,27 +35,27 @@ export const api = {
   from: (table: string) => ({
     select: async (fields?: string) => {
       // For now, we fetch all and return
-      const result = await apiAdapter.select(table);
+      const result = await getAdapterInstance().select(table);
       return { data: result.data, error: result.error };
     },
     selectOne: async (id: string) => {
-      const result = await apiAdapter.selectOne(table, id);
+      const result = await getAdapterInstance().selectOne(table, id);
       return { data: result.data, error: result.error };
     },
     selectBy: async (filter: Record<string, any>) => {
-      const result = await apiAdapter.selectBy(table, filter);
+      const result = await getAdapterInstance().selectBy(table, filter);
       return { data: result.data, error: result.error };
     },
     insert: async (data: any) => {
-      const result = await apiAdapter.insert(table, data);
+      const result = await getAdapterInstance().insert(table, data);
       return { data: result, error: result.error };
     },
     update: async (id: string, data: any) => {
-      const result = await apiAdapter.update(table, id, data);
+      const result = await getAdapterInstance().update(table, id, data);
       return { data: null, error: result.error };
     },
     delete: async (id: string) => {
-      const result = await apiAdapter.delete(table, id);
+      const result = await getAdapterInstance().delete(table, id);
       return { data: null, error: result.error };
     },
   }),
@@ -56,7 +63,9 @@ export const api = {
   /**
    * Direct adapter access for advanced queries
    */
-  adapter: apiAdapter,
+  get adapter() {
+    return getAdapterInstance();
+  },
 };
 
 // Helper to build filters from chainable calls
@@ -120,19 +129,19 @@ export class QueryBuilder {
   }
 
   async single() {
-    const result = await apiAdapter.selectBy(this.table, this.filters);
+    const result = await getAdapterInstance().selectBy(this.table, this.filters);
     const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
     return { data, error: result.error };
   }
 
   async maybeSingle() {
-    const result = await apiAdapter.selectBy(this.table, this.filters);
+    const result = await getAdapterInstance().selectBy(this.table, this.filters);
     const data = Array.isArray(result.data) ? result.data[0] || null : result.data || null;
     return { data, error: result.error };
   }
 
   async execute() {
-    const result = await apiAdapter.selectBy(this.table, this.filters);
+    const result = await getAdapterInstance().selectBy(this.table, this.filters);
     return { data: result.data, error: result.error };
   }
 }
@@ -148,42 +157,42 @@ export const apiClient = {
    * Direct methods
    */
   select: async (table: string, filter?: Record<string, any>) => {
-    const result = await apiAdapter.selectBy(table, filter || {});
+    const result = await getAdapterInstance().selectBy(table, filter || {});
     return { data: result.data, error: result.error };
   },
 
   selectOne: async (table: string, id: string) => {
-    const result = await apiAdapter.selectOne(table, id);
+    const result = await getAdapterInstance().selectOne(table, id);
     return { data: result.data, error: result.error };
   },
 
   insert: async (table: string, data: any) => {
-    const result = await apiAdapter.insert(table, data);
+    const result = await getAdapterInstance().insert(table, data);
     return { data: result.id, error: result.error };
   },
 
   insertMany: async (table: string, data: any[]) => {
-    const result = await apiAdapter.insertMany(table, data);
+    const result = await getAdapterInstance().insertMany(table, data);
     return { data: result.id, error: result.error };
   },
 
   update: async (table: string, id: string, data: any) => {
-    const result = await apiAdapter.update(table, id, data);
+    const result = await getAdapterInstance().update(table, id, data);
     return { data: null, error: result.error };
   },
 
   updateMany: async (table: string, filter: Record<string, any>, data: any) => {
-    const result = await apiAdapter.updateMany(table, filter, data);
+    const result = await getAdapterInstance().updateMany(table, filter, data);
     return { data: null, error: result.error };
   },
 
   delete: async (table: string, id: string) => {
-    const result = await apiAdapter.delete(table, id);
+    const result = await getAdapterInstance().delete(table, id);
     return { data: null, error: result.error };
   },
 
   deleteMany: async (table: string, filter: Record<string, any>) => {
-    const result = await apiAdapter.deleteMany(table, filter);
+    const result = await getAdapterInstance().deleteMany(table, filter);
     return { data: null, error: result.error };
   },
 
@@ -191,12 +200,12 @@ export const apiClient = {
    * Authentication
    */
   auth: {
-    login: (email: string, password: string) => apiAdapter.login(email, password),
-    logout: () => apiAdapter.logout(),
-    checkAuth: () => apiAdapter.checkAuth(),
+    login: (email: string, password: string) => getAdapterInstance().login(email, password),
+    logout: () => getAdapterInstance().logout(),
+    checkAuth: () => getAdapterInstance().checkAuth(),
     getToken: () => localStorage.getItem('med_api_token'),
-    setToken: (token: string) => apiAdapter.setAuthToken(token),
-    clearToken: () => apiAdapter.clearAuthToken(),
+    setToken: (token: string) => getAdapterInstance().setAuthToken(token),
+    clearToken: () => getAdapterInstance().clearAuthToken(),
     getSession: async () => {
       const token = localStorage.getItem('med_api_token');
       const userId = localStorage.getItem('med_api_user_id');
@@ -270,7 +279,7 @@ class QueryChain {
   async maybeSingle() {
     try {
       const finalFilters = this.buildFinalFilters();
-      const result = await apiAdapter.selectBy(this.table, finalFilters);
+      const result = await getAdapterInstance().selectBy(this.table, finalFilters);
       const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
       return { data, error: result.error };
     } catch (error) {
@@ -281,7 +290,7 @@ class QueryChain {
   async single() {
     try {
       const finalFilters = this.buildFinalFilters();
-      const result = await apiAdapter.selectBy(this.table, finalFilters);
+      const result = await getAdapterInstance().selectBy(this.table, finalFilters);
       const data = Array.isArray(result.data) ? result.data[0] || null : result.data;
       return { data, error: result.error };
     } catch (error) {
@@ -292,7 +301,7 @@ class QueryChain {
   async execute() {
     try {
       const finalFilters = this.buildFinalFilters();
-      const result = await apiAdapter.selectBy(this.table, finalFilters);
+      const result = await getAdapterInstance().selectBy(this.table, finalFilters);
       return { data: result.data, error: result.error };
     } catch (error) {
       return { data: null, error: error as Error };
@@ -353,7 +362,7 @@ export const supabaseCompat = {
       insert: (data: any) => ({
         select: () => ({
           single: async () => {
-            const result = await apiAdapter.insert(table, data);
+            const result = await getAdapterInstance().insert(table, data);
             return { data: result.id, error: result.error };
           },
         }),
@@ -361,11 +370,11 @@ export const supabaseCompat = {
       update: (data: any) => ({
         eq: (column: string, value: any) => ({
           select: async () => {
-            const result = await apiAdapter.update(table, String(value), data);
+            const result = await getAdapterInstance().update(table, String(value), data);
             return { data: null, error: result.error };
           },
           execute: async () => {
-            const result = await apiAdapter.update(table, String(value), data);
+            const result = await getAdapterInstance().update(table, String(value), data);
             return { data: null, error: result.error };
           },
         }),
@@ -373,7 +382,7 @@ export const supabaseCompat = {
       delete: () => ({
         eq: (column: string, value: any) => ({
           execute: async () => {
-            const result = await apiAdapter.delete(table, String(value));
+            const result = await getAdapterInstance().delete(table, String(value));
             return { data: null, error: result.error };
           },
         }),
@@ -399,7 +408,7 @@ export const supabaseCompat = {
     },
 
     signInWithPassword: async (credentials: { email: string; password: string }) => {
-      const result = await apiAdapter.login(credentials.email, credentials.password);
+      const result = await getAdapterInstance().login(credentials.email, credentials.password);
       if (result.error) {
         return { error: result.error, data: null };
       }
@@ -432,7 +441,7 @@ export const supabaseCompat = {
     },
 
     signOut: async () => {
-      const result = await apiAdapter.logout();
+      const result = await getAdapterInstance().logout();
 
       // Clear localStorage
       localStorage.removeItem('med_api_token');
@@ -460,7 +469,7 @@ export const supabaseCompat = {
       const userId = localStorage.getItem('med_api_user_id');
       if (userId) {
         // Try to fetch the profile from the database
-        const result = await apiAdapter.selectOne('profiles', userId);
+        const result = await getAdapterInstance().selectOne('profiles', userId);
         if (result.data) {
           return {
             data: {

@@ -7,7 +7,7 @@
 import type { IDatabase, DatabaseConfig, DatabaseProvider } from './types';
 import { SupabaseAdapter } from './supabase-adapter';
 import { MySQLAdapter } from './mysql-adapter';
-import { ExternalAPIAdapter } from './external-api-adapter';
+import { getSharedExternalAdapter } from './shared-adapter';
 
 class DatabaseManager {
   private adapter: IDatabase | null = null;
@@ -38,8 +38,8 @@ class DatabaseManager {
     let shouldFallback = false;
 
     if (provider === 'external-api') {
-      const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-      adapterToTry = new ExternalAPIAdapter(apiUrl);
+      // Use the shared instance so authentication is preserved
+      adapterToTry = getSharedExternalAdapter();
       shouldFallback = true; // Fallback to Supabase if external API fails
     } else if (provider === 'mysql') {
       adapterToTry = new MySQLAdapter();
@@ -86,8 +86,8 @@ class DatabaseManager {
       console.warn(`Database not initialized. Auto-initializing with ${provider} adapter.`);
 
       if (provider === 'external-api') {
-        const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-        this.adapter = new ExternalAPIAdapter(apiUrl);
+        // Use the shared instance so authentication is preserved
+        this.adapter = getSharedExternalAdapter();
       } else if (provider === 'mysql') {
         this.adapter = new MySQLAdapter();
       } else {
