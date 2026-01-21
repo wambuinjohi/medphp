@@ -789,6 +789,124 @@ try {
             'role' => $decoded['role']
         ]);
     }
+    elseif ($action === "diagnose_authorization") {
+        // Diagnostic endpoint to check authorization status
+        // Requires valid JWT token
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+        $token = null;
+
+        if ($auth_header && preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
+            $token = $matches[1];
+        }
+
+        if (!$token) {
+            http_response_code(401);
+            throw new Exception("Authentication required for diagnostic");
+        }
+
+        $decoded = verifyJWT($token);
+        if (!$decoded) {
+            http_response_code(401);
+            throw new Exception("Invalid token");
+        }
+
+        // Query 1: Get user profile info
+        $user_id = $decoded['id'] ?? $decoded['sub'] ?? null;
+        if (!$user_id) {
+            throw new Exception("No user ID in token");
+        }
+
+        $user_profile = null;
+        $sql = "SELECT id, email, role, status, company_id FROM profiles WHERE id = ? LIMIT 1";
+        $stmt = $conn->prepare($sql);
+        if ($stmt) {
+            $stmt->bind_param("s", $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user_profile = $result->fetch_assoc();
+            $stmt->close();
+        }
+
+        // Query 2: Get all companies
+        $companies = [];
+        $sql = "SELECT id, name, status FROM companies ORDER BY created_at DESC";
+        $result = $conn->query($sql);
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $companies[] = $row;
+            }
+        }
+
+        // Query 3: Get all admin users (for comparison)
+        $admin_users = [];
+        $sql = "SELECT id, email, role, status, company_id FROM profiles WHERE role LIKE '%admin%' OR role = 'super_admin' ORDER BY email";
+        $result = $conn->query($sql);
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $admin_users[] = $row;
+            }
+        }
+
+        // Perform authorization checks
+        $checks = [];
+
+        // Check 1: User exists in database
+        $checks['user_exists'] = [
+            'name' => 'User exists in database',
+            'passed' => $user_profile !== null,
+            'details' => $user_profile ? "Found user: {$user_profile['email']}" : "User not found in profiles table"
+        ];
+
+        // Check 2: User is active
+        $checks['user_is_active'] = [
+            'name' => 'User account is active',
+            'passed' => $user_profile && $user_profile['status'] === 'active',
+            'details' => $user_profile ? "Status: {$user_profile['status']}" : 'N/A',
+            'fix' => $user_profile && $user_profile['status'] !== 'active' ? "UPDATE profiles SET status = 'active' WHERE id = '{$user_id}';" : null
+        ];
+
+        // Check 3: User is admin
+        $is_admin = $user_profile && (stripos($user_profile['role'], 'admin') !== false || $user_profile['role'] === 'super_admin');
+        $checks['user_is_admin'] = [
+            'name' => 'User has admin role',
+            'passed' => $is_admin,
+            'details' => $user_profile ? "Role: {$user_profile['role']}" : 'N/A',
+            'fix' => $user_profile && !$is_admin ? "UPDATE profiles SET role = 'admin' WHERE id = '{$user_id}';" : null
+        ];
+
+        // Check 4: User has company assigned
+        $checks['user_has_company'] = [
+            'name' => 'User has company assigned',
+            'passed' => $user_profile && !empty($user_profile['company_id']),
+            'details' => $user_profile ? "Company ID: " . ($user_profile['company_id'] ?: 'NULL') : 'N/A',
+            'fix' => $user_profile && empty($user_profile['company_id']) && !empty($companies) ? "UPDATE profiles SET company_id = '{$companies[0]['id']}' WHERE id = '{$user_id}';" : null
+        ];
+
+        // Check 5: Company exists
+        $checks['company_exists'] = [
+            'name' => 'At least one company exists',
+            'passed' => !empty($companies),
+            'details' => "Found " . count($companies) . " company/companies",
+        ];
+
+        // Overall authorization status
+        $all_checks_passed = array_reduce($checks, function($carry, $check) {
+            return $carry && $check['passed'];
+        }, true);
+
+        echo json_encode([
+            'status' => 'success',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'user_profile' => $user_profile,
+            'companies' => $companies,
+            'admin_users' => $admin_users,
+            'checks' => $checks,
+            'authorization_status' => $all_checks_passed ? 'AUTHORIZED ✓' : 'NOT AUTHORIZED ✗',
+            'message' => $all_checks_passed ?
+                'User is authorized to save company settings' :
+                'User is missing one or more requirements to save company settings'
+        ]);
+    }
     // CRUD Operations
     elseif ($action === "create") {
         if (!$table) {
