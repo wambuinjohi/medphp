@@ -29,9 +29,21 @@ All frontend checks pass:
 - Company ID matches: Yes ✓
 - Company exists: Yes ✓
 
+## Key Finding: Backend Blocks Companies Table Updates
+
+The backend **authorizes the user** for general updates (as shown in SQL Authorization Diagnostics), but **specifically blocks updates to the companies table**.
+
+Frontend logs show:
+- ✅ profiles table updates work (confirmed in backend logs)
+- ❌ companies table updates fail with 403 Forbidden
+
+This suggests the `companies` table has **table-specific authorization rules** that are more restrictive than other tables.
+
+---
+
 ## Backend Issues to Check
 
-### 1. Check User Role Configuration
+### 1. Check Company Update Authorization Rules
 
 **What to check:**
 ```sql
