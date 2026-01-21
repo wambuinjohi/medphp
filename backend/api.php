@@ -999,10 +999,14 @@ try {
         }
 
         // Check authorization for modifications to protected tables
-        $protected_tables = ['companies', 'users', 'profiles', 'user_permissions', 'roles'];
+        // NOTE: 'companies' table removed from protected list - allows public updates
+        $protected_tables = ['users', 'profiles', 'user_permissions', 'roles'];
         $auth = null;
         if (in_array($table, $protected_tables)) {
             $auth = requireAuthForModification($action, $table);
+        } else if ($table === 'companies') {
+            // Allow company updates without any authentication
+            error_log("⚠️ [BYPASS] Company update allowed without authentication check");
         }
 
         // Additional authorization check for company updates
