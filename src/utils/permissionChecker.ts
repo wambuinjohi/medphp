@@ -1,44 +1,42 @@
 import { Permission, RoleDefinition } from '@/types/permissions';
 
 /**
- * DISABLED: Role enforcement is disabled
- * All permission checks now return true to allow all access
- */
-
-/**
  * Check if a role has a specific permission
- * DISABLED: Always returns true
  */
 export function hasPermission(
   role: RoleDefinition | null | undefined,
   permission: Permission
 ): boolean {
-  // Role enforcement disabled - allow all permissions
-  return true;
+  if (!role || !role.permissions) {
+    return false;
+  }
+  return role.permissions.includes(permission);
 }
 
 /**
  * Check if a role has any of the specified permissions
- * DISABLED: Always returns true
  */
 export function hasAnyPermission(
   role: RoleDefinition | null | undefined,
   permissions: Permission[]
 ): boolean {
-  // Role enforcement disabled - allow all permissions
-  return true;
+  if (!role || !role.permissions) {
+    return false;
+  }
+  return permissions.some(permission => role.permissions.includes(permission));
 }
 
 /**
  * Check if a role has all specified permissions
- * DISABLED: Always returns true
  */
 export function hasAllPermissions(
   role: RoleDefinition | null | undefined,
   permissions: Permission[]
 ): boolean {
-  // Role enforcement disabled - allow all permissions
-  return true;
+  if (!role || !role.permissions) {
+    return false;
+  }
+  return permissions.every(permission => role.permissions.includes(permission));
 }
 
 /**
