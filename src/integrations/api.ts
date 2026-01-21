@@ -7,7 +7,15 @@
 import { ExternalAPIAdapter } from './database/external-api-adapter';
 
 // Create a singleton instance
+// NOTE: Ensure this is initialized early so other modules can reuse it
 const apiAdapter = new ExternalAPIAdapter();
+
+/**
+ * Export the adapter so other modules can share the same authenticated instance
+ */
+export function getApiAdapter(): ExternalAPIAdapter {
+  return apiAdapter;
+}
 
 export const api = {
   /**
