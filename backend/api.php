@@ -629,17 +629,11 @@ try {
             $token = $_POST['token'] ?? null;
         }
 
-        // If no token provided, allow the request but return minimal user object
-        // This allows unauthenticated updates (useful for public API use)
+        // If no token provided, deny the request
         if (!$token) {
-            error_log("⚠️ [AUTH] $action on $table - No token provided (ALLOWED without auth)");
-            return [
-                'id' => 'anonymous',
-                'email' => 'anonymous@system.local',
-                'role' => 'admin', // Allow modifications without auth
-                'status' => 'active',
-                'company_id' => null
-            ];
+            http_response_code(401);
+            error_log("🔴 [AUTH] $action on $table - No token provided (DENIED)");
+            throw new Exception("Authentication required. Missing authorization token.");
         }
 
         // Verify token
