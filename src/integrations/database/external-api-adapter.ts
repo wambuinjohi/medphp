@@ -106,6 +106,16 @@ export class ExternalAPIAdapter implements IDatabase {
         headers['Authorization'] = `Bearer ${currentToken}`;
       }
 
+      // Log token status for debugging (especially for company updates)
+      if (action === 'update' && table === 'companies') {
+        console.log(`🔐 [Company Update] Token check:`, {
+          hasInstanceToken: !!this.authToken,
+          hasLocalStorageToken: !!localStorage.getItem('med_api_token'),
+          willSendAuthHeader: !!currentToken,
+          authHeaderValue: currentToken ? `Bearer ${currentToken.substring(0, 20)}...` : 'NONE',
+        });
+      }
+
       // Build request body
       let body: any = null;
 
