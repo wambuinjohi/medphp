@@ -249,6 +249,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []); // Empty dependency array - run only once on mount
 
+  // Periodic token validation - check every 5 minutes if token is still valid
+  // This catches tokens that become invalid while the app is running (e.g., admin revokes)
+  useEffect(() => {
+    if (!user) return; // Only validate if user is authenticated
+
+    const validateTokenPeriodically = async () => {
+      if (!mountedRef.current) return;
+
+      const token = localStorage.getItem('med_api_token');
+      if (!token) {
+        // Token was cleared - logout
+        if (user) {
+          console.warn('⚠️ Token was cleared externally, logging out');
+          setUser(null);
+          setProfile(null);
+          setSession(null);
+        }
+        return;
+      }
+
+      try {
+        // Silently check if token is still valid
+        const { user: validatedUser, error } = await apiClient.auth.checkAuth();
+
+        if (error || !validatedUser) {
+          // Token is no longer valid
+          console.warn('⚠️ Token validation failed during periodic check:', error?.message);
+          clearAuthTokens();
+
+          if (mountedRef.current && user) {
+            setUser(null);
+            setProfile(null);
+            setSession(null);
+            console.log('🔐 User logged out due to invalid token');
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Periodic token validation error:', error);
+        // Don't logout on network errors - user might just be offline
+      }
+    };
+
+    // Run validation every 5 minutes
+    const validationInterval = setInterval(validateTokenPeriodically, 5 * 60 * 1000);
+
+    return () => clearInterval(validationInterval);
+  }, [user]); // Re-run when user changes
+
   const signIn = useCallback(async (email: string, password: string) => {
     try {
       setLoading(true);
