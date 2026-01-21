@@ -26,12 +26,12 @@ export const api = {
    * Authentication methods
    */
   auth: {
-    login: (email: string, password: string) => apiAdapter.login(email, password),
-    logout: () => apiAdapter.logout(),
-    checkAuth: () => apiAdapter.checkAuth(),
+    login: (email: string, password: string) => getAdapterInstance().login(email, password),
+    logout: () => getAdapterInstance().logout(),
+    checkAuth: () => getAdapterInstance().checkAuth(),
     getAuthToken: () => localStorage.getItem('med_api_token'),
-    setAuthToken: (token: string) => apiAdapter.setAuthToken(token),
-    clearAuthToken: () => apiAdapter.clearAuthToken(),
+    setAuthToken: (token: string) => getAdapterInstance().setAuthToken(token),
+    clearAuthToken: () => getAdapterInstance().clearAuthToken(),
   },
 
   /**
@@ -40,27 +40,27 @@ export const api = {
   from: (table: string) => ({
     select: async (fields?: string) => {
       // For now, we fetch all and return
-      const result = await apiAdapter.select(table);
+      const result = await getAdapterInstance().select(table);
       return { data: result.data, error: result.error };
     },
     selectOne: async (id: string) => {
-      const result = await apiAdapter.selectOne(table, id);
+      const result = await getAdapterInstance().selectOne(table, id);
       return { data: result.data, error: result.error };
     },
     selectBy: async (filter: Record<string, any>) => {
-      const result = await apiAdapter.selectBy(table, filter);
+      const result = await getAdapterInstance().selectBy(table, filter);
       return { data: result.data, error: result.error };
     },
     insert: async (data: any) => {
-      const result = await apiAdapter.insert(table, data);
+      const result = await getAdapterInstance().insert(table, data);
       return { data: result, error: result.error };
     },
     update: async (id: string, data: any) => {
-      const result = await apiAdapter.update(table, id, data);
+      const result = await getAdapterInstance().update(table, id, data);
       return { data: null, error: result.error };
     },
     delete: async (id: string) => {
-      const result = await apiAdapter.delete(table, id);
+      const result = await getAdapterInstance().delete(table, id);
       return { data: null, error: result.error };
     },
   }),
@@ -68,7 +68,9 @@ export const api = {
   /**
    * Direct adapter access for advanced queries
    */
-  adapter: apiAdapter,
+  get adapter() {
+    return getAdapterInstance();
+  },
 };
 
 // Helper to build filters from chainable calls
