@@ -51,24 +51,26 @@ export function getPermissionCount(role: RoleDefinition | null | undefined): num
 
 /**
  * Filter a list of permissions based on what a role can do
- * DISABLED: Returns all permissions
  */
 export function filterPermissionsByRole(
   allPermissions: Permission[],
   role: RoleDefinition | null | undefined
 ): Permission[] {
-  // Role enforcement disabled - return all permissions
-  return allPermissions;
+  if (!role || !role.permissions) {
+    return [];
+  }
+  return allPermissions.filter(permission => role.permissions.includes(permission));
 }
 
 /**
  * Get permissions missing from a role
- * DISABLED: Always returns empty array
  */
 export function getMissingPermissions(
   role: RoleDefinition | null | undefined,
   requiredPermissions: Permission[]
 ): Permission[] {
-  // Role enforcement disabled - no missing permissions
-  return [];
+  if (!role || !role.permissions) {
+    return requiredPermissions;
+  }
+  return requiredPermissions.filter(permission => !role.permissions.includes(permission));
 }
