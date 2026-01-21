@@ -7,25 +7,7 @@
 import type { IDatabase, DatabaseConfig, DatabaseProvider } from './types';
 import { SupabaseAdapter } from './supabase-adapter';
 import { MySQLAdapter } from './mysql-adapter';
-import { ExternalAPIAdapter } from './external-api-adapter';
-
-// We'll create a shared adapter instance that both api.ts and this manager use
-// Using lazy initialization to ensure it's created fresh
-let sharedExternalAdapter: ExternalAPIAdapter | null = null;
-
-/**
- * Get or create the shared External API Adapter instance
- * This is the single source of truth for all database operations
- * The adapter will be used by both api.ts and DatabaseManager
- */
-function getSharedExternalAdapter(): ExternalAPIAdapter {
-  if (!sharedExternalAdapter) {
-    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-    sharedExternalAdapter = new ExternalAPIAdapter(apiUrl);
-    console.log('🎯 Created shared ExternalAPIAdapter instance for all database operations');
-  }
-  return sharedExternalAdapter;
-}
+import { getSharedExternalAdapter } from './shared-adapter';
 
 class DatabaseManager {
   private adapter: IDatabase | null = null;
