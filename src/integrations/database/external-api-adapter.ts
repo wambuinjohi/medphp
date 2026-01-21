@@ -239,7 +239,7 @@ export class ExternalAPIAdapter implements IDatabase {
           console.error(`❌ ${logPrefix} - PERMISSION DENIED (403)`);
           console.error('🔍 Troubleshooting 403 Forbidden Error:');
           console.error('1. User Role/Permissions:');
-          console.error(`   - Current user token: ${this.authToken ? 'Present' : 'Missing'}`);
+          console.error(`   - Current user token: ${this.getAuthToken() ? 'Present' : 'Missing'}`);
           console.error(`   - Check if user has permission to ${action} on ${table || 'resource'}`);
           console.error('2. Database:');
           console.error(`   - Verify the ${table} table exists on the backend`);
