@@ -741,8 +741,17 @@ try {
             throw new Exception("Invalid email or password");
         }
 
-        // Create JWT token instead of session
-        $token = createJWT($user['id'], $user['email'], $user['role']);
+        // Fetch full user profile including company_id and status
+        $profile_sql = "SELECT id, email, role, status, company_id FROM profiles WHERE id = ? LIMIT 1";
+        $profile_stmt = $conn->prepare($profile_sql);
+        $profile_stmt->bind_param("s", $user['id']);
+        $profile_stmt->execute();
+        $profile_result = $profile_stmt->get_result();
+        $profile = $profile_result->fetch_assoc();
+        $profile_stmt->close();
+
+        // Create JWT token instead of session (include company_id and status)
+        $token = createJWT($user['id'], $user['email'], $user['role'], $profile ? $profile['company_id'] : null, $profile ? $profile['status'] : 'active');
 
         echo json_encode([
             'status' => 'success',
@@ -751,7 +760,9 @@ try {
             'user' => [
                 'id' => $user['id'],
                 'email' => $user['email'],
-                'role' => $user['role']
+                'role' => $user['role'],
+                'company_id' => $profile ? $profile['company_id'] : null,
+                'status' => $profile ? $profile['status'] : 'active'
             ]
         ]);
     }
