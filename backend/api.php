@@ -1,4 +1,5 @@
 <?php
+<?php
 // Load .env file if it exists
 if (file_exists(__DIR__ . '/.env')) {
     $env_file = file_get_contents(__DIR__ . '/.env');
