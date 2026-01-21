@@ -56,8 +56,22 @@ export const usePermissions = () => {
         setError(errorMessage);
 
         // Fallback: Use default permissions based on role type if available
+        // Try exact match first, then case-insensitive match
+        let roleType: keyof typeof DEFAULT_ROLE_PERMISSIONS | null = null;
         if (userRole in DEFAULT_ROLE_PERMISSIONS) {
-          const roleType = userRole as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+          roleType = userRole as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+        } else {
+          // Try case-insensitive match for roles like "Administrator" → "admin"
+          const normalizedRole = userRole.toLowerCase();
+          const matchedRole = Object.keys(DEFAULT_ROLE_PERMISSIONS).find(
+            r => r.toLowerCase() === normalizedRole
+          );
+          if (matchedRole) {
+            roleType = matchedRole as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+          }
+        }
+
+        if (roleType) {
           const fallbackRole: RoleDefinition = {
             id: `fallback-${userRole}`,
             name: userRole,
