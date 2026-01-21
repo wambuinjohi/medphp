@@ -99,8 +99,11 @@ export class ExternalAPIAdapter implements IDatabase {
         'Content-Type': 'application/json',
       };
 
-      if (this.authToken) {
-        headers['Authorization'] = `Bearer ${this.authToken}`;
+      // Always check localStorage for the most current token
+      // This ensures we get the token even if the instance was created before login
+      const currentToken = this.authToken || localStorage.getItem('med_api_token');
+      if (currentToken) {
+        headers['Authorization'] = `Bearer ${currentToken}`;
       }
 
       // Build request body
