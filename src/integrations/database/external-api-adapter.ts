@@ -57,6 +57,35 @@ export class ExternalAPIAdapter implements IDatabase {
   }
 
   /**
+   * Validate token with backend and clear if invalid
+   * This ensures we don't use stale tokens
+   */
+  async validateToken(): Promise<boolean> {
+    const token = this.getAuthToken();
+    if (!token) {
+      return false; // No token to validate
+    }
+
+    try {
+      const { user, error } = await this.checkAuth();
+
+      if (error || !user) {
+        // Token is invalid - clear it immediately
+        console.warn('🧹 Token validation failed, clearing invalid token:', error?.message);
+        this.clearAuthToken();
+        return false;
+      }
+
+      // Token is valid
+      return true;
+    } catch (error) {
+      console.warn('⚠️ Token validation error:', error);
+      // On network errors, don't clear token - user might be offline
+      return true;
+    }
+  }
+
+  /**
    * Check if the current token is expired by decoding JWT payload
    */
   private isTokenExpired(): boolean {
