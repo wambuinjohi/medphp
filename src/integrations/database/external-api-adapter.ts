@@ -417,8 +417,9 @@ export class ExternalAPIAdapter implements IDatabase {
                 console.log(`✅ ${logPrefix} - Success after token refresh`);
                 return { data: retryResult.data || retryResult, error: null, status: retryResponse.status };
               } else {
-                // Still failed after refresh
-                console.error(`❌ ${logPrefix} - Still failed after token refresh`);
+                // Still failed after refresh - token is definitely invalid
+                console.error(`❌ ${logPrefix} - Still failed after token refresh, clearing token`);
+                this.clearAuthToken();
               }
             }
           } catch (refreshError) {
