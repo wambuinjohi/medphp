@@ -1,5 +1,4 @@
 <?php
-<?php
 // Load .env file if it exists
 if (file_exists(__DIR__ . '/.env')) {
     $env_file = file_get_contents(__DIR__ . '/.env');
@@ -574,13 +573,15 @@ try {
     }
 
     // Helper function to create JWT token
-    function createJWT($user_id, $user_email, $user_role) {
+    function createJWT($user_id, $user_email, $user_role, $company_id = null, $status = 'active') {
         $secret = $_ENV['JWT_SECRET'] ?? 'wayrus-secret-key-2024';
         $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
         $payload = base64_encode(json_encode([
             'sub' => $user_id,
             'email' => $user_email,
             'role' => $user_role,
+            'company_id' => $company_id,
+            'status' => $status,
             'iat' => time(),
             'exp' => time() + (24 * 60 * 60) // 24 hours
         ]));
@@ -629,17 +630,12 @@ try {
             $token = $_POST['token'] ?? null;
         }
 
-        // If no token provided, allow the request but return minimal user object
-        // This allows unauthenticated updates (useful for public API use)
+        // If no token provided, deny the request
         if (!$token) {
-            error_log("⚠️ [AUTH] $action on $table - No token provided (ALLOWED without auth)");
-            return [
-                'id' => 'anonymous',
-                'email' => 'anonymous@system.local',
-                'role' => 'admin', // Allow modifications without auth
-                'status' => 'active',
-                'company_id' => null
-            ];
+            http_response_code(401);
+            error_log("🔴 [AUTH] $action on $table - No token provided (DENIED)");
+            error_log("📋 [DEBUG] Authorization header present: " . ($auth_header ? "yes" : "no"));
+            throw new Exception("Authentication required. Missing authorization token.");
         }
 
         // Verify token
@@ -747,8 +743,17 @@ try {
             throw new Exception("Invalid email or password");
         }
 
-        // Create JWT token instead of session
-        $token = createJWT($user['id'], $user['email'], $user['role']);
+        // Fetch full user profile including company_id and status
+        $profile_sql = "SELECT id, email, role, status, company_id FROM profiles WHERE id = ? LIMIT 1";
+        $profile_stmt = $conn->prepare($profile_sql);
+        $profile_stmt->bind_param("s", $user['id']);
+        $profile_stmt->execute();
+        $profile_result = $profile_stmt->get_result();
+        $profile = $profile_result->fetch_assoc();
+        $profile_stmt->close();
+
+        // Create JWT token instead of session (include company_id and status)
+        $token = createJWT($user['id'], $user['email'], $user['role'], $profile ? $profile['company_id'] : null, $profile ? $profile['status'] : 'active');
 
         echo json_encode([
             'status' => 'success',
@@ -757,7 +762,9 @@ try {
             'user' => [
                 'id' => $user['id'],
                 'email' => $user['email'],
-                'role' => $user['role']
+                'role' => $user['role'],
+                'company_id' => $profile ? $profile['company_id'] : null,
+                'status' => $profile ? $profile['status'] : 'active'
             ]
         ]);
     }
@@ -999,21 +1006,35 @@ try {
         }
 
         // Check authorization for modifications to protected tables
-        // NOTE: 'companies' table removed from protected list - allows public updates
-        $protected_tables = ['users', 'profiles', 'user_permissions', 'roles'];
+        $protected_tables = ['users', 'profiles', 'user_permissions', 'roles', 'companies'];
         $auth = null;
         if (in_array($table, $protected_tables)) {
             $auth = requireAuthForModification($action, $table);
-        } else if ($table === 'companies') {
-            // Allow company updates without any authentication
-            error_log("⚠️ [BYPASS] Company update allowed without authentication check");
         }
 
         // Additional authorization check for company updates
-        // BYPASSED: Allow any user to update any company (public API mode)
-        if ($table === 'companies') {
-            error_log("⚠️ [BYPASS] Allowing company update without company-specific permission check");
-            // Skipping canManageCompany check - allows any user to update any company
+        if ($table === 'companies' && $auth) {
+            // Extract company ID from where clause
+            $company_id = null;
+            if (is_array($where) && isset($where['id'])) {
+                $company_id = $where['id'];
+            } elseif (is_array($where) && isset($where['company_id'])) {
+                $company_id = $where['company_id'];
+            }
+
+            if (!$company_id) {
+                http_response_code(400);
+                throw new Exception("Cannot determine company ID for authorization check");
+            }
+
+            // Check if user can manage this specific company
+            if (!canManageCompany($auth, $company_id)) {
+                http_response_code(403);
+                error_log("🔴 [AUTH] Denying company update: User {$auth['email']} cannot manage company {$company_id}");
+                throw new Exception("You do not have permission to update this company.");
+            }
+
+            error_log("✅ [AUTH] Company update authorized for {$auth['email']} on company {$company_id}");
         }
 
         $sets = [];

@@ -102,6 +102,13 @@ export default defineConfig(({ mode }) => {
           configure: (proxy, options) => {
             proxy.on('proxyReq', (proxyReq, req, res) => {
               console.log(`📡 Proxying: ${req.method} ${req.url}`);
+
+              // Log authorization header for debugging
+              if (req.headers.authorization) {
+                console.log(`🔐 Authorization header: ${req.headers.authorization.substring(0, 30)}...`);
+              } else {
+                console.log(`⚠️  No Authorization header present`);
+              }
             });
             proxy.on('proxyRes', (proxyRes, req, res) => {
               console.log(`✅ Response: ${proxyRes.statusCode}`);

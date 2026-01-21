@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useUpdateCompany, useCreateCompany, useTaxSettings, useCreateTaxSetting, useUpdateTaxSetting, useDeleteTaxSetting } from '@/hooks/useDatabase';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { ForceTaxSettings } from '@/components/ForceTaxSettings';
 import { CompanySettingsDiagnostics } from '@/components/CompanySettingsDiagnostics';
@@ -46,6 +47,7 @@ import {
 
 export default function CompanySettings() {
   const { isAuthenticated, profile: currentUser } = useAuth();
+  const { role, loading } = usePermissions();
 
   // Check authentication (all authenticated users can edit company settings)
   if (!isAuthenticated) {
@@ -406,6 +408,18 @@ export default function CompanySettings() {
   };
 
   const handleSaveCompany = async () => {
+    // Check if user has permission to access settings
+    if (!role || !role.permissions.includes('access_settings')) {
+      const missingPermission = !role ? 'No role assigned' : 'Missing access_settings permission';
+      const detailedMessage = `You do not have permission to update company settings. Required permission: access_settings. ${missingPermission}`;
+      setPermissionError({
+        statusCode: 403,
+        message: detailedMessage,
+      });
+      toast.error(detailedMessage);
+      return;
+    }
+
     // Perform validation before saving
     const validation = validateCompanyData(companyData);
     setValidationErrors(validation);
@@ -717,7 +731,13 @@ export default function CompanySettings() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="primary-gradient" size="lg" onClick={handleSaveCompany}>
+          <Button
+            variant="primary-gradient"
+            size="lg"
+            onClick={handleSaveCompany}
+            disabled={loading || !role || !role.permissions.includes('access_settings')}
+            title={loading ? 'Loading permissions...' : (!role || !role.permissions.includes('access_settings')) ? 'You do not have permission to update company settings' : ''}
+          >
             <Save className="h-4 w-4" />
             Save Settings
           </Button>
