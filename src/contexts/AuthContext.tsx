@@ -168,24 +168,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (quickSession?.user && mountedRef.current) {
           console.log('✅ Auth session restored from localStorage');
 
-          // IMPORTANT: Validate token with backend IMMEDIATELY
-          // This ensures we don't use stale/revoked tokens
-          console.log('🔐 Validating token with backend...');
-          const { user: validatedUser, error: authError } = await apiClient.auth.checkAuth();
-
-          if (authError || !validatedUser) {
-            // Token is invalid - clear it immediately
-            console.warn('⚠️ Token validation failed, clearing invalid token:', authError?.message);
-            clearAuthTokens();
-
-            if (mountedRef.current) {
-              setLoading(false);
-            }
-            return;
-          }
-
-          // Token is valid - proceed with session
-          console.log('✅ Token validated successfully');
+          // Session found, restore it
+          // Token validation will happen on first API call or during periodic checks
           setSession(quickSession);
           setUser(quickSession.user);
 
