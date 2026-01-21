@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ForceTaxSettings } from '@/components/ForceTaxSettings';
 import { CompanySettingsDiagnostics } from '@/components/CompanySettingsDiagnostics';
+import { AuthorizationDiagnostics } from '@/components/AuthorizationDiagnostics';
 import { getUserFriendlyMessage, logError } from '@/utils/errorParser';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { QuickSchemaFix } from '@/components/QuickSchemaFix';
@@ -732,16 +733,18 @@ export default function CompanySettings() {
             operation="update"
             resource="company settings"
           />
-          <div className="mt-4">
+          <div className="mt-4 space-y-4">
             <CompanySettingsDiagnostics currentCompany={currentCompany} />
+            <AuthorizationDiagnostics />
           </div>
         </>
       )}
 
       {/* Diagnostic Info - Always show for debugging */}
       {!permissionError && (
-        <div className="mb-4">
+        <div className="mb-4 space-y-4">
           <CompanySettingsDiagnostics currentCompany={currentCompany} />
+          <AuthorizationDiagnostics />
         </div>
       )}
 
