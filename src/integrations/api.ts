@@ -446,7 +446,7 @@ export const supabaseCompat = {
     },
 
     signOut: async () => {
-      const result = await apiAdapter.logout();
+      const result = await getAdapterInstance().logout();
 
       // Clear localStorage
       localStorage.removeItem('med_api_token');
