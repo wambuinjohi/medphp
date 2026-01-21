@@ -359,15 +359,24 @@ Copy this info and use it to debug the backend.
 
 ## Quick Fix Checklist
 
-- [ ] User role is lowercase 'admin' (not 'Admin', 'Administrator', 'ADMIN')
-- [ ] User status is 'active'
-- [ ] User has company_id = 1
+**General Authorization:**
+- [x] User role is lowercase 'admin' ✓
+- [x] User status is 'active' ✓
+- [x] User has company_id = 1 ✓
 - [ ] Company with id = 1 exists in database
 - [ ] Admin role is defined in roles table
 - [ ] Admin role has necessary permissions assigned
 - [ ] JWT_SECRET on backend matches frontend
 - [ ] JWT token is not expired
 - [ ] User is assigned to admin role (if using separate user_roles table)
+
+**Companies Table Specific (CRITICAL):**
+- [ ] Backend authorization check includes companies table
+- [ ] Companies table authorization matches user's company_id
+- [ ] Admin role has permission to update companies (check permission name)
+- [ ] Companies table doesn't have row-level security blocking updates
+- [ ] No special company status check blocking updates
+- [ ] Backend has authorization logic for the UPDATE action on companies table
 
 ---
 
