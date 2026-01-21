@@ -97,7 +97,7 @@ export class ExternalAPIAdapter implements IDatabase {
           method,
           action,
           table,
-          authTokenPresent: !!this.authToken,
+          authTokenPresent: !!this.getAuthToken(),
           bodyDataKeys: data ? Object.keys(data as any) : [],
         });
       }
@@ -563,7 +563,7 @@ export class ExternalAPIAdapter implements IDatabase {
         table,
         id,
         dataKeys: Object.keys(data as any || {}),
-        authTokenPresent: !!this.authToken,
+        authTokenPresent: !!this.getAuthToken(),
         dataSize: JSON.stringify(data).length,
       });
       const { error } = await this.apiCall('PUT', 'update', table, data, { id });
@@ -665,7 +665,7 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async rpc<T>(functionName: string, params?: Record<string, any>): Promise<{ data: T | null; error: Error | null }> {
     try {
-      const currentToken = this.authToken || localStorage.getItem('med_api_token');
+      const currentToken = this.getAuthToken();
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
@@ -701,7 +701,7 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async rpcList<T>(functionName: string, params?: Record<string, any>): Promise<{ data: T[]; error: Error | null; count?: number }> {
     try {
-      const currentToken = this.authToken || localStorage.getItem('med_api_token');
+      const currentToken = this.getAuthToken();
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
