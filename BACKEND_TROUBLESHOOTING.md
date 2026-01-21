@@ -45,7 +45,40 @@ This suggests the `companies` table has **table-specific authorization rules** t
 
 ### 1. Check Company Update Authorization Rules
 
-**What to check:**
+**What to check in backend code:**
+
+The backend needs to have authorization logic for the `companies` table specifically. Look for something like:
+
+```php
+function authorize_companies_update($user_id, $company_id) {
+  $user = get_user($user_id);
+
+  // Check 1: Is user admin?
+  if ($user['role'] !== 'admin') {
+    return ['authorized' => false, 'reason' => 'Not admin'];
+  }
+
+  // Check 2: Is user's company matching the record being updated?
+  if ($user['company_id'] !== $company_id) {
+    return ['authorized' => false, 'reason' => 'Company mismatch'];
+  }
+
+  // Check 3: Does user have explicit permission to update companies?
+  if (!user_has_permission($user_id, 'update_company_settings')) {
+    return ['authorized' => false, 'reason' => 'No update permission'];
+  }
+
+  return ['authorized' => true];
+}
+```
+
+**Common backend issues:**
+- ❌ Authorization check is missing the company ID matching logic
+- ❌ Authorization check requires a permission that admin doesn't have
+- ❌ Authorization check is looking for wrong permission name
+- ❌ Row-level security is blocking updates to the company record
+
+**To verify user exists and has correct role:**
 ```sql
 -- Check if user exists and has correct role
 SELECT id, email, role, status, company_id FROM users WHERE email = 'admin@mail.com';
