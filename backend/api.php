@@ -945,8 +945,34 @@ try {
 
         // Check authorization for modifications to protected tables
         $protected_tables = ['companies', 'users', 'profiles', 'user_permissions', 'roles'];
+        $auth = null;
         if (in_array($table, $protected_tables)) {
             $auth = requireAuthForModification($action, $table);
+        }
+
+        // Additional authorization check for company deletes
+        if ($table === 'companies' && $auth) {
+            // Extract company ID from where clause
+            $company_id = null;
+            if (is_array($where) && isset($where['id'])) {
+                $company_id = $where['id'];
+            } elseif (is_array($where) && isset($where['company_id'])) {
+                $company_id = $where['company_id'];
+            }
+
+            if (!$company_id) {
+                http_response_code(400);
+                throw new Exception("Cannot determine company ID for authorization check");
+            }
+
+            // Check if user can manage this specific company
+            if (!canManageCompany($auth, $company_id)) {
+                http_response_code(403);
+                error_log("🔴 [AUTH] Denying company delete: User {$auth['email']} cannot manage company {$company_id}");
+                throw new Exception("You do not have permission to delete this company.");
+            }
+
+            error_log("✅ [AUTH] Company delete authorized for {$auth['email']} on company {$company_id}");
         }
 
         $sql = "DELETE FROM `$table`";
