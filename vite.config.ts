@@ -83,9 +83,14 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: apiUrl,
           changeOrigin: true,
-          pathRewrite: {
-            '^/api(?=\\?)': '/api.php', // Rewrite /api to /api.php while preserving query string
-            '^/api$': '/api.php', // Also handle /api without query string
+          rewrite: (path) => {
+            // Don't rewrite file upload endpoints - keep them as /api/uploads
+            if (path.startsWith('/api/uploads')) {
+              return path;
+            }
+            // Convert /api paths to /api.php paths for the external API
+            // This preserves query strings: /api?action=login → /api.php?action=login
+            return path.replace(/^\/api(?=\?|$)/, '/api.php');
           },
           logLevel: 'debug', // Enable debug logging to see what's happening
         },
