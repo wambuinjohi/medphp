@@ -34,6 +34,7 @@ export class ExternalAPIAdapter implements IDatabase {
     // This prevents timing/initialization issues where the adapter
     // might be created before the token is available in localStorage.
     // All methods now read the token fresh from localStorage.
+    // Token refresh is automatic - we check for expiration and refresh before each API call.
   }
 
   setAuthToken(token: string) {
