@@ -705,7 +705,8 @@ try {
         }
 
         // Regular admins can only manage their own company
-        if ($user['company_id'] === $company_id) {
+        // Use loose comparison (==) to handle string/int type differences from URL parameters
+        if ($user['company_id'] == $company_id) {
             return true;
         }
 
