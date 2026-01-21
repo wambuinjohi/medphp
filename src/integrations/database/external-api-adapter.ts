@@ -628,7 +628,7 @@ export class ExternalAPIAdapter implements IDatabase {
   async raw<T>(sql: string, params?: any[]): Promise<ListQueryResult<T>> {
     try {
       const url = `${this.apiBase}?action=raw`;
-      const currentToken = this.authToken || localStorage.getItem('med_api_token');
+      const currentToken = this.getAuthToken();
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
