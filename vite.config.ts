@@ -83,10 +83,32 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: apiUrl,
           changeOrigin: true,
-          pathRewrite: {
-            '^/api\\?': '/api.php?', // /api?... → /api.php?...
-            '^/api/': '/api.php/', // /api/... → /api.php/...
-            '^/api$': '/api.php', // /api → /api.php
+          rewrite: (path) => {
+            // Skip file uploads - keep as /api/uploads
+            if (path.startsWith('/api/uploads')) {
+              return path;
+            }
+            // For query string requests: /api?action=X → /api.php?action=X
+            if (path.includes('?')) {
+              return path.replace('/api?', '/api.php?');
+            }
+            // For path-based requests: /api/upload_file → /api.php/upload_file
+            if (path.startsWith('/api/')) {
+              return '/api.php' + path.substring(4);
+            }
+            // Just /api → /api.php
+            return '/api.php';
+          },
+          configure: (proxy, options) => {
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              console.log(`📡 Proxying: ${req.method} ${req.url}`);
+            });
+            proxy.on('proxyRes', (proxyRes, req, res) => {
+              console.log(`✅ Response: ${proxyRes.statusCode}`);
+            });
+            proxy.on('error', (err, req, res) => {
+              console.error(`❌ Proxy error: ${err.message}`);
+            });
           },
         },
 
