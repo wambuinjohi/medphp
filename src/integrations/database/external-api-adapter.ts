@@ -99,8 +99,11 @@ export class ExternalAPIAdapter implements IDatabase {
         'Content-Type': 'application/json',
       };
 
-      if (this.authToken) {
-        headers['Authorization'] = `Bearer ${this.authToken}`;
+      // Always check localStorage for the most current token
+      // This ensures we get the token even if the instance was created before login
+      const currentToken = this.authToken || localStorage.getItem('med_api_token');
+      if (currentToken) {
+        headers['Authorization'] = `Bearer ${currentToken}`;
       }
 
       // Build request body
@@ -590,9 +593,16 @@ export class ExternalAPIAdapter implements IDatabase {
   async raw<T>(sql: string, params?: any[]): Promise<ListQueryResult<T>> {
     try {
       const url = `${this.apiBase}?action=raw`;
+      const currentToken = this.authToken || localStorage.getItem('med_api_token');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (currentToken) {
+        headers['Authorization'] = `Bearer ${currentToken}`;
+      }
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ sql, params }),
       });
 
@@ -620,9 +630,16 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async rpc<T>(functionName: string, params?: Record<string, any>): Promise<{ data: T | null; error: Error | null }> {
     try {
+      const currentToken = this.authToken || localStorage.getItem('med_api_token');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (currentToken) {
+        headers['Authorization'] = `Bearer ${currentToken}`;
+      }
       const response = await fetch(`${this.apiBase}?action=rpc`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ function: functionName, params: params || {} }),
       });
 
@@ -649,9 +666,16 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async rpcList<T>(functionName: string, params?: Record<string, any>): Promise<{ data: T[]; error: Error | null; count?: number }> {
     try {
+      const currentToken = this.authToken || localStorage.getItem('med_api_token');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (currentToken) {
+        headers['Authorization'] = `Bearer ${currentToken}`;
+      }
       const response = await fetch(`${this.apiBase}?action=rpc`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ function: functionName, params: params || {} }),
       });
 

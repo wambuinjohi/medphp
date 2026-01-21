@@ -701,15 +701,23 @@ try {
 
         // Super admins can manage any company
         if ($user['role'] === 'super_admin') {
+            error_log("✅ [AUTH] Super admin {$user['email']} can manage any company");
             return true;
         }
 
         // Regular admins can only manage their own company
-        if ($user['company_id'] === $company_id) {
+        // Cast both to string to handle type differences from URL parameters vs database
+        $user_company_id = (string)$user['company_id'];
+        $target_company_id = (string)$company_id;
+
+        error_log("🔍 [AUTH] Checking company access: user_company={$user_company_id}, target_company={$target_company_id}, user_role={$user['role']}");
+
+        if ($user_company_id === $target_company_id) {
+            error_log("✅ [AUTH] User {$user['email']} can manage company {$company_id} (match)");
             return true;
         }
 
-        error_log("🔴 [AUTH] User {$user['email']} cannot manage company $company_id (user's company: {$user['company_id']})");
+        error_log("🔴 [AUTH] User {$user['email']} cannot manage company $company_id (user's company: {$user['company_id']}, role: {$user['role']})");
         return false;
     }
 
@@ -919,6 +927,79 @@ try {
             'message' => $all_checks_passed ?
                 'User is authorized to save company settings' :
                 'User is missing one or more requirements to save company settings'
+        ]);
+    }
+    elseif ($action === "token_debug") {
+        // Simple diagnostic endpoint to debug token issues
+        // Does NOT require authentication - helps understand token problems
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+        $token = null;
+        $token_present = false;
+        $token_valid = false;
+        $decoded_payload = null;
+        $error = null;
+
+        // Check if Authorization header exists
+        if ($auth_header) {
+            $token_present = true;
+            if (preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
+                $token = $matches[1];
+            } else {
+                $error = "Authorization header present but not in 'Bearer <token>' format";
+            }
+        }
+
+        // If token is present, try to decode and verify it
+        if ($token) {
+            $parts = explode('.', $token);
+            if (count($parts) === 3) {
+                // Try to verify and decode
+                $decoded = verifyJWT($token);
+                if ($decoded) {
+                    $token_valid = true;
+                    $decoded_payload = $decoded;
+                    // Remove sensitive info if needed, but include enough for debugging
+                    unset($decoded_payload['exp']); // Remove expiration for cleaner output
+                } else {
+                    // Token exists but is invalid - diagnose why
+                    list($header, $payload, $signature) = $parts;
+                    try {
+                        $decoded_payload = json_decode(base64_decode($payload), true);
+                    } catch (Exception $e) {
+                        $decoded_payload = null;
+                    }
+
+                    if ($decoded_payload && isset($decoded_payload['exp'])) {
+                        if ($decoded_payload['exp'] < time()) {
+                            $error = "Token has expired (exp: " . date('Y-m-d H:i:s', $decoded_payload['exp']) . ")";
+                        } else {
+                            $error = "Token signature is invalid";
+                        }
+                    } else {
+                        $error = "Token is malformed or signature verification failed";
+                    }
+                }
+            } else {
+                $error = "Token does not have the correct JWT format (expected 3 parts separated by dots, got " . count($parts) . ")";
+            }
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'debug' => [
+                'token_present' => $token_present,
+                'token_valid' => $token_valid,
+                'token_value' => $token ? substr($token, 0, 20) . '...' : null,
+                'error' => $error,
+                'decoded_payload' => $decoded_payload
+            ],
+            'help' => [
+                'token_present' => 'Whether Authorization header with Bearer token was sent',
+                'token_valid' => 'Whether the token signature is valid and not expired',
+                'error' => 'Description of any token issues found',
+                'decoded_payload' => 'The decoded contents of the JWT (without sensitive expiration)'
+            ]
         ]);
     }
     // CRUD Operations
