@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ForceTaxSettings } from '@/components/ForceTaxSettings';
 import { CompanySettingsDiagnostics } from '@/components/CompanySettingsDiagnostics';
+import { AuthorizationDiagnostics } from '@/components/AuthorizationDiagnostics';
 import { getUserFriendlyMessage, logError } from '@/utils/errorParser';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { QuickSchemaFix } from '@/components/QuickSchemaFix';
