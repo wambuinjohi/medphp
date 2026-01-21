@@ -701,16 +701,23 @@ try {
 
         // Super admins can manage any company
         if ($user['role'] === 'super_admin') {
+            error_log("✅ [AUTH] Super admin {$user['email']} can manage any company");
             return true;
         }
 
         // Regular admins can only manage their own company
-        // Use loose comparison (==) to handle string/int type differences from URL parameters
-        if ($user['company_id'] == $company_id) {
+        // Cast both to string to handle type differences from URL parameters vs database
+        $user_company_id = (string)$user['company_id'];
+        $target_company_id = (string)$company_id;
+
+        error_log("🔍 [AUTH] Checking company access: user_company={$user_company_id}, target_company={$target_company_id}, user_role={$user['role']}");
+
+        if ($user_company_id === $target_company_id) {
+            error_log("✅ [AUTH] User {$user['email']} can manage company {$company_id} (match)");
             return true;
         }
 
-        error_log("🔴 [AUTH] User {$user['email']} cannot manage company $company_id (user's company: {$user['company_id']})");
+        error_log("🔴 [AUTH] User {$user['email']} cannot manage company $company_id (user's company: {$user['company_id']}, role: {$user['role']})");
         return false;
     }
 
