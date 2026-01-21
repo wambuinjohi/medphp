@@ -733,16 +733,18 @@ export default function CompanySettings() {
             operation="update"
             resource="company settings"
           />
-          <div className="mt-4">
+          <div className="mt-4 space-y-4">
             <CompanySettingsDiagnostics currentCompany={currentCompany} />
+            <AuthorizationDiagnostics />
           </div>
         </>
       )}
 
       {/* Diagnostic Info - Always show for debugging */}
       {!permissionError && (
-        <div className="mb-4">
+        <div className="mb-4 space-y-4">
           <CompanySettingsDiagnostics currentCompany={currentCompany} />
+          <AuthorizationDiagnostics />
         </div>
       )}
 
