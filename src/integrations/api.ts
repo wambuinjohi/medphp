@@ -7,14 +7,18 @@
 import { ExternalAPIAdapter } from './database/external-api-adapter';
 
 // Create a singleton instance
-// NOTE: Ensure this is initialized early so other modules can reuse it
-const apiAdapter = new ExternalAPIAdapter();
+// This instance is lazily loaded to ensure it's initialized after other modules
+let apiAdapterInstance: ExternalAPIAdapter | null = null;
 
 /**
- * Export the adapter so other modules can share the same authenticated instance
+ * Get or create the API adapter instance
+ * This ensures we always use the same authenticated adapter across the app
  */
-export function getApiAdapter(): ExternalAPIAdapter {
-  return apiAdapter;
+function getAdapterInstance(): ExternalAPIAdapter {
+  if (!apiAdapterInstance) {
+    apiAdapterInstance = new ExternalAPIAdapter();
+  }
+  return apiAdapterInstance;
 }
 
 export const api = {
