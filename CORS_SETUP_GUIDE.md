@@ -160,12 +160,90 @@ Look for these headers in the response:
 
 ---
 
+## Development Environment (localhost:8080)
+
+The application uses a **Vite development proxy** to bypass CORS issues during development:
+
+- Requests to `/api` are automatically proxied to the backend
+- The proxy handles `changeOrigin: true` to modify the request origin
+- This allows development to work even if the backend isn't CORS-configured
+
+### How It Works
+
+1. Frontend makes request to `http://localhost:8080/api`
+2. Vite proxy intercepts and forwards to `https://med.wayrus.co.ke/api.php`
+3. Response is returned to frontend without CORS blocking
+4. Proxy is **only available in development** - doesn't work in production
+
+---
+
+## Production Environment
+
+In production (deployed to fly.dev, netlify, vercel, etc.):
+
+- The Vite proxy is **NOT available**
+- Frontend must communicate directly with the backend API
+- **Backend MUST have CORS headers configured** for production to work
+
+### Required Production Fix
+
+Contact your backend team and have them implement CORS headers as described in the "Solution: Configure CORS on Backend" section above.
+
+---
+
+## Checking CORS Configuration Status
+
+### For Development (proxy enabled)
+
+If you see CORS errors in development, the proxy might not be working:
+
+1. Check that `npm run dev` is running
+2. Check browser DevTools Network tab
+3. Look for requests with `http://localhost:8080/api`
+4. Check proxy logs in terminal for "Proxying:" messages
+
+### For Production (no proxy)
+
+Verify backend has CORS headers:
+
+```bash
+# Test the backend directly
+curl -i -X OPTIONS \
+  -H "Origin: https://your-frontend-domain.fly.dev" \
+  -H "Access-Control-Request-Method: POST" \
+  https://med.wayrus.co.ke/api.php?action=login
+
+# Expected response headers:
+# access-control-allow-origin: https://your-frontend-domain.fly.dev
+# access-control-allow-methods: GET, POST, PUT, DELETE, OPTIONS
+# access-control-allow-headers: Content-Type, Authorization
+```
+
+---
+
+## Backend Implementation Checklist
+
+Your backend team should:
+
+- [ ] Add CORS headers to all API responses
+- [ ] Handle HTTP OPTIONS (preflight) requests with 200 status
+- [ ] Include `Authorization` and `Content-Type` in allowed headers
+- [ ] Set correct `Access-Control-Allow-Origin` (not just `*` for production)
+- [ ] Enable `Access-Control-Allow-Credentials` if using cookies
+- [ ] Test with curl or Postman before deploying
+
+---
+
 ## Next Steps
 
-1. **Contact Backend Team**: Ask them to implement CORS headers as described above
-2. **Provide Them**: Share this guide with your backend team
-3. **Test**: Use the curl command or browser DevTools to verify
-4. **Update Frontend**: Once backend is configured, the "Failed to fetch" errors should disappear
+1. **For Development**: No action needed - proxy handles CORS
+2. **For Production**:
+   - [ ] Contact Backend Team
+   - [ ] Share this guide with them
+   - [ ] Ask them to implement CORS headers
+   - [ ] Test using curl command above
+   - [ ] Verify in DevTools Network tab
+   - [ ] Deploy and test in production
 
 ---
 
@@ -174,3 +252,4 @@ Look for these headers in the response:
 - [MDN: CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
 - [MDN: CORS Errors](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors)
 - [CORS Tester](https://www.webtoolkitservices.com/cors-checker)
+- [Vite Proxy Documentation](https://vitejs.dev/config/server-options.html#server-proxy)
