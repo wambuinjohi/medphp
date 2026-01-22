@@ -24,11 +24,12 @@ header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Req
 header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Max-Age: 86400");
 
-// Don't force Content-Type for file uploads (multipart/form-data)
-$content_type = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
-if (strpos($content_type, 'multipart/form-data') === false) {
-    header("Content-Type: application/json");
-}
+// Always set response Content-Type to JSON
+header("Content-Type: application/json");
+
+// Note: The above correctly sets the RESPONSE content-type
+// The $_SERVER['CONTENT_TYPE'] is the REQUEST content-type (multipart/form-data for file uploads)
+// This is the correct behavior - requests can be multipart, but responses should be JSON
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -127,8 +128,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' &&
 
 // Debug logging for update operations
 if ($action === 'update') {
-    error_log("UPDATE DEBUG: Table: " . $table . " | Where: " . json_encode($where));
-    error_log("UPDATE DEBUG: Data count: " . count($data) . " | Data: " . json_encode($data));
+    error_log("🟦 UPDATE DEBUG: Table: " . $table . " | Where: " . json_encode($where));
+    error_log("🟦 UPDATE DEBUG: Data count: " . count($data) . " | Data: " . json_encode($data));
+    $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? 'NOT_SET';
+    error_log("🟦 UPDATE DEBUG: Authorization header: " . $auth_header);
 }
 
 // Handle REST-style requests from .htaccess rewrite
@@ -1343,21 +1346,23 @@ try {
             $sql .= " WHERE " . $where;
         }
 
-        error_log("SQL UPDATE: " . $sql);
+        error_log("🟦 SQL UPDATE: " . $sql);
 
         if (!$conn->query($sql)) {
-            error_log("MySQL Error: " . $conn->error . " | SQL: " . $sql);
+            error_log("🔴 MySQL Error: " . $conn->error . " | SQL: " . $sql);
             throw new Exception("Update failed: " . $conn->error);
         }
 
         $affectedRows = $conn->affected_rows;
-        error_log("Update completed - Affected rows: " . $affectedRows . " | Table: " . $table);
+        error_log("✅ Update completed - Affected rows: " . $affectedRows . " | Table: " . $table);
 
-        echo json_encode([
+        $response = [
             'status' => 'success',
             'message' => 'Record updated',
             'affected_rows' => $affectedRows
-        ]);
+        ];
+        error_log("✅ Sending JSON response: " . json_encode($response));
+        echo json_encode($response);
     }
     elseif ($action === "delete") {
         if (!$table || !$where) {
