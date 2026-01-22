@@ -17,8 +17,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { ForceTaxSettings } from '@/components/ForceTaxSettings';
 import { CompanySettingsDiagnostics } from '@/components/CompanySettingsDiagnostics';
-import { AuthorizationDiagnostics } from '@/components/AuthorizationDiagnostics';
-import { TokenDebugDiagnostics } from '@/components/TokenDebugDiagnostics';
 import { getUserFriendlyMessage, logError } from '@/utils/errorParser';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { QuickSchemaFix } from '@/components/QuickSchemaFix';
