@@ -1132,7 +1132,18 @@ try {
             if (!canManageCompany($auth, $company_id)) {
                 http_response_code(403);
                 error_log("🔴 [AUTH] Denying company update: User {$auth['email']} cannot manage company {$company_id}");
-                throw new Exception("You do not have permission to update this company.");
+
+                // Provide detailed error message for debugging
+                $detailedMessage = "You do not have permission to update company {$company_id}. ";
+                if (!$auth['company_id']) {
+                    $detailedMessage .= "Your user profile is not assigned to any company. Please contact your administrator to assign you to a company.";
+                } else if ($auth['role'] === 'super_admin') {
+                    $detailedMessage .= "Super admin check failed (unexpected). Please contact support.";
+                } else {
+                    $detailedMessage .= "You are assigned to company {$auth['company_id']} but trying to edit company {$company_id}. Regular admins can only edit their own company.";
+                }
+
+                throw new Exception($detailedMessage);
             }
 
             error_log("✅ [AUTH] Company update authorized for {$auth['email']} on company {$company_id}");
