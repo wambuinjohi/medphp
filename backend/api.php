@@ -475,7 +475,7 @@ try {
         }
 
         // Create uploads directory if it doesn't exist (in public folder)
-        $uploads_dir = dirname(__DIR__) . '/public/uploads';
+        $uploads_dir = $_ENV['UPLOADS_DIR'] ?? (dirname(__DIR__) . '/public/uploads');
         if (!is_dir($uploads_dir)) {
             error_log('📂 Creating uploads directory at: ' . $uploads_dir);
             if (!mkdir($uploads_dir, 0755, true)) {
@@ -1404,7 +1404,7 @@ try {
         }
 
         // Build full source path
-        $uploads_dir = dirname(__DIR__) . '/public/uploads';
+        $uploads_dir = $_ENV['UPLOADS_DIR'] ?? (dirname(__DIR__) . '/public/uploads');
         $full_source_path = $uploads_dir . '/' . $source_file;
 
         // Verify the source file exists and is within uploads directory
