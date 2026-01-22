@@ -667,7 +667,7 @@ Email: ${currentCompany?.email || 'info@medplusafrica.com'}`;
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {calculateActualStatus(invoice) === 'draft' && (
+                        {(isAdmin || calculateActualStatus(invoice) === 'draft') && (
                           <Button
                             variant="ghost"
                             size="icon"
