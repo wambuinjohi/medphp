@@ -143,10 +143,6 @@ export default function CompanySettings() {
     fileInputRef.current?.click();
   };
 
-  const handleChooseFallbackFile = () => {
-    fallbackLogoInputRef.current?.click();
-  };
-
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !currentCompany) return;
@@ -225,92 +221,6 @@ export default function CompanySettings() {
     }
   };
 
-  const handleFallbackFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Enhanced validation
-    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validImageTypes.includes(file.type)) {
-      toast.error('Please select a valid image file (PNG, JPG, GIF, or WebP)');
-      return;
-    }
-
-    // Check file size (limit to 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB');
-      return;
-    }
-
-    setUploadingFallback(true);
-    try {
-      const result = await uploadFallbackLogo(file);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Upload failed');
-      }
-
-      console.log('✅ Fallback logo upload successful');
-      setFallbackLogoExists(true);
-      setFallbackLogoRefreshKey(prev => prev + 1); // Force image re-render
-      toast.success('Fallback logo uploaded successfully!');
-
-    } catch (err: any) {
-      logError(err, 'Fallback Logo Upload');
-
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      let userMessage = getUserFriendlyMessage(err, 'Failed to upload fallback logo');
-
-      // Provide helpful suggestions based on error type
-      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('network')) {
-        userMessage = 'Cannot reach the upload server. Please check your internet connection and try again.';
-      } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout')) {
-        userMessage = 'Upload took too long. Please try again with a smaller file or faster connection.';
-      } else if (errorMsg.includes('image format') || errorMsg.includes('Image')) {
-        userMessage = 'Invalid image format. Please use PNG, JPG, GIF, or WebP.';
-      }
-
-      console.error('🔴 Fallback logo upload error:', {
-        message: errorMsg,
-        userMessage,
-        timestamp: new Date().toISOString()
-      });
-
-      toast.error(userMessage);
-    } finally {
-      setUploadingFallback(false);
-      // Clear the file input
-      if (fallbackLogoInputRef.current) {
-        fallbackLogoInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleDeleteFallbackLogo = async () => {
-    if (!confirm('Are you sure you want to delete the fallback logo? Companies without logos will show a placeholder instead.')) {
-      return;
-    }
-
-    setUploadingFallback(true);
-    try {
-      const result = await deleteFallbackLogo();
-
-      if (!result.success) {
-        throw new Error(result.error || 'Delete failed');
-      }
-
-      console.log('✅ Fallback logo deleted successfully');
-      setFallbackLogoExists(false);
-      toast.success('Fallback logo removed successfully!');
-
-    } catch (err: any) {
-      logError(err, 'Fallback Logo Delete');
-      const userMessage = getUserFriendlyMessage(err, 'Failed to delete fallback logo');
-      toast.error(userMessage);
-    } finally {
-      setUploadingFallback(false);
-    }
-  };
 
 
   // Real-time validation with debounce
