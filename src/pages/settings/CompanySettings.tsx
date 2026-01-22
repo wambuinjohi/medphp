@@ -179,17 +179,25 @@ export default function CompanySettings() {
 
       // Add cache-busting parameter for safe URLs
       const cachebustedUrl = addCacheBustingParam(logoUrl);
+      console.log('🔄 URL transformation:', { original: logoUrl, cacheBusted: cachebustedUrl });
 
       // Update local state & persist using existing hook
       setCompanyData(prev => ({ ...prev, logo_url: cachebustedUrl }));
       setLogoLoadError(false);
       setLogoRefreshKey(prev => prev + 1); // Force image re-render
+      console.log('💾 Local state updated with cacheBusted URL');
 
       // Persist to database (use sanitized URL without cache-busting in DB)
       const dbUrl = sanitizeLogoUrl(logoUrl);
-      console.log('📝 Updating companies record:', { id: currentCompany.id, logo_url: dbUrl });
+      console.log('📝 Preparing database update:', {
+        companyId: currentCompany.id,
+        originalUrl: logoUrl,
+        dbUrl: dbUrl,
+        updatePayload: { id: currentCompany.id, data: { logo_url: dbUrl } }
+      });
 
       try {
+        console.log('🔌 Calling updateCompany.mutateAsync...');
         const updateResult = await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: dbUrl } });
         console.log('✅ Database update successful:', updateResult);
         toast.success('Logo uploaded successfully! The preview updates below.');
@@ -198,7 +206,9 @@ export default function CompanySettings() {
         const updateErrorMsg = updateError instanceof Error ? updateError.message : String(updateError);
         console.error('Update error details:', {
           message: updateErrorMsg,
-          stack: updateError instanceof Error ? updateError.stack : 'N/A'
+          stack: updateError instanceof Error ? updateError.stack : 'N/A',
+          errorType: typeof updateError,
+          errorKeys: updateError && typeof updateError === 'object' ? Object.keys(updateError) : 'N/A'
         });
         throw updateError;
       }
