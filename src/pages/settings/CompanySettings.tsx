@@ -370,18 +370,6 @@ export default function CompanySettings() {
   };
 
   const handleSaveCompany = async () => {
-    // Check if user has permission to access settings
-    if (!role || !role.permissions.includes('access_settings')) {
-      const missingPermission = !role ? 'No role assigned' : 'Missing access_settings permission';
-      const detailedMessage = `You do not have permission to update company settings. Required permission: access_settings. ${missingPermission}`;
-      setPermissionError({
-        statusCode: 403,
-        message: detailedMessage,
-      });
-      toast.error(detailedMessage);
-      return;
-    }
-
     // Perform validation before saving
     const validation = validateCompanyData(companyData);
     setValidationErrors(validation);
