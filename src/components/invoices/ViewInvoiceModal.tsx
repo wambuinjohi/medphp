@@ -60,6 +60,7 @@ export function ViewInvoiceModal({
 }: ViewInvoiceModalProps) {
   if (!invoice) return null;
 
+  const { isAdmin } = useAuth();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const deleteInvoice = useDeleteInvoice();
 
