@@ -71,7 +71,9 @@ export function SimpleLogin() {
             <BiolegendLogo size="lg" showText={false} />
           </div>
           <div className="space-y-2">
-            <CardTitle className="text-2xl font-bold biolegend-brand">Medplus Africa</CardTitle>
+            <CardTitle className="text-2xl font-bold biolegend-brand">
+              {currentCompany?.name || 'Medplus Africa'}
+            </CardTitle>
             <p className="text-sm text-muted-foreground">
               Sign in to access your business management system
             </p>
