@@ -162,11 +162,16 @@ export default function CompanySettings() {
 
     setUploading(true);
     try {
+      console.log('📤 Starting logo upload:', { fileName: file.name, fileSize: file.size, fileType: file.type });
       // Upload using the standard upload utility
       const result = await uploadImage(file);
 
+      console.log('📥 Upload result received:', result);
+
       if (!result.success || !result.url) {
-        throw new Error(result.error || 'Upload failed');
+        const errorMsg = result.error || 'Upload failed';
+        console.error('❌ Upload result indicates failure:', { success: result.success, url: result.url, error: result.error });
+        throw new Error(errorMsg);
       }
 
       const logoUrl = result.url;
