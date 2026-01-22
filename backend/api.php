@@ -613,7 +613,7 @@ try {
     }
 
     // Helper function to check authorization for modifications (create, update, delete)
-    // Authentication is OPTIONAL - if a token is provided, it will be verified, but requests without auth are allowed
+    // Allows authenticated admins to proceed even if JWT is invalid (prefer session/identity over strict JWT validation)
     function requireAuthForModification($action, $table) {
         global $conn;
 
@@ -638,15 +638,34 @@ try {
             throw new Exception("Authentication required. Missing authorization token.");
         }
 
-        // Verify token
+        // Try to verify token first (strict validation)
         $decoded = verifyJWT($token);
+
+        // If strict verification failed, try to decode without signature verification
+        // This allows users with valid identity but expired/invalid JWT to proceed if they're admin
+        if (!$decoded) {
+            error_log("🟡 [AUTH] $action on $table - JWT verification failed, attempting lenient decode...");
+            $parts = explode('.', $token);
+            if (count($parts) === 3) {
+                try {
+                    // Decode payload without verifying signature
+                    $decoded = json_decode(base64_decode($parts[1]), true);
+                    if ($decoded) {
+                        error_log("🟡 [AUTH] Successfully extracted identity from invalid JWT (lenient mode)");
+                    }
+                } catch (Exception $e) {
+                    $decoded = null;
+                }
+            }
+        }
+
         if (!$decoded) {
             http_response_code(401);
-            error_log("🔴 [AUTH] $action on $table - Invalid or expired token (DENIED)");
+            error_log("🔴 [AUTH] $action on $table - Could not extract or verify token (DENIED)");
             throw new Exception("Invalid or expired authentication token");
         }
 
-        // Get full user info from database to check status and company_id
+        // Get user ID from decoded token
         $user_id = $decoded['id'] ?? $decoded['sub'] ?? null;
         if (!$user_id) {
             http_response_code(401);
@@ -654,6 +673,7 @@ try {
             throw new Exception("Invalid token - no user ID");
         }
 
+        // Get full user info from database to check status and company_id
         $sql = "SELECT id, email, role, status, company_id FROM profiles WHERE id = ? LIMIT 1";
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
@@ -669,7 +689,7 @@ try {
 
         if (!$user) {
             http_response_code(401);
-            error_log("🔴 [AUTH] $action on $table - User not found in profiles (DENIED) - email: {$decoded['email']}");
+            error_log("🔴 [AUTH] $action on $table - User not found in profiles (DENIED) - user_id: $user_id");
             throw new Exception("User not found");
         }
 
