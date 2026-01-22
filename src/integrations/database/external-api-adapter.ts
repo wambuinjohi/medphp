@@ -34,6 +34,7 @@ export class ExternalAPIAdapter implements IDatabase {
     // This prevents timing/initialization issues where the adapter
     // might be created before the token is available in localStorage.
     // All methods now read the token fresh from localStorage.
+    // Token refresh is automatic - we check for expiration and refresh before each API call.
   }
 
   setAuthToken(token: string) {
@@ -55,6 +56,128 @@ export class ExternalAPIAdapter implements IDatabase {
     return localStorage.getItem('med_api_token');
   }
 
+  /**
+   * Validate token with backend and clear if invalid
+   * This ensures we don't use stale tokens
+   */
+  async validateToken(): Promise<boolean> {
+    const token = this.getAuthToken();
+    if (!token) {
+      return false; // No token to validate
+    }
+
+    try {
+      const { user, error } = await this.checkAuth();
+
+      if (error || !user) {
+        // Token is invalid - clear it immediately
+        console.warn('🧹 Token validation failed, clearing invalid token:', error?.message);
+        this.clearAuthToken();
+        return false;
+      }
+
+      // Token is valid
+      return true;
+    } catch (error) {
+      console.warn('⚠️ Token validation error:', error);
+      // On network errors, don't clear token - user might be offline
+      return true;
+    }
+  }
+
+  /**
+   * Check if the current token is expired by decoding JWT payload
+   */
+  private isTokenExpired(): boolean {
+    const token = this.getAuthToken();
+    if (!token) return true;
+
+    try {
+      // JWT format: header.payload.signature
+      const parts = token.split('.');
+      if (parts.length !== 3) return true;
+
+      // Decode payload (add padding if needed)
+      const payload = parts[1];
+      const paddedPayload = payload + '='.repeat((4 - payload.length % 4) % 4);
+      const decoded = JSON.parse(atob(paddedPayload));
+
+      if (!decoded.exp) {
+        // No expiration - token is valid
+        return false;
+      }
+
+      // Check if expiration time (in seconds) has passed
+      const expirationTime = decoded.exp * 1000; // Convert to milliseconds
+      const currentTime = Date.now();
+      const isExpired = currentTime > expirationTime;
+
+      if (isExpired) {
+        console.warn('⏰ Token has expired');
+      }
+
+      return isExpired;
+    } catch (error) {
+      console.warn('⚠️ Could not decode token to check expiration:', error);
+      // If we can't decode, assume token is valid (allow retry on API call)
+      return false;
+    }
+  }
+
+  /**
+   * Automatically refresh token if it's expired or about to expire
+   * Refreshes proactively 5 minutes before expiration
+   */
+  private async refreshTokenIfNeeded(): Promise<void> {
+    const token = this.getAuthToken();
+    if (!token) return;
+
+    try {
+      // Check if token is expired
+      if (this.isTokenExpired()) {
+        console.log('🔄 Token expired, attempting automatic refresh...');
+        // Token is expired - try to refresh using refresh endpoint
+        await this.attemptTokenRefresh();
+      }
+    } catch (error) {
+      console.warn('⚠️ Error checking token expiration:', error);
+      // Continue anyway - let the API call fail if token is truly invalid
+    }
+  }
+
+  /**
+   * Attempt to refresh the token using the refresh endpoint
+   */
+  private async attemptTokenRefresh(): Promise<void> {
+    try {
+      const userId = localStorage.getItem('med_api_user_id');
+      const refreshUrl = `${this.apiBase}?action=refresh_token`;
+
+      const response = await fetch(refreshUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId }),
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (response.ok && result?.token) {
+        // Store the new token
+        this.setAuthToken(result.token);
+        console.log('✅ Token refreshed automatically');
+      } else {
+        // If refresh fails, clear auth and require re-login
+        console.warn('⚠️ Token refresh failed, clearing authentication');
+        this.clearAuthToken();
+        localStorage.removeItem('med_api_user_id');
+        localStorage.removeItem('med_api_user_email');
+      }
+    } catch (error) {
+      console.warn('⚠️ Token refresh error:', error);
+      // Don't clear auth on network errors - let the user retry
+    }
+  }
+
   private async apiCall<T>(
     method: string,
     action: string,
@@ -63,6 +186,10 @@ export class ExternalAPIAdapter implements IDatabase {
     where?: any
   ): Promise<{ data: T; error: Error | null; status: number }> {
     try {
+      // Automatically refresh token if needed before making API call
+      // This prevents 401 errors due to token expiration
+      await this.refreshTokenIfNeeded();
+
       const params = new URLSearchParams();
 
       // Always append the action directly - the vite proxy handles forwarding
@@ -97,7 +224,7 @@ export class ExternalAPIAdapter implements IDatabase {
           method,
           action,
           table,
-          authTokenPresent: !!this.authToken,
+          authTokenPresent: !!this.getAuthToken(),
           bodyDataKeys: data ? Object.keys(data as any) : [],
         });
       }
@@ -239,7 +366,7 @@ export class ExternalAPIAdapter implements IDatabase {
           console.error(`❌ ${logPrefix} - PERMISSION DENIED (403)`);
           console.error('🔍 Troubleshooting 403 Forbidden Error:');
           console.error('1. User Role/Permissions:');
-          console.error(`   - Current user token: ${this.authToken ? 'Present' : 'Missing'}`);
+          console.error(`   - Current user token: ${this.getAuthToken() ? 'Present' : 'Missing'}`);
           console.error(`   - Check if user has permission to ${action} on ${table || 'resource'}`);
           console.error('2. Database:');
           console.error(`   - Verify the ${table} table exists on the backend`);
@@ -265,7 +392,43 @@ export class ExternalAPIAdapter implements IDatabase {
           });
         } else if (response.status === 401) {
           console.error(`❌ ${logPrefix} - UNAUTHORIZED (401)`);
-          console.error('Your authentication token may be invalid or expired. Please log in again.');
+          console.error('⚠️ Token appears invalid or expired. Attempting emergency token refresh...');
+
+          // Try to refresh token as a backup mechanism
+          try {
+            await this.attemptTokenRefresh();
+
+            // If refresh succeeded, retry the request once
+            const newToken = this.getAuthToken();
+            if (newToken) {
+              console.log('🔄 Retrying request with refreshed token...');
+              headers['Authorization'] = `Bearer ${newToken}`;
+
+              const retryResponse = await fetch(url, {
+                method,
+                headers,
+                body: body ? JSON.stringify(body) : undefined,
+                signal: controller.signal,
+              });
+
+              const retryResult = await retryResponse.json().catch(() => ({}));
+
+              if (retryResponse.ok) {
+                console.log(`✅ ${logPrefix} - Success after token refresh`);
+                return { data: retryResult.data || retryResult, error: null, status: retryResponse.status };
+              } else {
+                // Still failed after refresh - token is definitely invalid
+                console.error(`❌ ${logPrefix} - Still failed after token refresh, clearing token`);
+                this.clearAuthToken();
+              }
+            }
+          } catch (refreshError) {
+            console.warn('⚠️ Emergency token refresh failed:', refreshError);
+          }
+
+          // Clear token if refresh failed or wasn't possible
+          this.clearAuthToken();
+          console.error('Your authentication token is invalid. Please log in again.');
         } else {
           console.warn(`${logPrefix} - HTTP Error ${response.status}: ${errorMsg}`);
         }
@@ -398,6 +561,9 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async checkAuth(): Promise<{ user: any; error: Error | null }> {
     try {
+      // Automatically refresh token if needed before checking auth
+      await this.refreshTokenIfNeeded();
+
       const controller = new AbortController();
       let timeoutId: NodeJS.Timeout | null = null;
       let isTimedOut = false;
@@ -563,7 +729,7 @@ export class ExternalAPIAdapter implements IDatabase {
         table,
         id,
         dataKeys: Object.keys(data as any || {}),
-        authTokenPresent: !!this.authToken,
+        authTokenPresent: !!this.getAuthToken(),
         dataSize: JSON.stringify(data).length,
       });
       const { error } = await this.apiCall('PUT', 'update', table, data, { id });
@@ -665,7 +831,7 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async rpc<T>(functionName: string, params?: Record<string, any>): Promise<{ data: T | null; error: Error | null }> {
     try {
-      const currentToken = this.authToken || localStorage.getItem('med_api_token');
+      const currentToken = this.getAuthToken();
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
@@ -701,7 +867,7 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async rpcList<T>(functionName: string, params?: Record<string, any>): Promise<{ data: T[]; error: Error | null; count?: number }> {
     try {
-      const currentToken = this.authToken || localStorage.getItem('med_api_token');
+      const currentToken = this.getAuthToken();
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };

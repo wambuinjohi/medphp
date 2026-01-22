@@ -533,7 +533,11 @@ export default function CompanySettings() {
       }
       // Check for unauthorized error (401)
       else if (errorString.includes('401') || errorString.includes('Unauthorized')) {
-        const detailedMessage = 'Your authentication token is invalid or expired. Please log out and log in again.';
+        // The adapter already attempts token refresh and retry on 401
+        // If we still get 401 here, it means refresh failed
+        console.error('🔴 401 Unauthorized - Token refresh attempt failed');
+
+        const detailedMessage = 'Your authentication token is invalid or expired and could not be refreshed. Please log out and log in again to get a new token.';
         setPermissionError({
           statusCode: 401,
           message: detailedMessage,
