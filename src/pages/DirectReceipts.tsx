@@ -242,7 +242,7 @@ export default function DirectReceipts() {
     // Search filter
     const matchesSearch =
       receipt.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      receipt.payment_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      receipt.receipt_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       receipt.customers?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Status filter
