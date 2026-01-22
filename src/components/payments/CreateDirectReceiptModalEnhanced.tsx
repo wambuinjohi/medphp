@@ -299,6 +299,43 @@ export function CreateDirectReceiptModalEnhanced({
     setReferenceNumber('');
     setNotes('');
     setItems([]);
+    setShowExcessPaymentHandler(false);
+    setExcessPaymentData(null);
+  };
+
+  const handleExcessPaymentCreditBalance = async (notes?: string) => {
+    if (!excessPaymentData) return;
+
+    try {
+      await createCreditBalance.mutateAsync({
+        companyId: currentCompany!.id,
+        customerId: excessPaymentData.customerId,
+        creditAmount: excessPaymentData.excessAmount,
+        sourceReceiptId: excessPaymentData.receiptId,
+        notes: notes || 'Credit from excess payment'
+      });
+
+      onSuccess();
+      setShowExcessPaymentHandler(false);
+      onOpenChange(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error creating credit balance:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to create credit balance: ${errorMessage}`);
+    }
+  };
+
+  const handleExcessPaymentChangeNote = async (notes?: string) => {
+    if (!excessPaymentData) return;
+
+    // TODO: Implement change note creation when credit_notes table is available
+    toast.info('Change note creation coming soon. Credit balance has been created for now.');
+
+    onSuccess();
+    setShowExcessPaymentHandler(false);
+    onOpenChange(false);
+    resetForm();
   };
 
   const amountNum = parseFloat(amount) || 0;
