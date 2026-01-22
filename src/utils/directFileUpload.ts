@@ -63,20 +63,40 @@ export async function uploadFile(
       }
     });
 
+    // Log response details
+    console.log('📡 Upload response - status:', response.status, 'statusText:', response.statusText);
+    console.log('📡 Response headers:', {
+      contentType: response.headers.get('content-type'),
+      contentLength: response.headers.get('content-length')
+    });
+
     if (!response.ok) {
+      console.error('❌ HTTP error response - status:', response.status);
       const errorData = await response.json().catch(() => ({}));
+      console.error('❌ Error data:', errorData);
       return {
         success: false,
         error: errorData.message || `Upload failed with status ${response.status}`
       };
     }
 
-    // Defensively parse JSON for successful response
-    const data = await response.json().catch(() => {
+    // Get raw response text before parsing
+    const responseText = await response.text();
+    console.log('📡 Raw response text:', responseText.substring(0, 500));
+
+    // Parse JSON with detailed error logging
+    let data;
+    try {
+      data = JSON.parse(responseText);
+      console.log('📡 Parsed JSON response:', data);
+    } catch (parseError) {
+      console.error('❌ JSON parse error:', parseError instanceof Error ? parseError.message : String(parseError));
+      console.error('❌ Full response was:', responseText);
       throw new Error('Invalid response from server: Expected valid JSON');
-    });
+    }
 
     if (data.status === 'success') {
+      console.log('✅ Upload successful, URL:', data.url || `${UPLOAD_BASE_URL}/${data.path}`);
       return {
         success: true,
         url: data.url || `${UPLOAD_BASE_URL}/${data.path}`,
@@ -84,6 +104,8 @@ export async function uploadFile(
         message: 'File uploaded successfully'
       };
     } else {
+      console.error('❌ Server returned non-success status:', data.status);
+      console.error('❌ Error message:', data.message);
       return {
         success: false,
         error: data.message || 'Upload failed'
