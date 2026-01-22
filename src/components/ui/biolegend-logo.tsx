@@ -36,7 +36,8 @@ export function BiolegendLogo({
   };
 
   // Use passed-in data first, then fall back to context, then use defaults
-  const logoSrc = propLogoUrl || currentCompany?.logo_url || '/placeholder.svg';
+  const fallbackLogoUrl = 'https://cdn.builder.io/api/v1/image/assets%2F127809c0fae44c52a78e72153b23b3a4%2F3d082ccf9e42493f80f13b7fc0733ec5?format=webp&width=800&height=1200';
+  const logoSrc = propLogoUrl || currentCompany?.logo_url || fallbackLogoUrl;
   const companyName = propCompanyName || currentCompany?.name || 'MEDPLUS';
 
   return (
