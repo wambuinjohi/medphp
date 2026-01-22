@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
