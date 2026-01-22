@@ -39,6 +39,7 @@ import {
   Truck,
   Trash2
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices, useDeleteInvoice } from '@/hooks/useInvoicesFixed';
 import { toast } from 'sonner';
