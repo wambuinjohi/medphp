@@ -1346,21 +1346,23 @@ try {
             $sql .= " WHERE " . $where;
         }
 
-        error_log("SQL UPDATE: " . $sql);
+        error_log("🟦 SQL UPDATE: " . $sql);
 
         if (!$conn->query($sql)) {
-            error_log("MySQL Error: " . $conn->error . " | SQL: " . $sql);
+            error_log("🔴 MySQL Error: " . $conn->error . " | SQL: " . $sql);
             throw new Exception("Update failed: " . $conn->error);
         }
 
         $affectedRows = $conn->affected_rows;
-        error_log("Update completed - Affected rows: " . $affectedRows . " | Table: " . $table);
+        error_log("✅ Update completed - Affected rows: " . $affectedRows . " | Table: " . $table);
 
-        echo json_encode([
+        $response = [
             'status' => 'success',
             'message' => 'Record updated',
             'affected_rows' => $affectedRows
-        ]);
+        ];
+        error_log("✅ Sending JSON response: " . json_encode($response));
+        echo json_encode($response);
     }
     elseif ($action === "delete") {
         if (!$table || !$where) {
