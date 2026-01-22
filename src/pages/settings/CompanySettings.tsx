@@ -23,6 +23,7 @@ import { QuickSchemaFix } from '@/components/QuickSchemaFix';
 import { addCurrencyColumn, ADD_CURRENCY_COLUMN_SQL } from '@/utils/addCurrencyColumn';
 import { getDatabaseProvider } from '@/integrations/database';
 import { validateLogoUrl, addCacheBustingParam, sanitizeLogoUrl } from '@/utils/logoUploadUtils';
+import { uploadImage } from '@/utils/directFileUpload';
 import { PermissionErrorHelper } from '@/components/PermissionErrorHelper';
 import {
   validateCompanyName,
@@ -160,30 +161,15 @@ export default function CompanySettings() {
 
     setUploading(true);
     try {
-      // Upload to server
-      let logoUrl: string | null = null;
+      // Upload using the standard upload utility
+      const result = await uploadImage(file);
 
-      try {
-        logoUrl = await uploadToExternalAPI(file, currentCompany.id);
-        console.log('✅ Server upload successful:', logoUrl);
-      } catch (uploadError) {
-        console.error('❌ Server upload failed:', uploadError);
-        logError(uploadError, 'Logo Upload to Server');
-
-        // Do NOT fall back to base64 - it causes issues with very large data URLs
-        // Instead, inform the user to contact admin
-        throw new Error('Logo upload failed. Please check your internet connection or contact your administrator. Local fallback is disabled to prevent performance issues.');
+      if (!result.success || !result.url) {
+        throw new Error(result.error || 'Upload failed');
       }
 
-      if (!logoUrl) {
-        throw new Error('Failed to process logo upload');
-      }
-
-      // Validate the returned URL before persisting
-      const urlValidation = validateLogoUrl(logoUrl);
-      if (!urlValidation.valid) {
-        throw new Error(urlValidation.error || 'Invalid logo URL returned from server');
-      }
+      const logoUrl = result.url;
+      console.log('✅ Logo upload successful:', logoUrl);
 
       // Add cache-busting parameter for safe URLs
       const cachebustedUrl = addCacheBustingParam(logoUrl);
@@ -214,10 +200,8 @@ export default function CompanySettings() {
         userMessage = 'Upload took too long. Please try again with a smaller file or faster connection.';
       } else if (errorMsg.includes('Invalid response')) {
         userMessage = 'The server returned an invalid response. The upload may have failed. Please try again.';
-      } else if (errorMsg.includes('No file URL')) {
-        userMessage = 'Upload may have failed. The server did not return a valid file URL. Please try again.';
-      } else if (errorMsg.includes('URL')) {
-        userMessage = 'The uploaded file URL is invalid. Please try uploading again.';
+      } else if (errorMsg.includes('image format') || errorMsg.includes('Image')) {
+        userMessage = 'Invalid image format. Please use PNG, JPG, GIF, or WebP.';
       }
 
       console.error('🔴 Logo upload error:', {
@@ -234,95 +218,6 @@ export default function CompanySettings() {
         fileInputRef.current.value = '';
       }
     }
-  };
-
-  // Helper function to upload to remote backend API via proxy
-  const uploadToExternalAPI = async (file: File, companyId: string): Promise<string> => {
-    // Use Vite proxy endpoint instead of direct URL to avoid CORS issues
-    const proxyUrl = '/api/upload_file';
-    console.log('🚀 Uploading via proxy endpoint to:', proxyUrl);
-
-    // Get file extension safely
-    const fileNameParts = file.name.split('.');
-    const ext = fileNameParts.length > 1 ? fileNameParts.pop() : 'png';
-    const fileName = `company-${companyId}-logo-${Date.now()}.${ext}`;
-
-    // Create FormData for multipart/form-data upload
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('filename', fileName);
-
-    try {
-      console.log(`🚀 Starting upload to: ${proxyUrl}`);
-      console.log(`📁 File: ${fileName} (${(file.size / 1024).toFixed(2)} KB)`);
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-      const response = await fetch(proxyUrl, {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-      console.log(`📊 Upload response status: ${response.status}`);
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        throw new Error(`Upload failed: HTTP ${response.status} - ${errorText.substring(0, 100)}`);
-      }
-
-      // Parse response - expecting { url: "https://..." } or similar
-      let result;
-      try {
-        result = await response.json();
-      } catch {
-        throw new Error('Server returned invalid response format');
-      }
-
-      // Handle different response formats
-      const fileUrl = result.url || result.file_url || result.path;
-
-      if (!fileUrl) {
-        console.error('❌ No file URL in response:', result);
-        throw new Error('Server did not return a file URL. Response: ' + JSON.stringify(result).substring(0, 100));
-      }
-
-      console.log('✅ Upload successful. File URL:', fileUrl);
-      return fileUrl;
-    } catch (error) {
-      // Handle DOMException (AbortError from AbortController)
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        throw new Error('Upload failed: Request timeout (> 30 seconds). The server may be slow.');
-      }
-
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error('❌ Upload error:', errorMsg);
-
-      // Provide helpful error messages
-      if (errorMsg.includes('Failed to fetch')) {
-        throw new Error('Upload failed: Cannot reach the upload server. Check your connection or CORS configuration.');
-      }
-
-      throw new Error(`Upload failed: ${errorMsg}`);
-    }
-  };
-
-  // Helper function to convert file to base64
-  const convertToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          resolve(reader.result);
-        } else {
-          reject(new Error('Failed to convert file to base64'));
-        }
-      };
-      reader.onerror = () => reject(new Error('File reading failed'));
-      reader.readAsDataURL(file);
-    });
   };
 
 
