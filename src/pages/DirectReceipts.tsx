@@ -323,13 +323,13 @@ export default function DirectReceipts() {
         {
           ...enrichedReceipt,
           type: 'receipt',
-          number: receipt.payment_number,
-          date: receipt.payment_date
+          number: receipt.receipt_number,
+          date: receipt.receipt_date
         },
         'RECEIPT',
         companyDetails
       );
-      toast.success(`Receipt PDF download started for ${receipt.payment_number}`);
+      toast.success(`Receipt PDF download started for ${receipt.receipt_number}`);
     } catch (error) {
       console.error('Error downloading PDF:', error);
       toast.error('Failed to download receipt PDF. Please try again.');
