@@ -93,6 +93,8 @@ export function CreateDirectReceiptModalEnhanced({
   const { data: popularProducts } = usePopularProducts(currentCompany?.id, 10);
   const { data: taxSettings } = useTaxSettings(currentCompany?.id);
   const createDirectReceiptWithItems = useCreateDirectReceiptWithItems();
+  const createCreditBalance = useCreateCreditBalance();
+  const { totalAvailableCredit } = useCustomerCreditBalances(selectedCustomerId || null, currentCompany?.id || null);
   const generateDocNumber = useGenerateDocumentNumber();
 
   // Get default tax rate
