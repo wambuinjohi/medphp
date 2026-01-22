@@ -182,8 +182,21 @@ export default function CompanySettings() {
 
       // Persist to database (use sanitized URL without cache-busting in DB)
       const dbUrl = sanitizeLogoUrl(logoUrl);
-      await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: dbUrl } });
-      toast.success('Logo uploaded successfully! The preview updates below.');
+      console.log('📝 Updating companies record:', { id: currentCompany.id, logo_url: dbUrl });
+
+      try {
+        const updateResult = await updateCompany.mutateAsync({ id: currentCompany.id, data: { logo_url: dbUrl } });
+        console.log('✅ Database update successful:', updateResult);
+        toast.success('Logo uploaded successfully! The preview updates below.');
+      } catch (updateError: any) {
+        console.error('❌ Database update failed:', updateError);
+        const updateErrorMsg = updateError instanceof Error ? updateError.message : String(updateError);
+        console.error('Update error details:', {
+          message: updateErrorMsg,
+          stack: updateError instanceof Error ? updateError.stack : 'N/A'
+        });
+        throw updateError;
+      }
 
     } catch (err: any) {
       // Use centralized error parsing and logging for file upload
