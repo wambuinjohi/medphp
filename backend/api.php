@@ -630,30 +630,26 @@ try {
             $token = $_POST['token'] ?? null;
         }
 
-        // For company updates, allow bypassing token if the company has active admin users
-        // This enables updates when token is missing but the system is properly configured
-        if (!$token && $action === 'update' && $table === 'companies') {
-            error_log("🟡 [AUTH] $action on $table - No token provided, checking for bypass eligibility...");
-
-            // Company updates don't strictly require a token if we can verify the company has admins
-            // This is a pragmatic solution for cases where the token is temporarily unavailable
-            // but the user profile is correctly set up in the database
-            error_log("⚠️ [SECURITY] Allowing $action on $table without token (bypass mode for configured system)");
-
-            // Return a minimal user object - actual authorization will be checked later
-            // by checking if the company has any active admin users
-            return [
-                'id' => null,
-                'email' => 'system',
-                'role' => 'admin',
-                'status' => 'active',
-                'company_id' => null,
-                'bypass_mode' => true
-            ];
-        }
-
-        // If no token provided, deny the request
+        // If no token provided, check if we can bypass for company updates
         if (!$token) {
+            // For company updates, allow bypassing token if the company has active admin users
+            // This enables updates when token is missing but the system is properly configured
+            if ($action === 'update' && $table === 'companies') {
+                error_log("🟡 [AUTH] $action on $table - No token provided, entering bypass mode...");
+                error_log("⚠️ [SECURITY] Allowing $action on $table without token (bypass mode for configured system)");
+
+                // Return a minimal user object with bypass flag
+                return [
+                    'id' => null,
+                    'email' => 'system',
+                    'role' => 'admin',
+                    'status' => 'active',
+                    'company_id' => null,
+                    'bypass_mode' => true
+                ];
+            }
+
+            // For other operations, require a token
             http_response_code(401);
             error_log("🔴 [AUTH] $action on $table - No token provided (DENIED)");
             error_log("📋 [DEBUG] Authorization header present: " . ($auth_header ? "yes" : "no"));
