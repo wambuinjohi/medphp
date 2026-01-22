@@ -252,7 +252,7 @@ try {
         }
 
         // Create uploads directory if it doesn't exist
-        $uploads_dir = dirname(__DIR__) . '/public/uploads';
+        $uploads_dir = $_ENV['UPLOADS_DIR'] ?? (dirname(__DIR__) . '/public/uploads');
         if (!is_dir($uploads_dir)) {
             if (!mkdir($uploads_dir, 0755, true)) {
                 throw new Exception("Failed to create uploads directory at $uploads_dir");
