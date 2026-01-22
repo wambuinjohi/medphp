@@ -161,30 +161,15 @@ export default function CompanySettings() {
 
     setUploading(true);
     try {
-      // Upload to server
-      let logoUrl: string | null = null;
+      // Upload using the standard upload utility
+      const result = await uploadImage(file);
 
-      try {
-        logoUrl = await uploadToExternalAPI(file, currentCompany.id);
-        console.log('✅ Server upload successful:', logoUrl);
-      } catch (uploadError) {
-        console.error('❌ Server upload failed:', uploadError);
-        logError(uploadError, 'Logo Upload to Server');
-
-        // Do NOT fall back to base64 - it causes issues with very large data URLs
-        // Instead, inform the user to contact admin
-        throw new Error('Logo upload failed. Please check your internet connection or contact your administrator. Local fallback is disabled to prevent performance issues.');
+      if (!result.success || !result.url) {
+        throw new Error(result.error || 'Upload failed');
       }
 
-      if (!logoUrl) {
-        throw new Error('Failed to process logo upload');
-      }
-
-      // Validate the returned URL before persisting
-      const urlValidation = validateLogoUrl(logoUrl);
-      if (!urlValidation.valid) {
-        throw new Error(urlValidation.error || 'Invalid logo URL returned from server');
-      }
+      const logoUrl = result.url;
+      console.log('✅ Logo upload successful:', logoUrl);
 
       // Add cache-busting parameter for safe URLs
       const cachebustedUrl = addCacheBustingParam(logoUrl);
@@ -215,10 +200,8 @@ export default function CompanySettings() {
         userMessage = 'Upload took too long. Please try again with a smaller file or faster connection.';
       } else if (errorMsg.includes('Invalid response')) {
         userMessage = 'The server returned an invalid response. The upload may have failed. Please try again.';
-      } else if (errorMsg.includes('No file URL')) {
-        userMessage = 'Upload may have failed. The server did not return a valid file URL. Please try again.';
-      } else if (errorMsg.includes('URL')) {
-        userMessage = 'The uploaded file URL is invalid. Please try uploading again.';
+      } else if (errorMsg.includes('image format') || errorMsg.includes('Image')) {
+        userMessage = 'Invalid image format. Please use PNG, JPG, GIF, or WebP.';
       }
 
       console.error('🔴 Logo upload error:', {
