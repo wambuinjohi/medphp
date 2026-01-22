@@ -1157,14 +1157,26 @@ try {
         if ($table === 'companies' && $auth) {
             // Extract company ID from where clause
             $company_id = null;
+
             if (is_array($where) && isset($where['id'])) {
                 $company_id = $where['id'];
             } elseif (is_array($where) && isset($where['company_id'])) {
                 $company_id = $where['company_id'];
+            } elseif (is_string($where)) {
+                // Parse string-based where clause: "id='1'" or "id=1"
+                // Try to extract id value using regex
+                if (preg_match("/id\s*=\s*['\"]?(\d+)['\"]?/i", $where, $matches)) {
+                    $company_id = $matches[1];
+                } elseif (preg_match("/company_id\s*=\s*['\"]?(\d+)['\"]?/i", $where, $matches)) {
+                    $company_id = $matches[1];
+                }
+
+                error_log("🔍 [AUTH] Parsed string where clause: '{$where}' -> company_id={$company_id}");
             }
 
             if (!$company_id) {
                 http_response_code(400);
+                error_log("🔴 [AUTH] Could not extract company_id from where clause. Where: " . json_encode($where));
                 throw new Exception("Cannot determine company ID for authorization check");
             }
 
