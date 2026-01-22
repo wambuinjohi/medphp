@@ -718,28 +718,12 @@ export default function CompanySettings() {
 
       {/* Permission Error Helper - Show when user lacks permissions */}
       {permissionError && (
-        <>
-          <PermissionErrorHelper
-            statusCode={permissionError.statusCode}
-            errorMessage={permissionError.message}
-            operation="update"
-            resource="company settings"
-          />
-          <div className="mt-4 space-y-4">
-            <CompanySettingsDiagnostics currentCompany={currentCompany} />
-            <TokenDebugDiagnostics />
-            <AuthorizationDiagnostics />
-          </div>
-        </>
-      )}
-
-      {/* Diagnostic Info - Always show for debugging */}
-      {!permissionError && (
-        <div className="mb-4 space-y-4">
-          <CompanySettingsDiagnostics currentCompany={currentCompany} />
-          <TokenDebugDiagnostics />
-          <AuthorizationDiagnostics />
-        </div>
+        <PermissionErrorHelper
+          statusCode={permissionError.statusCode}
+          errorMessage={permissionError.message}
+          operation="update"
+          resource="company settings"
+        />
       )}
 
       {/* Simple Currency Column Fix - Show when schema errors are detected */}
