@@ -12,6 +12,7 @@ import { handleAuthError } from '@/utils/authErrorHandler';
 
 export function SimpleLogin() {
   const { signIn, loading } = useAuth();
+  const { currentCompany } = useCurrentCompany();
 
   const [formData, setFormData] = useState({
     email: '',
