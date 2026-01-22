@@ -68,5 +68,5 @@ export function useCurrentCompany() {
 
 export function useCurrentCompanyId() {
   const { currentCompany } = useCurrentCompany();
-  return currentCompany?.id;
+  return currentCompany?.id || null;
 }
