@@ -157,6 +157,10 @@ export default function CompanySettings() {
     fileInputRef.current?.click();
   };
 
+  const handleChooseFallbackFile = () => {
+    fallbackLogoInputRef.current?.click();
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !currentCompany) return;
