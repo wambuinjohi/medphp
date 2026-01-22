@@ -475,7 +475,7 @@ try {
         }
 
         // Create uploads directory if it doesn't exist (in public folder)
-        $uploads_dir = dirname(__DIR__) . '/public/uploads';
+        $uploads_dir = $_ENV['UPLOADS_DIR'] ?? (dirname(__DIR__) . '/public/uploads');
         if (!is_dir($uploads_dir)) {
             error_log('📂 Creating uploads directory at: ' . $uploads_dir);
             if (!mkdir($uploads_dir, 0755, true)) {
@@ -526,6 +526,131 @@ try {
             'file_url' => $file_url,
             'path' => "/uploads/$safe_filename",
             'filename' => $safe_filename
+        ]);
+        exit();
+    }
+
+    // Upload fallback logo endpoint
+    if ($action === "upload_fallback_logo") {
+        error_log('🎯 Processing fallback logo upload...');
+
+        if (!isset($_FILES['file'])) {
+            http_response_code(400);
+            throw new Exception("No file provided");
+        }
+
+        $file = $_FILES['file'];
+        $filename = 'fallback-logo.png'; // Always use fixed filename
+
+        error_log('📁 Fallback logo file info - Name: ' . $file['name'] . ' | Size: ' . $file['size'] . ' | Type: ' . $file['type']);
+
+        // Validate file
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $error_messages = [
+                UPLOAD_ERR_INI_SIZE => 'File exceeds php.ini upload_max_filesize',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds form MAX_FILE_SIZE',
+                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                UPLOAD_ERR_EXTENSION => 'Extension not allowed',
+            ];
+            $error_msg = $error_messages[$file['error']] ?? 'Unknown upload error';
+            throw new Exception("File upload error: $error_msg");
+        }
+
+        // Validate file type (same as company logo)
+        $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!in_array($file['type'], $allowed_types)) {
+            throw new Exception("Invalid file type. Only images are allowed. Got: " . $file['type']);
+        }
+
+        // Validate file size (5MB limit, same as company logo)
+        if ($file['size'] > 5 * 1024 * 1024) {
+            throw new Exception("File too large. Maximum size is 5MB. Got: " . ($file['size'] / 1024 / 1024) . "MB");
+        }
+
+        // Get public directory path
+        $public_dir = dirname(__DIR__) . '/public';
+        if (!is_dir($public_dir)) {
+            throw new Exception("Public directory not found at $public_dir");
+        }
+
+        // Verify directory is writable
+        if (!is_writable($public_dir)) {
+            throw new Exception("Public directory is not writable. Check permissions.");
+        }
+
+        // Define fallback logo path (always the same path)
+        $fallback_logo_path = $public_dir . '/fallback-logo.png';
+
+        error_log('📝 Saving fallback logo to: ' . $fallback_logo_path);
+
+        // Remove old fallback logo if it exists
+        if (file_exists($fallback_logo_path)) {
+            error_log('🗑️ Removing old fallback logo');
+            if (!unlink($fallback_logo_path)) {
+                throw new Exception("Failed to remove old fallback logo");
+            }
+        }
+
+        // Move uploaded file
+        if (!move_uploaded_file($file['tmp_name'], $fallback_logo_path)) {
+            throw new Exception("Failed to save fallback logo to $fallback_logo_path");
+        }
+
+        error_log('✅ Fallback logo saved successfully');
+
+        // Verify file was saved
+        if (!file_exists($fallback_logo_path)) {
+            throw new Exception("File was moved but cannot be found at $fallback_logo_path");
+        }
+
+        // Construct the public URL
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'];
+        $fallback_logo_url = "$protocol://$host/fallback-logo.png";
+
+        error_log('🔗 Fallback logo URL: ' . $fallback_logo_url);
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Fallback logo uploaded successfully',
+            'url' => $fallback_logo_url,
+            'path' => '/fallback-logo.png'
+        ]);
+        exit();
+    }
+
+    // Delete fallback logo endpoint
+    if ($action === "delete_fallback_logo") {
+        error_log('🎯 Processing fallback logo deletion...');
+
+        // Get public directory path
+        $public_dir = dirname(__DIR__) . '/public';
+        $fallback_logo_path = $public_dir . '/fallback-logo.png';
+
+        // Check if file exists
+        if (!file_exists($fallback_logo_path)) {
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'Fallback logo does not exist (nothing to delete)'
+            ]);
+            exit();
+        }
+
+        error_log('🗑️ Deleting fallback logo from: ' . $fallback_logo_path);
+
+        // Delete the file
+        if (!unlink($fallback_logo_path)) {
+            throw new Exception("Failed to delete fallback logo from $fallback_logo_path");
+        }
+
+        error_log('✅ Fallback logo deleted successfully');
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Fallback logo deleted successfully'
         ]);
         exit();
     }
@@ -1404,7 +1529,7 @@ try {
         }
 
         // Build full source path
-        $uploads_dir = dirname(__DIR__) . '/public/uploads';
+        $uploads_dir = $_ENV['UPLOADS_DIR'] ?? (dirname(__DIR__) . '/public/uploads');
         $full_source_path = $uploads_dir . '/' . $source_file;
 
         // Verify the source file exists and is within uploads directory

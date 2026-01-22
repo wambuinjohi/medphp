@@ -25,6 +25,7 @@ import { getDatabaseProvider } from '@/integrations/database';
 import { validateLogoUrl, addCacheBustingParam, sanitizeLogoUrl } from '@/utils/logoUploadUtils';
 import { uploadImage } from '@/utils/directFileUpload';
 import { PermissionErrorHelper } from '@/components/PermissionErrorHelper';
+import { uploadFallbackLogo, deleteFallbackLogo, checkFallbackLogoExists } from '@/utils/fallbackLogoUpload';
 import {
   validateCompanyName,
   validateCompanyEmail,
@@ -59,7 +60,11 @@ export default function CompanySettings() {
   const [logoRefreshKey, setLogoRefreshKey] = useState(0); // Force re-render of logo image
   const [permissionError, setPermissionError] = useState<{ statusCode: number; message: string } | null>(null);
   const [validationErrors, setValidationErrors] = useState<CompanyDataValidation | null>(null);
+  const [fallbackLogoExists, setFallbackLogoExists] = useState(false);
+  const [uploadingFallback, setUploadingFallback] = useState(false);
+  const [fallbackLogoRefreshKey, setFallbackLogoRefreshKey] = useState(0); // Force re-render of fallback logo
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const fallbackLogoInputRef = useRef<HTMLInputElement | null>(null);
   const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [companyData, setCompanyData] = useState({
     name: '',
@@ -83,6 +88,16 @@ export default function CompanySettings() {
   const createTaxSetting = useCreateTaxSetting();
   const updateTaxSetting = useUpdateTaxSetting();
   const deleteTaxSetting = useDeleteTaxSetting();
+
+  // Check if fallback logo exists on mount
+  useEffect(() => {
+    const checkFallbackLogo = async () => {
+      const exists = await checkFallbackLogoExists();
+      setFallbackLogoExists(exists);
+    };
+
+    checkFallbackLogo();
+  }, []);
 
   // Debug logging and schema check
   useEffect(() => {
@@ -140,6 +155,10 @@ export default function CompanySettings() {
 
   const handleChooseFile = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleChooseFallbackFile = () => {
+    fallbackLogoInputRef.current?.click();
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -217,6 +236,93 @@ export default function CompanySettings() {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleFallbackFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Enhanced validation
+    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validImageTypes.includes(file.type)) {
+      toast.error('Please select a valid image file (PNG, JPG, GIF, or WebP)');
+      return;
+    }
+
+    // Check file size (limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    setUploadingFallback(true);
+    try {
+      const result = await uploadFallbackLogo(file);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      console.log('✅ Fallback logo upload successful');
+      setFallbackLogoExists(true);
+      setFallbackLogoRefreshKey(prev => prev + 1); // Force image re-render
+      toast.success('Fallback logo uploaded successfully!');
+
+    } catch (err: any) {
+      logError(err, 'Fallback Logo Upload');
+
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      let userMessage = getUserFriendlyMessage(err, 'Failed to upload fallback logo');
+
+      // Provide helpful suggestions based on error type
+      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('network')) {
+        userMessage = 'Cannot reach the upload server. Please check your internet connection and try again.';
+      } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout')) {
+        userMessage = 'Upload took too long. Please try again with a smaller file or faster connection.';
+      } else if (errorMsg.includes('image format') || errorMsg.includes('Image')) {
+        userMessage = 'Invalid image format. Please use PNG, JPG, GIF, or WebP.';
+      }
+
+      console.error('🔴 Fallback logo upload error:', {
+        message: errorMsg,
+        userMessage,
+        timestamp: new Date().toISOString()
+      });
+
+      toast.error(userMessage);
+    } finally {
+      setUploadingFallback(false);
+      // Clear the file input
+      if (fallbackLogoInputRef.current) {
+        fallbackLogoInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDeleteFallbackLogo = async () => {
+    if (!confirm('Are you sure you want to delete the fallback logo? Companies without logos will show a placeholder instead.')) {
+      return;
+    }
+
+    setUploadingFallback(true);
+    try {
+      const result = await deleteFallbackLogo();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Delete failed');
+      }
+
+      console.log('✅ Fallback logo deleted successfully');
+      setFallbackLogoExists(false);
+      toast.success('Fallback logo removed successfully!');
+
+    } catch (err: any) {
+      logError(err, 'Fallback Logo Delete');
+      const userMessage = getUserFriendlyMessage(err, 'Failed to delete fallback logo');
+      toast.error(userMessage);
+    } finally {
+      setUploadingFallback(false);
     }
   };
 
@@ -1017,6 +1123,82 @@ export default function CompanySettings() {
                 <p className="text-xs text-muted-foreground">
                   This color will be applied to PDFs, buttons, and other UI elements throughout the application.
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Fallback Logo Settings */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle>Fallback Logo Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                The fallback logo is displayed when a company doesn't have a logo or when the logo fails to load.
+              </p>
+
+              <div className="flex items-start space-x-6">
+                <div className="w-24 h-24 bg-muted rounded-lg flex items-center justify-center overflow-hidden border-2 border-dashed border-muted-foreground/25">
+                  {uploadingFallback ? (
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      <span className="text-xs mt-1">Uploading...</span>
+                    </div>
+                  ) : fallbackLogoExists ? (
+                    <img
+                      key={fallbackLogoRefreshKey}
+                      src={`/fallback-logo.png?t=${Date.now()}`}
+                      alt="Fallback Logo"
+                      className="w-full h-full object-contain"
+                      onError={() => console.warn('Failed to load fallback logo preview')}
+                      onLoad={() => console.log('Fallback logo preview loaded')}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <Image className="h-6 w-6 mb-1" />
+                      <span className="text-xs">No Fallback Logo</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <Label className="text-sm font-medium">Fallback Logo Image</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Upload a fallback logo image. Recommended size: 200x200px, max 5MB. Supports PNG, JPG, GIF, WebP.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                      ref={fallbackLogoInputRef}
+                      onChange={handleFallbackFileChange}
+                      style={{ display: 'none' }}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={handleChooseFallbackFile}
+                      disabled={uploadingFallback}
+                      className="flex items-center gap-2"
+                    >
+                      <Upload className="h-4 w-4" />
+                      {uploadingFallback ? 'Uploading...' : 'Upload Fallback Logo'}
+                    </Button>
+                    {fallbackLogoExists && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleDeleteFallbackLogo}
+                        disabled={uploadingFallback}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Remove Fallback Logo
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

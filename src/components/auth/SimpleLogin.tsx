@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePublicCompany } from '@/hooks/usePublicCompany';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +12,7 @@ import { handleAuthError } from '@/utils/authErrorHandler';
 
 export function SimpleLogin() {
   const { signIn, loading } = useAuth();
+  const { company: publicCompany } = usePublicCompany();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -66,10 +68,12 @@ export function SimpleLogin() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto">
-            <BiolegendLogo size="lg" showText={false} />
+            <BiolegendLogo size="lg" showText={false} logoUrl={publicCompany?.logo_url} />
           </div>
           <div className="space-y-2">
-            <CardTitle className="text-2xl font-bold biolegend-brand">Medplus Africa</CardTitle>
+            <CardTitle className="text-2xl font-bold biolegend-brand">
+              {publicCompany?.name || 'Medplus Africa'}
+            </CardTitle>
             <p className="text-sm text-muted-foreground">
               Sign in to access your business management system
             </p>

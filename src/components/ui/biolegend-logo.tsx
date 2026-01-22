@@ -36,7 +36,9 @@ export function BiolegendLogo({
   };
 
   // Use passed-in data first, then fall back to context, then use defaults
-  const logoSrc = propLogoUrl || currentCompany?.logo_url || '/placeholder.svg';
+  const fallbackLogoUrl = '/fallback-logo.png';
+  const fallbackLogoSvgUrl = '/fallback-logo.svg';
+  const logoSrc = propLogoUrl || currentCompany?.logo_url || fallbackLogoUrl;
   const companyName = propCompanyName || currentCompany?.name || 'MEDPLUS';
 
   return (
@@ -48,8 +50,15 @@ export function BiolegendLogo({
           alt={`${companyName} Logo`}
           className="w-full h-full object-contain"
           onError={(e) => {
-            console.warn(`Logo failed to load: ${logoSrc}`);
-            (e.target as HTMLImageElement).src = '/placeholder.svg';
+            const img = e.target as HTMLImageElement;
+            // If the current src is the PNG fallback, try SVG
+            if (img.src.includes('/fallback-logo.png')) {
+              console.warn(`PNG fallback failed, trying SVG: ${logoSrc}`);
+              img.src = fallbackLogoSvgUrl;
+            } else {
+              // If both PNG and SVG failed, just warn
+              console.warn(`Logo failed to load: ${logoSrc}`);
+            }
           }}
         />
       </div>
