@@ -575,7 +575,7 @@ export default function DirectReceipts() {
                     <TableCell className="font-medium">
                       <div className="flex items-center space-x-2">
                         <Banknote className="h-4 w-4 text-primary" />
-                        <span>{receipt.payment_number}</span>
+                        <span>{receipt.receipt_number}</span>
                       </div>
                     </TableCell>
                     <TableCell>
