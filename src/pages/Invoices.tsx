@@ -132,6 +132,7 @@ export default function Invoices() {
   const [amountFromFilter, setAmountFromFilter] = useState('');
   const [amountToFilter, setAmountToFilter] = useState('');
 
+  const { isAdmin } = useAuth();
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
 
