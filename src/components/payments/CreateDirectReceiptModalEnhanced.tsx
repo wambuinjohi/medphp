@@ -343,7 +343,8 @@ export function CreateDirectReceiptModalEnhanced({
   const isPartialPayment = amountNum > 0 && amountNum < total && total > 0;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -643,5 +644,16 @@ export function CreateDirectReceiptModalEnhanced({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Excess Payment Handler Modal */}
+    <ExcessPaymentHandler
+      open={showExcessPaymentHandler}
+      onOpenChange={setShowExcessPaymentHandler}
+      excessPaymentData={excessPaymentData}
+      onCreditBalance={handleExcessPaymentCreditBalance}
+      onChangeNote={handleExcessPaymentChangeNote}
+      isLoading={createCreditBalance.isPending}
+    />
+    </>
   );
 }
