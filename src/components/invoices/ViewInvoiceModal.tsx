@@ -34,6 +34,7 @@ import {
   Edit,
   Trash2
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useDeleteInvoice } from '@/hooks/useInvoicesFixed';
 
 interface ViewInvoiceModalProps {
