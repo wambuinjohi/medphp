@@ -50,8 +50,15 @@ export function BiolegendLogo({
           alt={`${companyName} Logo`}
           className="w-full h-full object-contain"
           onError={(e) => {
-            console.warn(`Logo failed to load: ${logoSrc}`);
-            (e.target as HTMLImageElement).src = fallbackLogoUrl;
+            const img = e.target as HTMLImageElement;
+            // If the current src is the PNG fallback, try SVG
+            if (img.src.includes('/fallback-logo.png')) {
+              console.warn(`PNG fallback failed, trying SVG: ${logoSrc}`);
+              img.src = fallbackLogoSvgUrl;
+            } else {
+              // If both PNG and SVG failed, just warn
+              console.warn(`Logo failed to load: ${logoSrc}`);
+            }
           }}
         />
       </div>
