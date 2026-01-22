@@ -1384,11 +1384,61 @@ export const useCreateDirectReceiptWithItems = () => {
         console.warn('Failed to create payment allocation:', allocationInsertResult.error);
       }
 
+      // CREATE RECEIPT RECORD
+      // Generate receipt number and create receipt record
+      const timestamp = Date.now().toString();
+      const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const receiptNumber = `REC-${timestamp.slice(-6)}${randomPart}`;
+
+      const excessAmount = paymentAmount > invoiceAmount ? paymentAmount - invoiceAmount : 0;
+
+      let receiptData = {
+        company_id: companyId,
+        payment_id: paymentData.id,
+        invoice_id: invoiceData.id,
+        receipt_number: receiptNumber,
+        receipt_date: paymentDate,
+        receipt_type: 'direct_receipt',
+        total_amount: paymentAmount,
+        excess_amount: excessAmount,
+        excess_handling: excessAmount > 0 ? 'pending' : 'pending',
+        notes: 'Direct receipt',
+        created_by: createdBy
+      } as any;
+
+      const receiptInsertResult = await db.insert('receipts', receiptData);
+      let receiptRecord = null;
+
+      if (receiptInsertResult.error) {
+        console.warn('Failed to create receipt:', receiptInsertResult.error);
+      } else if (receiptInsertResult.id) {
+        // Fetch the created receipt
+        const receiptSelectResult = await db.selectOne('receipts', receiptInsertResult.id);
+        if (!receiptSelectResult.error && receiptSelectResult.data) {
+          receiptRecord = receiptSelectResult.data;
+        }
+      }
+
+      // HANDLE EXCESS PAYMENT
+      // If there's excess payment, note it for future credit balance/change note handling
+      let excessPaymentData = null;
+      if (excessAmount > 0 && receiptRecord) {
+        excessPaymentData = {
+          receiptId: receiptRecord.id,
+          customerId: customerId,
+          excessAmount: excessAmount,
+          paymentAmount: paymentAmount,
+          invoiceAmount: invoiceAmount
+        };
+      }
+
       return {
         payment: paymentData,
         invoice: invoiceData,
         items: invoiceItemsResult,
-        allocation: allocationInsertResult.error ? null : { id: allocationInsertResult.id }
+        allocation: allocationInsertResult.error ? null : { id: allocationInsertResult.id },
+        receipt: receiptRecord,
+        excessPayment: excessPaymentData
       };
     },
     onSuccess: (data) => {
