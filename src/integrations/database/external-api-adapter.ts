@@ -285,14 +285,14 @@ export class ExternalAPIAdapter implements IDatabase {
       let result: any;
 
       try {
-        // Log headers being sent (for debugging company update issues)
-        if (action === 'update' && table === 'companies') {
-          console.log(`📤 [Company Update] Sending request with headers:`, {
+        // Log headers being sent (for debugging update issues)
+        if (action === 'update') {
+          console.log(`📤 [Update ${table}] Sending request with headers:`, {
             url: url.substring(0, 100),
             method,
             headerKeys: Object.keys(headers),
             hasAuthorizationHeader: 'Authorization' in headers,
-            unauthenticatedAccess: skipAuthHeader,
+            authenticatedRequest: !!currentToken,
           });
         }
 
