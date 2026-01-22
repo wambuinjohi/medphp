@@ -25,6 +25,7 @@ import { getDatabaseProvider } from '@/integrations/database';
 import { validateLogoUrl, addCacheBustingParam, sanitizeLogoUrl } from '@/utils/logoUploadUtils';
 import { uploadImage } from '@/utils/directFileUpload';
 import { PermissionErrorHelper } from '@/components/PermissionErrorHelper';
+import { uploadFallbackLogo, deleteFallbackLogo, checkFallbackLogoExists } from '@/utils/fallbackLogoUpload';
 import {
   validateCompanyName,
   validateCompanyEmail,
