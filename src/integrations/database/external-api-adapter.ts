@@ -307,11 +307,30 @@ export class ExternalAPIAdapter implements IDatabase {
         if (timeoutId) clearTimeout(timeoutId);
 
         // Defensively parse JSON - handle cases where server returns non-JSON (e.g., 500 error)
-        result = await response.json().catch(() => {
-          if (!response.ok) {
-            throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+        result = await response.json().catch(async (jsonError) => {
+          // Capture the raw response text for debugging when JSON parsing fails
+          let responseText = '';
+          try {
+            responseText = await response.clone().text();
+          } catch (e) {
+            responseText = '(unable to read response body)';
           }
-          throw new Error('Invalid response from server: Expected valid JSON');
+
+          const errorDetails = {
+            status: response.status,
+            statusText: response.statusText,
+            responseBody: responseText.substring(0, 500), // First 500 chars to avoid noise
+            url: url.substring(0, 100),
+            action,
+            table,
+          };
+
+          console.error(`❌ [${action} ${table || 'API'}] Server returned invalid JSON response:`, errorDetails);
+
+          if (!response.ok) {
+            throw new Error(`Server error (HTTP ${response.status} ${response.statusText}): ${responseText.substring(0, 200) || 'The API server may be experiencing issues.'}`);
+          }
+          throw new Error(`Invalid response from server: Expected valid JSON. Response: ${responseText.substring(0, 200)}`);
         });
       } catch (fetchError: any) {
         requestCompleted = true;
