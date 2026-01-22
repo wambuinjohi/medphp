@@ -233,30 +233,22 @@ export class ExternalAPIAdapter implements IDatabase {
         'Content-Type': 'application/json',
       };
 
-      // Skip Authorization header for company updates to allow unauthenticated access
-      const skipAuthHeader = action === 'update' && table === 'companies';
+      // ALWAYS read token fresh from localStorage to ensure we get the most recent one
+      // This is critical for updates that happen after login (especially after page refresh)
+      const currentToken = this.getAuthToken();
 
-      if (!skipAuthHeader) {
-        // ALWAYS read token fresh from localStorage to ensure we get the most recent one
-        // This is critical for updates that happen after login (especially after page refresh)
-        const currentToken = this.getAuthToken();
+      if (currentToken) {
+        headers['Authorization'] = `Bearer ${currentToken}`;
+      }
 
-        if (currentToken) {
-          headers['Authorization'] = `Bearer ${currentToken}`;
-        }
-
-        // Log token status for debugging (especially for non-company updates)
-        if (action === 'update' && table !== 'companies') {
-          console.log(`🔐 [Update] Token check:`, {
-            hasLocalStorageToken: !!currentToken,
-            willSendAuthHeader: !!currentToken,
-            authHeaderValue: currentToken ? `Bearer ${currentToken.substring(0, 20)}...` : 'NONE',
-            readingFreshFromLocalStorage: true,
-          });
-        }
-      } else {
-        // Company updates do not send Authorization header
-        console.log(`🔓 [Company Update] Skipping Authorization header (unauthenticated access enabled)`);
+      // Log token status for debugging updates
+      if (action === 'update') {
+        console.log(`🔐 [Update ${table}] Token check:`, {
+          hasLocalStorageToken: !!currentToken,
+          willSendAuthHeader: !!currentToken,
+          authHeaderValue: currentToken ? `Bearer ${currentToken.substring(0, 20)}...` : 'NONE',
+          readingFreshFromLocalStorage: true,
+        });
       }
 
       // Build request body
