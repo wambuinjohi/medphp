@@ -54,8 +54,14 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
 export function useCurrentCompany() {
   const context = useContext(CompanyContext);
+  // Return safe default when used outside of provider (e.g., on login page)
   if (context === undefined) {
-    throw new Error('useCurrentCompany must be used within a CompanyProvider');
+    return {
+      currentCompany: null,
+      isLoading: false,
+      error: null,
+      isReady: true
+    };
   }
   return context;
 }
