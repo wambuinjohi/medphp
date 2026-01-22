@@ -19,17 +19,31 @@ const FALLBACK_LOGO_PATH = '/fallback-logo.png';
  */
 export async function checkFallbackLogoExists(): Promise<boolean> {
   try {
-    // Try to fetch the image with a HEAD request to check if it exists
+    // Check for PNG first
     const response = await fetch(FALLBACK_LOGO_PATH, {
       method: 'HEAD'
     });
-    return response.ok;
+    if (response.ok) {
+      return true;
+    }
+
+    // Fall back to checking SVG
+    const svgResponse = await fetch(FALLBACK_LOGO_PATH.replace('.png', '.svg'), {
+      method: 'HEAD'
+    });
+    return svgResponse.ok;
   } catch {
     // If fetch fails, try loading it as an image to verify it exists
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
+      img.onerror = () => {
+        // Try SVG as fallback
+        const svgImg = new Image();
+        svgImg.onload = () => resolve(true);
+        svgImg.onerror = () => resolve(false);
+        svgImg.src = `${FALLBACK_LOGO_PATH.replace('.png', '.svg')}?t=${Date.now()}`;
+      };
       img.src = `${FALLBACK_LOGO_PATH}?t=${Date.now()}`; // Add cache buster
     });
   }
