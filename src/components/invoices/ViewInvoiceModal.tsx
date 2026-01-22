@@ -131,7 +131,7 @@ export function ViewInvoiceModal({
             </div>
             
             <div className="flex space-x-2">
-              {invoice.status === 'draft' && (
+              {(isAdmin || invoice.status === 'draft') && (
                 <Button variant="outline" size="sm" onClick={onEdit}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
