@@ -75,6 +75,8 @@ export function CreateDirectReceiptModalEnhanced({
   
   const [items, setItems] = useState<ReceiptItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showExcessPaymentHandler, setShowExcessPaymentHandler] = useState(false);
+  const [excessPaymentData, setExcessPaymentData] = useState<ExcessPaymentData | null>(null);
 
   // Get current user and company from context
   const { profile, loading: authLoading } = useAuth();
