@@ -239,7 +239,7 @@ export default function CompanySettings() {
   // Helper function to upload to remote backend API via proxy
   const uploadToExternalAPI = async (file: File, companyId: string): Promise<string> => {
     // Use Vite proxy endpoint instead of direct URL to avoid CORS issues
-    const proxyUrl = '/api/upload_file';
+    const proxyUrl = '/api?action=upload_file';
     console.log('🚀 Uploading via proxy endpoint to:', proxyUrl);
 
     // Get file extension safely
