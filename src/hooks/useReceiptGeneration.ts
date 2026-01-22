@@ -186,6 +186,3 @@ export const useUpdateReceipt = () => {
     }
   });
 };
-
-// Import React for hooks
-import * as React from 'react';
