@@ -395,7 +395,7 @@ const App = () => {
                 <Route
                   path="/app/settings/company"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute requireAuth={false}>
                       <CompanySettings />
                     </ProtectedRoute>
                   }

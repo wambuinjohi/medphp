@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Save, Upload, Plus, Trash2, Edit, Check, X, Image, AlertTriangle, AlertCircle, Shield } from 'lucide-react';
+import { Building2, Save, Upload, Plus, Trash2, Edit, Check, X, Image, AlertTriangle, AlertCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -17,8 +17,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { ForceTaxSettings } from '@/components/ForceTaxSettings';
 import { CompanySettingsDiagnostics } from '@/components/CompanySettingsDiagnostics';
-import { AuthorizationDiagnostics } from '@/components/AuthorizationDiagnostics';
-import { TokenDebugDiagnostics } from '@/components/TokenDebugDiagnostics';
 import { getUserFriendlyMessage, logError } from '@/utils/errorParser';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { QuickSchemaFix } from '@/components/QuickSchemaFix';
@@ -47,45 +45,8 @@ import {
 } from '@/utils/companySettingsValidators';
 
 export default function CompanySettings() {
-  const { isAuthenticated, profile: currentUser } = useAuth();
+  const { profile: currentUser } = useAuth();
   const { role, loading } = usePermissions();
-
-  // Check authentication (all authenticated users can edit company settings)
-  if (!isAuthenticated) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Company Settings</h1>
-            <p className="text-muted-foreground">
-              Manage company information and preferences
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-center">
-          <Card className="w-full max-w-md text-center">
-            <CardContent className="pt-6">
-              <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
-              <p className="text-muted-foreground mb-4">
-                You need to be logged in to access company settings.
-              </p>
-              {currentUser && (
-                <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-900 rounded text-left text-sm space-y-3">
-                  <div>
-                    <p className="font-mono text-xs text-muted-foreground mb-2">Current User Info:</p>
-                    <p className="text-xs"><span className="font-semibold">Email:</span> {currentUser.email}</p>
-                    <p className="text-xs"><span className="font-semibold">Role:</span> {currentUser.role || 'Not set'}</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   const [editingTax, setEditingTax] = useState<string | null>(null);
   const [newTax, setNewTax] = useState({ name: '', rate: 0, is_default: false });
@@ -409,18 +370,6 @@ export default function CompanySettings() {
   };
 
   const handleSaveCompany = async () => {
-    // Check if user has permission to access settings
-    if (!role || !role.permissions.includes('access_settings')) {
-      const missingPermission = !role ? 'No role assigned' : 'Missing access_settings permission';
-      const detailedMessage = `You do not have permission to update company settings. Required permission: access_settings. ${missingPermission}`;
-      setPermissionError({
-        statusCode: 403,
-        message: detailedMessage,
-      });
-      toast.error(detailedMessage);
-      return;
-    }
-
     // Perform validation before saving
     const validation = validateCompanyData(companyData);
     setValidationErrors(validation);
@@ -746,8 +695,8 @@ export default function CompanySettings() {
             variant="primary-gradient"
             size="lg"
             onClick={handleSaveCompany}
-            disabled={loading || !role || !role.permissions.includes('access_settings')}
-            title={loading ? 'Loading permissions...' : (!role || !role.permissions.includes('access_settings')) ? 'You do not have permission to update company settings' : ''}
+            disabled={loading}
+            title={loading ? 'Loading permissions...' : ''}
           >
             <Save className="h-4 w-4" />
             Save Settings
@@ -757,28 +706,12 @@ export default function CompanySettings() {
 
       {/* Permission Error Helper - Show when user lacks permissions */}
       {permissionError && (
-        <>
-          <PermissionErrorHelper
-            statusCode={permissionError.statusCode}
-            errorMessage={permissionError.message}
-            operation="update"
-            resource="company settings"
-          />
-          <div className="mt-4 space-y-4">
-            <CompanySettingsDiagnostics currentCompany={currentCompany} />
-            <TokenDebugDiagnostics />
-            <AuthorizationDiagnostics />
-          </div>
-        </>
-      )}
-
-      {/* Diagnostic Info - Always show for debugging */}
-      {!permissionError && (
-        <div className="mb-4 space-y-4">
-          <CompanySettingsDiagnostics currentCompany={currentCompany} />
-          <TokenDebugDiagnostics />
-          <AuthorizationDiagnostics />
-        </div>
+        <PermissionErrorHelper
+          statusCode={permissionError.statusCode}
+          errorMessage={permissionError.message}
+          operation="update"
+          resource="company settings"
+        />
       )}
 
       {/* Simple Currency Column Fix - Show when schema errors are detected */}
