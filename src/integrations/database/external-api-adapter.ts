@@ -233,22 +233,30 @@ export class ExternalAPIAdapter implements IDatabase {
         'Content-Type': 'application/json',
       };
 
-      // ALWAYS read token fresh from localStorage to ensure we get the most recent one
-      // This is critical for updates that happen after login (especially after page refresh)
-      const currentToken = this.getAuthToken();
+      // Skip Authorization header for company updates to allow unauthenticated access
+      const skipAuthHeader = action === 'update' && table === 'companies';
 
-      if (currentToken) {
-        headers['Authorization'] = `Bearer ${currentToken}`;
-      }
+      if (!skipAuthHeader) {
+        // ALWAYS read token fresh from localStorage to ensure we get the most recent one
+        // This is critical for updates that happen after login (especially after page refresh)
+        const currentToken = this.getAuthToken();
 
-      // Log token status for debugging (especially for company updates)
-      if (action === 'update' && table === 'companies') {
-        console.log(`🔐 [Company Update] Token check:`, {
-          hasLocalStorageToken: !!currentToken,
-          willSendAuthHeader: !!currentToken,
-          authHeaderValue: currentToken ? `Bearer ${currentToken.substring(0, 20)}...` : 'NONE',
-          readingFreshFromLocalStorage: true,
-        });
+        if (currentToken) {
+          headers['Authorization'] = `Bearer ${currentToken}`;
+        }
+
+        // Log token status for debugging (especially for non-company updates)
+        if (action === 'update' && table !== 'companies') {
+          console.log(`🔐 [Update] Token check:`, {
+            hasLocalStorageToken: !!currentToken,
+            willSendAuthHeader: !!currentToken,
+            authHeaderValue: currentToken ? `Bearer ${currentToken.substring(0, 20)}...` : 'NONE',
+            readingFreshFromLocalStorage: true,
+          });
+        }
+      } else {
+        // Company updates do not send Authorization header
+        console.log(`🔓 [Company Update] Skipping Authorization header (unauthenticated access enabled)`);
       }
 
       // Build request body
