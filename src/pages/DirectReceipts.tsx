@@ -45,17 +45,21 @@ import { apiClient } from '@/integrations/api';
 
 interface Receipt {
   id: string;
+  receipt_number: string;
+  receipt_date: string;
+  receipt_type: string;
   invoice_id: string;
+  payment_id: string;
   payment_number: string;
   invoice_number: string;
   customers: {
     name: string;
     email?: string;
   };
-  invoice_date: string;
   payment_date: string;
   total_amount: number;
-  paid_amount: number;
+  excess_amount: number;
+  excess_handling: string;
   payment_method: string;
   reference_number?: string;
   status: 'paid' | 'partial' | 'draft';
