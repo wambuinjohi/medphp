@@ -39,6 +39,7 @@ import {
   Truck,
   Trash2
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCompanies } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices, useDeleteInvoice } from '@/hooks/useInvoicesFixed';
 import { toast } from 'sonner';
@@ -131,6 +132,7 @@ export default function Invoices() {
   const [amountFromFilter, setAmountFromFilter] = useState('');
   const [amountToFilter, setAmountToFilter] = useState('');
 
+  const { isAdmin } = useAuth();
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
 
@@ -665,7 +667,7 @@ Email: ${currentCompany?.email || 'info@medplusafrica.com'}`;
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {calculateActualStatus(invoice) === 'draft' && (
+                        {(isAdmin || calculateActualStatus(invoice) === 'draft') && (
                           <Button
                             variant="ghost"
                             size="icon"

@@ -34,6 +34,7 @@ import {
   Edit,
   Trash2
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useDeleteInvoice } from '@/hooks/useInvoicesFixed';
 
 interface ViewInvoiceModalProps {
@@ -59,6 +60,7 @@ export function ViewInvoiceModal({
 }: ViewInvoiceModalProps) {
   if (!invoice) return null;
 
+  const { isAdmin } = useAuth();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const deleteInvoice = useDeleteInvoice();
 
@@ -129,7 +131,7 @@ export function ViewInvoiceModal({
             </div>
             
             <div className="flex space-x-2">
-              {invoice.status === 'draft' && (
+              {(isAdmin || invoice.status === 'draft') && (
                 <Button variant="outline" size="sm" onClick={onEdit}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit

@@ -1089,6 +1089,7 @@ export const useCreateDirectReceipt = () => {
         total_amount: invoiceAmount,
         paid_amount: paidAmount,
         balance_due: balanceDue,
+        notes: 'Direct receipt',
         created_by: createdBy
       } as any;
 
@@ -1274,6 +1275,7 @@ export const useCreateDirectReceiptWithItems = () => {
         total_amount: invoiceAmount,
         paid_amount: paidAmount,
         balance_due: balanceDue,
+        notes: 'Direct receipt',
         created_by: createdBy
       } as any;
 
