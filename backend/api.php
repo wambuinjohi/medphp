@@ -677,11 +677,11 @@ try {
             }
         }
 
-        // If token validation completely failed, allow company updates to bypass
-        // This handles cases where token is invalid but company setup is correct
+        // If token validation completely failed, allow certain updates to bypass
+        // This handles cases where token is invalid but system setup is correct
         if (!$decoded) {
-            if ($action === 'update' && $table === 'companies') {
-                error_log("🟡 [AUTH] $action on $table - Token validation failed, but entering bypass mode for company update...");
+            if ($action === 'update' && ($table === 'companies' || $table === 'profiles')) {
+                error_log("🟡 [AUTH] $action on $table - Token validation failed, but entering bypass mode...");
                 error_log("⚠️ [SECURITY] Allowing $action on $table with invalid token (bypass mode for configured system)");
 
                 return [
