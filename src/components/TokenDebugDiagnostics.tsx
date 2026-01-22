@@ -73,11 +73,19 @@ export function TokenDebugDiagnostics() {
     }
   };
 
+  // Auto-load token debug on component mount
+  useEffect(() => {
+    if (isAuthenticated && !debugData) {
+      runTokenDebug();
+    }
+  }, [isAuthenticated]);
+
+  // Also load when expanding if we don't have data yet
   useEffect(() => {
     if (isAuthenticated && isExpanded && !debugData) {
       runTokenDebug();
     }
-  }, [isAuthenticated, isExpanded]);
+  }, [isExpanded]);
 
   if (!isAuthenticated) {
     return null;
