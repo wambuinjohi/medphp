@@ -37,6 +37,7 @@ export function BiolegendLogo({
 
   // Use passed-in data first, then fall back to context, then use defaults
   const fallbackLogoUrl = '/fallback-logo.png';
+  const fallbackLogoSvgUrl = '/fallback-logo.svg';
   const logoSrc = propLogoUrl || currentCompany?.logo_url || fallbackLogoUrl;
   const companyName = propCompanyName || currentCompany?.name || 'MEDPLUS';
 
