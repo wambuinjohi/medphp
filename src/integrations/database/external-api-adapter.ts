@@ -300,6 +300,7 @@ export class ExternalAPIAdapter implements IDatabase {
             method,
             headerKeys: Object.keys(headers),
             hasAuthorizationHeader: 'Authorization' in headers,
+            unauthenticatedAccess: skipAuthHeader,
           });
         }
 
