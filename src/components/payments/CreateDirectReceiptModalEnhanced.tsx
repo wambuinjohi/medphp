@@ -253,7 +253,7 @@ export function CreateDirectReceiptModalEnhanced({
         notes: notes || null,
       };
 
-      await createDirectReceiptWithItems.mutateAsync({
+      const result = await createDirectReceiptWithItems.mutateAsync({
         payment: paymentData,
         invoiceAmount: total,
         subtotal: subtotal,
@@ -263,9 +263,25 @@ export function CreateDirectReceiptModalEnhanced({
         items: items
       });
 
-      onSuccess();
-      onOpenChange(false);
-      resetForm();
+      // Check if there's excess payment to handle
+      if (result.excessPayment && result.receipt) {
+        const selectedCustomer = customers?.find(c => c.id === selectedCustomerId);
+        setExcessPaymentData({
+          receiptId: result.receipt.id,
+          customerId: selectedCustomerId,
+          invoiceId: result.invoice.id,
+          excessAmount: result.excessPayment.excessAmount,
+          paymentAmount: result.excessPayment.paymentAmount,
+          invoiceAmount: result.excessPayment.invoiceAmount,
+          customerName: selectedCustomer?.name
+        });
+        setShowExcessPaymentHandler(true);
+      } else {
+        // No excess payment, success
+        onSuccess();
+        onOpenChange(false);
+        resetForm();
+      }
     } catch (error) {
       console.error('Error creating direct receipt:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
