@@ -89,6 +89,16 @@ export default function CompanySettings() {
   const updateTaxSetting = useUpdateTaxSetting();
   const deleteTaxSetting = useDeleteTaxSetting();
 
+  // Check if fallback logo exists on mount
+  useEffect(() => {
+    const checkFallbackLogo = async () => {
+      const exists = await checkFallbackLogoExists();
+      setFallbackLogoExists(exists);
+    };
+
+    checkFallbackLogo();
+  }, []);
+
   // Debug logging and schema check
   useEffect(() => {
     console.log('=== Company Settings Debug Info ===');
