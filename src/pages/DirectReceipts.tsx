@@ -101,7 +101,7 @@ export default function DirectReceipts() {
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
 
-  // Fetch direct receipts (invoices created via direct receipt process)
+  // Fetch direct receipts from receipts table
   const fetchDirectReceipts = async () => {
     if (!currentCompany?.id) return;
 
@@ -109,35 +109,59 @@ export default function DirectReceipts() {
     setError(null);
 
     try {
-      // Fetch all invoices for the company
-      const { data: invoices, error: invoicesError } = await apiClient.select('invoices', {
+      // Fetch all receipts for the company
+      const { data: allReceipts, error: receiptsError } = await apiClient.select('receipts', {
         company_id: currentCompany.id
       });
 
-      if (invoicesError) throw new Error(invoicesError.message || 'Failed to fetch invoices');
+      if (receiptsError) throw new Error(receiptsError.message || 'Failed to fetch receipts');
 
-      if (!Array.isArray(invoices)) {
+      if (!Array.isArray(allReceipts) || allReceipts.length === 0) {
         setReceipts([]);
         return;
       }
 
-      // Filter for receipts (invoices with 'Direct receipt' in notes)
-      const receiptInvoices = invoices.filter((inv: any) =>
-        inv.notes && inv.notes.includes('Direct receipt')
-      );
+      // Collect IDs for batch fetching
+      const invoiceIds = [...new Set(allReceipts.map((r: any) => r.invoice_id))];
+      const paymentIds = [...new Set(allReceipts.map((r: any) => r.payment_id))];
+      let customerIds: string[] = [];
+      let createdByIds: string[] = [];
 
-      if (receiptInvoices.length === 0) {
-        setReceipts([]);
-        return;
-      }
-
-      // Fetch customer and payment data for each receipt
-      const invoiceIds = receiptInvoices.map((inv: any) => inv.id);
-      const customerIds = [...new Set(receiptInvoices.map((inv: any) => inv.customer_id).filter(id => id))];
-
-      let customerMap = new Map();
-      let itemsMap = new Map();
+      let invoiceMap = new Map();
       let paymentMap = new Map();
+      let customerMap = new Map();
+      let createdByMap = new Map();
+      let itemsMap = new Map();
+
+      // Fetch invoices
+      try {
+        const { data: invoices } = await apiClient.select('invoices', {});
+        if (Array.isArray(invoices)) {
+          invoices.forEach((inv: any) => {
+            invoiceMap.set(inv.id, inv);
+            if (inv.customer_id && !customerIds.includes(inv.customer_id)) {
+              customerIds.push(inv.customer_id);
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Could not fetch invoices:', e);
+      }
+
+      // Fetch payments
+      try {
+        const { data: payments } = await apiClient.select('payments', {});
+        if (Array.isArray(payments)) {
+          payments.forEach((payment: any) => {
+            paymentMap.set(payment.id, payment);
+            if (payment.created_by && !createdByIds.includes(payment.created_by)) {
+              createdByIds.push(payment.created_by);
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Could not fetch payments:', e);
+      }
 
       // Fetch customers
       try {
@@ -153,65 +177,47 @@ export default function DirectReceipts() {
 
       // Fetch invoice items
       try {
-        const { data: allItems } = await apiClient.select('invoice_items', {});
-        if (Array.isArray(allItems)) {
-          const relevantItems = allItems.filter((item: any) => invoiceIds.includes(item.invoice_id));
-          relevantItems.forEach((item: any) => {
-            if (!itemsMap.has(item.invoice_id)) {
-              itemsMap.set(item.invoice_id, []);
+        const { data: items } = await apiClient.select('invoice_items', {});
+        if (Array.isArray(items)) {
+          items.forEach((item: any) => {
+            if (invoiceIds.includes(item.invoice_id)) {
+              if (!itemsMap.has(item.invoice_id)) {
+                itemsMap.set(item.invoice_id, []);
+              }
+              itemsMap.get(item.invoice_id).push(item);
             }
-            itemsMap.get(item.invoice_id).push(item);
           });
         }
       } catch (e) {
         console.warn('Could not fetch invoice items:', e);
       }
 
-      // Fetch payment allocations
-      try {
-        const { data: allPayments } = await apiClient.select('payment_allocations', {});
-        const { data: payments } = await apiClient.select('payments', {});
-
-        if (Array.isArray(allPayments) && Array.isArray(payments)) {
-          const paymentsByInvoice = new Map();
-          const paymentsById = new Map();
-
-          payments.forEach((p: any) => {
-            paymentsById.set(p.id, p);
-          });
-
-          allPayments.forEach((allocation: any) => {
-            if (invoiceIds.includes(allocation.invoice_id) && paymentsById.has(allocation.payment_id)) {
-              const payment = paymentsById.get(allocation.payment_id);
-              paymentMap.set(allocation.invoice_id, payment);
-            }
-          });
-        }
-      } catch (e) {
-        console.warn('Could not fetch payment data:', e);
-      }
-
-      // Transform to receipts format
-      const transformedReceipts: Receipt[] = receiptInvoices.map((invoice: any) => {
-        const payment = paymentMap.get(invoice.id);
-        const customer = customerMap.get(invoice.customer_id);
+      // Transform receipts
+      const transformedReceipts: Receipt[] = allReceipts.map((receipt: any) => {
+        const invoice = invoiceMap.get(receipt.invoice_id);
+        const payment = paymentMap.get(receipt.payment_id);
+        const customer = invoice ? customerMap.get(invoice.customer_id) : null;
 
         return {
-          id: invoice.id,
-          invoice_id: invoice.id,
-          payment_number: payment?.payment_number || `REC-${invoice.id.slice(0, 8)}`,
-          invoice_number: invoice.invoice_number,
+          id: receipt.id,
+          receipt_number: receipt.receipt_number,
+          receipt_date: receipt.receipt_date,
+          receipt_type: receipt.receipt_type,
+          invoice_id: receipt.invoice_id,
+          payment_id: receipt.payment_id,
+          payment_number: receipt.receipt_number,
+          invoice_number: invoice?.invoice_number || 'Unknown',
           customers: customer || { name: 'Unknown Customer', email: null },
-          invoice_date: invoice.invoice_date,
-          payment_date: payment?.payment_date || invoice.invoice_date,
-          total_amount: invoice.total_amount,
-          paid_amount: invoice.paid_amount || 0,
+          payment_date: receipt.receipt_date,
+          total_amount: receipt.total_amount,
+          excess_amount: receipt.excess_amount || 0,
+          excess_handling: receipt.excess_handling,
           payment_method: payment?.payment_method || 'unknown',
           reference_number: payment?.reference_number,
-          status: invoice.status,
-          invoice_items: itemsMap.get(invoice.id) || [],
-          created_by: invoice.created_by,
-          created_by_profile: invoice.created_by_profile
+          status: invoice?.status || 'draft',
+          invoice_items: itemsMap.get(receipt.invoice_id) || [],
+          created_by: receipt.created_by,
+          created_by_profile: receipt.created_by_profile
         };
       });
 
