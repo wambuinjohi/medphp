@@ -152,6 +152,9 @@ export const generatePDF = (data: DocumentData) => {
   const primaryColorLight = lightenColor(primaryColor, 25);
   const hslColor = getColorAsHslVar(primaryColor);
 
+  // Get PDF template (defaults to 'default' for backward compatibility)
+  const templateName = data.pdfTemplate || (company as any)?.pdf_template || 'default';
+
   // Analyze which columns have values
   const visibleColumns = analyzeColumns(data.items);
   const formatCurrency = (amount: number) => {
