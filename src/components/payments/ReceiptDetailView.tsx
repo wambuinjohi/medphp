@@ -207,6 +207,42 @@ export function ReceiptDetailView({
             </div>
           )}
 
+          {/* Line Items Section */}
+          {lineItems && lineItems.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                <p className="font-semibold text-sm">Line Items</p>
+              </div>
+              <div className="overflow-x-auto">
+                <Table className="text-sm">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="text-center w-16">Qty</TableHead>
+                      <TableHead className="text-right">Unit Price</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {lineItems.map((item, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{item.description || item.product_name || 'N/A'}</TableCell>
+                        <TableCell className="text-center">{item.quantity || 0}</TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.unit_price || 0)}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {formatCurrency(item.line_total || (item.quantity || 0) * (item.unit_price || 0))}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+
           <Separator />
 
           {/* Notes */}
