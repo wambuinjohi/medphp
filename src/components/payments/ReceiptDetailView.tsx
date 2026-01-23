@@ -34,6 +34,7 @@ export interface Receipt {
 
 export interface ReceiptDetailViewProps {
   receipt: Receipt;
+  lineItems?: any[];
   companyName?: string;
   onDownloadPDF?: () => void;
   onSendEmail?: () => void;
