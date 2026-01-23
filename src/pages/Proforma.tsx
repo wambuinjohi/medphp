@@ -28,9 +28,11 @@ import {
   Trash2,
   ArrowRightCircle
 } from 'lucide-react';
-import { useProformas, useDeleteProforma, type ProformaWithItems } from '@/hooks/useProforma';
+import { useProformas, useDeleteProforma, useConvertProformaToInvoice, type ProformaWithItems } from '@/hooks/useProforma';
 import { useCompanies } from '@/hooks/useDatabase';
 import { toast } from 'sonner';
+import { ConversionPreviewModal } from '@/components/shared/ConversionPreviewModal';
+import { supabase } from '@/integrations/supabase/client';
 import { CreateProformaModalOptimized } from '@/components/proforma/CreateProformaModalOptimized';
 import { EditProformaModal } from '@/components/proforma/EditProformaModal';
 import { ViewProformaModal } from '@/components/proforma/ViewProformaModal';
