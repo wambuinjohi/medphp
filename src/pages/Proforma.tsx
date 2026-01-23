@@ -63,6 +63,7 @@ export default function Proforma() {
   // Use proper proforma hooks
   const { data: proformas = [], isLoading, refetch } = useProformas(currentCompany?.id);
   const deleteProforma = useDeleteProforma();
+  const convertToInvoice = useConvertProformaToInvoice();
 
   const filteredProformas = proformas.filter(proforma =>
     proforma.proforma_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
