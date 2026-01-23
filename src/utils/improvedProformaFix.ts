@@ -109,7 +109,7 @@ export async function generateNextProformaNumber(): Promise<string> {
     const { data: lastProforma, error } = await supabase
       .from('proforma_invoices')
       .select('proforma_number')
-      .not('proforma_number', 'is', null)
+      .neq('proforma_number', null)
       .order('created_at', { ascending: false })
       .limit(1);
 
