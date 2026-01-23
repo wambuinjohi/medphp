@@ -1034,10 +1034,57 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     docType = 'receipt';
   }
 
+  // Ensure line items are present, especially for receipts
+  let lineItems = invoice.invoice_items || [];
+
+  // If no line items and this is a receipt or invoice, create a fallback item from the total
+  if ((!lineItems || lineItems.length === 0) && (docType === 'receipt' || docType === 'invoice')) {
+    const totalAmount = invoice.total_amount || 0;
+    const subtotal = invoice.subtotal || totalAmount;
+    const taxAmount = invoice.tax_amount || 0;
+
+    lineItems = [{
+      description: docType === 'receipt' ? 'Payment Received' : invoice.invoice_number ? `Invoice ${invoice.invoice_number}` : 'Service/Product',
+      quantity: 1,
+      unit_price: subtotal,
+      discount_percentage: 0,
+      discount_before_vat: 0,
+      discount_amount: 0,
+      tax_percentage: taxAmount > 0 ? Math.round((taxAmount / subtotal) * 100 * 100) / 100 : 0,
+      tax_amount: taxAmount,
+      tax_inclusive: false,
+      line_total: totalAmount,
+      unit_of_measure: 'item',
+    }];
+  }
+
+  // Transform line items to ensure proper formatting
+  const transformedItems = lineItems.map((item: any) => {
+    const quantity = Number(item.quantity || 0);
+    const unitPrice = Number(item.unit_price || 0);
+    const taxAmount = Number(item.tax_amount || 0);
+    const discountAmount = Number(item.discount_amount || 0);
+    const computedLineTotal = quantity * unitPrice - discountAmount + taxAmount;
+
+    return {
+      description: item.description || item.product_name || item.products?.name || 'Unknown Item',
+      quantity: quantity,
+      unit_price: unitPrice,
+      discount_percentage: Number(item.discount_percentage || 0),
+      discount_before_vat: Number(item.discount_before_vat || 0),
+      discount_amount: discountAmount,
+      tax_percentage: Number(item.tax_percentage || 0),
+      tax_amount: taxAmount,
+      tax_inclusive: item.tax_inclusive || false,
+      line_total: Number(item.line_total ?? computedLineTotal),
+      unit_of_measure: item.products?.unit_of_measure || item.unit_of_measure || 'pcs',
+    };
+  });
+
   const documentData: DocumentData = {
     type: docType,
-    number: invoice.number || invoice.payment_number || invoice.invoice_number,
-    date: invoice.date || invoice.payment_date || invoice.invoice_date,
+    number: invoice.number || invoice.payment_number || invoice.invoice_number || invoice.receipt_number || `DOC-${Date.now()}`,
+    date: invoice.date || invoice.payment_date || invoice.invoice_date || invoice.receipt_date || new Date().toISOString().split('T')[0],
     due_date: invoice.due_date,
     lpo_number: invoice.lpo_number,
     company: company, // Pass company details
@@ -1049,32 +1096,12 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
       city: invoice.customers?.city,
       country: invoice.customers?.country,
     },
-    items: invoice.invoice_items?.map((item: any) => {
-      const quantity = Number(item.quantity || 0);
-      const unitPrice = Number(item.unit_price || 0);
-      const taxAmount = Number(item.tax_amount || 0);
-      const discountAmount = Number(item.discount_amount || 0);
-      const computedLineTotal = quantity * unitPrice - discountAmount + taxAmount;
-
-      return {
-        description: item.description || item.product_name || item.products?.name || 'Unknown Item',
-        quantity: quantity,
-        unit_price: unitPrice,
-        discount_percentage: Number(item.discount_percentage || 0),
-        discount_before_vat: Number(item.discount_before_vat || 0),
-        discount_amount: discountAmount,
-        tax_percentage: Number(item.tax_percentage || 0),
-        tax_amount: taxAmount,
-        tax_inclusive: item.tax_inclusive || false,
-        line_total: Number(item.line_total ?? computedLineTotal),
-        unit_of_measure: item.products?.unit_of_measure || item.unit_of_measure || 'pcs',
-      };
-    }) || [],
-    subtotal: invoice.subtotal,
-    tax_amount: invoice.tax_amount,
-    total_amount: invoice.total_amount,
+    items: transformedItems,
+    subtotal: invoice.subtotal || 0,
+    tax_amount: invoice.tax_amount || 0,
+    total_amount: invoice.total_amount || 0,
     paid_amount: invoice.paid_amount || 0,
-    balance_due: invoice.balance_due || (invoice.total_amount - (invoice.paid_amount || 0)),
+    balance_due: invoice.balance_due || (invoice.total_amount ? invoice.total_amount - (invoice.paid_amount || 0) : 0),
     notes: invoice.notes,
     terms_and_conditions: invoice.terms_and_conditions,
   };
