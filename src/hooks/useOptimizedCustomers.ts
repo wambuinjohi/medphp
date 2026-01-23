@@ -198,7 +198,7 @@ export const useCustomerCities = (companyId?: string) => {
       let query = supabase
         .from('customers')
         .select('city')
-        .not('city', 'is', null)
+        .neq('city', null)
         .order('city');
 
       if (companyId) {
