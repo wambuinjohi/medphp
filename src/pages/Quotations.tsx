@@ -37,6 +37,7 @@ import { ConvertQuotationToProformaModal } from '@/components/quotations/Convert
 import { ConvertQuotationToInvoiceModal } from '@/components/quotations/ConvertQuotationToInvoiceModal';
 import { ConversionPreviewModal } from '@/components/shared/ConversionPreviewModal';
 import { downloadQuotationPDF } from '@/utils/pdfGenerator';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Quotation {
   id: string;
