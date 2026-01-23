@@ -682,7 +682,7 @@ Email: ${companyEmail}`;
             documentType: conversionType === 'proforma' ? 'proforma' : 'invoice',
             date: new Date().toISOString().split('T')[0],
             dueDate: conversionType === 'invoice' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined,
-            status: 'draft',
+            status: conversionType === 'invoice' ? 'sent' : 'draft',
             conversionImpact: conversionType === 'invoice'
               ? [
                   'Create a new invoice with status "Sent"',
