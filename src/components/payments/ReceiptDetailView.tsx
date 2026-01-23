@@ -44,6 +44,7 @@ export interface ReceiptDetailViewProps {
 
 export function ReceiptDetailView({
   receipt,
+  lineItems = [],
   companyName = 'Company',
   onDownloadPDF,
   onSendEmail,
