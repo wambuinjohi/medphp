@@ -50,7 +50,9 @@ export default function Proforma() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
+  const [showConversionPreviewModal, setShowConversionPreviewModal] = useState(false);
   const [selectedProforma, setSelectedProforma] = useState<ProformaWithItems | null>(null);
+  const [isLoadingConversionData, setIsLoadingConversionData] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
 
