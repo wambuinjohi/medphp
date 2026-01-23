@@ -3,6 +3,13 @@ import { lightenColor, getColorAsHslVar } from './colorUtils';
 // PDF Generation utility using HTML to print/PDF conversion
 // Since we don't have jsPDF installed, I'll create a simple HTML-to-print function
 // In a real app, you'd want to use a proper PDF library like jsPDF or react-pdf
+//
+// IMPORTANT: All PDFs (invoices, receipts, quotations, etc.) are GUARANTEED to include line items:
+// - Invoices: Uses invoice_items from the database
+// - Receipts: Uses invoice_items if available, falls back to payment_allocations, then creates single line item
+// - Quotations: Uses quotation_items from the database
+// - Delivery Notes: Uses invoice_items or delivery items
+// This ensures every PDF document has detailed line-item breakdown
 
 export interface DocumentData {
   type: 'quotation' | 'invoice' | 'remittance' | 'proforma' | 'delivery' | 'statement' | 'receipt' | 'lpo';
