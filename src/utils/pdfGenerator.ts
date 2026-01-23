@@ -987,9 +987,37 @@ export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyD
     parseFloat(payment.amount.replace('$', '').replace(',', '')) :
     payment.amount;
 
-  // Process payment allocations with proper formatting
-  const items = (payment.payment_allocations && payment.payment_allocations.length > 0) ?
-    payment.payment_allocations.map((allocation: any) => ({
+  // Prioritize actual invoice line items if available, otherwise use payment allocations
+  let items: any[] = [];
+
+  // First, try to use actual invoice items if available
+  if (payment.invoice_items && payment.invoice_items.length > 0) {
+    items = payment.invoice_items.map((item: any) => {
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.unit_price || 0);
+      const taxAmount = Number(item.tax_amount || 0);
+      const discountAmount = Number(item.discount_amount || 0);
+      const computedLineTotal = quantity * unitPrice - discountAmount + taxAmount;
+
+      return {
+        description: item.description || item.product_name || item.products?.name || 'Unknown Item',
+        quantity: quantity,
+        unit_price: unitPrice,
+        discount_percentage: Number(item.discount_percentage || 0),
+        discount_before_vat: Number(item.discount_before_vat || 0),
+        discount_amount: discountAmount,
+        tax_percentage: Number(item.tax_percentage || 0),
+        tax_amount: taxAmount,
+        tax_inclusive: item.tax_inclusive || false,
+        line_total: Number(item.line_total ?? computedLineTotal),
+        unit_of_measure: item.products?.unit_of_measure || item.unit_of_measure || 'pcs',
+      };
+    });
+  }
+
+  // Fallback to payment allocations if no invoice items
+  if (items.length === 0 && payment.payment_allocations && payment.payment_allocations.length > 0) {
+    items = payment.payment_allocations.map((allocation: any) => ({
       description: allocation.invoice_number ?
         `Invoice ${allocation.invoice_number}${allocation.invoice_date ? ` - ${new Date(allocation.invoice_date).toLocaleDateString()}` : ''}` :
         'Payment Allocation',
@@ -1000,24 +1028,44 @@ export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyD
       tax_inclusive: false,
       line_total: allocation.allocated_amount || allocation.amount_allocated || 0,
       unit_of_measure: 'payment',
-    })) :
-    [];
+    }));
+  }
+
+  // Final fallback: create a single line item with the payment amount
+  if (items.length === 0) {
+    items = [{
+      description: `Payment Received - ${payment.invoice_number ? `Invoice ${payment.invoice_number}` : 'Direct Receipt'}`,
+      quantity: 1,
+      unit_price: paymentAmount,
+      discount_percentage: 0,
+      tax_percentage: 0,
+      tax_amount: 0,
+      tax_inclusive: false,
+      line_total: paymentAmount,
+      unit_of_measure: 'payment',
+    }];
+  }
 
   const documentData: DocumentData = {
     type: 'receipt',
-    number: payment.number || payment.payment_number || `REC-${Date.now()}`,
-    date: payment.date || payment.payment_date || new Date().toISOString().split('T')[0],
+    number: payment.number || payment.payment_number || payment.receipt_number || `REC-${Date.now()}`,
+    date: payment.date || payment.payment_date || payment.receipt_date || new Date().toISOString().split('T')[0],
     company: company,
     customer: {
       name: payment.customer || payment.customers?.name || 'Unknown Customer',
       email: payment.customers?.email,
       phone: payment.customers?.phone,
+      address: payment.customers?.address,
+      city: payment.customers?.city,
+      country: payment.customers?.country,
     },
-    // Include payment allocations as line items
+    // Include actual invoice items or payment allocations as line items
     items: items,
-    subtotal: paymentAmount,
-    tax_amount: 0,
+    subtotal: payment.subtotal || paymentAmount,
+    tax_amount: payment.tax_amount || 0,
     total_amount: paymentAmount,
+    paid_amount: paymentAmount,
+    balance_due: 0,
     notes: `Payment Method: ${payment.payment_method?.replace('_', ' ') || payment.method?.replace('_', ' ') || 'Unknown'}\nReference: ${payment.reference_number || 'N/A'}`,
   };
 
