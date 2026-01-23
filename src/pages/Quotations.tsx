@@ -215,12 +215,14 @@ Email: ${companyEmail}`;
 
   const handleConvertToProforma = (quotation: Quotation) => {
     setSelectedQuotation(quotation);
-    setShowConvertProformaModal(true);
+    setConversionType('proforma');
+    setShowConversionPreviewModal(true);
   };
 
   const handleConvertToInvoice = (quotation: Quotation) => {
     setSelectedQuotation(quotation);
-    setShowConvertInvoiceModal(true);
+    setConversionType('invoice');
+    setShowConversionPreviewModal(true);
   };
 
   const handleConvertSuccess = () => {
