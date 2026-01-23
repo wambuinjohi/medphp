@@ -150,9 +150,44 @@ export default function Proforma() {
     toast.success(`Email client opened with proforma ${proforma.proforma_number}`);
   };
 
-  const handleCreateInvoice = (proforma: ProformaWithItems) => {
-    setSelectedProforma(proforma);
-    setShowConvertModal(true);
+  const handleCreateInvoice = async (proforma: ProformaWithItems) => {
+    try {
+      setIsLoadingConversionData(true);
+      // Fetch full proforma with items
+      const { data, error } = await supabase
+        .from('proforma_invoices')
+        .select(`
+          *,
+          customers (
+            id,
+            name,
+            email,
+            phone,
+            address
+          ),
+          proforma_items (
+            id,
+            description,
+            quantity,
+            unit_price,
+            line_total,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive
+          )
+        `)
+        .eq('id', proforma.id)
+        .single();
+
+      if (error) throw error;
+      setSelectedProforma(data as ProformaWithItems);
+      setShowConversionPreviewModal(true);
+    } catch (error) {
+      console.error('Error fetching proforma data:', error);
+      toast.error('Failed to load proforma details');
+    } finally {
+      setIsLoadingConversionData(false);
+    }
   };
 
   const handleConvertSuccess = (invoiceNumber: string) => {
