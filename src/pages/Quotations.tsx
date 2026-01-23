@@ -217,16 +217,86 @@ Email: ${companyEmail}`;
     }
   };
 
-  const handleConvertToProforma = (quotation: Quotation) => {
-    setSelectedQuotation(quotation);
-    setConversionType('proforma');
-    setShowConversionPreviewModal(true);
+  const handleConvertToProforma = async (quotation: Quotation) => {
+    try {
+      setIsLoadingConversionData(true);
+      // Fetch full quotation with items
+      const { data, error } = await supabase
+        .from('quotations')
+        .select(`
+          *,
+          customers (
+            id,
+            name,
+            email,
+            phone,
+            address
+          ),
+          quotation_items (
+            id,
+            description,
+            quantity,
+            unit_price,
+            line_total,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive
+          )
+        `)
+        .eq('id', quotation.id)
+        .single();
+
+      if (error) throw error;
+      setSelectedQuotation(data as Quotation);
+      setConversionType('proforma');
+      setShowConversionPreviewModal(true);
+    } catch (error) {
+      console.error('Error fetching quotation data:', error);
+      toast.error('Failed to load quotation details');
+    } finally {
+      setIsLoadingConversionData(false);
+    }
   };
 
-  const handleConvertToInvoice = (quotation: Quotation) => {
-    setSelectedQuotation(quotation);
-    setConversionType('invoice');
-    setShowConversionPreviewModal(true);
+  const handleConvertToInvoice = async (quotation: Quotation) => {
+    try {
+      setIsLoadingConversionData(true);
+      // Fetch full quotation with items
+      const { data, error } = await supabase
+        .from('quotations')
+        .select(`
+          *,
+          customers (
+            id,
+            name,
+            email,
+            phone,
+            address
+          ),
+          quotation_items (
+            id,
+            description,
+            quantity,
+            unit_price,
+            line_total,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive
+          )
+        `)
+        .eq('id', quotation.id)
+        .single();
+
+      if (error) throw error;
+      setSelectedQuotation(data as Quotation);
+      setConversionType('invoice');
+      setShowConversionPreviewModal(true);
+    } catch (error) {
+      console.error('Error fetching quotation data:', error);
+      toast.error('Failed to load quotation details');
+    } finally {
+      setIsLoadingConversionData(false);
+    }
   };
 
   const handleConvertSuccess = () => {
