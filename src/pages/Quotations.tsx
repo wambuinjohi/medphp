@@ -657,6 +657,51 @@ Email: ${companyEmail}`;
         quotationNumber={selectedQuotation?.quotation_number || ''}
         onSuccess={handleConvertSuccess}
       />
+
+      {selectedQuotation && showConversionPreviewModal && (
+        <ConversionPreviewModal
+          open={showConversionPreviewModal}
+          onOpenChange={setShowConversionPreviewModal}
+          sourceDocument={{
+            id: selectedQuotation.id,
+            number: selectedQuotation.quotation_number,
+            date: selectedQuotation.quotation_date,
+            customer: selectedQuotation.customers,
+            items: (selectedQuotation.quotation_items || []).map((item: any) => ({
+              description: item.description,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              line_total: item.line_total,
+            })),
+            subtotal: selectedQuotation.subtotal || 0,
+            tax_amount: selectedQuotation.tax_amount || 0,
+            total_amount: selectedQuotation.total_amount || 0,
+          }}
+          sourceDocumentType="quotation"
+          destinationData={{
+            documentType: conversionType === 'proforma' ? 'proforma' : 'invoice',
+            date: new Date().toISOString().split('T')[0],
+            dueDate: conversionType === 'invoice' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined,
+            status: 'draft',
+            conversionImpact: conversionType === 'invoice'
+              ? [
+                  'Create a new invoice with status "Sent"',
+                  'Generate a unique invoice number',
+                  'Copy all items and amounts from the quotation',
+                  'Create stock movements for inventory tracking',
+                  'Mark the quotation as "Converted"'
+                ]
+              : [
+                  'Create a new proforma invoice with status "Draft"',
+                  'Generate a proforma number',
+                  'Copy all items and amounts from the quotation',
+                  'Mark the quotation as "Converted"'
+                ]
+          }}
+          isLoading={convertToProforma.isPending || convertToInvoice.isPending}
+          onConfirm={handleConversionPreviewConfirm}
+        />
+      )}
     </div>
   );
 }
