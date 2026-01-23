@@ -95,7 +95,7 @@ export const useOptimizedCustomers = (
 
       // Apply credit limit filter
       if (creditLimitFilter === 'with_limit') {
-        query = query.not('credit_limit', 'is', null);
+        query = query.neq('credit_limit', null);
       } else if (creditLimitFilter === 'no_limit') {
         query = query.is('credit_limit', null);
       }
@@ -198,7 +198,7 @@ export const useCustomerCities = (companyId?: string) => {
       let query = supabase
         .from('customers')
         .select('city')
-        .not('city', 'is', null)
+        .neq('city', null)
         .order('city');
 
       if (companyId) {

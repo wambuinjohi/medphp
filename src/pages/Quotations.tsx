@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { useQuotations, useCompanies } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDeleteQuotation } from '@/hooks/useQuotationItems';
+import { useDeleteQuotation, useConvertQuotationToProforma, useConvertQuotationToInvoice } from '@/hooks/useQuotationItems';
 import { toast } from 'sonner';
 import { CreateQuotationModal } from '@/components/quotations/CreateQuotationModal';
 import { ViewQuotationModal } from '@/components/quotations/ViewQuotationModal';
@@ -35,7 +35,9 @@ import { EditQuotationModal } from '@/components/quotations/EditQuotationModal';
 import { ChangeQuotationStatusModal } from '@/components/quotations/ChangeQuotationStatusModal';
 import { ConvertQuotationToProformaModal } from '@/components/quotations/ConvertQuotationToProformaModal';
 import { ConvertQuotationToInvoiceModal } from '@/components/quotations/ConvertQuotationToInvoiceModal';
+import { ConversionPreviewModal } from '@/components/shared/ConversionPreviewModal';
 import { downloadQuotationPDF } from '@/utils/pdfGenerator';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Quotation {
   id: string;
@@ -84,7 +86,10 @@ export default function Quotations() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showConvertProformaModal, setShowConvertProformaModal] = useState(false);
   const [showConvertInvoiceModal, setShowConvertInvoiceModal] = useState(false);
+  const [showConversionPreviewModal, setShowConversionPreviewModal] = useState(false);
+  const [conversionType, setConversionType] = useState<'proforma' | 'invoice' | null>(null);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
+  const [isLoadingConversionData, setIsLoadingConversionData] = useState(false);
   
   // Get current user and company from context
   const { profile, loading: authLoading } = useAuth();
@@ -92,6 +97,8 @@ export default function Quotations() {
   const currentCompany = companies?.[0];
   const { data: quotations, isLoading, error, refetch } = useQuotations(currentCompany?.id);
   const deleteQuotation = useDeleteQuotation();
+  const convertToProforma = useConvertQuotationToProforma();
+  const convertToInvoice = useConvertQuotationToInvoice();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -210,19 +217,109 @@ Email: ${companyEmail}`;
     }
   };
 
-  const handleConvertToProforma = (quotation: Quotation) => {
-    setSelectedQuotation(quotation);
-    setShowConvertProformaModal(true);
+  const handleConvertToProforma = async (quotation: Quotation) => {
+    try {
+      setIsLoadingConversionData(true);
+      // Fetch full quotation with items
+      const { data, error } = await supabase
+        .from('quotations')
+        .select(`
+          *,
+          customers (
+            id,
+            name,
+            email,
+            phone,
+            address
+          ),
+          quotation_items (
+            id,
+            description,
+            quantity,
+            unit_price,
+            line_total,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive
+          )
+        `)
+        .eq('id', quotation.id)
+        .single();
+
+      if (error) throw error;
+      setSelectedQuotation(data as Quotation);
+      setConversionType('proforma');
+      setShowConversionPreviewModal(true);
+    } catch (error) {
+      console.error('Error fetching quotation data:', error);
+      toast.error('Failed to load quotation details');
+    } finally {
+      setIsLoadingConversionData(false);
+    }
   };
 
-  const handleConvertToInvoice = (quotation: Quotation) => {
-    setSelectedQuotation(quotation);
-    setShowConvertInvoiceModal(true);
+  const handleConvertToInvoice = async (quotation: Quotation) => {
+    try {
+      setIsLoadingConversionData(true);
+      // Fetch full quotation with items
+      const { data, error } = await supabase
+        .from('quotations')
+        .select(`
+          *,
+          customers (
+            id,
+            name,
+            email,
+            phone,
+            address
+          ),
+          quotation_items (
+            id,
+            description,
+            quantity,
+            unit_price,
+            line_total,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive
+          )
+        `)
+        .eq('id', quotation.id)
+        .single();
+
+      if (error) throw error;
+      setSelectedQuotation(data as Quotation);
+      setConversionType('invoice');
+      setShowConversionPreviewModal(true);
+    } catch (error) {
+      console.error('Error fetching quotation data:', error);
+      toast.error('Failed to load quotation details');
+    } finally {
+      setIsLoadingConversionData(false);
+    }
   };
 
   const handleConvertSuccess = () => {
     refetch();
     setSelectedQuotation(null);
+  };
+
+  const handleConversionPreviewConfirm = async () => {
+    if (!selectedQuotation) return;
+
+    try {
+      if (conversionType === 'proforma') {
+        await convertToProforma.mutateAsync(selectedQuotation.id);
+      } else if (conversionType === 'invoice') {
+        await convertToInvoice.mutateAsync(selectedQuotation.id);
+      }
+      refetch();
+      setShowConversionPreviewModal(false);
+      setSelectedQuotation(null);
+      setConversionType(null);
+    } catch (error) {
+      console.error('Conversion failed:', error);
+    }
   };
 
   const handleOpenStatusModal = (quotation: Quotation) => {
@@ -560,6 +657,51 @@ Email: ${companyEmail}`;
         quotationNumber={selectedQuotation?.quotation_number || ''}
         onSuccess={handleConvertSuccess}
       />
+
+      {selectedQuotation && showConversionPreviewModal && (
+        <ConversionPreviewModal
+          open={showConversionPreviewModal}
+          onOpenChange={setShowConversionPreviewModal}
+          sourceDocument={{
+            id: selectedQuotation.id,
+            number: selectedQuotation.quotation_number,
+            date: selectedQuotation.quotation_date,
+            customer: selectedQuotation.customers,
+            items: (selectedQuotation.quotation_items || []).map((item: any) => ({
+              description: item.description,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              line_total: item.line_total,
+            })),
+            subtotal: selectedQuotation.subtotal || 0,
+            tax_amount: selectedQuotation.tax_amount || 0,
+            total_amount: selectedQuotation.total_amount || 0,
+          }}
+          sourceDocumentType="quotation"
+          destinationData={{
+            documentType: conversionType === 'proforma' ? 'proforma' : 'invoice',
+            date: new Date().toISOString().split('T')[0],
+            dueDate: conversionType === 'invoice' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined,
+            status: conversionType === 'invoice' ? 'sent' : 'draft',
+            conversionImpact: conversionType === 'invoice'
+              ? [
+                  'Create a new invoice with status "Sent"',
+                  'Generate a unique invoice number',
+                  'Copy all items and amounts from the quotation',
+                  'Create stock movements for inventory tracking',
+                  'Mark the quotation as "Converted"'
+                ]
+              : [
+                  'Create a new proforma invoice with status "Draft"',
+                  'Generate a proforma number',
+                  'Copy all items and amounts from the quotation',
+                  'Mark the quotation as "Converted"'
+                ]
+          }}
+          isLoading={convertToProforma.isPending || convertToInvoice.isPending}
+          onConfirm={handleConversionPreviewConfirm}
+        />
+      )}
     </div>
   );
 }

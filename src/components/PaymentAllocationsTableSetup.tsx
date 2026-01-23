@@ -100,8 +100,8 @@ export function PaymentAllocationsTableSetup() {
         const { data, error } = await supabase
           .from('payment_allocations')
           .select('payment_id, invoice_id, amount')
-          .not('payment_id', 'is', null)
-          .not('invoice_id', 'is', null)
+          .neq('payment_id', null)
+          .neq('invoice_id', null)
           .limit(1);
         
         updateStepStatus('check_constraints', 'completed');

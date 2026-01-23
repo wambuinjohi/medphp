@@ -28,9 +28,11 @@ import {
   Trash2,
   ArrowRightCircle
 } from 'lucide-react';
-import { useProformas, useDeleteProforma, type ProformaWithItems } from '@/hooks/useProforma';
+import { useProformas, useDeleteProforma, useConvertProformaToInvoice, type ProformaWithItems } from '@/hooks/useProforma';
 import { useCompanies } from '@/hooks/useDatabase';
 import { toast } from 'sonner';
+import { ConversionPreviewModal } from '@/components/shared/ConversionPreviewModal';
+import { supabase } from '@/integrations/supabase/client';
 import { CreateProformaModalOptimized } from '@/components/proforma/CreateProformaModalOptimized';
 import { EditProformaModal } from '@/components/proforma/EditProformaModal';
 import { ViewProformaModal } from '@/components/proforma/ViewProformaModal';
@@ -48,7 +50,9 @@ export default function Proforma() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
+  const [showConversionPreviewModal, setShowConversionPreviewModal] = useState(false);
   const [selectedProforma, setSelectedProforma] = useState<ProformaWithItems | null>(null);
+  const [isLoadingConversionData, setIsLoadingConversionData] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
 
@@ -59,6 +63,7 @@ export default function Proforma() {
   // Use proper proforma hooks
   const { data: proformas = [], isLoading, refetch } = useProformas(currentCompany?.id);
   const deleteProforma = useDeleteProforma();
+  const convertToInvoice = useConvertProformaToInvoice();
 
   const filteredProformas = proformas.filter(proforma =>
     proforma.proforma_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -145,9 +150,44 @@ export default function Proforma() {
     toast.success(`Email client opened with proforma ${proforma.proforma_number}`);
   };
 
-  const handleCreateInvoice = (proforma: ProformaWithItems) => {
-    setSelectedProforma(proforma);
-    setShowConvertModal(true);
+  const handleCreateInvoice = async (proforma: ProformaWithItems) => {
+    try {
+      setIsLoadingConversionData(true);
+      // Fetch full proforma with items
+      const { data, error } = await supabase
+        .from('proforma_invoices')
+        .select(`
+          *,
+          customers (
+            id,
+            name,
+            email,
+            phone,
+            address
+          ),
+          proforma_items (
+            id,
+            description,
+            quantity,
+            unit_price,
+            line_total,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive
+          )
+        `)
+        .eq('id', proforma.id)
+        .single();
+
+      if (error) throw error;
+      setSelectedProforma(data as ProformaWithItems);
+      setShowConversionPreviewModal(true);
+    } catch (error) {
+      console.error('Error fetching proforma data:', error);
+      toast.error('Failed to load proforma details');
+    } finally {
+      setIsLoadingConversionData(false);
+    }
   };
 
   const handleConvertSuccess = (invoiceNumber: string) => {
@@ -155,6 +195,20 @@ export default function Proforma() {
     setSelectedProforma(null);
     setShowViewModal(false);
     toast.success(`Successfully converted to invoice ${invoiceNumber}`);
+  };
+
+  const handleConversionPreviewConfirm = async () => {
+    if (!selectedProforma) return;
+
+    try {
+      const result = await convertToInvoice.mutateAsync(selectedProforma.id!);
+      refetch();
+      setShowConversionPreviewModal(false);
+      setSelectedProforma(null);
+      toast.success(`Successfully converted to invoice ${result.invoice_number}`);
+    } catch (error) {
+      console.error('Conversion failed:', error);
+    }
   };
 
   const handleAcceptProforma = async (proforma: ProformaWithItems) => {
@@ -526,6 +580,43 @@ export default function Proforma() {
         onSuccess={handleConvertSuccess}
       />
 
+      {selectedProforma && showConversionPreviewModal && (
+        <ConversionPreviewModal
+          open={showConversionPreviewModal}
+          onOpenChange={setShowConversionPreviewModal}
+          sourceDocument={{
+            id: selectedProforma.id!,
+            number: selectedProforma.proforma_number,
+            date: selectedProforma.proforma_date,
+            customer: selectedProforma.customers,
+            items: (selectedProforma.proforma_items || []).map((item: any) => ({
+              description: item.description,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              line_total: item.line_total,
+            })),
+            subtotal: selectedProforma.subtotal || 0,
+            tax_amount: selectedProforma.tax_amount || 0,
+            total_amount: selectedProforma.total_amount || 0,
+          }}
+          sourceDocumentType="proforma"
+          destinationData={{
+            documentType: 'invoice',
+            date: new Date().toISOString().split('T')[0],
+            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            status: 'sent',
+            conversionImpact: [
+              'Create a new invoice with status "Sent"',
+              'Generate a unique invoice number',
+              'Copy all items and amounts from the proforma',
+              'Create stock movements for inventory tracking',
+              'Mark the proforma as "Converted"'
+            ]
+          }}
+          isLoading={convertToInvoice.isPending}
+          onConfirm={handleConversionPreviewConfirm}
+        />
+      )}
     </div>
   );
 }
