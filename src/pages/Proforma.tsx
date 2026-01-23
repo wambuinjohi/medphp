@@ -197,6 +197,20 @@ export default function Proforma() {
     toast.success(`Successfully converted to invoice ${invoiceNumber}`);
   };
 
+  const handleConversionPreviewConfirm = async () => {
+    if (!selectedProforma) return;
+
+    try {
+      const result = await convertToInvoice.mutateAsync(selectedProforma.id!);
+      refetch();
+      setShowConversionPreviewModal(false);
+      setSelectedProforma(null);
+      toast.success(`Successfully converted to invoice ${result.invoice_number}`);
+    } catch (error) {
+      console.error('Conversion failed:', error);
+    }
+  };
+
   const handleAcceptProforma = async (proforma: ProformaWithItems) => {
     setSelectedProforma(proforma);
     setShowStatusModal(true);
