@@ -232,6 +232,24 @@ Email: ${companyEmail}`;
     setSelectedQuotation(null);
   };
 
+  const handleConversionPreviewConfirm = async () => {
+    if (!selectedQuotation) return;
+
+    try {
+      if (conversionType === 'proforma') {
+        await convertToProforma.mutateAsync(selectedQuotation.id);
+      } else if (conversionType === 'invoice') {
+        await convertToInvoice.mutateAsync(selectedQuotation.id);
+      }
+      refetch();
+      setShowConversionPreviewModal(false);
+      setSelectedQuotation(null);
+      setConversionType(null);
+    } catch (error) {
+      console.error('Conversion failed:', error);
+    }
+  };
+
   const handleOpenStatusModal = (quotation: Quotation) => {
     setSelectedQuotation(quotation);
     setShowStatusModal(true);
