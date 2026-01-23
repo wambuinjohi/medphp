@@ -1,4 +1,5 @@
 import { lightenColor, getColorAsHslVar } from './colorUtils';
+import { renderHeaderHTML, getTemplateCSS, TemplateName } from './pdfTemplates';
 
 // PDF Generation utility using HTML to print/PDF conversion
 // Since we don't have jsPDF installed, I'll create a simple HTML-to-print function
@@ -16,6 +17,7 @@ export interface DocumentData {
   number: string;
   date: string;
   lpo_number?: string;
+  pdfTemplate?: TemplateName; // PDF template to use (default, helix, compact, etc.)
   customer: {
     name: string;
     email?: string;
