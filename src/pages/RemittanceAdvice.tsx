@@ -27,6 +27,7 @@ import { useRemittanceAdvice, useCompanies } from '@/hooks/useDatabase';
 import { CreateRemittanceModal } from '@/components/remittance/CreateRemittanceModalFixed';
 import { ViewRemittanceModal } from '@/components/remittance/ViewRemittanceModal';
 import { EditRemittanceModal } from '@/components/remittance/EditRemittanceModal';
+import { supabase } from '@/integrations/supabase/client';
 
 // Remittance advice page - uses real database data via useRemittanceAdvice hook
 
