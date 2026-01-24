@@ -62,6 +62,8 @@ export default function TradingPLReport() {
   const { can: canViewReports, loading: permissionsLoading } = usePermissions();
   const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useInvoices(companyId);
 
+  console.log('[TradingPLReport] Component mounted/updated - companyId:', companyId, 'invoices loading:', invoicesLoading, 'invoices count:', invoices?.length);
+
   const isLoading = invoicesLoading;
   const hasError = invoicesError;
 
