@@ -32,24 +32,9 @@ export function ProtectedRoute({
     );
   }
 
-  // Check authentication - if requireAuth is true and user is not authenticated, deny access
+  // Check authentication - if requireAuth is true and user is not authenticated, redirect to login
   if (requireAuth && !isAuthenticated) {
-    return fallback || (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="w-full max-w-md text-center">
-          <CardContent className="pt-6">
-            <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Authentication Required</h3>
-            <p className="text-muted-foreground mb-4">
-              Please sign in to access this page.
-            </p>
-            <Button onClick={() => window.location.href = '/login'}>
-              Sign In
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <Navigate to="/login" replace />;
   }
 
   // Check role-based access control - if requiredRole is specified, user must have that role
