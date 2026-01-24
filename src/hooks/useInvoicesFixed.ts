@@ -10,31 +10,42 @@ export const useInvoicesFixed = (companyId?: string) => {
   return useQuery({
     queryKey: ['invoices_fixed', companyId],
     queryFn: async () => {
-      if (!companyId) return [];
+      if (!companyId) {
+        console.log('[useInvoicesFixed] No companyId provided, returning empty array');
+        return [];
+      }
 
       try {
-        console.log('Fetching invoices for company:', companyId);
+        console.log('[useInvoicesFixed] Starting fetch for companyId:', companyId);
 
         // Fetch invoices using the external API adapter
+        console.log('[useInvoicesFixed] Calling apiClient.select("invoices", {company_id:', companyId, '})');
         const { data: invoices, error: invoicesError } = await apiClient.select('invoices', {
           company_id: companyId
         });
 
+        console.log('[useInvoicesFixed] API response - Error:', invoicesError);
+        console.log('[useInvoicesFixed] API response - Data type:', typeof invoices, 'Is Array:', Array.isArray(invoices));
+        console.log('[useInvoicesFixed] API response - Data length:', Array.isArray(invoices) ? invoices.length : 'N/A');
+        console.log('[useInvoicesFixed] Raw API response:', invoices);
+
         if (invoicesError) {
-          console.error('Error fetching invoices:', invoicesError);
+          console.error('[useInvoicesFixed] Error fetching invoices:', invoicesError);
           throw new Error(`Failed to fetch invoices: ${invoicesError.message}`);
         }
 
         if (!Array.isArray(invoices)) {
-          console.log('Invoices fetched successfully (no data)');
+          console.log('[useInvoicesFixed] Invoices is not an array, returning empty');
           return [];
         }
 
         if (!invoices || invoices.length === 0) {
+          console.log('[useInvoicesFixed] No invoices returned from API');
           return [];
         }
 
-        console.log('Invoices fetched successfully:', invoices?.length || 0);
+        console.log('[useInvoicesFixed] Invoices fetched successfully, count:', invoices.length);
+        console.log('[useInvoicesFixed] First invoice sample:', invoices[0]);
 
         // Try to fetch customer data
         const customerIds = [...new Set(invoices.map((invoice: any) => invoice.customer_id).filter(id => id && typeof id === 'string'))];
