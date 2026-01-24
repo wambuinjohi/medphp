@@ -496,10 +496,7 @@ export default function CreditNotes() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => {
-                              setSelectedCreditNote(creditNote);
-                              setShowEditModal(true);
-                            }}
+                            onClick={() => handleEditCreditNote(creditNote)}
                             title="Edit credit note"
                           >
                             <Edit className="h-4 w-4" />
