@@ -45,8 +45,9 @@ export function TokenDebugDiagnostics() {
 
     try {
       const token = localStorage.getItem('med_api_token');
-      
-      const response = await fetch('/api?action=token_debug', {
+      const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+
+      const response = await fetch(`${apiUrl}?action=token_debug`, {
         method: 'GET',
         headers: {
           ...(token && { 'Authorization': `Bearer ${token}` }),
