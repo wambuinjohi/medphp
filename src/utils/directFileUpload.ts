@@ -18,9 +18,9 @@ export interface UploadResult {
   message?: string;
 }
 
-// Use proxy endpoints to avoid CORS issues
-const UPLOAD_BASE_URL = '/api/uploads';
-const API_URL = '/api';
+// Use direct API URL (no proxy) for consistency across all environments
+const API_BASE_URL = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+const UPLOAD_BASE_URL = API_BASE_URL.replace(/\/api\.php$/, '') + '/uploads';
 
 /**
  * Upload a file directly to the server
@@ -54,7 +54,7 @@ export async function uploadFile(
     formData.append('record_id', options?.recordId || '');
 
     // Upload to API
-    const response = await fetch(`${API_URL}?action=upload_file`, {
+    const response = await fetch(`${API_BASE_URL}?action=upload_file`, {
       method: 'POST',
       body: formData,
       headers: {
@@ -189,8 +189,9 @@ export function getPublicUrl(path: string): string {
  */
 export async function deleteFile(path: string): Promise<UploadResult> {
   try {
-    // Use proxy endpoint to avoid CORS issues
-    const response = await fetch(`/api?action=delete_file`, {
+    // Use direct API URL (no proxy) for consistency across all environments
+    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+    const response = await fetch(`${apiUrl}?action=delete_file`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
