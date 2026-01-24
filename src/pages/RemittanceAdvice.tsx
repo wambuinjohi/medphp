@@ -51,9 +51,42 @@ const RemittanceAdvice = () => {
     setShowViewModal(true);
   };
 
-  const handleEditRemittance = (remittance: any) => {
-    setSelectedRemittance(remittance);
-    setShowEditModal(true);
+  const handleEditRemittance = async (remittance: any) => {
+    try {
+      // Fetch full remittance with items and supplier details
+      const { data, error } = await supabase
+        .from('remittance_advice')
+        .select(`
+          *,
+          suppliers (
+            id,
+            name,
+            email,
+            phone,
+            address
+          ),
+          remittance_advice_items (
+            id,
+            lpo_id,
+            lpos (
+              id,
+              lpo_number
+            ),
+            amount,
+            reference,
+            notes
+          )
+        `)
+        .eq('id', remittance.id)
+        .single();
+
+      if (error) throw error;
+      setSelectedRemittance(data);
+      setShowEditModal(true);
+    } catch (error) {
+      console.error('Error fetching remittance data:', error);
+      toast.error('Failed to load remittance details');
+    }
   };
 
   const handleDownloadRemittance = (remittance: any) => {
