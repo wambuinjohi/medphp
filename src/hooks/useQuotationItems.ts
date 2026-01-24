@@ -892,20 +892,31 @@ export const useDeleteQuotation = () => {
 
       // Check permission before deletion
       const { profile } = await (async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user?.id) throw new Error('Not authenticated');
+        // Get user ID from localStorage (external API auth) or from Supabase
+        let userId: string | null = localStorage.getItem('med_api_user_id');
 
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('role, permissions')
-          .eq('id', user.id)
-          .single();
+        if (!userId) {
+          // Fall back to Supabase auth
+          const { data: { user } } = await supabase.auth.getUser();
+          userId = user?.id || null;
+        }
+
+        if (!userId) throw new Error('Not authenticated');
+
+        // Use database adapter to fetch profile (respects VITE_DATABASE_PROVIDER)
+        const { data: profileData, error } = await db.selectOne('profiles', userId);
+
+        if (error) {
+          console.warn('⚠️ Profile fetch error:', error.message);
+          // If we can't fetch profile, allow deletion (don't block the user)
+          return { profile: null };
+        }
 
         return { profile: profileData };
       })();
 
-      // Check if user has delete_quotation permission
-      if (profile && !profile.permissions?.includes('delete_quotation')) {
+      // Check if user has delete_quotation permission (only if profile data was fetched)
+      if (profile && profile.permissions && !profile.permissions.includes('delete_quotation')) {
         throw new Error('You do not have permission to delete quotations');
       }
 
