@@ -49,35 +49,46 @@ export const useInvoicesFixed = (companyId?: string) => {
 
         // Try to fetch customer data
         const customerIds = [...new Set(invoices.map((invoice: any) => invoice.customer_id).filter(id => id && typeof id === 'string'))];
+        console.log('[useInvoicesFixed] Unique customer IDs found:', customerIds.length, customerIds);
+
         let customerMap = new Map();
-        
+
         if (customerIds.length > 0) {
           try {
             // Fetch customers
             for (const customerId of customerIds) {
               const { data: customer, error: customerError } = await apiClient.selectOne('customers', customerId);
+              console.log(`[useInvoicesFixed] Fetched customer ${customerId} - Error:`, customerError, 'Data:', customer);
               if (!customerError && customer) {
                 customerMap.set(customerId, customer);
               }
             }
+            console.log('[useInvoicesFixed] Customer map size after fetching:', customerMap.size);
           } catch (e) {
-            console.warn('Could not fetch customer details (non-fatal):', e);
+            console.warn('[useInvoicesFixed] Could not fetch customer details (non-fatal):', e);
           }
         }
 
         // Try to fetch invoice items
         let itemsMap = new Map();
         let invoiceIds = invoices.map((inv: any) => inv.id);
-        
+        console.log('[useInvoicesFixed] Invoice IDs to fetch items for:', invoiceIds.length, invoiceIds.slice(0, 5));
+
         if (invoiceIds.length > 0) {
           try {
             // Fetch invoice items for all invoices
+            console.log('[useInvoicesFixed] Fetching invoice_items with filter: {}');
             const { data: allItems, error: itemsError } = await apiClient.select('invoice_items', {});
-            
+
+            console.log('[useInvoicesFixed] All items API response - Error:', itemsError);
+            console.log('[useInvoicesFixed] All items API response - Count:', Array.isArray(allItems) ? allItems.length : 'Not an array');
+            console.log('[useInvoicesFixed] All items sample:', Array.isArray(allItems) ? allItems.slice(0, 3) : allItems);
+
             if (!itemsError && Array.isArray(allItems)) {
               // Filter items for our invoices
               const relevantItems = allItems.filter((item: any) => invoiceIds.includes(item.invoice_id));
-              
+              console.log('[useInvoicesFixed] Filtered relevant items count:', relevantItems.length);
+
               // Group by invoice_id
               relevantItems.forEach((item: any) => {
                 if (!itemsMap.has(item.invoice_id)) {
@@ -85,9 +96,10 @@ export const useInvoicesFixed = (companyId?: string) => {
                 }
                 itemsMap.get(item.invoice_id).push(item);
               });
+              console.log('[useInvoicesFixed] Items map size (invoices with items):', itemsMap.size);
             }
           } catch (e) {
-            console.warn('Could not fetch invoice items (non-fatal):', e);
+            console.warn('[useInvoicesFixed] Could not fetch invoice items (non-fatal):', e);
           }
         }
 
@@ -102,7 +114,8 @@ export const useInvoicesFixed = (companyId?: string) => {
           invoice_items: itemsMap.get(invoice.id) || []
         }));
 
-        console.log('Invoices enriched successfully:', enrichedInvoices.length);
+        console.log('[useInvoicesFixed] Enrichment complete - Invoices with items:', enrichedInvoices.filter((inv: any) => inv.invoice_items.length > 0).length);
+        console.log('[useInvoicesFixed] Final enriched invoices sample:', enrichedInvoices.slice(0, 2));
         return enrichedInvoices;
 
       } catch (error) {
