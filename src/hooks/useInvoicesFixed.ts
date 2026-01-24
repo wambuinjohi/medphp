@@ -10,63 +10,85 @@ export const useInvoicesFixed = (companyId?: string) => {
   return useQuery({
     queryKey: ['invoices_fixed', companyId],
     queryFn: async () => {
-      if (!companyId) return [];
+      if (!companyId) {
+        console.log('[useInvoicesFixed] No companyId provided, returning empty array');
+        return [];
+      }
 
       try {
-        console.log('Fetching invoices for company:', companyId);
+        console.log('[useInvoicesFixed] Starting fetch for companyId:', companyId);
 
         // Fetch invoices using the external API adapter
+        console.log('[useInvoicesFixed] Calling apiClient.select("invoices", {company_id:', companyId, '})');
         const { data: invoices, error: invoicesError } = await apiClient.select('invoices', {
           company_id: companyId
         });
 
+        console.log('[useInvoicesFixed] API response - Error:', invoicesError);
+        console.log('[useInvoicesFixed] API response - Data type:', typeof invoices, 'Is Array:', Array.isArray(invoices));
+        console.log('[useInvoicesFixed] API response - Data length:', Array.isArray(invoices) ? invoices.length : 'N/A');
+        console.log('[useInvoicesFixed] Raw API response:', invoices);
+
         if (invoicesError) {
-          console.error('Error fetching invoices:', invoicesError);
+          console.error('[useInvoicesFixed] Error fetching invoices:', invoicesError);
           throw new Error(`Failed to fetch invoices: ${invoicesError.message}`);
         }
 
         if (!Array.isArray(invoices)) {
-          console.log('Invoices fetched successfully (no data)');
+          console.log('[useInvoicesFixed] Invoices is not an array, returning empty');
           return [];
         }
 
         if (!invoices || invoices.length === 0) {
+          console.log('[useInvoicesFixed] No invoices returned from API');
           return [];
         }
 
-        console.log('Invoices fetched successfully:', invoices?.length || 0);
+        console.log('[useInvoicesFixed] Invoices fetched successfully, count:', invoices.length);
+        console.log('[useInvoicesFixed] First invoice sample:', invoices[0]);
 
         // Try to fetch customer data
         const customerIds = [...new Set(invoices.map((invoice: any) => invoice.customer_id).filter(id => id && typeof id === 'string'))];
+        console.log('[useInvoicesFixed] Unique customer IDs found:', customerIds.length, customerIds);
+
         let customerMap = new Map();
-        
+
         if (customerIds.length > 0) {
           try {
             // Fetch customers
             for (const customerId of customerIds) {
               const { data: customer, error: customerError } = await apiClient.selectOne('customers', customerId);
+              console.log(`[useInvoicesFixed] Fetched customer ${customerId} - Error:`, customerError, 'Data:', customer);
               if (!customerError && customer) {
                 customerMap.set(customerId, customer);
               }
             }
+            console.log('[useInvoicesFixed] Customer map size after fetching:', customerMap.size);
           } catch (e) {
-            console.warn('Could not fetch customer details (non-fatal):', e);
+            console.warn('[useInvoicesFixed] Could not fetch customer details (non-fatal):', e);
           }
         }
 
         // Try to fetch invoice items
         let itemsMap = new Map();
         let invoiceIds = invoices.map((inv: any) => inv.id);
-        
+        console.log('[useInvoicesFixed] Invoice IDs to fetch items for:', invoiceIds.length, invoiceIds.slice(0, 5));
+
         if (invoiceIds.length > 0) {
           try {
             // Fetch invoice items for all invoices
+            console.log('[useInvoicesFixed] Fetching invoice_items with filter: {}');
             const { data: allItems, error: itemsError } = await apiClient.select('invoice_items', {});
-            
+
+            console.log('[useInvoicesFixed] All items API response - Error:', itemsError);
+            console.log('[useInvoicesFixed] All items API response - Count:', Array.isArray(allItems) ? allItems.length : 'Not an array');
+            console.log('[useInvoicesFixed] All items sample:', Array.isArray(allItems) ? allItems.slice(0, 3) : allItems);
+
             if (!itemsError && Array.isArray(allItems)) {
               // Filter items for our invoices
               const relevantItems = allItems.filter((item: any) => invoiceIds.includes(item.invoice_id));
-              
+              console.log('[useInvoicesFixed] Filtered relevant items count:', relevantItems.length);
+
               // Group by invoice_id
               relevantItems.forEach((item: any) => {
                 if (!itemsMap.has(item.invoice_id)) {
@@ -74,9 +96,10 @@ export const useInvoicesFixed = (companyId?: string) => {
                 }
                 itemsMap.get(item.invoice_id).push(item);
               });
+              console.log('[useInvoicesFixed] Items map size (invoices with items):', itemsMap.size);
             }
           } catch (e) {
-            console.warn('Could not fetch invoice items (non-fatal):', e);
+            console.warn('[useInvoicesFixed] Could not fetch invoice items (non-fatal):', e);
           }
         }
 
@@ -91,11 +114,17 @@ export const useInvoicesFixed = (companyId?: string) => {
           invoice_items: itemsMap.get(invoice.id) || []
         }));
 
-        console.log('Invoices enriched successfully:', enrichedInvoices.length);
+        console.log('[useInvoicesFixed] Enrichment complete - Invoices with items:', enrichedInvoices.filter((inv: any) => inv.invoice_items.length > 0).length);
+        console.log('[useInvoicesFixed] Final enriched invoices sample:', enrichedInvoices.slice(0, 2));
         return enrichedInvoices;
 
       } catch (error) {
-        console.error('Error in useInvoicesFixed:', error);
+        console.error('[useInvoicesFixed] Fatal error in useInvoicesFixed:', error);
+        console.error('[useInvoicesFixed] Error details:', {
+          message: (error as any)?.message,
+          stack: (error as any)?.stack,
+          error
+        });
         throw error;
       }
     },

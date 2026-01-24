@@ -124,9 +124,49 @@ export default function Quotations() {
     setShowViewModal(true);
   };
 
-  const handleEditQuotation = (quotation: Quotation) => {
-    setSelectedQuotation(quotation);
-    setShowEditModal(true);
+  const handleEditQuotation = async (quotation: Quotation) => {
+    try {
+      setIsLoadingConversionData(true);
+      // Fetch full quotation with items and product details
+      const { data, error } = await supabase
+        .from('quotations')
+        .select(`
+          *,
+          customers (
+            id,
+            name,
+            email,
+            phone,
+            address
+          ),
+          quotation_items (
+            id,
+            product_id,
+            products (
+              name
+            ),
+            description,
+            quantity,
+            unit_price,
+            discount_percentage,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive,
+            line_total
+          )
+        `)
+        .eq('id', quotation.id)
+        .single();
+
+      if (error) throw error;
+      setSelectedQuotation(data as Quotation);
+      setShowEditModal(true);
+    } catch (error) {
+      console.error('Error fetching quotation data:', error);
+      toast.error('Failed to load quotation details');
+    } finally {
+      setIsLoadingConversionData(false);
+    }
   };
 
   const handleEditSuccess = () => {

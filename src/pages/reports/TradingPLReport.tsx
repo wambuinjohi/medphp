@@ -62,6 +62,8 @@ export default function TradingPLReport() {
   const { can: canViewReports, loading: permissionsLoading } = usePermissions();
   const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useInvoices(companyId);
 
+  console.log('[TradingPLReport] Component mounted/updated - companyId:', companyId, 'invoices loading:', invoicesLoading, 'invoices count:', invoices?.length);
+
   const isLoading = invoicesLoading;
   const hasError = invoicesError;
 
@@ -139,22 +141,36 @@ export default function TradingPLReport() {
   };
 
   const metrics = useMemo(() => {
-    if (!invoices) return null;
+    console.log('[TradingPLReport] Computing metrics - Invoices available:', !!invoices, 'Count:', invoices?.length);
+    console.log('[TradingPLReport] Invoices sample:', invoices?.slice(0, 2));
+    if (!invoices) {
+      console.log('[TradingPLReport] No invoices, returning null metrics');
+      return null;
+    }
     const { start, end } = getDateRange();
     end.setHours(23, 59, 59, 999);
-    return calculateTradingPLMetrics(invoices, start, end);
+    console.log('[TradingPLReport] Computing metrics for date range:', start, 'to', end);
+    const calculatedMetrics = calculateTradingPLMetrics(invoices, start, end);
+    console.log('[TradingPLReport] Calculated metrics:', calculatedMetrics);
+    return calculatedMetrics;
   }, [invoices, dateRange, startDate, endDate]);
 
   const productPerformance = useMemo(() => {
+    console.log('[TradingPLReport] Computing product performance - Invoices:', invoices?.length);
     if (!invoices) return [];
     const { start, end } = getDateRange();
     end.setHours(23, 59, 59, 999);
-    return calculateProductPerformance(invoices, start, end);
+    const performance = calculateProductPerformance(invoices, start, end);
+    console.log('[TradingPLReport] Product performance calculated, count:', performance.length);
+    return performance;
   }, [invoices, dateRange, startDate, endDate]);
 
   const monthlySalesData = useMemo(() => {
+    console.log('[TradingPLReport] Computing monthly sales data');
     if (!invoices) return [];
-    return calculateMonthlySalesData(invoices);
+    const data = calculateMonthlySalesData(invoices);
+    console.log('[TradingPLReport] Monthly sales data calculated, months:', data.length);
+    return data;
   }, [invoices]);
 
   const handleExport = () => {

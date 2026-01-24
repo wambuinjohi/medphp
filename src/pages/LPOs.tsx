@@ -42,6 +42,7 @@ import { DeleteLPOModal } from '@/components/lpo/DeleteLPOModal';
 import { DatabaseAuditPanel } from '@/components/DatabaseAuditPanel';
 import { DirectForceMigration } from '@/components/DirectForceMigration';
 import { LPOCustomerSupplierAudit } from '@/components/LPOCustomerSupplierAudit';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function LPOs() {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -104,9 +105,46 @@ export default function LPOs() {
     setShowViewModal(true);
   };
 
-  const handleEdit = (lpo: any) => {
-    setSelectedLPO(lpo);
-    setShowEditModal(true);
+  const handleEdit = async (lpo: any) => {
+    try {
+      // Fetch full LPO with items and product details
+      const { data, error } = await supabase
+        .from('lpos')
+        .select(`
+          *,
+          suppliers (
+            id,
+            name,
+            email,
+            phone,
+            address
+          ),
+          lpo_items (
+            id,
+            product_id,
+            products (
+              name
+            ),
+            description,
+            quantity,
+            unit_price,
+            discount_percentage,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive,
+            line_total
+          )
+        `)
+        .eq('id', lpo.id)
+        .single();
+
+      if (error) throw error;
+      setSelectedLPO(data);
+      setShowEditModal(true);
+    } catch (error) {
+      console.error('Error fetching LPO data:', error);
+      toast.error('Failed to load LPO details');
+    }
   };
 
   const handleDownloadPDF = async (lpo: any) => {
