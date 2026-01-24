@@ -215,9 +215,46 @@ export default function Invoices() {
     setShowViewModal(true);
   };
 
-  const handleEditInvoice = (invoice: Invoice) => {
-    setSelectedInvoice(invoice);
-    setShowEditModal(true);
+  const handleEditInvoice = async (invoice: Invoice) => {
+    try {
+      // Fetch full invoice with items and product details
+      const { data, error } = await supabase
+        .from('invoices')
+        .select(`
+          *,
+          customers (
+            id,
+            name,
+            email,
+            phone,
+            address
+          ),
+          invoice_items (
+            id,
+            product_id,
+            products (
+              name
+            ),
+            description,
+            quantity,
+            unit_price,
+            discount_percentage,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive,
+            line_total
+          )
+        `)
+        .eq('id', invoice.id)
+        .single();
+
+      if (error) throw error;
+      setSelectedInvoice(data as Invoice);
+      setShowEditModal(true);
+    } catch (error) {
+      console.error('Error fetching invoice data:', error);
+      toast.error('Failed to load invoice details');
+    }
   };
 
   const handleDownloadInvoice = async (invoice: Invoice) => {
