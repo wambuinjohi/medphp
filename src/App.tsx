@@ -48,6 +48,7 @@ import DatabaseManagementAdmin from "./pages/DatabaseManagementAdmin";
 import { APIDiagnosticsPage } from "./pages/APIDiagnosticsPage";
 import PaymentMethods from "./pages/settings/PaymentMethods";
 import Login from "./pages/Login";
+import ImageManagement from "./pages/admin/ImageManagement";
 
 const App = () => {
 
@@ -217,6 +218,15 @@ const App = () => {
                   element={
                     <ProtectedRoute requireAuth={true} requiredRole="admin">
                       <DatabaseManagementAdmin />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/app/admin/images"
+                  element={
+                    <ProtectedRoute requireAuth={true} requiredRole="admin">
+                      <ImageManagement />
                     </ProtectedRoute>
                   }
                 />

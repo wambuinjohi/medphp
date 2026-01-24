@@ -22,7 +22,9 @@ import {
   Database,
   TrendingUp,
   Banknote,
-  TrendingDown
+  TrendingDown,
+  Image as ImageIcon,
+  LogOut
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -120,6 +122,16 @@ const sidebarItems: SidebarItem[] = [
       { title: 'User Management', icon: Users, href: '/app/settings/users', allowedRoles: ['admin'] },
       { title: 'Payment Methods', icon: Banknote, href: '/app/settings/payment-methods', allowedRoles: ['admin'] },
       { title: 'Database & Roles', icon: Database, href: '/app/settings/database-roles', allowedRoles: ['admin'] }
+    ]
+  },
+  {
+    title: 'Admin',
+    icon: LogOut,
+    allowedRoles: ['admin'],
+    children: [
+      { title: 'Image Management', icon: ImageIcon, href: '/app/admin/images', allowedRoles: ['admin'] },
+      { title: 'Audit Logs', icon: FileText, href: '/app/admin/audit-logs', allowedRoles: ['admin'] },
+      { title: 'Database', icon: Database, href: '/app/admin/database', allowedRoles: ['admin'] }
     ]
   }
 ];
