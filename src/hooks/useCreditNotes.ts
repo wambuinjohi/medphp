@@ -248,26 +248,35 @@ export function useDeleteCreditNote() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      const db = getDatabase();
+
       // Check permission before deletion
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.id) throw new Error('Not authenticated');
+      // Get user ID from localStorage (external API auth) or from Supabase
+      let userId: string | null = localStorage.getItem('med_api_user_id');
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('company_id, role')
-        .eq('id', user.id)
-        .single();
+      if (!userId) {
+        // Fall back to Supabase auth
+        const { data: { user } } = await supabase.auth.getUser();
+        userId = user?.id || null;
+      }
 
-      if (!profileData) throw new Error('User profile not found');
+      if (!userId) throw new Error('Not authenticated');
 
-      const { data: roleData } = await supabase
-        .from('roles')
-        .select('permissions')
-        .eq('company_id', profileData.company_id)
-        .eq('name', profileData.role)
-        .single();
+      // Use database adapter to fetch profile (respects VITE_DATABASE_PROVIDER)
+      const { data: profileData, error: profileError } = await db.selectOne('profiles', userId);
 
-      if (!roleData?.permissions?.includes('delete_credit_note')) {
+      if (profileError || !profileData) {
+        console.warn('⚠️ Profile fetch error:', profileError?.message);
+        throw new Error('Could not verify permissions for credit note deletion');
+      }
+
+      // Check if user has delete_credit_note permission
+      if (profileData.permissions && !profileData.permissions.includes('delete_credit_note')) {
+        throw new Error('You do not have permission to delete credit notes');
+      }
+
+      // Fallback to role-based check if permissions array not available
+      if (!profileData.permissions && profileData.role !== 'admin') {
         throw new Error('You do not have permission to delete credit notes');
       }
 
