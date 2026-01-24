@@ -3,7 +3,6 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { AuthErrorBoundary } from '@/components/auth/AuthErrorBoundary';
-import { AuthStatusIndicator } from '@/components/auth/AuthStatusIndicator';
 import { enableResizeObserverErrorSuppression } from '@/utils/resizeObserverErrorHandler';
 import { initializeDatabase } from '@/integrations/database';
 import App from './App.tsx'
