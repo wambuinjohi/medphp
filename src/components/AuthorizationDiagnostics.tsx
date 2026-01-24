@@ -59,7 +59,8 @@ export function AuthorizationDiagnostics() {
         return;
       }
 
-      const response = await fetch('/api?action=diagnose_authorization', {
+      const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+      const response = await fetch(`${apiUrl}?action=diagnose_authorization`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

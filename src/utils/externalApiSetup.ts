@@ -32,9 +32,8 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
   const adminEmail = email || 'admin@mail.com';
   const adminPassword = password || 'Pass123';
 
-  // Determine if we should use the proxy (for default API) or direct URL (for custom APIs)
-  const isDefaultApi = !apiUrl || apiUrl.includes('med.wayrus.co.ke') || apiUrl === import.meta.env.VITE_EXTERNAL_API_URL;
-  const fetchUrl = isDefaultApi ? '/api' : apiUrl.replace(/\/api\.php$/, '') + '/api.php';
+  // Always use the direct URL (no proxy) for consistency across all environments
+  const fetchUrl = apiUrl.includes('/api.php') ? apiUrl : apiUrl + '/api.php';
 
   try {
     // Step 1: Test API connectivity
@@ -173,9 +172,8 @@ export async function checkAdminExists(options: SetupOptions = {}): Promise<bool
   const email = options.email || 'admin@mail.com';
   const password = options.password || 'Pass123';
 
-  // Use proxy for default API, direct URL for custom APIs
-  const isDefaultApi = !apiUrl || apiUrl.includes('med.wayrus.co.ke') || apiUrl === import.meta.env.VITE_EXTERNAL_API_URL;
-  const fetchUrl = isDefaultApi ? '/api' : apiUrl.replace(/\/api\.php$/, '') + '/api.php';
+  // Always use the direct URL (no proxy) for consistency across all environments
+  const fetchUrl = apiUrl.includes('/api.php') ? apiUrl : apiUrl + '/api.php';
 
   try {
     const response = await fetch(`${fetchUrl}?action=login`, {
@@ -210,9 +208,8 @@ export async function createUserViaAPI(
     options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
   const { onProgress } = options;
 
-  // Use proxy for default API, direct URL for custom APIs
-  const isDefaultApi = !apiUrl || apiUrl.includes('med.wayrus.co.ke') || apiUrl === import.meta.env.VITE_EXTERNAL_API_URL;
-  const fetchUrl = isDefaultApi ? '/api' : apiUrl.replace(/\/api\.php$/, '') + '/api.php';
+  // Always use the direct URL (no proxy) for consistency across all environments
+  const fetchUrl = apiUrl.includes('/api.php') ? apiUrl : apiUrl + '/api.php';
 
   try {
     onProgress?.(`Creating user: ${email}`);
@@ -261,9 +258,8 @@ export async function getDatabaseInfo(options: SetupOptions = {}): Promise<any> 
   const apiUrl =
     options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
 
-  // Use proxy for default API, direct URL for custom APIs
-  const isDefaultApi = !apiUrl || apiUrl.includes('med.wayrus.co.ke') || apiUrl === import.meta.env.VITE_EXTERNAL_API_URL;
-  const fetchUrl = isDefaultApi ? '/api' : apiUrl.replace(/\/api\.php$/, '') + '/api.php';
+  // Always use the direct URL (no proxy) for consistency across all environments
+  const fetchUrl = apiUrl.includes('/api.php') ? apiUrl : apiUrl + '/api.php';
 
   try {
     // Try to read users table to verify connection

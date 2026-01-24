@@ -22,9 +22,8 @@ class ExternalAPIAuthHandler {
   constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
     this.apiUrl = apiUrl;
 
-    // Determine if we should use proxy (for default API) or direct URL (for custom APIs)
-    const isDefaultApi = !apiUrl || apiUrl.includes('med.wayrus.co.ke') || apiUrl === import.meta.env.VITE_EXTERNAL_API_URL;
-    this.fetchUrl = isDefaultApi ? '/api' : apiUrl.replace(/\/api\.php$/, '') + '/api.php';
+    // Always use the direct URL (no proxy) for consistency across all environments
+    this.fetchUrl = apiUrl.includes('/api.php') ? apiUrl : apiUrl + '/api.php';
   }
 
   /**
