@@ -96,9 +96,46 @@ export default function Proforma() {
     setShowViewModal(true);
   };
 
-  const handleEdit = (proforma: ProformaWithItems) => {
-    setSelectedProforma(proforma);
-    setShowEditModal(true);
+  const handleEdit = async (proforma: ProformaWithItems) => {
+    try {
+      // Fetch full proforma with items and product details
+      const { data, error } = await supabase
+        .from('proformas')
+        .select(`
+          *,
+          customers (
+            id,
+            name,
+            email,
+            phone,
+            address
+          ),
+          proforma_items (
+            id,
+            product_id,
+            products (
+              name
+            ),
+            description,
+            quantity,
+            unit_price,
+            discount_percentage,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive,
+            line_total
+          )
+        `)
+        .eq('id', proforma.id)
+        .single();
+
+      if (error) throw error;
+      setSelectedProforma(data as ProformaWithItems);
+      setShowEditModal(true);
+    } catch (error) {
+      console.error('Error fetching proforma data:', error);
+      toast.error('Failed to load proforma details');
+    }
   };
 
   const handleDownloadPDF = async (proforma: ProformaWithItems) => {
