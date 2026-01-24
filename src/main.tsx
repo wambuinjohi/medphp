@@ -42,7 +42,6 @@ root.render(
   <QueryClientProvider client={queryClient}>
     <AuthErrorBoundary>
       <AuthProvider>
-        <AuthStatusIndicator />
         <BrowserRouter>
           <App />
         </BrowserRouter>
