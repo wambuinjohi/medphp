@@ -32,6 +32,7 @@ import {
 import { toast } from 'sonner';
 import { useCreateCustomer, useCustomers } from '@/hooks/useDatabase';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { formatError } from '@/lib/utils';
 
 interface CreateCustomerModalProps {
   open: boolean;
