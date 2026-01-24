@@ -64,6 +64,9 @@ export default function TransportPLReport() {
   // Fetch transport finance data
   const { data: transportData, isLoading: transportLoading } = useTransportFinance(companyId);
 
+  console.log('[TransportPLReport] Component mounted/updated - companyId:', companyId, 'transport loading:', transportLoading, 'transport data count:', transportData?.length);
+  console.log('[TransportPLReport] Transport data sample:', transportData?.slice(0, 2));
+
   const isLoading = transportLoading;
   const hasError = false;
 
