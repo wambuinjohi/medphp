@@ -119,7 +119,12 @@ export const useInvoicesFixed = (companyId?: string) => {
         return enrichedInvoices;
 
       } catch (error) {
-        console.error('Error in useInvoicesFixed:', error);
+        console.error('[useInvoicesFixed] Fatal error in useInvoicesFixed:', error);
+        console.error('[useInvoicesFixed] Error details:', {
+          message: (error as any)?.message,
+          stack: (error as any)?.stack,
+          error
+        });
         throw error;
       }
     },
