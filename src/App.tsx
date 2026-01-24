@@ -222,6 +222,15 @@ const App = () => {
                   }
                 />
 
+                <Route
+                  path="/app/admin/images"
+                  element={
+                    <ProtectedRoute requireAuth={true} requiredRole="admin">
+                      <ImageManagement />
+                    </ProtectedRoute>
+                  }
+                />
+
                 {/* Procurement & Inventory */}
                 <Route
                   path="/app/lpos"
