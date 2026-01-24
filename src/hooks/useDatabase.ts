@@ -76,9 +76,12 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
           setLoadingTimeout(false);
         }
 
+        console.log(`[useSelect] Starting fetch from table: ${table}`, 'Filter:', filter);
+
         // Set a 12-second timeout for the request (longer than API's 10s timeout)
         timeoutHandle = setTimeout(() => {
           if (isMounted) {
+            console.warn(`[useSelect] Timeout on table ${table} - no response after 12s`);
             setLoadingTimeout(true);
             setIsLoading(false);
           }
@@ -87,6 +90,15 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
         const result = await db.select<T>(table, filter);
 
         if (timeoutHandle) clearTimeout(timeoutHandle);
+
+        console.log(`[useSelect] Response from table: ${table}`, {
+          hasError: !!result.error,
+          errorMessage: result.error?.message,
+          dataType: typeof result.data,
+          isArray: Array.isArray(result.data),
+          dataLength: Array.isArray(result.data) ? result.data.length : 'N/A'
+        });
+        console.log(`[useSelect] Data sample from ${table}:`, Array.isArray(result.data) ? result.data.slice(0, 2) : result.data);
 
         if (isMounted) {
           setData(result.data);
@@ -102,7 +114,11 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
         if (timeoutHandle) clearTimeout(timeoutHandle);
 
         const error = err as Error;
-        console.error(`Error fetching from ${table}:`, error);
+        console.error(`[useSelect] Error fetching from ${table}:`, error);
+        console.error(`[useSelect] Error details:`, {
+          message: error.message,
+          stack: error.stack
+        });
 
         if (isMounted) {
           setError(error);
@@ -112,6 +128,7 @@ export function useSelect<T>(table: string, filter?: Record<string, any>) {
       } finally {
         if (isMounted) {
           setIsLoading(false);
+          console.log(`[useSelect] Fetch complete for table: ${table}, final state - loading: false`);
         }
       }
     }
