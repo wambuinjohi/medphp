@@ -16,7 +16,6 @@ import type {
 export class ExternalAPIAdapter implements IDatabase {
   private apiBase: string;
   private externalApiUrl: string;
-  private isProxyMode: boolean = true; // Always use proxy mode
 
   constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
     // Always use the direct external API URL (no proxy) for consistency across all environments
