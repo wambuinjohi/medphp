@@ -17,7 +17,6 @@ export function Layout({ children }: LayoutProps) {
   const [loadingStartTime] = useState(Date.now());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { isConnected, retry } = useAPIConnectivity();
 
   // Apply company branding colors globally
   useCompanyBranding();
