@@ -142,6 +142,44 @@ export default function CreditNotes() {
     toast.success('Filters cleared');
   };
 
+  const handleEditCreditNote = async (creditNote: CreditNote) => {
+    try {
+      // Fetch full credit note with items and customer details
+      const { data, error } = await supabase
+        .from('credit_notes')
+        .select(`
+          *,
+          customers!customer_id (
+            name,
+            email,
+            phone,
+            customer_code
+          ),
+          credit_note_items (
+            *,
+            products!product_id (
+              name,
+              product_code,
+              unit_of_measure
+            )
+          ),
+          invoices!invoice_id (
+            invoice_number,
+            total_amount
+          )
+        `)
+        .eq('id', creditNote.id)
+        .single();
+
+      if (error) throw error;
+      setSelectedCreditNote(data);
+      setShowEditModal(true);
+    } catch (error) {
+      console.error('Error fetching credit note data:', error);
+      toast.error('Failed to load credit note details');
+    }
+  };
+
   // Check if we have the credit_notes table available
   const hasCreditNotesTable = !error || !(
     error.message.includes('relation "credit_notes" does not exist') ||
@@ -458,10 +496,7 @@ export default function CreditNotes() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => {
-                              setSelectedCreditNote(creditNote);
-                              setShowEditModal(true);
-                            }}
+                            onClick={() => handleEditCreditNote(creditNote)}
                             title="Edit credit note"
                           >
                             <Edit className="h-4 w-4" />
