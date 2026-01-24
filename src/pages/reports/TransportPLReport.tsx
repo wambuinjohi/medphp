@@ -144,22 +144,36 @@ export default function TransportPLReport() {
   };
 
   const metrics = useMemo(() => {
-    if (!transportData) return null;
+    console.log('[TransportPLReport] Computing metrics - Transport data available:', !!transportData, 'Count:', transportData?.length);
+    console.log('[TransportPLReport] Transport data sample:', transportData?.slice(0, 2));
+    if (!transportData) {
+      console.log('[TransportPLReport] No transport data, returning null metrics');
+      return null;
+    }
     const { start, end } = getDateRange();
     end.setHours(23, 59, 59, 999);
-    return calculateTransportPLMetrics(transportData, start, end);
+    console.log('[TransportPLReport] Computing metrics for date range:', start, 'to', end);
+    const calculatedMetrics = calculateTransportPLMetrics(transportData, start, end);
+    console.log('[TransportPLReport] Calculated metrics:', calculatedMetrics);
+    return calculatedMetrics;
   }, [transportData, dateRange, startDate, endDate]);
 
   const vehiclePerformance = useMemo(() => {
+    console.log('[TransportPLReport] Computing vehicle performance - Transport data:', transportData?.length);
     if (!transportData) return [];
     const { start, end } = getDateRange();
     end.setHours(23, 59, 59, 999);
-    return calculateVehiclePerformance(transportData, start, end);
+    const performance = calculateVehiclePerformance(transportData, start, end);
+    console.log('[TransportPLReport] Vehicle performance calculated, count:', performance.length);
+    return performance;
   }, [transportData, dateRange, startDate, endDate]);
 
   const monthlyData = useMemo(() => {
+    console.log('[TransportPLReport] Computing monthly transport data');
     if (!transportData) return [];
-    return calculateMonthlyTransportData(transportData);
+    const data = calculateMonthlyTransportData(transportData);
+    console.log('[TransportPLReport] Monthly transport data calculated, months:', data.length);
+    return data;
   }, [transportData]);
 
   const handleExport = () => {
