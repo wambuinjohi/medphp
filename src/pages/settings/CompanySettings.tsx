@@ -140,7 +140,8 @@ export default function CompanySettings() {
         fiscal_year_start: currentCompany.fiscal_year_start || 1,
         logo_url: currentCompany.logo_url || '',
         primary_color: currentCompany.primary_color || '#FF8C42',
-        pdf_template: currentCompany.pdf_template || 'default'
+        pdf_template: currentCompany.pdf_template || 'default',
+        website: currentCompany.website || ''
       });
     }
   }, [currentCompany]);
