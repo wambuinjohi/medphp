@@ -7,7 +7,6 @@ import { EnhancedLogin } from '@/components/auth/EnhancedLogin';
 import { AdminInventoryPermissionFix } from '@/components/AdminInventoryPermissionFix';
 import { ensureAuditLogSchema } from '@/utils/auditLogger';
 import { useCompanyBranding } from '@/hooks/useCompanyBranding';
-import { useAPIConnectivity } from '@/hooks/useAPIConnectivity';
 
 interface LayoutProps {
   children: ReactNode;
