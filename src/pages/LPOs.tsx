@@ -42,6 +42,7 @@ import { DeleteLPOModal } from '@/components/lpo/DeleteLPOModal';
 import { DatabaseAuditPanel } from '@/components/DatabaseAuditPanel';
 import { DirectForceMigration } from '@/components/DirectForceMigration';
 import { LPOCustomerSupplierAudit } from '@/components/LPOCustomerSupplierAudit';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function LPOs() {
   const [showCreateModal, setShowCreateModal] = useState(false);
