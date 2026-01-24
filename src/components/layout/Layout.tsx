@@ -5,7 +5,6 @@ import { Header } from './Header';
 import { useAuth } from '@/contexts/AuthContext';
 import { EnhancedLogin } from '@/components/auth/EnhancedLogin';
 import { AdminInventoryPermissionFix } from '@/components/AdminInventoryPermissionFix';
-import { APIUnavailableBanner } from '@/components/connectivity/APIUnavailableBanner';
 import { ensureAuditLogSchema } from '@/utils/auditLogger';
 import { useCompanyBranding } from '@/hooks/useCompanyBranding';
 import { useAPIConnectivity } from '@/hooks/useAPIConnectivity';
