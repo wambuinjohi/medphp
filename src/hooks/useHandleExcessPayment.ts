@@ -10,6 +10,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
+import { useCreateCreditBalance as useCreateCreditBalanceHook } from '@/hooks/useCustomerCreditBalances';
 
 export interface ExcessPaymentInput {
   receiptId: string;
