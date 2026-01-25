@@ -29,6 +29,8 @@ export interface ExcessPaymentResult {
 
 /**
  * Hook to create customer credit balance from excess payment
+ * NOTE: This is deprecated. Use useCustomerCreditBalances.useCreateCreditBalance instead.
+ * Kept for backwards compatibility during transition.
  */
 export const useCreateCreditBalance = () => {
   const queryClient = useQueryClient();
@@ -41,58 +43,29 @@ export const useCreateCreditBalance = () => {
 
       const db = getDatabase();
 
-      // Check if credit balance already exists for this customer
-      const existingBalances = await db.select('customer_credit_balances', {
+      // Create new credit balance with correct column names
+      const creditData = {
         company_id: input.companyId,
-        customer_id: input.customerId
-      });
+        customer_id: input.customerId,
+        credit_amount: input.excessAmount,
+        source_receipt_id: input.receiptId,
+        source_payment_id: input.paymentId,
+        status: 'available',
+        notes: `Created from excess payment on receipt ${input.receiptId}`
+      };
 
-      let creditBalance: any;
+      const insertResult = await db.insert('customer_credit_balances', creditData);
+      if (insertResult.error) throw insertResult.error;
 
-      if (existingBalances.error) {
-        throw existingBalances.error;
-      }
-
-      const existing = existingBalances.data && existingBalances.data.length > 0
-        ? existingBalances.data[0]
-        : null;
-
-      if (existing) {
-        // Update existing credit balance
-        const newBalance = (existing.balance || 0) + input.excessAmount;
-        const updateResult = await db.update('customer_credit_balances', existing.id, {
-          balance: newBalance,
-          source_payment_id: input.paymentId,
-          notes: `Added from receipt ${input.receiptId}`
-        });
-
-        if (updateResult.error) throw updateResult.error;
-
-        creditBalance = { ...existing, balance: newBalance };
-      } else {
-        // Create new credit balance
-        const insertResult = await db.insert('customer_credit_balances', {
-          company_id: input.companyId,
-          customer_id: input.customerId,
-          balance: input.excessAmount,
-          source_payment_id: input.paymentId,
-          notes: `Created from excess payment on receipt ${input.receiptId}`
-        });
-
-        if (insertResult.error) throw insertResult.error;
-
-        // Fetch created balance
-        const selectResult = await db.selectOne('customer_credit_balances', insertResult.id);
-        if (selectResult.error) throw selectResult.error;
-        creditBalance = selectResult.data;
-      }
-
-      return creditBalance;
+      // Fetch created balance
+      const selectResult = await db.selectOne('customer_credit_balances', insertResult.id);
+      if (selectResult.error) throw selectResult.error;
+      return selectResult.data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['customer_credit_balances'] });
       queryClient.invalidateQueries({ queryKey: ['customers'] });
-      toast.success(`Credit balance updated: ${data.balance} added`);
+      toast.success(`Credit balance updated: ${(data as any).credit_amount} added`);
     },
     onError: (error) => {
       const errorMessage = parseErrorMessageWithCodes(error, 'create credit balance');
