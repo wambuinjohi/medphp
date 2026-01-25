@@ -32,13 +32,12 @@ export const useGenerateReceiptNumber = () => {
  */
 export const useCreateReceipt = () => {
   const queryClient = useQueryClient();
-  const generateReceiptNumber = useGenerateReceiptNumber();
 
   return useMutation({
     mutationFn: async (input: ReceiptGenerationInput) => {
       const db = getDatabase();
 
-      // Generate receipt number
+      // Generate receipt number using centralized utility
       const receiptNumber = generateReceiptNumber(input.companyId);
       const receiptDate = new Date().toISOString().split('T')[0];
 
