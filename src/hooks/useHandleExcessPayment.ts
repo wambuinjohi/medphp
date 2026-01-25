@@ -121,8 +121,15 @@ export const useHandleExcessPayment = () => {
       try {
         switch (input.handling) {
           case 'credit_balance':
-            // Create or update customer credit balance
-            result.creditBalance = await createCreditBalance.mutateAsync(input);
+            // Create customer credit balance with correct parameter structure
+            result.creditBalance = await createCreditBalance.mutateAsync({
+              companyId: input.companyId,
+              customerId: input.customerId,
+              creditAmount: input.excessAmount,
+              sourceReceiptId: input.receiptId,
+              sourcePaymentId: input.paymentId,
+              notes: `Created from excess payment on receipt ${input.receiptId}`
+            });
             break;
 
           case 'change_note':
