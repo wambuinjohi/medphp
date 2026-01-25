@@ -52,6 +52,8 @@ CREATE TABLE IF NOT EXISTS receipts (
   INDEX idx_receipts_company_id (company_id),
   INDEX idx_receipts_payment_id (payment_id),
   INDEX idx_receipts_invoice_id (invoice_id),
+  INDEX idx_receipts_change_note_id (change_note_id),
+  INDEX idx_receipts_created_by (created_by),
   INDEX idx_receipts_receipt_number (receipt_number),
   INDEX idx_receipts_receipt_date (receipt_date),
   INDEX idx_receipts_receipt_type (receipt_type),
