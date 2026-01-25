@@ -1181,8 +1181,20 @@ export const useCreateDirectReceipt = () => {
       });
 
       if (allocationInsertResult.error) {
-        console.warn('Failed to create payment allocation:', allocationInsertResult.error);
+        const allocationError = allocationInsertResult.error;
+        console.error(
+          'Failed to create payment allocation',
+          {
+            paymentId: paymentData.id,
+            invoiceId: invoiceData.id,
+            amount: paymentAmount,
+            error: allocationError,
+            errorMessage: typeof allocationError === 'string' ? allocationError : (allocationError as any).message || JSON.stringify(allocationError)
+          }
+        );
         // Don't throw - payment and invoice were created successfully
+        // But alert user about allocation link failure
+        console.warn(`Warning: Payment allocation could not be created for invoice ${invoiceData.invoice_number}`);
       }
 
       return {
