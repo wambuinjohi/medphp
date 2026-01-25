@@ -144,7 +144,7 @@ const analyzeColumns = (items: DocumentData['items']) => {
   return columns;
 };
 
-export const generatePDF = (data: DocumentData) => {
+export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) => {
   // Use company details from data or fall back to defaults
   const company = data.company || DEFAULT_COMPANY;
 
@@ -174,12 +174,6 @@ export const generatePDF = (data: DocumentData) => {
       year: 'numeric'
     });
   };
-
-  // Create a new window with the document content
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) {
-    throw new Error('Could not open print window. Please allow popups.');
-  }
 
   const documentTitle = data.type === 'proforma' ? 'Proforma Invoice' :
                        data.type === 'delivery' ? 'Delivery Note' :
