@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
+import { generateReceiptNumber } from '@/utils/documentNumbering';
 
 export interface ReceiptGenerationInput {
   companyId: string;
@@ -19,14 +20,10 @@ export interface ReceiptGenerationInput {
 
 /**
  * Hook to generate receipt number in format REC-XXXXXXXXXX
- * Ensures uniqueness per company
+ * Uses centralized number generation utility
  */
 export const useGenerateReceiptNumber = () => {
-  return (companyId: string) => {
-    const timestamp = Date.now().toString();
-    const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
-    return `REC-${timestamp.slice(-6)}${randomPart}`;
-  };
+  return (companyId: string) => generateReceiptNumber(companyId);
 };
 
 /**
@@ -35,13 +32,12 @@ export const useGenerateReceiptNumber = () => {
  */
 export const useCreateReceipt = () => {
   const queryClient = useQueryClient();
-  const generateReceiptNumber = useGenerateReceiptNumber();
 
   return useMutation({
     mutationFn: async (input: ReceiptGenerationInput) => {
       const db = getDatabase();
 
-      // Generate receipt number
+      // Generate receipt number using centralized utility
       const receiptNumber = generateReceiptNumber(input.companyId);
       const receiptDate = new Date().toISOString().split('T')[0];
 

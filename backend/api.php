@@ -1746,6 +1746,215 @@ try {
         // Return the external API response as-is
         echo is_string($external_response) ? $external_response : json_encode($decoded_response);
     }
+    // Handle transaction-safe receipt creation
+    elseif ($action === "create_receipt_with_items_transaction") {
+        // Requires authorization for modifications
+        $auth = requireAuthForModification($action, 'receipts');
+
+        // Extract request parameters
+        $companyId = $json_body['company_id'] ?? $_POST['company_id'] ?? null;
+        $customerId = $json_body['customer_id'] ?? $_POST['customer_id'] ?? null;
+        $payment = $json_body['payment'] ?? $_POST['payment'] ?? [];
+        $invoiceData = $json_body['invoice'] ?? $_POST['invoice'] ?? [];
+        $items = $json_body['items'] ?? $_POST['items'] ?? [];
+
+        if (!$companyId || !$customerId) {
+            throw new Exception("Missing company_id or customer_id");
+        }
+
+        // Validate payment data
+        if (empty($payment) || !isset($payment['amount'])) {
+            throw new Exception("Missing or invalid payment data");
+        }
+
+        // Start transaction
+        if (!$conn->begin_transaction()) {
+            throw new Exception("Failed to start transaction");
+        }
+
+        try {
+            $paymentAmount = (float)$payment['amount'];
+            $paymentDate = $payment['payment_date'] ?? date('Y-m-d');
+            $invoiceAmount = 0;
+
+            // Calculate invoice amount from items
+            if (is_array($items) && count($items) > 0) {
+                foreach ($items as $item) {
+                    $itemQuantity = (float)($item['quantity'] ?? 0);
+                    $itemPrice = (float)($item['unit_price'] ?? 0);
+                    $itemTax = (float)($item['tax_amount'] ?? 0);
+                    $invoiceAmount += ($itemQuantity * $itemPrice) + $itemTax;
+                }
+            } else if (isset($invoiceData['total_amount'])) {
+                $invoiceAmount = (float)$invoiceData['total_amount'];
+            }
+
+            // Determine invoice status
+            $invoiceStatus = 'draft';
+            $paidAmount = 0;
+            $balanceDue = $invoiceAmount;
+
+            if ($paymentAmount >= $invoiceAmount) {
+                $invoiceStatus = 'paid';
+                $paidAmount = $invoiceAmount;
+                $balanceDue = 0;
+            } elseif ($paymentAmount > 0) {
+                $invoiceStatus = 'partial';
+                $paidAmount = $paymentAmount;
+                $balanceDue = $invoiceAmount - $paymentAmount;
+            }
+
+            // Generate invoice number
+            $invoiceNumber = $invoiceData['invoice_number'] ?? 'INV-' . time();
+
+            // Step 1: Create invoice
+            $companyId_e = escape($conn, $companyId);
+            $customerId_e = escape($conn, $customerId);
+            $invoiceNumber_e = escape($conn, $invoiceNumber);
+
+            $invoice_sql = "INSERT INTO `invoices` (
+                company_id, customer_id, invoice_number, invoice_date, due_date,
+                status, subtotal, tax_amount, total_amount, paid_amount, balance_due,
+                notes, created_by, created_at, updated_at
+            ) VALUES (
+                '$companyId_e', '$customerId_e', '$invoiceNumber_e', '$paymentDate', '$paymentDate',
+                '$invoiceStatus', '0', '0', '$invoiceAmount', '$paidAmount', '$balanceDue',
+                'Direct receipt', " . ($auth['id'] ? "'" . escape($conn, $auth['id']) . "'" : "NULL") . ",
+                NOW(), NOW()
+            )";
+
+            if (!$conn->query($invoice_sql)) {
+                throw new Exception("Failed to create invoice: " . $conn->error);
+            }
+
+            $invoiceId = $conn->insert_id;
+            if (!$invoiceId) {
+                throw new Exception("Failed to get invoice ID");
+            }
+
+            // Step 2: Create invoice items (if any)
+            if (is_array($items) && count($items) > 0) {
+                foreach ($items as $index => $item) {
+                    $itemDesc = escape($conn, $item['description'] ?? '');
+                    $itemQty = (float)($item['quantity'] ?? 0);
+                    $itemPrice = (float)($item['unit_price'] ?? 0);
+                    $itemTax = (float)($item['tax_amount'] ?? 0);
+                    $itemTaxPct = (float)($item['tax_percentage'] ?? 0);
+                    $itemLineTotal = ($itemQty * $itemPrice) + $itemTax;
+
+                    $item_sql = "INSERT INTO `invoice_items` (
+                        invoice_id, product_id, description, quantity, unit_price,
+                        tax_percentage, tax_amount, tax_inclusive, line_total, sort_order, created_at
+                    ) VALUES (
+                        '$invoiceId', NULL, '$itemDesc', '$itemQty', '$itemPrice',
+                        '$itemTaxPct', '$itemTax', 0, '$itemLineTotal', " . ($index + 1) . ", NOW()
+                    )";
+
+                    if (!$conn->query($item_sql)) {
+                        throw new Exception("Failed to create invoice item: " . $conn->error);
+                    }
+                }
+            }
+
+            // Step 3: Create payment
+            $paymentMethod = $payment['payment_method'] ?? 'cash';
+            $paymentNumber = $payment['payment_number'] ?? 'PAY-' . time();
+            $referenceNumber = $payment['reference_number'] ?? null;
+
+            $paymentMethod_e = escape($conn, $paymentMethod);
+            $paymentNumber_e = escape($conn, $paymentNumber);
+            $referenceNumber_e = $referenceNumber ? escape($conn, $referenceNumber) : null;
+
+            $payment_sql = "INSERT INTO `payments` (
+                company_id, invoice_id, payment_date, payment_method, amount,
+                payment_number, reference_number, created_by, created_at, updated_at
+            ) VALUES (
+                '$companyId_e', '$invoiceId', '$paymentDate', '$paymentMethod_e', '$paymentAmount',
+                '$paymentNumber_e', " . ($referenceNumber_e ? "'$referenceNumber_e'" : "NULL") . ",
+                " . ($auth['id'] ? "'" . escape($conn, $auth['id']) . "'" : "NULL") . ", NOW(), NOW()
+            )";
+
+            if (!$conn->query($payment_sql)) {
+                throw new Exception("Failed to create payment: " . $conn->error);
+            }
+
+            $paymentId = $conn->insert_id;
+            if (!$paymentId) {
+                throw new Exception("Failed to get payment ID");
+            }
+
+            // Step 4: Create payment allocation
+            $allocation_sql = "INSERT INTO `payment_allocations` (
+                payment_id, invoice_id, amount, created_at
+            ) VALUES (
+                '$paymentId', '$invoiceId', '$paymentAmount', NOW()
+            )";
+
+            if (!$conn->query($allocation_sql)) {
+                throw new Exception("Failed to create payment allocation: " . $conn->error);
+            }
+
+            $allocationId = $conn->insert_id;
+
+            // Step 5: Create receipt record
+            $receiptNumber = 'REC-' . substr((string)time(), -6) . strtoupper(substr(md5(uniqid()), 0, 6));
+            $receiptNumber_e = escape($conn, $receiptNumber);
+            $excessAmount = max(0, $paymentAmount - $invoiceAmount);
+
+            $receipt_sql = "INSERT INTO `receipts` (
+                company_id, payment_id, invoice_id, receipt_number, receipt_date,
+                receipt_type, total_amount, excess_amount, excess_handling, notes,
+                created_by, created_at, updated_at
+            ) VALUES (
+                '$companyId_e', '$paymentId', '$invoiceId', '$receiptNumber_e', '$paymentDate',
+                'direct_receipt', '$paymentAmount', '$excessAmount', 'pending', 'Direct receipt',
+                " . ($auth['id'] ? "'" . escape($conn, $auth['id']) . "'" : "NULL") . ", NOW(), NOW()
+            )";
+
+            if (!$conn->query($receipt_sql)) {
+                throw new Exception("Failed to create receipt: " . $conn->error);
+            }
+
+            $receiptId = $conn->insert_id;
+            if (!$receiptId) {
+                throw new Exception("Failed to get receipt ID");
+            }
+
+            // Commit transaction
+            if (!$conn->commit()) {
+                throw new Exception("Failed to commit transaction: " . $conn->error);
+            }
+
+            // Fetch all created records for response
+            $invoice_result = $conn->query("SELECT * FROM invoices WHERE id = '$invoiceId' LIMIT 1");
+            $invoice = $invoice_result ? $invoice_result->fetch_assoc() : null;
+
+            $payment_result = $conn->query("SELECT * FROM payments WHERE id = '$paymentId' LIMIT 1");
+            $payment_record = $payment_result ? $payment_result->fetch_assoc() : null;
+
+            $receipt_result = $conn->query("SELECT * FROM receipts WHERE id = '$receiptId' LIMIT 1");
+            $receipt = $receipt_result ? $receipt_result->fetch_assoc() : null;
+
+            // Return success response
+            echo json_encode([
+                'status' => 'success',
+                'message' => 'Receipt created successfully with transaction safety',
+                'data' => [
+                    'receipt' => $receipt,
+                    'payment' => $payment_record,
+                    'invoice' => $invoice,
+                    'allocation' => ['id' => $allocationId],
+                    'excess_amount' => $excessAmount
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            // Rollback on any error
+            $conn->rollback();
+            error_log("Receipt creation transaction failed: " . $e->getMessage());
+            throw new Exception("Receipt creation failed: " . $e->getMessage());
+        }
+    }
     else {
         throw new Exception("Unknown action: $action");
     }

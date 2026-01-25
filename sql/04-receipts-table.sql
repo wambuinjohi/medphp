@@ -29,7 +29,13 @@ CREATE TABLE IF NOT EXISTS receipts (
   -- Excess Handling
   excess_handling VARCHAR(50) DEFAULT 'pending', -- credit_balance, change_note, pending
   change_note_id UUID REFERENCES credit_notes(id) ON DELETE SET NULL, -- If excess_handling = 'change_note'
-  
+
+  -- Receipt Status / Lifecycle
+  status VARCHAR(50) DEFAULT 'finalized', -- draft, finalized, voided, archived
+  void_reason VARCHAR(255), -- Reason if receipt was voided
+  voided_by UUID, -- User who voided the receipt
+  voided_at TIMESTAMP WITH TIME ZONE, -- When receipt was voided
+
   -- Additional Info
   notes TEXT,
   
@@ -48,4 +54,6 @@ CREATE INDEX IF NOT EXISTS idx_receipts_receipt_number ON receipts(receipt_numbe
 CREATE INDEX IF NOT EXISTS idx_receipts_receipt_date ON receipts(receipt_date);
 CREATE INDEX IF NOT EXISTS idx_receipts_receipt_type ON receipts(receipt_type);
 CREATE INDEX IF NOT EXISTS idx_receipts_excess_handling ON receipts(excess_handling);
+CREATE INDEX IF NOT EXISTS idx_receipts_status ON receipts(status);
+CREATE INDEX IF NOT EXISTS idx_receipts_voided_at ON receipts(voided_at);
 CREATE INDEX IF NOT EXISTS idx_receipts_created_at ON receipts(created_at DESC);

@@ -1396,10 +1396,9 @@ export const useCreateDirectReceiptWithItems = () => {
       }
 
       // CREATE RECEIPT RECORD
-      // Generate receipt number and create receipt record
-      const timestamp = Date.now().toString();
-      const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const receiptNumber = `REC-${timestamp.slice(-6)}${randomPart}`;
+      // Generate receipt number using centralized utility
+      const { generateReceiptNumber } = await import('@/utils/documentNumbering');
+      const receiptNumber = generateReceiptNumber(companyId);
 
       const excessAmount = paymentAmount > invoiceAmount ? paymentAmount - invoiceAmount : 0;
 
