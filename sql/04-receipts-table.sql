@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS receipts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   payment_id UUID NOT NULL REFERENCES payments(id) ON DELETE CASCADE,
-  invoice_id UUID NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+  invoice_id UUID REFERENCES invoices(id) ON DELETE SET NULL,
   
   -- Receipt Identification
   receipt_number VARCHAR(100) NOT NULL, -- Independent receipt numbering (REC-XXXX format)
