@@ -29,7 +29,13 @@ CREATE TABLE IF NOT EXISTS receipts (
   -- Excess Handling
   excess_handling VARCHAR(50) DEFAULT 'pending' COMMENT 'credit_balance, change_note, pending',
   change_note_id CHAR(36) COMMENT 'If excess_handling = change_note',
-  
+
+  -- Receipt Status / Lifecycle
+  status VARCHAR(50) DEFAULT 'finalized' COMMENT 'draft, finalized, voided, archived',
+  void_reason VARCHAR(255) COMMENT 'Reason if receipt was voided',
+  voided_by CHAR(36) COMMENT 'User who voided the receipt',
+  voided_at TIMESTAMP NULL COMMENT 'When receipt was voided',
+
   -- Additional Info
   notes TEXT COMMENT 'Additional notes',
   
