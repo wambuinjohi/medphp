@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS receipts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   payment_id UUID NOT NULL REFERENCES payments(id) ON DELETE CASCADE,
-  invoice_id UUID NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+  invoice_id UUID REFERENCES invoices(id) ON DELETE SET NULL,
   
   -- Receipt Identification
   receipt_number VARCHAR(100) NOT NULL, -- Independent receipt numbering (REC-XXXX format)
@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS receipts (
 CREATE INDEX IF NOT EXISTS idx_receipts_company_id ON receipts(company_id);
 CREATE INDEX IF NOT EXISTS idx_receipts_payment_id ON receipts(payment_id);
 CREATE INDEX IF NOT EXISTS idx_receipts_invoice_id ON receipts(invoice_id);
+CREATE INDEX IF NOT EXISTS idx_receipts_change_note_id ON receipts(change_note_id);
+CREATE INDEX IF NOT EXISTS idx_receipts_created_by ON receipts(created_by);
 CREATE INDEX IF NOT EXISTS idx_receipts_receipt_number ON receipts(receipt_number);
 CREATE INDEX IF NOT EXISTS idx_receipts_receipt_date ON receipts(receipt_date);
 CREATE INDEX IF NOT EXISTS idx_receipts_receipt_type ON receipts(receipt_type);

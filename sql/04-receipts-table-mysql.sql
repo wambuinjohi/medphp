@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS receipts (
   id CHAR(36) PRIMARY KEY COMMENT 'UUID identifier',
   company_id CHAR(36) NOT NULL COMMENT 'Foreign key to companies',
   payment_id CHAR(36) NOT NULL COMMENT 'Foreign key to payments',
-  invoice_id CHAR(36) NOT NULL COMMENT 'Foreign key to invoices',
+  invoice_id CHAR(36) COMMENT 'Foreign key to invoices (nullable to preserve receipt history when invoice deleted)',
   
   -- Receipt Identification
   receipt_number VARCHAR(100) NOT NULL COMMENT 'Independent receipt numbering (REC-XXXX format)',
@@ -47,11 +47,13 @@ CREATE TABLE IF NOT EXISTS receipts (
   UNIQUE KEY unique_receipt_number (company_id, receipt_number),
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
   FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE,
-  FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+  FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE SET NULL,
   FOREIGN KEY (change_note_id) REFERENCES credit_notes(id) ON DELETE SET NULL,
   INDEX idx_receipts_company_id (company_id),
   INDEX idx_receipts_payment_id (payment_id),
   INDEX idx_receipts_invoice_id (invoice_id),
+  INDEX idx_receipts_change_note_id (change_note_id),
+  INDEX idx_receipts_created_by (created_by),
   INDEX idx_receipts_receipt_number (receipt_number),
   INDEX idx_receipts_receipt_date (receipt_date),
   INDEX idx_receipts_receipt_type (receipt_type),

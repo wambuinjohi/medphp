@@ -10,6 +10,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
+import { useCreateCreditBalance as useCreateCreditBalanceHook } from '@/hooks/useCustomerCreditBalances';
 
 export interface ExcessPaymentInput {
   receiptId: string;
@@ -29,76 +30,11 @@ export interface ExcessPaymentResult {
 
 /**
  * Hook to create customer credit balance from excess payment
+ * NOTE: Consolidated into a single implementation. Use the imported hook from useCustomerCreditBalances.
+ * @deprecated - Import useCreateCreditBalance from useCustomerCreditBalances instead
  */
 export const useCreateCreditBalance = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input: ExcessPaymentInput) => {
-      if (input.excessAmount <= 0) {
-        throw new Error('Excess amount must be greater than zero');
-      }
-
-      const db = getDatabase();
-
-      // Check if credit balance already exists for this customer
-      const existingBalances = await db.select('customer_credit_balances', {
-        company_id: input.companyId,
-        customer_id: input.customerId
-      });
-
-      let creditBalance: any;
-
-      if (existingBalances.error) {
-        throw existingBalances.error;
-      }
-
-      const existing = existingBalances.data && existingBalances.data.length > 0
-        ? existingBalances.data[0]
-        : null;
-
-      if (existing) {
-        // Update existing credit balance
-        const newBalance = (existing.balance || 0) + input.excessAmount;
-        const updateResult = await db.update('customer_credit_balances', existing.id, {
-          balance: newBalance,
-          source_payment_id: input.paymentId,
-          notes: `Added from receipt ${input.receiptId}`
-        });
-
-        if (updateResult.error) throw updateResult.error;
-
-        creditBalance = { ...existing, balance: newBalance };
-      } else {
-        // Create new credit balance
-        const insertResult = await db.insert('customer_credit_balances', {
-          company_id: input.companyId,
-          customer_id: input.customerId,
-          balance: input.excessAmount,
-          source_payment_id: input.paymentId,
-          notes: `Created from excess payment on receipt ${input.receiptId}`
-        });
-
-        if (insertResult.error) throw insertResult.error;
-
-        // Fetch created balance
-        const selectResult = await db.selectOne('customer_credit_balances', insertResult.id);
-        if (selectResult.error) throw selectResult.error;
-        creditBalance = selectResult.data;
-      }
-
-      return creditBalance;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['customer_credit_balances'] });
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-      toast.success(`Credit balance updated: ${data.balance} added`);
-    },
-    onError: (error) => {
-      const errorMessage = parseErrorMessageWithCodes(error, 'create credit balance');
-      toast.error(`Failed to create credit balance: ${errorMessage}`);
-    }
-  });
+  return useCreateCreditBalanceHook();
 };
 
 /**
@@ -138,7 +74,17 @@ export const useCreateChangeNote = () => {
       const selectResult = await db.selectOne('credit_notes', insertResult.id);
       if (selectResult.error) throw selectResult.error;
 
-      return selectResult.data;
+      const creditNote = selectResult.data;
+
+      // Link credit note back to receipt
+      const updateReceiptResult = await db.update('receipts', input.receiptId, {
+        change_note_id: creditNote.id
+      });
+      if (updateReceiptResult.error) {
+        console.warn('Failed to link credit note to receipt:', updateReceiptResult.error);
+      }
+
+      return creditNote;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['credit_notes'] });
@@ -175,8 +121,15 @@ export const useHandleExcessPayment = () => {
       try {
         switch (input.handling) {
           case 'credit_balance':
-            // Create or update customer credit balance
-            result.creditBalance = await createCreditBalance.mutateAsync(input);
+            // Create customer credit balance with correct parameter structure
+            result.creditBalance = await createCreditBalance.mutateAsync({
+              companyId: input.companyId,
+              customerId: input.customerId,
+              creditAmount: input.excessAmount,
+              sourceReceiptId: input.receiptId,
+              sourcePaymentId: input.paymentId,
+              notes: `Created from excess payment on receipt ${input.receiptId}`
+            });
             break;
 
           case 'change_note':

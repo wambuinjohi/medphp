@@ -144,7 +144,7 @@ const analyzeColumns = (items: DocumentData['items']) => {
   return columns;
 };
 
-export const generatePDF = (data: DocumentData) => {
+export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) => {
   // Use company details from data or fall back to defaults
   const company = data.company || DEFAULT_COMPANY;
 
@@ -174,12 +174,6 @@ export const generatePDF = (data: DocumentData) => {
       year: 'numeric'
     });
   };
-
-  // Create a new window with the document content
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) {
-    throw new Error('Could not open print window. Please allow popups.');
-  }
 
   const documentTitle = data.type === 'proforma' ? 'Proforma Invoice' :
                        data.type === 'delivery' ? 'Delivery Note' :
@@ -809,24 +803,100 @@ export const generatePDF = (data: DocumentData) => {
     </html>
   `;
 
-  printWindow.document.write(htmlContent);
-  printWindow.document.close();
-
-  // Wait for content to load before printing
-  printWindow.onload = () => {
-    setTimeout(() => {
-      printWindow.print();
-    }, 500);
+  // Generate filename based on document type and number
+  const generateFilename = () => {
+    const date = new Date().toISOString().split('T')[0];
+    const docNumber = data.number.replace(/\//g, '-');
+    const typeLabel = data.type === 'proforma' ? 'PROFORMA' :
+                      data.type === 'delivery' ? 'DELIVERY' :
+                      data.type === 'statement' ? 'STATEMENT' :
+                      data.type === 'receipt' ? 'RECEIPT' :
+                      data.type === 'remittance' ? 'REMITTANCE' :
+                      data.type === 'lpo' ? 'LPO' :
+                      data.type.toUpperCase();
+    return `${typeLabel}_${docNumber}_${date}.pdf`;
   };
 
-  // Fallback if onload doesn't fire
-  setTimeout(() => {
-    if (printWindow && !printWindow.closed) {
-      printWindow.print();
-    }
-  }, 1000);
+  if (downloadAsFile) {
+    // Convert HTML to blob and download as PDF
+    try {
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = window.URL.createObjectURL(blob);
 
-  return printWindow;
+      // Create a hidden iframe for print-to-PDF
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+
+      // Trigger print after iframe loads
+      iframe.onload = () => {
+        setTimeout(() => {
+          iframe.focus();
+          iframe.contentWindow?.print();
+
+          // Clean up after a delay
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+            window.URL.revokeObjectURL(url);
+          }, 500);
+        }, 300);
+      };
+
+      return iframe;
+    } catch (error) {
+      console.error('Error generating PDF blob:', error);
+      // Fallback to window.open approach
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        throw new Error('Could not open print window. Please allow popups.');
+      }
+
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+
+      // Wait for content to load before printing
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
+      };
+
+      // Fallback if onload doesn't fire
+      setTimeout(() => {
+        if (printWindow && !printWindow.closed) {
+          printWindow.print();
+        }
+      }, 1000);
+
+      return printWindow;
+    }
+  } else {
+    // Original window.open approach for backwards compatibility
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      throw new Error('Could not open print window. Please allow popups.');
+    }
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+
+    // Wait for content to load before printing
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    };
+
+    // Fallback if onload doesn't fire
+    setTimeout(() => {
+      if (printWindow && !printWindow.closed) {
+        printWindow.print();
+      }
+    }, 1000);
+
+    return printWindow;
+  }
 };
 
 // Function for generating payment receipt PDF with payment details
