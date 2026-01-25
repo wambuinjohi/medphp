@@ -54,4 +54,6 @@ CREATE INDEX IF NOT EXISTS idx_receipts_receipt_number ON receipts(receipt_numbe
 CREATE INDEX IF NOT EXISTS idx_receipts_receipt_date ON receipts(receipt_date);
 CREATE INDEX IF NOT EXISTS idx_receipts_receipt_type ON receipts(receipt_type);
 CREATE INDEX IF NOT EXISTS idx_receipts_excess_handling ON receipts(excess_handling);
+CREATE INDEX IF NOT EXISTS idx_receipts_status ON receipts(status);
+CREATE INDEX IF NOT EXISTS idx_receipts_voided_at ON receipts(voided_at);
 CREATE INDEX IF NOT EXISTS idx_receipts_created_at ON receipts(created_at DESC);
