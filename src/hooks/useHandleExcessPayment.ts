@@ -30,49 +30,11 @@ export interface ExcessPaymentResult {
 
 /**
  * Hook to create customer credit balance from excess payment
- * NOTE: This is deprecated. Use useCustomerCreditBalances.useCreateCreditBalance instead.
- * Kept for backwards compatibility during transition.
+ * NOTE: Consolidated into a single implementation. Use the imported hook from useCustomerCreditBalances.
+ * @deprecated - Import useCreateCreditBalance from useCustomerCreditBalances instead
  */
 export const useCreateCreditBalance = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input: ExcessPaymentInput) => {
-      if (input.excessAmount <= 0) {
-        throw new Error('Excess amount must be greater than zero');
-      }
-
-      const db = getDatabase();
-
-      // Create new credit balance with correct column names
-      const creditData = {
-        company_id: input.companyId,
-        customer_id: input.customerId,
-        credit_amount: input.excessAmount,
-        source_receipt_id: input.receiptId,
-        source_payment_id: input.paymentId,
-        status: 'available',
-        notes: `Created from excess payment on receipt ${input.receiptId}`
-      };
-
-      const insertResult = await db.insert('customer_credit_balances', creditData);
-      if (insertResult.error) throw insertResult.error;
-
-      // Fetch created balance
-      const selectResult = await db.selectOne('customer_credit_balances', insertResult.id);
-      if (selectResult.error) throw selectResult.error;
-      return selectResult.data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['customer_credit_balances'] });
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-      toast.success(`Credit balance updated: ${(data as any).credit_amount} added`);
-    },
-    onError: (error) => {
-      const errorMessage = parseErrorMessageWithCodes(error, 'create credit balance');
-      toast.error(`Failed to create credit balance: ${errorMessage}`);
-    }
-  });
+  return useCreateCreditBalanceHook();
 };
 
 /**
