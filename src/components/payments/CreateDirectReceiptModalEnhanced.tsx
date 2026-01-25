@@ -95,6 +95,7 @@ export function CreateDirectReceiptModalEnhanced({
   const { data: taxSettings } = useTaxSettings(currentCompany?.id);
   const createDirectReceiptWithItems = useCreateDirectReceiptWithItems();
   const createCreditBalance = useCreateCreditBalance();
+  const handleExcessPayment = useHandleExcessPayment();
   const { totalAvailableCredit } = useCustomerCreditBalances(selectedCustomerId || null, currentCompany?.id || null);
   const generateDocNumber = useGenerateDocumentNumber();
 
