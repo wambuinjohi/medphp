@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS receipts (
   UNIQUE KEY unique_receipt_number (company_id, receipt_number),
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
   FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE,
-  FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+  FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE SET NULL,
   FOREIGN KEY (change_note_id) REFERENCES credit_notes(id) ON DELETE SET NULL,
   INDEX idx_receipts_company_id (company_id),
   INDEX idx_receipts_payment_id (payment_id),
