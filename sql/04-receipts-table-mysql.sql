@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS receipts (
   id CHAR(36) PRIMARY KEY COMMENT 'UUID identifier',
   company_id CHAR(36) NOT NULL COMMENT 'Foreign key to companies',
   payment_id CHAR(36) NOT NULL COMMENT 'Foreign key to payments',
-  invoice_id CHAR(36) NOT NULL COMMENT 'Foreign key to invoices',
+  invoice_id CHAR(36) COMMENT 'Foreign key to invoices (nullable to preserve receipt history when invoice deleted)',
   
   -- Receipt Identification
   receipt_number VARCHAR(100) NOT NULL COMMENT 'Independent receipt numbering (REC-XXXX format)',
