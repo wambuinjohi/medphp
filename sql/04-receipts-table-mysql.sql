@@ -56,5 +56,7 @@ CREATE TABLE IF NOT EXISTS receipts (
   INDEX idx_receipts_receipt_date (receipt_date),
   INDEX idx_receipts_receipt_type (receipt_type),
   INDEX idx_receipts_excess_handling (excess_handling),
+  INDEX idx_receipts_status (status),
+  INDEX idx_receipts_voided_at (voided_at),
   INDEX idx_receipts_created_at (created_at DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
