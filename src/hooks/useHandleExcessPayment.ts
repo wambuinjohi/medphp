@@ -111,7 +111,17 @@ export const useCreateChangeNote = () => {
       const selectResult = await db.selectOne('credit_notes', insertResult.id);
       if (selectResult.error) throw selectResult.error;
 
-      return selectResult.data;
+      const creditNote = selectResult.data;
+
+      // Link credit note back to receipt
+      const updateReceiptResult = await db.update('receipts', input.receiptId, {
+        change_note_id: creditNote.id
+      });
+      if (updateReceiptResult.error) {
+        console.warn('Failed to link credit note to receipt:', updateReceiptResult.error);
+      }
+
+      return creditNote;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['credit_notes'] });
