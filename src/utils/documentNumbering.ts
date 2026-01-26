@@ -1,110 +1,198 @@
 /**
  * Centralized document numbering utility
- * Provides consistent number generation for all document types
- * Ensures uniqueness and format consistency across the application
+ * Provides sequential, globally unique number generation for all document types
+ * Ensures consistency across the application using backend API
  */
 
 /**
- * Generate a unique receipt number in format: REC-XXXXXX where XXXXXX is timestamp + random
- * @param companyId - Company ID (for future multi-company number sequences)
- * @returns Receipt number string
+ * Document type mapping from internal names to 3-letter prefixes
  */
-export const generateReceiptNumber = (companyId?: string): string => {
-  const timestamp = Date.now().toString();
-  // Use MD5-style hash for better uniqueness than simple random
-  const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
-  return `REC-${timestamp.slice(-6)}${randomPart}`;
+const DOCUMENT_TYPE_MAP: Record<string, string> = {
+  'receipt': 'REC',
+  'invoice': 'INV',
+  'payment': 'PAY',
+  'proforma': 'PRO',
+  'quotation': 'QT',
+  'delivery_note': 'DN',
+  'credit_note': 'CN',
+  'po': 'PO',
+  'lpo': 'LPO',
 };
 
 /**
- * Generate a unique invoice number in format: INV-XXXXXXXX where XXXXXXXX is timestamp
- * @param companyId - Company ID (for future multi-company invoice number sequences)
- * @returns Invoice number string
+ * Valid document types for the API
  */
-export const generateInvoiceNumber = (companyId?: string): string => {
-  return `INV-${Date.now()}`;
+const VALID_DOCUMENT_TYPES = ['INV', 'PRO', 'QT', 'PO', 'LPO', 'DN', 'CN', 'PAY', 'REC'] as const;
+export type DocumentType = typeof VALID_DOCUMENT_TYPES[number];
+
+/**
+ * Response from the document number API
+ */
+export interface DocumentNumberResponse {
+  success: boolean;
+  number?: string;
+  type?: string;
+  year?: number;
+  sequence?: number;
+  error?: string;
+}
+
+/**
+ * Generate a unique document number via the backend API
+ * Format: TYPE-YYYY-NNNN (e.g., INV-2026-0001)
+ *
+ * @param type - Document type (e.g., 'invoice', 'proforma', 'quotation')
+ * @param year - Optional year (defaults to current year)
+ * @returns Promise resolving to the generated document number
+ */
+export async function generateDocumentNumberAPI(
+  type: string,
+  year?: number
+): Promise<string> {
+  try {
+    // Map internal type name to API type code
+    const apiType = DOCUMENT_TYPE_MAP[type];
+    if (!apiType) {
+      throw new Error(`Unknown document type: ${type}`);
+    }
+
+    const currentYear = year || new Date().getFullYear();
+
+    // Get API base URL with proper environment detection
+    // This handles both local (/api.php) and cloud (external API URL) setups
+    let apiUrl = '/api.php';
+    try {
+      const { getAPIBaseURL } = await import('./environment-detection');
+      apiUrl = getAPIBaseURL();
+    } catch {
+      // Fallback to relative path if environment detection fails
+      console.warn('Could not detect API base URL, using /api.php fallback');
+    }
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'get_next_document_number',
+        type: apiType,
+        year: currentYear,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.warn(`Failed to generate document number (${response.status}):`, errorData);
+      // Return fallback format on API error
+      return generateFallbackNumber(apiType, currentYear);
+    }
+
+    const data = await response.json() as DocumentNumberResponse;
+
+    if (!data.success || !data.number) {
+      console.warn('API returned unsuccessful response:', data);
+      return generateFallbackNumber(apiType, currentYear);
+    }
+
+    return data.number;
+  } catch (error) {
+    console.warn('Error generating document number via API:', error);
+    // Return fallback format on network/parsing error
+    const apiType = DOCUMENT_TYPE_MAP[type] || type.toUpperCase().substring(0, 3);
+    const currentYear = year || new Date().getFullYear();
+    return generateFallbackNumber(apiType, currentYear);
+  }
+}
+
+/**
+ * Generate a fallback document number when API is unavailable
+ * Format: TYPE-YYYY-XXXX where XXXX is random alphanumeric
+ * 
+ * @param type - Document type code (e.g., 'INV', 'PRO')
+ * @param year - Year for the number
+ * @returns Fallback number string
+ */
+function generateFallbackNumber(type: string, year: number): string {
+  // Generate 4 random alphanumeric characters for fallback
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let random = '';
+  for (let i = 0; i < 4; i++) {
+    random += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `${type}-${year}-${random}`;
+}
+
+/**
+ * Legacy function exports for backward compatibility
+ * These now use the API-based generation
+ */
+
+/**
+ * @deprecated Use generateDocumentNumberAPI('receipt') instead
+ */
+export const generateReceiptNumber = async (companyId?: string): Promise<string> => {
+  return generateDocumentNumberAPI('receipt');
 };
 
 /**
- * Generate a unique payment number in format: PAY-XXXXXXXX where XXXXXXXX is timestamp
- * @param companyId - Company ID (for future multi-company payment number sequences)
- * @returns Payment number string
+ * @deprecated Use generateDocumentNumberAPI('invoice') instead
  */
-export const generatePaymentNumber = (companyId?: string): string => {
-  return `PAY-${Date.now()}`;
+export const generateInvoiceNumber = async (companyId?: string): Promise<string> => {
+  return generateDocumentNumberAPI('invoice');
 };
 
 /**
- * Generate a unique proforma invoice number in format: PROFORMA-XXXXXXXX
- * @param companyId - Company ID
- * @returns Proforma invoice number string
+ * @deprecated Use generateDocumentNumberAPI('payment') instead
  */
-export const generateProformaNumber = (companyId?: string): string => {
-  return `PROFORMA-${Date.now()}`;
+export const generatePaymentNumber = async (companyId?: string): Promise<string> => {
+  return generateDocumentNumberAPI('payment');
 };
 
 /**
- * Generate a unique quotation number in format: QT-XXXXXXXX
- * @param companyId - Company ID
- * @returns Quotation number string
+ * @deprecated Use generateDocumentNumberAPI('proforma') instead
  */
-export const generateQuotationNumber = (companyId?: string): string => {
-  return `QT-${Date.now()}`;
+export const generateProformaNumber = async (companyId?: string): Promise<string> => {
+  return generateDocumentNumberAPI('proforma');
 };
 
 /**
- * Generate a unique delivery note number in format: DN-XXXXXXXX
- * @param companyId - Company ID
- * @returns Delivery note number string
+ * @deprecated Use generateDocumentNumberAPI('quotation') instead
  */
-export const generateDeliveryNoteNumber = (companyId?: string): string => {
-  return `DN-${Date.now()}`;
+export const generateQuotationNumber = async (companyId?: string): Promise<string> => {
+  return generateDocumentNumberAPI('quotation');
 };
 
 /**
- * Generate a unique credit note number in format: CN-XXXXXXXX
- * @param companyId - Company ID
- * @returns Credit note number string
+ * @deprecated Use generateDocumentNumberAPI('delivery_note') instead
  */
-export const generateCreditNoteNumber = (companyId?: string): string => {
-  return `CN-${Date.now()}`;
+export const generateDeliveryNoteNumber = async (companyId?: string): Promise<string> => {
+  return generateDocumentNumberAPI('delivery_note');
 };
 
 /**
- * Generate a unique PO (Purchase Order) number in format: PO-XXXXXXXX
- * @param companyId - Company ID
- * @returns PO number string
+ * @deprecated Use generateDocumentNumberAPI('credit_note') instead
  */
-export const generatePONumber = (companyId?: string): string => {
-  return `PO-${Date.now()}`;
+export const generateCreditNoteNumber = async (companyId?: string): Promise<string> => {
+  return generateDocumentNumberAPI('credit_note');
 };
 
 /**
- * Type-safe document number generator
- * Usage: generateDocumentNumber('receipt') or generateDocumentNumber('invoice')
+ * @deprecated Use generateDocumentNumberAPI('po') instead
  */
-export const generateDocumentNumber = (
+export const generatePONumber = async (companyId?: string): Promise<string> => {
+  return generateDocumentNumberAPI('po');
+};
+
+/**
+ * Type-safe document number generator (async version)
+ * Usage: await generateDocumentNumber('receipt') or await generateDocumentNumber('invoice')
+ * 
+ * @deprecated Use generateDocumentNumberAPI instead
+ */
+export const generateDocumentNumber = async (
   type: 'receipt' | 'invoice' | 'payment' | 'proforma' | 'quotation' | 'delivery_note' | 'credit_note' | 'po',
   companyId?: string
-): string => {
-  switch (type) {
-    case 'receipt':
-      return generateReceiptNumber(companyId);
-    case 'invoice':
-      return generateInvoiceNumber(companyId);
-    case 'payment':
-      return generatePaymentNumber(companyId);
-    case 'proforma':
-      return generateProformaNumber(companyId);
-    case 'quotation':
-      return generateQuotationNumber(companyId);
-    case 'delivery_note':
-      return generateDeliveryNoteNumber(companyId);
-    case 'credit_note':
-      return generateCreditNoteNumber(companyId);
-    case 'po':
-      return generatePONumber(companyId);
-    default:
-      throw new Error(`Unknown document type: ${type}`);
-  }
+): Promise<string> => {
+  return generateDocumentNumberAPI(type);
 };

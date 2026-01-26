@@ -19,11 +19,13 @@ export interface ReceiptGenerationInput {
 }
 
 /**
- * Hook to generate receipt number in format REC-XXXXXXXXXX
- * Uses centralized number generation utility
+ * Hook to generate receipt number in format REC-YYYY-NNNN
+ * Uses centralized number generation utility (API-based)
  */
 export const useGenerateReceiptNumber = () => {
-  return (companyId: string) => generateReceiptNumber(companyId);
+  return useMutation({
+    mutationFn: (companyId: string) => generateReceiptNumber(companyId)
+  });
 };
 
 /**
@@ -37,8 +39,8 @@ export const useCreateReceipt = () => {
     mutationFn: async (input: ReceiptGenerationInput) => {
       const db = getDatabase();
 
-      // Generate receipt number using centralized utility
-      const receiptNumber = generateReceiptNumber(input.companyId);
+      // Generate receipt number using centralized utility (now async)
+      const receiptNumber = await generateReceiptNumber(input.companyId);
       const receiptDate = new Date().toISOString().split('T')[0];
 
       // Create receipt record

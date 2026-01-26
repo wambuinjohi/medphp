@@ -33,7 +33,6 @@ import { useCustomers, useProducts, useTaxSettings } from '@/hooks/useDatabase';
 import { useCreateProforma, type ProformaItem } from '@/hooks/useProforma';
 import { calculateItemTax, calculateDocumentTotals, formatCurrency, type TaxableItem } from '@/utils/taxCalculation';
 import { generateNextProformaNumber } from '@/utils/improvedProformaFix';
-import { ProformaErrorSolution } from '@/components/fixes/ProformaErrorSolution';
 import { toast } from 'sonner';
 
 interface CreateProformaModalOptimizedProps {
@@ -61,8 +60,6 @@ export const CreateProformaModalOptimized = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showProductSearch, setShowProductSearch] = useState(false);
   const [proformaNumber, setProformaNumber] = useState('');
-  const [functionError, setFunctionError] = useState<string>('');
-  const [createError, setCreateError] = useState<string>('');
 
   const { data: customers, isLoading: customersLoading } = useCustomers(companyId);
   const { data: products, isLoading: productsLoading } = useProducts(companyId);
@@ -87,8 +84,6 @@ export const CreateProformaModalOptimized = ({
   }, [open, proformaNumber]);
 
   const generateProformaNumber = () => {
-    setFunctionError('');
-
     try {
       console.log('🔢 Generating proforma number...');
 
@@ -101,7 +96,6 @@ export const CreateProformaModalOptimized = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('❌ Proforma number generation failed:', error);
-      setFunctionError(errorMessage);
       toast.error(`Failed to generate proforma number: ${errorMessage}`);
     }
   };
@@ -194,8 +188,6 @@ export const CreateProformaModalOptimized = ({
       return;
     }
 
-    setCreateError(''); // Clear previous errors
-
     try {
       const totals = calculateTotals();
 
@@ -218,14 +210,13 @@ export const CreateProformaModalOptimized = ({
         items: items
       });
 
+      toast.success('Proforma invoice created successfully!');
       onSuccess?.();
       handleClose();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('Error creating proforma:', errorMessage);
-      setCreateError(errorMessage);
-
-      // Don't show toast as the error will be displayed in the component
+      toast.error(`Error creating proforma: ${errorMessage}`);
     }
   };
 
@@ -241,8 +232,6 @@ export const CreateProformaModalOptimized = ({
     setSearchTerm('');
     setShowProductSearch(false);
     setProformaNumber('');
-    setFunctionError('');
-    setCreateError('');
     onOpenChange(false);
   };
 
@@ -271,22 +260,6 @@ export const CreateProformaModalOptimized = ({
 
         {!isLoading && (
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Error Notifications */}
-            {(functionError || createError) && (
-              <ProformaErrorSolution
-                error={functionError || createError}
-                onResolved={() => {
-                  setFunctionError('');
-                  setCreateError('');
-                  // Regenerate number if function was fixed
-                  if (functionError && !createError) {
-                    generateProformaNumber();
-                  }
-                }}
-                compact={true}
-              />
-            )}
-            
             {/* Header Information */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">

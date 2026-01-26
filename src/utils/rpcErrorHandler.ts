@@ -2,6 +2,10 @@
  * RPC Error Handler
  * Provides graceful fallbacks when Supabase RPC functions are not available
  * (which is the case when using external MySQL API)
+ *
+ * @deprecated Document number generation RPC functions have been replaced with API-based generation.
+ * For document numbering, use generateDocumentNumberAPI() from src/utils/documentNumbering.ts instead.
+ * The general RPC error handling utilities remain available for other RPC functions.
  */
 
 export interface RPCCallOptions {
@@ -128,12 +132,13 @@ export const RPCFallbacks = {
   },
 
   /**
-   * Fallback for generate_proforma_number
+   * Fallback for generate_proforma_number (deprecated - use API-based generation)
+   * Updated to use PRO prefix instead of PF
    */
   generateProformaNumber: (companyId?: string) => {
     const year = new Date().getFullYear();
     const timestamp = Date.now().toString().slice(-5);
-    return `PF-${year}-${timestamp}`;
+    return `PRO-${year}-${timestamp}`;
   },
 
   /**

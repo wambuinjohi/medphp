@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { getDatabase, getDatabaseProvider } from '@/integrations/database';
 import type { IDatabase, DatabaseProvider } from '@/integrations/database';
 import { useForceTaxSettings } from '@/hooks/useForceTaxSettings';
+import { generateDocumentNumberAPI } from '@/utils/documentNumbering';
 
 let errorToastShown = false;
 
@@ -1504,39 +1505,9 @@ export function useGenerateDocumentNumber() {
       companyId: string;
       type?: 'invoice' | 'proforma' | 'credit_note' | 'lpo' | 'delivery_note' | 'quotation';
     }) => {
-      try {
-        // Map document type to the appropriate RPC function
-        const rpcFunctionMap: Record<string, string> = {
-          invoice: 'generate_invoice_number',
-          proforma: 'generate_proforma_number',
-          credit_note: 'generate_credit_note_number',
-          lpo: 'generate_lpo_number',
-          delivery_note: 'generate_delivery_note_number',
-          quotation: 'generate_quotation_number',
-        };
-
-        const rpcFunction = rpcFunctionMap[type] || 'generate_invoice_number';
-        const db = getDatabase();
-
-        const { data, error } = await db.rpc<string>(rpcFunction, {
-          company_uuid: companyId
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        return data as string;
-      } catch (error) {
-        // Fallback to client-side generation
-        const timestamp = Date.now().toString().slice(-6);
-        const year = new Date().getFullYear();
-        const typePrefix = type.toUpperCase().substring(0, 2);
-        const fallbackNumber = `${typePrefix}-${year}-${timestamp}`;
-
-        console.warn(`Document number generation (${type}) failed, using fallback:`, fallbackNumber);
-        return fallbackNumber;
-      }
+      // Use the new API-based document number generation
+      // The generateDocumentNumberAPI function handles all fallback logic
+      return generateDocumentNumberAPI(type);
     },
   });
 }
