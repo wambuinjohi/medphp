@@ -28,7 +28,7 @@ if (isset($_SERVER['HTTP_ORIGIN'])) {
 
 // Set CORS headers for all requests
 header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With, X-Requested-With");
+header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With");
 header("Access-Control-Max-Age: 86400");
 header("Access-Control-Expose-Headers: Content-Type, X-Total-Count, X-Page, X-Page-Size");
 
