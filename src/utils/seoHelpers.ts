@@ -262,9 +262,11 @@ export const generateFAQSchema = (faqs: Array<{ question: string; answer: string
 /**
  * Update document meta tags
  */
-export const updateMetaTags = (metadata: SEOMetadata) => {
+export const updateMetaTags = (metadata: SEOMetadata, companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+
   // Title
-  document.title = `${metadata.title} | ${SITE_CONFIG.siteName}`;
+  document.title = `${metadata.title} | ${config.siteName}`;
 
   // Meta tags
   updateOrCreateMetaTag('name', 'description', metadata.description);
@@ -273,17 +275,17 @@ export const updateMetaTags = (metadata: SEOMetadata) => {
   // Open Graph
   updateOrCreateMetaTag('property', 'og:title', `${metadata.title}`);
   updateOrCreateMetaTag('property', 'og:description', metadata.description);
-  updateOrCreateMetaTag('property', 'og:url', metadata.url || SITE_CONFIG.url);
-  updateOrCreateMetaTag('property', 'og:image', metadata.image || SITE_CONFIG.logo);
+  updateOrCreateMetaTag('property', 'og:url', metadata.url || config.url);
+  updateOrCreateMetaTag('property', 'og:image', metadata.image || config.logo);
   updateOrCreateMetaTag('property', 'og:type', metadata.type || 'website');
 
   // Twitter
   updateOrCreateMetaTag('name', 'twitter:title', metadata.title);
   updateOrCreateMetaTag('name', 'twitter:description', metadata.description);
-  updateOrCreateMetaTag('name', 'twitter:image', metadata.image || SITE_CONFIG.logo);
+  updateOrCreateMetaTag('name', 'twitter:image', metadata.image || config.logo);
 
   // Canonical
-  updateOrCreateCanonical(metadata.url || SITE_CONFIG.url);
+  updateOrCreateCanonical(metadata.url || config.url);
 };
 
 /**
