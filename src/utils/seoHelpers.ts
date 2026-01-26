@@ -246,7 +246,7 @@ export const generateContactPageSchema = (companyConfig?: CompanyConfig | null) 
 /**
  * Generate FAQ schema
  */
-export const generateFAQSchema = (faqs: Array<{ question: string; answer: string }>) => ({
+export const generateFAQSchema = (faqs: Array<{ question: string; answer: string }>, companyConfig?: CompanyConfig | null) => ({
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: faqs.map((faq) => ({
