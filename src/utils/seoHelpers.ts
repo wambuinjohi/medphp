@@ -1,6 +1,9 @@
 /**
  * SEO Helpers for structured data and meta information
+ * Now supports dynamic company configuration from database
  */
+
+import { CompanyConfig } from '@/contexts/CompanyConfigContext';
 
 export interface SEOMetadata {
   title: string;
@@ -11,7 +14,8 @@ export interface SEOMetadata {
   type?: 'website' | 'article' | 'product';
 }
 
-export const SITE_CONFIG = {
+// Default site config - used as fallback if company config is not available
+const DEFAULT_SITE_CONFIG = {
   siteName: '&gt;&gt; Medical Supplies',
   url: 'https://medplusafrica.com',
   logo: 'https://medplusafrica.com/assets/medplus-logo.webp',
@@ -20,6 +24,29 @@ export const SITE_CONFIG = {
   phone: '+254 741 207 690',
   address: 'P.O. Box 85988-00200, Nairobi, Eastern Bypass, Membley',
 };
+
+/**
+ * Create SITE_CONFIG from company configuration
+ * Used to generate SEO metadata and structured data
+ */
+export function createSiteConfig(companyConfig: CompanyConfig | null) {
+  if (!companyConfig) {
+    return DEFAULT_SITE_CONFIG;
+  }
+
+  return {
+    siteName: companyConfig.name || DEFAULT_SITE_CONFIG.siteName,
+    url: `https://${companyConfig.name?.toLowerCase().replace(/\s+/g, '')}` || DEFAULT_SITE_CONFIG.url,
+    logo: companyConfig.logo_url || DEFAULT_SITE_CONFIG.logo,
+    description: companyConfig.description || DEFAULT_SITE_CONFIG.description,
+    email: companyConfig.email || DEFAULT_SITE_CONFIG.email,
+    phone: companyConfig.phone || DEFAULT_SITE_CONFIG.phone,
+    address: companyConfig.address || DEFAULT_SITE_CONFIG.address,
+  };
+}
+
+// Export default for backward compatibility
+export const SITE_CONFIG = DEFAULT_SITE_CONFIG;
 
 /**
  * Generate structured data for Organization
