@@ -74,9 +74,9 @@ export const CreateProformaModalOptimized = ({
 
   // Generate proforma number when modal opens
   useEffect(() => {
-    if (open && !proformaNumber && !isGeneratingNumber) {
+    if (open && !proformaNumber) {
       generateProformaNumber();
-      
+
       // Set default valid until date (30 days from today)
       const validUntil = new Date();
       validUntil.setDate(validUntil.getDate() + 30);
@@ -85,7 +85,7 @@ export const CreateProformaModalOptimized = ({
         valid_until: validUntil.toISOString().split('T')[0]
       }));
     }
-  }, [open, proformaNumber, isGeneratingNumber]);
+  }, [open, proformaNumber]);
 
   const generateProformaNumber = () => {
     setFunctionError('');
