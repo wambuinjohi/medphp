@@ -1,7 +1,123 @@
 /**
- * Centralized document numbering utility
+ * CENTRALIZED DOCUMENT NUMBERING SYSTEM
+ * =====================================
+ *
  * Provides sequential, globally unique number generation for all document types
- * Ensures consistency across the application using backend API
+ * Ensures consistency across the application using backend API with fallback support
+ *
+ * ARCHITECTURE:
+ * - Primary: Backend PHP API endpoint (/backend/api.php?action=get_next_document_number)
+ * - Fallback: Client-side random alphanumeric generation (when API unavailable)
+ * - Format: TYPE-YYYY-NNNN (e.g., INV-2026-0001, PRO-2026-0042, QT-2026-0115)
+ *
+ * SUPPORTED DOCUMENT TYPES:
+ * - INV: Invoices (generateDocumentNumberAPI('invoice'))
+ * - PRO: Proforma Invoices (generateDocumentNumberAPI('proforma'))
+ * - QT: Quotations (generateDocumentNumberAPI('quotation'))
+ * - REC: Receipts (generateDocumentNumberAPI('receipt'))
+ * - PO: Purchase Orders (generateDocumentNumberAPI('po'))
+ * - LPO: Local Purchase Orders (generateDocumentNumberAPI('lpo'))
+ * - DN: Delivery Notes (generateDocumentNumberAPI('delivery_note'))
+ * - CN: Credit Notes (generateDocumentNumberAPI('credit_note'))
+ * - PAY: Payments (generateDocumentNumberAPI('payment'))
+ *
+ * USAGE EXAMPLES:
+ * ==============
+ *
+ * 1. Generate an invoice number:
+ *    const invoiceNumber = await generateDocumentNumberAPI('invoice');
+ *    // Result: "INV-2026-0001"
+ *
+ * 2. Generate a proforma number:
+ *    const proformaNumber = await generateDocumentNumberAPI('proforma');
+ *    // Result: "PRO-2026-0001"
+ *
+ * 3. Using legacy wrapper (deprecated but still functional):
+ *    const receiptNumber = await generateReceiptNumber();
+ *    // Internally calls: generateDocumentNumberAPI('receipt')
+ *
+ * TECHNICAL DETAILS:
+ * ==================
+ *
+ * API Request Pattern:
+ * - URL: /backend/api.php?action=get_next_document_number
+ * - Method: POST
+ * - Body: { type: "INV", year: 2026 }
+ * - Response: { success: true, number: "INV-2026-0001", type: "INV", year: 2026, sequence: 1 }
+ *
+ * Fallback Behavior (when API unavailable):
+ * - Still returns valid format: TYPE-YYYY-RANDOM (e.g., INV-2026-A7K2)
+ * - Uses random alphanumeric characters (A-Z, 0-9) instead of sequential
+ * - Prevents application crashes when API is down
+ * - Logs warnings to console for monitoring
+ *
+ * ERROR HANDLING:
+ * ===============
+ * - API failures: Automatically fallback to random generation
+ * - Network errors: Gracefully handled with fallback
+ * - Invalid types: Throws error with clear message
+ * - Missing API: Uses fallback mechanism
+ *
+ * MIGRATION FROM LEGACY SYSTEM:
+ * =============================
+ *
+ * Old RPC-based system (DEPRECATED):
+ * - db.rpc('generate_invoice_number', { company_id: ... })
+ * - db.rpc('generate_proforma_number', { company_uuid: ... })
+ * - Stored procedures in schema.sql
+ *
+ * New API-based system (CURRENT):
+ * - generateDocumentNumberAPI('invoice')
+ * - generateDocumentNumberAPI('proforma')
+ * - Backend PHP endpoint with unified logic
+ *
+ * Legacy wrapper functions still available:
+ * - generateInvoiceNumber() -> generateDocumentNumberAPI('invoice')
+ * - generateReceiptNumber() -> generateDocumentNumberAPI('receipt')
+ * - generateProformaNumber() -> generateDocumentNumberAPI('proforma')
+ * - All others -> generateDocumentNumberAPI(type)
+ *
+ * CONVERSION FLOW UPDATES:
+ * ========================
+ * When converting documents (quotation -> invoice, proforma -> invoice, etc.):
+ * ✅ BEFORE: const invoiceNumber = `INV-${Date.now()}` (timestamp-based, non-sequential)
+ * ✅ NOW:    const invoiceNumber = await generateDocumentNumberAPI('invoice') (sequential, proper)
+ *
+ * Affected functions:
+ * - useProforma.ts: useConvertProformaToInvoice()
+ * - useQuotationItems.ts: useConvertQuotationToInvoice(), useCreateDirectReceipt(), etc.
+ *
+ * ADDING NEW DOCUMENT TYPES:
+ * ==========================
+ * To add support for a new document type:
+ *
+ * 1. Update DOCUMENT_TYPE_MAP:
+ *    const DOCUMENT_TYPE_MAP: Record<string, string> = {
+ *      ...
+ *      'new_type': 'NWT'  // Add your type here
+ *    };
+ *
+ * 2. Update VALID_DOCUMENT_TYPES:
+ *    const VALID_DOCUMENT_TYPES = [..., 'NWT'] as const;
+ *
+ * 3. Update DocumentType type:
+ *    export type DocumentType = typeof VALID_DOCUMENT_TYPES[number];
+ *
+ * 4. Add backend support:
+ *    - Update src/backend/api.php to handle ?action=get_next_document_number with type=NWT
+ *
+ * 5. Test:
+ *    const result = await generateDocumentNumberAPI('new_type');
+ *
+ * DEBUGGING:
+ * ==========
+ * The system logs detailed information with [DOC_NUM] prefix:
+ * - [DOC_NUM] Starting document number generation for type: invoice
+ * - [DOC_NUM] Mapped type: invoice -> INV, year: 2026
+ * - [DOC_NUM] Sending request to: /api.php?action=get_next_document_number
+ * - [DOC_NUM] API Response: { success: true, number: "INV-2026-0001", ... }
+ *
+ * Check browser console for [DOC_NUM] logs when troubleshooting.
  */
 
 /**

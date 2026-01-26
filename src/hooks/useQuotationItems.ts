@@ -258,8 +258,9 @@ export const useConvertQuotationToInvoice = () => {
       if (itemsResult.error) throw itemsResult.error;
       const quotationItems = itemsResult.data || [];
 
-      // Generate invoice number using timestamp
-      const invoiceNumber = `INV-${Date.now()}`;
+      // Generate invoice number using centralized API
+      const { generateDocumentNumberAPI } = await import('@/utils/documentNumbering');
+      const invoiceNumber = await generateDocumentNumberAPI('invoice');
 
       // Create invoice from quotation
       // Determine creator
@@ -568,31 +569,21 @@ export const useCreateProformaWithItems = () => {
     mutationFn: async ({ proforma, items }: { proforma: any; items: any[] }) => {
       const db = getDatabase();
 
-      // Ensure created_by defaults to the authenticated user
-      let cleanProforma = { ...proforma } as any;
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        const authUserId = userData?.user?.id || null;
-        if (authUserId) {
-          cleanProforma.created_by = authUserId;
-        } else if (typeof cleanProforma.created_by === 'undefined' || cleanProforma.created_by === null) {
-          cleanProforma.created_by = null;
-        }
-      } catch {
-        if (typeof cleanProforma.created_by === 'undefined') {
-          cleanProforma.created_by = null;
-        }
-      }
-
       // Create the proforma invoice using database adapter
-      const proformaInsertResult = await db.insert('proforma_invoices', cleanProforma);
+      // Note: proforma_invoices table does not have a created_by column
+      const { created_by, ...cleanProforma } = proforma as any;
+
+      let proformaInsertResult = await db.insert('proforma_invoices', cleanProforma);
       if (proformaInsertResult.error) {
-        // Fallback: if FK violation on created_by, retry with created_by = null
-        if (String(proformaInsertResult.error.message || '').includes('created_by')) {
-          const retryPayload = { ...cleanProforma, created_by: null };
-          const retryResult = await db.insert('proforma_invoices', retryPayload);
+        const errorMessage = String(proformaInsertResult.error.message || '').toLowerCase();
+
+        // Fallback: if valid_until column missing, retry without it
+        if (errorMessage.includes('valid_until')) {
+          const { valid_until, ...dataWithoutValidUntil } = cleanProforma;
+          const retryResult = await db.insert('proforma_invoices', dataWithoutValidUntil);
           if (retryResult.error) throw retryResult.error;
           if (!retryResult.id) throw new Error('Failed to create proforma: no ID returned');
+          proformaInsertResult = retryResult;
         } else {
           throw proformaInsertResult.error;
         }
@@ -805,8 +796,8 @@ export const useConvertQuotationToProforma = () => {
         tax_amount: quotation.tax_amount,
         total_amount: quotation.total_amount,
         notes: `Converted from quotation ${quotation.quotation_number}`,
-        terms_and_conditions: quotation.terms_and_conditions,
-        created_by: createdBy
+        terms_and_conditions: quotation.terms_and_conditions
+        // Note: created_by column does not exist in proforma_invoices table
       };
 
       // Create proforma using database adapter
@@ -814,17 +805,10 @@ export const useConvertQuotationToProforma = () => {
       if (proformaInsertResult.error) {
         const errorMessage = String(proformaInsertResult.error.message || '').toLowerCase();
 
-        // Fallback: if column missing, retry without valid_until
+        // Fallback: if valid_until column missing, retry without it
         if (errorMessage.includes('valid_until')) {
           const { valid_until, ...dataWithoutValidUntil } = proformaData;
           const retryResult = await db.insert('proforma_invoices', dataWithoutValidUntil);
-          if (retryResult.error) throw retryResult.error;
-          proformaInsertResult = retryResult;
-        }
-        // Fallback: if FK violation on created_by, retry with created_by = null
-        else if (errorMessage.includes('created_by')) {
-          const retryPayload = { ...proformaData, created_by: null };
-          const retryResult = await db.insert('proforma_invoices', retryPayload);
           if (retryResult.error) throw retryResult.error;
           proformaInsertResult = retryResult;
         } else {
@@ -1076,16 +1060,8 @@ export const useCreateDirectReceipt = () => {
       // Generate invoice number if not provided
       let finalInvoiceNumber = invoiceNumber;
       if (!finalInvoiceNumber) {
-        try {
-          const { useGenerateDocumentNumber } = await import('@/hooks/useDatabase');
-          const generator = useGenerateDocumentNumber();
-          finalInvoiceNumber = await generator.mutateAsync({
-            companyId: companyId,
-            type: 'invoice'
-          });
-        } catch (e) {
-          finalInvoiceNumber = `INV-${Date.now()}`;
-        }
+        const { generateDocumentNumberAPI: generateInvoiceNum } = await import('@/utils/documentNumbering');
+        finalInvoiceNumber = await generateInvoiceNum('invoice');
       }
 
       // CREATE INVOICE FIRST (before payment, since payments.invoice_id references invoices.id)
@@ -1274,16 +1250,8 @@ export const useCreateDirectReceiptWithItems = () => {
       // Generate invoice number if not provided
       let finalInvoiceNumber = invoiceNumber;
       if (!finalInvoiceNumber) {
-        try {
-          const { useGenerateDocumentNumber } = await import('@/hooks/useDatabase');
-          const generator = useGenerateDocumentNumber();
-          finalInvoiceNumber = await generator.mutateAsync({
-            companyId: companyId,
-            type: 'invoice'
-          });
-        } catch (e) {
-          finalInvoiceNumber = `INV-${Date.now()}`;
-        }
+        const { generateDocumentNumberAPI: generateInvoiceNum } = await import('@/utils/documentNumbering');
+        finalInvoiceNumber = await generateInvoiceNum('invoice');
       }
 
       // CREATE INVOICE FIRST (before payment, since payments.invoice_id references invoices.id)

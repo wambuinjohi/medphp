@@ -4,8 +4,16 @@
  * (which is the case when using external MySQL API)
  *
  * @deprecated Document number generation RPC functions have been replaced with API-based generation.
- * For document numbering, use generateDocumentNumberAPI() from src/utils/documentNumbering.ts instead.
- * The general RPC error handling utilities remain available for other RPC functions.
+ * See DEPRECATION NOTES below for details on each fallback function.
+ *
+ * DOCUMENT NUMBER GENERATION MIGRATION:
+ * - ❌ OLD: db.rpc('generate_invoice_number'), db.rpc('generate_proforma_number'), etc.
+ * - ✅ NEW: generateDocumentNumberAPI() from src/utils/documentNumbering.ts
+ * - 📍 Endpoint: /backend/api.php?action=get_next_document_number
+ *
+ * The fallback functions below are kept for reference but should NOT be used.
+ * They used to be RPC function fallbacks but are now obsolete with the new API system.
+ * The new generateDocumentNumberAPI() has its own robust fallback mechanism.
  */
 
 export interface RPCCallOptions {
@@ -112,8 +120,9 @@ export async function callRPCWithFallback(
  */
 export const RPCFallbacks = {
   /**
-   * Fallback for generate_invoice_number
-   * Returns a simple sequential number based on current date/time
+   * @deprecated Use generateDocumentNumberAPI('invoice') instead
+   * Fallback for legacy RPC: generate_invoice_number
+   * This is obsolete - the new API system has its own fallback mechanism
    */
   generateInvoiceNumber: (companyId?: string) => {
     const year = new Date().getFullYear();
@@ -123,7 +132,9 @@ export const RPCFallbacks = {
   },
 
   /**
-   * Fallback for generate_quotation_number
+   * @deprecated Use generateDocumentNumberAPI('quotation') instead
+   * Fallback for legacy RPC: generate_quotation_number
+   * This is obsolete - the new API system has its own fallback mechanism
    */
   generateQuotationNumber: (companyId?: string) => {
     const year = new Date().getFullYear();
@@ -132,8 +143,10 @@ export const RPCFallbacks = {
   },
 
   /**
-   * Fallback for generate_proforma_number (deprecated - use API-based generation)
-   * Updated to use PRO prefix instead of PF
+   * @deprecated Use generateDocumentNumberAPI('proforma') instead
+   * Fallback for legacy RPC: generate_proforma_number
+   * This is obsolete - the new API system has its own fallback mechanism
+   * Note: Old format was 'PF-', new system uses 'PRO-' prefix
    */
   generateProformaNumber: (companyId?: string) => {
     const year = new Date().getFullYear();
@@ -142,7 +155,9 @@ export const RPCFallbacks = {
   },
 
   /**
-   * Fallback for generate_credit_note_number
+   * @deprecated Use generateDocumentNumberAPI('credit_note') instead
+   * Fallback for legacy RPC: generate_credit_note_number
+   * This is obsolete - the new API system has its own fallback mechanism
    */
   generateCreditNoteNumber: (companyId?: string) => {
     const timestamp = Date.now().toString().slice(-6);
@@ -150,7 +165,9 @@ export const RPCFallbacks = {
   },
 
   /**
-   * Fallback for generate_payment_number
+   * @deprecated Use generateDocumentNumberAPI('payment') instead
+   * Fallback for legacy RPC: generate_payment_number
+   * This is obsolete - the new API system has its own fallback mechanism
    */
   generatePaymentNumber: (companyId?: string) => {
     const year = new Date().getFullYear();
@@ -159,7 +176,9 @@ export const RPCFallbacks = {
   },
 
   /**
-   * Fallback for generate_delivery_number
+   * @deprecated Use generateDocumentNumberAPI('delivery_note') instead
+   * Fallback for legacy RPC: generate_delivery_number
+   * This is obsolete - the new API system has its own fallback mechanism
    */
   generateDeliveryNumber: (companyId?: string) => {
     const year = new Date().getFullYear();

@@ -222,9 +222,9 @@ export const useCreateProforma = () => {
         firstData = data; proformaError = error as any;
       }
 
-      // Fallback: if FK violation on created_by, retry with created_by = null
-      if (proformaError && proformaError.code === '23503' && String(proformaError.message || '').includes('created_by')) {
-        const retryPayload = { ...cleanProforma, created_by: null };
+      // Fallback: if error includes created_by (FK violation or column missing), retry without it
+      if (proformaError && String(proformaError.message || '').includes('created_by')) {
+        const { created_by, ...retryPayload } = cleanProforma;
         const retryRes = await supabase
           .from('proforma_invoices')
           .insert([retryPayload])
@@ -237,11 +237,12 @@ export const useCreateProforma = () => {
         const errorMessage = serializeError(proformaError).toLowerCase();
         console.warn('Proforma insert failed, checking for schema mismatch:', errorMessage);
 
+        // Fallback: if valid_until column missing, retry without it
         if (errorMessage.includes('valid_until')) {
-          const { valid_until, ...withoutValidUntil } = cleanProforma as any;
+          const { valid_until, created_by, ...withoutColumns } = cleanProforma as any;
           const retry = await supabase
             .from('proforma_invoices')
-            .insert([withoutValidUntil])
+            .insert([withoutColumns])
             .select()
             .single();
 
@@ -529,8 +530,9 @@ export const useConvertProformaToInvoice = () => {
       if (itemsResult.error) throw itemsResult.error;
       const proformaItems = itemsResult.data || [];
 
-      // Generate invoice number using timestamp
-      const invoiceNumber = `INV-${Date.now()}`;
+      // Generate invoice number using centralized API
+      const { generateDocumentNumberAPI } = await import('@/utils/documentNumbering');
+      const invoiceNumber = await generateDocumentNumberAPI('invoice');
 
       // Get current user
       let createdBy: string | null = null;

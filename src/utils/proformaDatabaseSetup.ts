@@ -1,11 +1,41 @@
 import { getDatabase } from '@/integrations/database';
 
 /**
- * @deprecated This file contains Supabase RPC-based setup for proforma database tables.
- * Proforma number generation has been migrated to API-based generation using the backend PHP endpoint.
- * See src/utils/documentNumbering.ts for the new API-based generateDocumentNumberAPI() function.
- * The database tables and RPC functions defined here are kept for reference only.
- * For new deployments, use the backend PHP API endpoint (src/backend/api.php) for document number generation.
+ * @deprecated LEGACY DATABASE SETUP - DO NOT USE FOR NEW CODE
+ *
+ * This file contains legacy Supabase RPC-based setup for proforma database tables and functions.
+ * The document number generation functions defined here have been completely replaced by the centralized API.
+ *
+ * MIGRATION GUIDE:
+ * - Old way: setupProformaTables(), setupProformaFunction(), checkProformaTables()
+ * - New way: Use generateDocumentNumberAPI() from src/utils/documentNumbering.ts
+ *
+ * MIGRATION STATUS:
+ * ✅ Database tables: Remain in place (no changes needed)
+ * ✅ Number generation functions: DEPRECATED - use API endpoint instead
+ * ✅ RPC functions: DEPRECATED - replaced by backend PHP API
+ * ⚠️  This file kept for reference only and potential rollback scenarios
+ *
+ * REFERENCE:
+ * - New implementation: src/utils/documentNumbering.ts
+ * - Backend API: src/backend/api.php (handles ?action=get_next_document_number)
+ * - Database tables: Still used for storing proforma data (proforma_invoices, proforma_items)
+ * - API-based generation: Handles all document number creation with consistent formatting
+ *
+ * WHAT STILL WORKS:
+ * - Proforma database tables (proforma_invoices, proforma_items) remain functional
+ * - All data access and manipulation continues to work as before
+ * - RLS policies and triggers remain in place for security and data consistency
+ *
+ * WHAT CHANGED:
+ * - Document number generation moved from Supabase RPC to backend PHP API
+ * - Removed timestamp-based fallbacks in conversion flows
+ * - All document types (INV, PRO, QT, etc.) now use centralized API
+ *
+ * BACKWARD COMPATIBILITY:
+ * This file is kept for reference and potential emergency rollback.
+ * All functions remain in place but should NOT be used for new development.
+ * If you need to use these functions, please file an issue explaining the use case.
  */
 
 // SQL script to create proforma invoice tables
