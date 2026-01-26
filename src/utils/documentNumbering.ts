@@ -123,7 +123,7 @@ export async function generateDocumentNumberAPI(
 /**
  * Generate a fallback document number when API is unavailable
  * Format: TYPE-YYYY-XXXX where XXXX is random alphanumeric
- * 
+ *
  * @param type - Document type code (e.g., 'INV', 'PRO')
  * @param year - Year for the number
  * @returns Fallback number string
@@ -135,7 +135,9 @@ function generateFallbackNumber(type: string, year: number): string {
   for (let i = 0; i < 4; i++) {
     random += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return `${type}-${year}-${random}`;
+  const fallbackNumber = `${type}-${year}-${random}`;
+  console.warn(`[DOC_NUM] Generated FALLBACK number (API unavailable):`, fallbackNumber);
+  return fallbackNumber;
 }
 
 /**
