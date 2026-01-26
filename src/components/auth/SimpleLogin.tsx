@@ -68,11 +68,11 @@ export function SimpleLogin() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
           <div className="mx-auto">
-            <BiolegendLogo size="lg" showText={false} logoUrl={publicCompany?.logo_url} />
+            <BiolegendLogo size="lg" showText={false} logoUrl={companyConfig.logo_url} />
           </div>
           <div className="space-y-2">
             <CardTitle className="text-2xl font-bold biolegend-brand">
-              {publicCompany?.name || 'Medplus Africa'}
+              {companyConfig.name}
             </CardTitle>
             <p className="text-sm text-muted-foreground">
               Sign in to access your business management system
