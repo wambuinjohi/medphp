@@ -6,15 +6,17 @@ import { useNavigate } from 'react-router-dom';
 import { PaymentSynchronization } from '@/components/PaymentSynchronization';
 import { PublicFooter } from '@/components/PublicFooter';
 import { useWebCategories } from '@/hooks/useWebCategories';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 
 export default function PaymentSynchronizationPage() {
   const navigate = useNavigate();
   const { categories } = useWebCategories();
+  const companyConfig = useCompanyConfig();
 
   useEffect(() => {
     // Set page title
-    document.title = 'Payment Synchronization - &gt;&gt; Medical Supplies';
-  }, []);
+    document.title = `Payment Synchronization - ${companyConfig.name}`;
+  }, [companyConfig.name]);
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5">
@@ -25,7 +27,7 @@ export default function PaymentSynchronizationPage() {
           <BiolegendLogo size="lg" showText={false} />
           <h1 className="text-3xl font-bold mt-4 biolegend-brand flex items-center justify-center gap-2">
             <RefreshCw className="h-8 w-8 text-primary" />
-            &gt;&gt; Medical Supplies
+            {companyConfig.name}
           </h1>
           <p className="text-muted-foreground mt-2">Payment-Invoice Synchronization</p>
           <p className="text-sm text-muted-foreground mt-1">

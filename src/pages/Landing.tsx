@@ -10,23 +10,23 @@ import { PublicFooter } from '@/components/PublicFooter';
 import { useWebCategories } from '@/hooks/useWebCategories';
 import { useSEO } from '@/hooks/useSEO';
 import { generateOrganizationSchema } from '@/utils/seoHelpers';
-import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 
 export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [productsDropdownOpen, setProductsDropdownOpen] = useState(false);
-  const { currentCompany } = useCurrentCompany();
-  const companyName = currentCompany?.name || '>> Medical Supplies';
+  const companyConfig = useCompanyConfig();
   const { categories } = useWebCategories();
 
   useSEO(
     {
-      title: 'Home - Medical Supplies & Hospital Equipment',
-      description: 'Medplus Africa - Trusted distributor of critical care supplies, hospital consumables, and furniture. Over 10 years of serving healthcare facilities across Africa.',
+      title: `Home - ${companyConfig.name}`,
+      description: companyConfig.description || 'Trusted distributor of critical care supplies, hospital consumables, and furniture. Over 10 years of serving healthcare facilities across Africa.',
       keywords: 'medical supplies, hospital equipment, critical care, healthcare distributor, Africa',
-      url: 'https://medplusafrica.com/',
+      url: '/',
+      image: companyConfig.logo_url,
     },
-    generateOrganizationSchema()
+    generateOrganizationSchema(companyConfig)
   );
 
   const navigationItems = [
@@ -77,7 +77,7 @@ export default function Landing() {
                     key={item.label}
                     to="/contact"
                     className="text-gray-700 hover:text-primary transition-colors font-medium text-sm lg:text-base px-2 py-2 rounded hover:bg-gray-100"
-                    aria-label={`Talk to us - Contact ${companyName}`}
+                    aria-label={`Talk to us - Contact ${companyConfig.name}`}
                   >
                     {item.label}
                   </Link>
@@ -89,7 +89,7 @@ export default function Landing() {
                     key={item.label}
                     to="/about-us"
                     className="text-gray-700 hover:text-primary transition-colors font-medium text-sm lg:text-base px-2 py-2 rounded hover:bg-gray-100"
-                    aria-label={`About Us - Learn about ${companyName}`}
+                    aria-label={`About Us - Learn about ${companyConfig.name}`}
                   >
                     {item.label}
                   </Link>

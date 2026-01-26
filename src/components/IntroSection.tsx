@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Heart, Globe, Users } from 'lucide-react';
-import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 
 export default function IntroSection() {
-  const { currentCompany } = useCurrentCompany();
-  const companyName = currentCompany?.name || '>> Medical Supplies';
+  const companyConfig = useCompanyConfig();
 
   return (
     <section className="py-12 sm:py-24 bg-gradient-to-b from-white via-blue-50/20 to-white">
@@ -15,7 +14,7 @@ export default function IntroSection() {
           <div className="space-y-6 sm:space-y-8">
             <div className="animate-fadeInUp">
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent mb-4 sm:mb-6 leading-tight">
-                Welcome to {companyName}
+                Welcome to {companyConfig.name}
               </h2>
               <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
                 Your trusted partner in healthcare excellence across the African continent. For over a decade, we've been committed to delivering premium medical supplies and hospital equipment to healthcare facilities, ensuring quality care reaches every corner of Africa.

@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { CompanyConfigProvider } from '@/contexts/CompanyConfigContext';
 import { AuthErrorBoundary } from '@/components/auth/AuthErrorBoundary';
 import { enableResizeObserverErrorSuppression } from '@/utils/resizeObserverErrorHandler';
 import { initializeDatabase } from '@/integrations/database';
@@ -40,13 +41,15 @@ const queryClient = new QueryClient();
 const root = createRoot(document.getElementById("root")!);
 root.render(
   <QueryClientProvider client={queryClient}>
-    <AuthErrorBoundary>
-      <AuthProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </AuthProvider>
-    </AuthErrorBoundary>
+    <CompanyConfigProvider>
+      <AuthErrorBoundary>
+        <AuthProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </AuthProvider>
+      </AuthErrorBoundary>
+    </CompanyConfigProvider>
   </QueryClientProvider>
 );
 

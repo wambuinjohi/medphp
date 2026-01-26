@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import { getProductBySlug } from '@/data/products';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 
 interface ProductCategory {
   name?: string;
@@ -15,51 +14,8 @@ interface PublicFooterProps {
   productCategories?: (ProductCategory | string)[];
 }
 
-interface CompanyData {
-  name: string;
-  address?: string;
-  city?: string;
-  country?: string;
-  phone?: string;
-  email?: string;
-}
-
 export const PublicFooter = ({ productCategories = [] }: PublicFooterProps) => {
-  const [company, setCompany] = useState<CompanyData>({
-    name: '>> Medical Supplies Limited',
-    address: 'Siens Plaza River Road',
-    city: 'Nairobi',
-    country: 'Kenya',
-    phone: '+254 713 416 022',
-    email: 'sales@medplusafrica.com'
-  });
-
-  useEffect(() => {
-    const fetchCompanyData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('companies')
-          .select('name, address, city, country, phone, email')
-          .limit(1)
-          .single();
-
-        if (!error && data) {
-          setCompany({
-            name: data.name || '>> Medical Supplies Limited',
-            address: data.address || 'Siens Plaza River Road',
-            city: data.city || 'Nairobi',
-            country: data.country || 'Kenya',
-            phone: data.phone || '+254 713 416 022',
-            email: data.email || 'sales@medplusafrica.com'
-          });
-        }
-      } catch (error) {
-        console.warn('Failed to fetch company data:', error);
-      }
-    };
-
-    fetchCompanyData();
-  }, []);
+  const company = useCompanyConfig();
   const getCategoryName = (category: ProductCategory | string): string => {
     return typeof category === 'string' ? category : category.name || '';
   };

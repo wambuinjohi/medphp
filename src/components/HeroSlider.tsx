@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 
 interface Slide {
   id: number;
@@ -11,8 +11,7 @@ interface Slide {
 
 export default function HeroSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const { currentCompany } = useCurrentCompany();
-  const companyName = currentCompany?.name || '>> Medical Supplies';
+  const companyConfig = useCompanyConfig();
 
   const slides: Slide[] = [
     {
@@ -103,7 +102,7 @@ export default function HeroSlider() {
                   <div className="pt-4 sm:pt-6">
                     <Link to="/about-us" className="block sm:inline-block">
                       <button className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 sm:px-8 py-3 sm:py-3 rounded-lg font-semibold hover:shadow-lg active:shadow-md transform hover:scale-105 active:scale-100 transition-all duration-200 text-base sm:text-base min-h-[44px] sm:min-h-auto flex items-center justify-center"
-                        aria-label={`Learn more about ${companyName}`}>
+                        aria-label={`Learn more about ${companyConfig.name}`}>
                         Learn More
                       </button>
                     </Link>

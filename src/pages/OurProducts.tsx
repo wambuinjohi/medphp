@@ -8,28 +8,31 @@ import ProductCategorySidebar from '@/components/ProductCategorySidebar';
 import { useWebCategories } from '@/hooks/useWebCategories';
 import { useSEO } from '@/hooks/useSEO';
 import { generateWebPageSchema, useBreadcrumbSchema, generateCollectionSchema, addStructuredData } from '@/utils/seoHelpers';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 
 export default function OurProducts() {
   const { categories } = useWebCategories();
+  const companyConfig = useCompanyConfig();
 
   useSEO(
     {
-      title: 'Our Products',
+      title: `${companyConfig.name} Products`,
       description: 'Browse our comprehensive range of medical supplies and hospital equipment. From bandages and dressings to hospital furniture and instruments.',
       keywords: 'medical products, hospital supplies, healthcare equipment, medical equipment',
-      url: 'https://medplusafrica.com/products',
+      url: '/products',
+      image: companyConfig.logo_url,
     },
     generateWebPageSchema({
-      title: 'Our Products - Medical Supplies & Equipment',
+      title: `Our Products - ${companyConfig.name}`,
       description: 'Comprehensive range of hospital consumables, medical equipment, and furniture',
-      url: 'https://medplusafrica.com/products',
-    })
+      url: '/products',
+    }, companyConfig)
   );
 
   useBreadcrumbSchema([
     { name: 'Home', url: '/' },
     { name: 'Our Products', url: '/products' }
-  ]);
+  ], companyConfig);
 
   // Add collection schema with available categories
   useEffect(() => {

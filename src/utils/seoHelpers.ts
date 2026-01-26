@@ -1,6 +1,9 @@
 /**
  * SEO Helpers for structured data and meta information
+ * Now supports dynamic company configuration from database
  */
+
+import { CompanyConfig } from '@/contexts/CompanyConfigContext';
 
 export interface SEOMetadata {
   title: string;
@@ -11,7 +14,8 @@ export interface SEOMetadata {
   type?: 'website' | 'article' | 'product';
 }
 
-export const SITE_CONFIG = {
+// Default site config - used as fallback if company config is not available
+const DEFAULT_SITE_CONFIG = {
   siteName: '&gt;&gt; Medical Supplies',
   url: 'https://medplusafrica.com',
   logo: 'https://medplusafrica.com/assets/medplus-logo.webp',
@@ -22,47 +26,76 @@ export const SITE_CONFIG = {
 };
 
 /**
+ * Create SITE_CONFIG from company configuration
+ * Used to generate SEO metadata and structured data
+ */
+export function createSiteConfig(companyConfig: CompanyConfig | null) {
+  if (!companyConfig) {
+    return DEFAULT_SITE_CONFIG;
+  }
+
+  return {
+    siteName: companyConfig.name || DEFAULT_SITE_CONFIG.siteName,
+    url: `https://${companyConfig.name?.toLowerCase().replace(/\s+/g, '')}` || DEFAULT_SITE_CONFIG.url,
+    logo: companyConfig.logo_url || DEFAULT_SITE_CONFIG.logo,
+    description: companyConfig.description || DEFAULT_SITE_CONFIG.description,
+    email: companyConfig.email || DEFAULT_SITE_CONFIG.email,
+    phone: companyConfig.phone || DEFAULT_SITE_CONFIG.phone,
+    address: companyConfig.address || DEFAULT_SITE_CONFIG.address,
+  };
+}
+
+// Export default for backward compatibility
+export const SITE_CONFIG = DEFAULT_SITE_CONFIG;
+
+/**
  * Generate structured data for Organization
  */
-export const generateOrganizationSchema = () => ({
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: SITE_CONFIG.siteName,
-  url: SITE_CONFIG.url,
-  logo: SITE_CONFIG.logo,
-  description: SITE_CONFIG.description,
-  email: SITE_CONFIG.email,
-  telephone: SITE_CONFIG.phone,
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: SITE_CONFIG.address,
-    addressCountry: 'KE',
-  },
-  sameAs: [
-    'https://www.facebook.com/medplusafrica',
-    'https://www.instagram.com/medplusafrica',
-  ],
-});
+export const generateOrganizationSchema = (companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: config.siteName,
+    url: config.url,
+    logo: config.logo,
+    description: config.description,
+    email: config.email,
+    telephone: config.phone,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: config.address,
+      addressCountry: 'KE',
+    },
+    sameAs: [
+      'https://www.facebook.com/medplusafrica',
+      'https://www.instagram.com/medplusafrica',
+    ],
+  };
+};
 
 /**
  * Generate structured data for WebPage
  */
-export const generateWebPageSchema = (metadata: SEOMetadata) => ({
-  '@context': 'https://schema.org',
-  '@type': 'WebPage',
-  name: metadata.title,
-  description: metadata.description,
-  url: metadata.url || SITE_CONFIG.url,
-  image: metadata.image || SITE_CONFIG.logo,
-  publisher: {
-    '@type': 'Organization',
-    name: SITE_CONFIG.siteName,
-    logo: {
-      '@type': 'ImageObject',
-      url: SITE_CONFIG.logo,
+export const generateWebPageSchema = (metadata: SEOMetadata, companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: metadata.title,
+    description: metadata.description,
+    url: metadata.url || config.url,
+    image: metadata.image || config.logo,
+    publisher: {
+      '@type': 'Organization',
+      name: config.siteName,
+      logo: {
+        '@type': 'ImageObject',
+        url: config.logo,
+      },
     },
-  },
-});
+  };
+};
 
 /**
  * Generate structured data for Product
@@ -74,73 +107,82 @@ export const generateProductSchema = (product: {
   url?: string;
   category?: string;
   price?: number;
-}) => ({
-  '@context': 'https://schema.org',
-  '@type': 'Product',
-  name: product.name,
-  description: product.description,
-  image: product.image || SITE_CONFIG.logo,
-  url: product.url,
-  category: product.category,
-  brand: {
-    '@type': 'Brand',
-    name: SITE_CONFIG.siteName,
-  },
-  offers: {
-    '@type': 'AggregateOffer',
-    availability: 'https://schema.org/InStock',
-    priceCurrency: 'KES',
-    ...(product.price && { highPrice: product.price.toString() }),
-  },
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.8',
-    reviewCount: '150',
-  },
-});
+}, companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description,
+    image: product.image || config.logo,
+    url: product.url,
+    category: product.category,
+    brand: {
+      '@type': 'Brand',
+      name: config.siteName,
+    },
+    offers: {
+      '@type': 'AggregateOffer',
+      availability: 'https://schema.org/InStock',
+      priceCurrency: 'KES',
+      ...(product.price && { highPrice: product.price.toString() }),
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.8',
+      reviewCount: '150',
+    },
+  };
+};
 
 /**
  * Generate structured data for LocalBusiness
  */
-export const generateLocalBusinessSchema = () => ({
-  '@context': 'https://schema.org',
-  '@type': 'LocalBusiness',
-  name: SITE_CONFIG.siteName,
-  description: SITE_CONFIG.description,
-  url: SITE_CONFIG.url,
-  logo: SITE_CONFIG.logo,
-  telephone: SITE_CONFIG.phone,
-  email: SITE_CONFIG.email,
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: SITE_CONFIG.address,
-    addressCountry: 'KE',
-  },
-  areaServed: {
-    '@type': 'Region',
-    name: 'East Africa',
-  },
-});
+export const generateLocalBusinessSchema = (companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: config.siteName,
+    description: config.description,
+    url: config.url,
+    logo: config.logo,
+    telephone: config.phone,
+    email: config.email,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: config.address,
+      addressCountry: 'KE',
+    },
+    areaServed: {
+      '@type': 'Region',
+      name: 'East Africa',
+    },
+  };
+};
 
 /**
  * Generate breadcrumb schema
  */
-export const generateBreadcrumbSchema = (items: Array<{ name: string; url: string }>) => ({
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListElement: items.map((item, index) => ({
-    '@type': 'ListItem',
-    position: index + 1,
-    name: item.name,
-    item: `${SITE_CONFIG.url}${item.url}`,
-  })),
-});
+export const generateBreadcrumbSchema = (items: Array<{ name: string; url: string }>, companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: `${config.url}${item.url}`,
+    })),
+  };
+};
 
 /**
  * Use breadcrumb schema and add to page
  */
-export const useBreadcrumbSchema = (items: Array<{ name: string; url: string }>) => {
-  addStructuredData(generateBreadcrumbSchema(items));
+export const useBreadcrumbSchema = (items: Array<{ name: string; url: string }>, companyConfig?: CompanyConfig | null) => {
+  addStructuredData(generateBreadcrumbSchema(items, companyConfig));
 };
 
 /**
@@ -152,53 +194,59 @@ export const generateCollectionSchema = (products: Array<{
   image?: string;
   url?: string;
   price?: number;
-}>) => ({
-  '@context': 'https://schema.org',
-  '@type': 'CollectionPage',
-  name: 'Product Collection',
-  description: 'Collection of medical products and equipment',
-  url: `${SITE_CONFIG.url}/products`,
-  mainEntity: products.map((product) => ({
-    '@type': 'Product',
-    name: product.name,
-    description: product.description,
-    image: product.image || SITE_CONFIG.logo,
-    url: product.url || `${SITE_CONFIG.url}/products`,
-    brand: {
-      '@type': 'Brand',
-      name: SITE_CONFIG.siteName,
-    },
-    offers: {
-      '@type': 'AggregateOffer',
-      availability: 'https://schema.org/InStock',
-      priceCurrency: 'KES',
-      ...(product.price && { highPrice: product.price.toString() }),
-    },
-  })),
-});
+}>, companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Product Collection',
+    description: 'Collection of medical products and equipment',
+    url: `${config.url}/products`,
+    mainEntity: products.map((product) => ({
+      '@type': 'Product',
+      name: product.name,
+      description: product.description,
+      image: product.image || config.logo,
+      url: product.url || `${config.url}/products`,
+      brand: {
+        '@type': 'Brand',
+        name: config.siteName,
+      },
+      offers: {
+        '@type': 'AggregateOffer',
+        availability: 'https://schema.org/InStock',
+        priceCurrency: 'KES',
+        ...(product.price && { highPrice: product.price.toString() }),
+      },
+    })),
+  };
+};
 
 /**
  * Generate Contact Page schema
  */
-export const generateContactPageSchema = () => ({
-  '@context': 'https://schema.org',
-  '@type': 'ContactPage',
-  name: 'Contact &gt;&gt; Medical Supplies',
-  description: 'Get in touch with &gt;&gt; Medical Supplies for inquiries and support regarding medical supplies and hospital equipment.',
-  url: `${SITE_CONFIG.url}/contact`,
-  contactPoint: {
-    '@type': 'ContactPoint',
-    telephone: SITE_CONFIG.phone,
-    contactType: 'Customer Service',
-    email: SITE_CONFIG.email,
-    areaServed: 'East Africa',
-  },
-});
+export const generateContactPageSchema = (companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ContactPage',
+    name: `Contact ${config.siteName}`,
+    description: `Get in touch with ${config.siteName} for inquiries and support regarding medical supplies and hospital equipment.`,
+    url: `${config.url}/contact`,
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: config.phone,
+      contactType: 'Customer Service',
+      email: config.email,
+      areaServed: 'East Africa',
+    },
+  };
+};
 
 /**
  * Generate FAQ schema
  */
-export const generateFAQSchema = (faqs: Array<{ question: string; answer: string }>) => ({
+export const generateFAQSchema = (faqs: Array<{ question: string; answer: string }>, companyConfig?: CompanyConfig | null) => ({
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: faqs.map((faq) => ({
@@ -214,9 +262,11 @@ export const generateFAQSchema = (faqs: Array<{ question: string; answer: string
 /**
  * Update document meta tags
  */
-export const updateMetaTags = (metadata: SEOMetadata) => {
+export const updateMetaTags = (metadata: SEOMetadata, companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+
   // Title
-  document.title = `${metadata.title} | ${SITE_CONFIG.siteName}`;
+  document.title = `${metadata.title} | ${config.siteName}`;
 
   // Meta tags
   updateOrCreateMetaTag('name', 'description', metadata.description);
@@ -225,17 +275,17 @@ export const updateMetaTags = (metadata: SEOMetadata) => {
   // Open Graph
   updateOrCreateMetaTag('property', 'og:title', `${metadata.title}`);
   updateOrCreateMetaTag('property', 'og:description', metadata.description);
-  updateOrCreateMetaTag('property', 'og:url', metadata.url || SITE_CONFIG.url);
-  updateOrCreateMetaTag('property', 'og:image', metadata.image || SITE_CONFIG.logo);
+  updateOrCreateMetaTag('property', 'og:url', metadata.url || config.url);
+  updateOrCreateMetaTag('property', 'og:image', metadata.image || config.logo);
   updateOrCreateMetaTag('property', 'og:type', metadata.type || 'website');
 
   // Twitter
   updateOrCreateMetaTag('name', 'twitter:title', metadata.title);
   updateOrCreateMetaTag('name', 'twitter:description', metadata.description);
-  updateOrCreateMetaTag('name', 'twitter:image', metadata.image || SITE_CONFIG.logo);
+  updateOrCreateMetaTag('name', 'twitter:image', metadata.image || config.logo);
 
   // Canonical
-  updateOrCreateCanonical(metadata.url || SITE_CONFIG.url);
+  updateOrCreateCanonical(metadata.url || config.url);
 };
 
 /**
