@@ -2005,6 +2005,31 @@ try {
             throw new Exception("Missing or invalid payment data");
         }
 
+        // Generate document numbers BEFORE transaction (to avoid transaction nesting)
+        // Generate invoice number if not provided
+        if (empty($invoiceData['invoice_number'])) {
+            try {
+                $invoiceNumber = getNextDocumentNumberInternal('INV');
+            } catch (Exception $e) {
+                error_log("Failed to generate invoice number: " . $e->getMessage());
+                throw new Exception("Failed to generate invoice number: " . $e->getMessage());
+            }
+        } else {
+            $invoiceNumber = $invoiceData['invoice_number'];
+        }
+
+        // Generate payment number if not provided
+        if (empty($payment['payment_number'])) {
+            try {
+                $paymentNumber = getNextDocumentNumberInternal('PAY');
+            } catch (Exception $e) {
+                error_log("Failed to generate payment number: " . $e->getMessage());
+                throw new Exception("Failed to generate payment number: " . $e->getMessage());
+            }
+        } else {
+            $paymentNumber = $payment['payment_number'];
+        }
+
         // Start transaction
         if (!$conn->begin_transaction()) {
             throw new Exception("Failed to start transaction");
@@ -2041,9 +2066,6 @@ try {
                 $paidAmount = $paymentAmount;
                 $balanceDue = $invoiceAmount - $paymentAmount;
             }
-
-            // Generate invoice number
-            $invoiceNumber = $invoiceData['invoice_number'] ?? 'INV-' . time();
 
             // Step 1: Create invoice
             $companyId_e = escape($conn, $companyId);
