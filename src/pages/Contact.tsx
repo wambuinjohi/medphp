@@ -120,8 +120,7 @@ export default function Contact() {
 
   const handleWhatsAppSubmit = () => {
     try {
-      const companyName = currentCompany?.name || '>> Medical Supplies';
-      const message = `*Inquiry from ${companyName} Contact Form*
+      const message = `*Inquiry from ${companyConfig.name} Contact Form*
 ━━━━━━━━━━━━━━━━━━━━━━
 
 *From:*
