@@ -7,9 +7,13 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => {
   // Use local auth server for development if VITE_USE_LOCAL_AUTH is set
   const useLocalAuth = process.env.VITE_USE_LOCAL_AUTH === 'true';
-  const apiUrl = useLocalAuth
-    ? 'http://localhost:3001'
-    : (process.env.VITE_EXTERNAL_API_URL || process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com');
+  // Load from environment or use new default
+  let apiUrl: string;
+  if (useLocalAuth) {
+    apiUrl = 'http://localhost:3001';
+  } else {
+    apiUrl = process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com';
+  }
 
   if (useLocalAuth) {
     console.log('✅ Using LOCAL authentication server at http://localhost:3001');
