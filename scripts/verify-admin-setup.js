@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
  * Verify Admin Setup - External API Version
- * 
- * This script verifies that admin setup is complete via med.wayrus.co.ke/api.php
+ *
+ * This script verifies that admin setup is complete via med.layonsconstruction.com/api.php
  * 
  * Usage:
  *   node scripts/verify-admin-setup.js
  */
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
 const AUTH_TOKEN = process.env.API_AUTH_TOKEN || null;
 
 async function verifyAdminSetup() {

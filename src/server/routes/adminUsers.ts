@@ -4,12 +4,12 @@ import { fixProfileRls } from '../lib/fixProfileRls';
 import { checkDatabaseStatus, initializeDatabase, getDatabaseStats } from '../lib/dbInitialize';
 import { checkRolesStatus, createDefaultRoles, setupRolePermissions, completeRoleSetup } from '../lib/setupRoles';
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
 const API_AUTH_TOKEN = process.env.API_AUTH_TOKEN || '';
 
 /**
  * API Route Handler for creating users
- * Calls the external API (med.wayrus.co.ke/api.php)
+ * Calls the external API (med.layonsconstruction.com/api.php)
  *
  * Usage:
  * POST /api/admin/users/create
@@ -64,7 +64,7 @@ export async function handleCreateUser(body: any) {
 
 /**
  * API Route Handler for password reset
- * Calls the external API (med.wayrus.co.ke/api.php)
+ * Calls the external API (med.layonsconstruction.com/api.php)
  *
  * Usage:
  * POST /api/admin/users/reset-password
@@ -109,7 +109,7 @@ export async function handleResetPassword(body: any) {
 
 /**
  * API Route Handler for fixing profile RLS
- * Calls the external API (med.wayrus.co.ke/api.php)
+ * Calls the external API (med.layonsconstruction.com/api.php)
  *
  * Usage:
  * POST /api/admin/database/fix-rls

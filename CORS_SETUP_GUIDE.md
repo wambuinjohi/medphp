@@ -120,7 +120,7 @@ Configure Vite to proxy requests. The `vite.config.ts` already has some proxy se
 server: {
   proxy: {
     '/api': {
-      target: 'https://med.wayrus.co.ke',
+      target: 'https://med.layonsconstruction.com',
       changeOrigin: true,
       rewrite: (path) => path.replace(/^\/api/, ''),
     }
@@ -141,7 +141,7 @@ curl -i -X OPTIONS \
   -H "Origin: https://your-frontend.fly.dev" \
   -H "Access-Control-Request-Method: POST" \
   -H "Access-Control-Request-Headers: Content-Type" \
-  https://med.wayrus.co.ke/api.php?action=login
+  https://med.layonsconstruction.com/api.php?action=login
 ```
 
 Look for these headers in the response:
@@ -171,7 +171,7 @@ The application uses a **Vite development proxy** to bypass CORS issues during d
 ### How It Works
 
 1. Frontend makes request to `http://localhost:8080/api`
-2. Vite proxy intercepts and forwards to `https://med.wayrus.co.ke/api.php`
+2. Vite proxy intercepts and forwards to `https://med.layonsconstruction.com/api.php`
 3. Response is returned to frontend without CORS blocking
 4. Proxy is **only available in development** - doesn't work in production
 
@@ -211,7 +211,7 @@ Verify backend has CORS headers:
 curl -i -X OPTIONS \
   -H "Origin: https://your-frontend-domain.fly.dev" \
   -H "Access-Control-Request-Method: POST" \
-  https://med.wayrus.co.ke/api.php?action=login
+  https://med.layonsconstruction.com/api.php?action=login
 
 # Expected response headers:
 # access-control-allow-origin: https://your-frontend-domain.fly.dev

@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
  * Approve Admin Account - External API Version
- * 
- * This script approves/activates an admin account via med.wayrus.co.ke/api.php
+ *
+ * This script approves/activates an admin account via med.layonsconstruction.com/api.php
  * 
  * Usage:
  *   node scripts/approve-admin-account.js [user-id] [approval-code]
  */
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
 const AUTH_TOKEN = process.env.API_AUTH_TOKEN || null;
 
 async function approveAdminAccount() {

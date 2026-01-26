@@ -69,7 +69,7 @@ function parseArgs(): CliArgs {
 }
 
 async function main() {
-  const apiUrl = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+  const apiUrl = process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
   const authToken = process.env.API_AUTH_TOKEN;
 
   const args = parseArgs();
