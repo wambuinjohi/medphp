@@ -1210,8 +1210,14 @@ try {
         $values = [];
 
         foreach ($data as $col => $val) {
+            // Convert boolean values to 0/1 for proper MySQL handling
+            if (is_bool($val)) {
+                $val = $val ? 1 : 0;
+            }
+
             $columns[] = "`" . escape($conn, $col) . "`";
-            $values[] = "'" . escape($conn, $val) . "'";
+            // Handle NULL values properly - don't wrap in quotes
+            $values[] = is_null($val) ? "NULL" : ("'" . escape($conn, $val) . "'");
         }
 
         $sql = "INSERT INTO `$table` (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $values) . ")";
