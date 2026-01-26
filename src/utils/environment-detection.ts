@@ -88,9 +88,14 @@ function detectLocalHosting(): boolean {
  * Hybrid approach: respects VITE_EXTERNAL_API_URL if set, otherwise auto-detects
  */
 function getAPIBaseURLInternal(): string {
+  console.log('[ENV_DETECT] 🔵 getAPIBaseURLInternal called');
+  console.log('[ENV_DETECT] typeof window:', typeof window);
+
   // If running in SSR context, require explicit config
   if (typeof window === 'undefined') {
+    console.log('[ENV_DETECT] SSR context detected');
     const envUrl = import.meta.env.VITE_EXTERNAL_API_URL;
+    console.log('[ENV_DETECT] VITE_EXTERNAL_API_URL in SSR:', envUrl);
     if (!envUrl) {
       throw new Error('VITE_EXTERNAL_API_URL is required for non-browser environments');
     }
@@ -98,30 +103,38 @@ function getAPIBaseURLInternal(): string {
   }
 
   // Priority 1: Use explicit environment variable if set
+  console.log('[ENV_DETECT] Browser context detected');
   const explicitUrl = import.meta.env.VITE_EXTERNAL_API_URL;
+  console.log('[ENV_DETECT] VITE_EXTERNAL_API_URL:', explicitUrl);
   if (explicitUrl) {
-    console.log('🌐 Using explicit VITE_EXTERNAL_API_URL:', explicitUrl);
+    console.log('[ENV_DETECT] 🌐 Using explicit VITE_EXTERNAL_API_URL:', explicitUrl);
     return ensureApiPhpSuffix(explicitUrl);
   }
 
   // Priority 2: Auto-detect based on hostname
+  console.log('[ENV_DETECT] No explicit URL, auto-detecting...');
   const isLocal = detectLocalHosting();
   const protocol = window.location.protocol;
   const hostname = window.location.hostname;
   const port = window.location.port ? `:${window.location.port}` : '';
 
+  console.log('[ENV_DETECT] Hostname:', hostname);
+  console.log('[ENV_DETECT] Protocol:', protocol);
+  console.log('[ENV_DETECT] Port:', port || '(default)');
+  console.log('[ENV_DETECT] isLocal:', isLocal);
+
   if (isLocal) {
     // Local/Apache mode: use /api.php endpoint at root
     const localUrl = `${protocol}//${hostname}${port}/api.php`;
-    console.log('🏠 Local hosting detected - using /api.php endpoint:', localUrl);
+    console.log('[ENV_DETECT] 🏠 Local hosting detected - using /api.php endpoint:', localUrl);
     return localUrl;
   }
 
   // Cloud mode without explicit config: error
-  throw new Error(
-    `Cloud hosting detected (${hostname}) but VITE_EXTERNAL_API_URL is not configured. ` +
-    `Please set VITE_EXTERNAL_API_URL environment variable with the API endpoint URL.`
-  );
+  const errorMsg = `Cloud hosting detected (${hostname}) but VITE_EXTERNAL_API_URL is not configured. ` +
+    `Please set VITE_EXTERNAL_API_URL environment variable with the API endpoint URL.`;
+  console.error('[ENV_DETECT] 🌐 Cloud mode detected without config:', errorMsg);
+  throw new Error(errorMsg);
 }
 
 /**
