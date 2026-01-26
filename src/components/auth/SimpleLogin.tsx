@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Mail, Lock, Zap } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { toast } from 'sonner';
 import { handleAuthError } from '@/utils/authErrorHandler';
@@ -13,6 +14,7 @@ import { handleAuthError } from '@/utils/authErrorHandler';
 export function SimpleLogin() {
   const { signIn, loading } = useAuth();
   const companyConfig = useCompanyConfig();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -150,8 +152,25 @@ export function SimpleLogin() {
             </Button>
           </form>
 
-          <div className="text-center text-xs text-muted-foreground">
-            <p>Contact your administrator if you need account access.</p>
+          <div className="space-y-3">
+            <div className="text-center text-xs text-muted-foreground">
+              <p>Contact your administrator if you need account access.</p>
+            </div>
+
+            <div className="border-t pt-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2 text-xs"
+                onClick={() => navigate('/debug/network')}
+              >
+                <Zap className="h-4 w-4" />
+                Network Diagnostics
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2">
+                Having connection issues? Run diagnostics to troubleshoot.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
