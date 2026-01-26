@@ -25,12 +25,15 @@ if (isset($_SERVER['HTTP_ORIGIN'])) {
     // If no origin header sent, allow requests without credentials
     header("Access-Control-Allow-Origin: *");
 }
+
+// Set CORS headers for all requests
 header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With");
+header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With, X-Requested-With");
 header("Access-Control-Max-Age: 86400");
+header("Access-Control-Expose-Headers: Content-Type, X-Total-Count, X-Page, X-Page-Size");
 
 // Always set response Content-Type to JSON
-header("Content-Type: application/json");
+header("Content-Type: application/json; charset=utf-8");
 
 // Note: The above correctly sets the RESPONSE content-type
 // The $_SERVER['CONTENT_TYPE'] is the REQUEST content-type (multipart/form-data for file uploads)
