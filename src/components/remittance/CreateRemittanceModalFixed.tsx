@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { useCreateRemittanceAdvice, useCustomers, useGenerateDocumentNumber } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { generateDocumentNumberAPI } from '@/utils/documentNumbering';
 import type { RemittanceAdviceItemFormData } from '@/types/remittance';
 
 interface CreateRemittanceModalProps {
