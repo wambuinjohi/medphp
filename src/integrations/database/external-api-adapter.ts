@@ -338,9 +338,13 @@ export class ExternalAPIAdapter implements IDatabase {
           console.error(`❌ [${action} ${table || 'API'}] Server returned invalid JSON response:`, errorDetails);
 
           if (!response.ok) {
+            console.error(`Server returned HTTP ${response.status} ${response.statusText}`);
+            console.error(`Response body: ${responseText}`);
             throw new Error(`Server error (HTTP ${response.status} ${response.statusText}): ${responseText.substring(0, 200) || 'The API server may be experiencing issues.'}`);
           }
-          throw new Error(`Invalid response from server: Expected valid JSON. Response: ${responseText.substring(0, 200)}`);
+          console.error(`Server returned non-JSON response with status ${response.status}`);
+          console.error(`Response body: ${responseText}`);
+          throw new Error(`Invalid response from server: Expected valid JSON but received: ${responseText.substring(0, 300)}`);
         });
       } catch (fetchError: any) {
         requestCompleted = true;
