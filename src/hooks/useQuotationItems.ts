@@ -258,8 +258,9 @@ export const useConvertQuotationToInvoice = () => {
       if (itemsResult.error) throw itemsResult.error;
       const quotationItems = itemsResult.data || [];
 
-      // Generate invoice number using timestamp
-      const invoiceNumber = `INV-${Date.now()}`;
+      // Generate invoice number using centralized API
+      const { generateDocumentNumberAPI } = await import('@/utils/documentNumbering');
+      const invoiceNumber = await generateDocumentNumberAPI('invoice');
 
       // Create invoice from quotation
       // Determine creator
@@ -1076,16 +1077,8 @@ export const useCreateDirectReceipt = () => {
       // Generate invoice number if not provided
       let finalInvoiceNumber = invoiceNumber;
       if (!finalInvoiceNumber) {
-        try {
-          const { useGenerateDocumentNumber } = await import('@/hooks/useDatabase');
-          const generator = useGenerateDocumentNumber();
-          finalInvoiceNumber = await generator.mutateAsync({
-            companyId: companyId,
-            type: 'invoice'
-          });
-        } catch (e) {
-          finalInvoiceNumber = `INV-${Date.now()}`;
-        }
+        const { generateDocumentNumberAPI: generateInvoiceNum } = await import('@/utils/documentNumbering');
+        finalInvoiceNumber = await generateInvoiceNum('invoice');
       }
 
       // CREATE INVOICE FIRST (before payment, since payments.invoice_id references invoices.id)
@@ -1274,16 +1267,8 @@ export const useCreateDirectReceiptWithItems = () => {
       // Generate invoice number if not provided
       let finalInvoiceNumber = invoiceNumber;
       if (!finalInvoiceNumber) {
-        try {
-          const { useGenerateDocumentNumber } = await import('@/hooks/useDatabase');
-          const generator = useGenerateDocumentNumber();
-          finalInvoiceNumber = await generator.mutateAsync({
-            companyId: companyId,
-            type: 'invoice'
-          });
-        } catch (e) {
-          finalInvoiceNumber = `INV-${Date.now()}`;
-        }
+        const { generateDocumentNumberAPI: generateInvoiceNum } = await import('@/utils/documentNumbering');
+        finalInvoiceNumber = await generateInvoiceNum('invoice');
       }
 
       // CREATE INVOICE FIRST (before payment, since payments.invoice_id references invoices.id)
