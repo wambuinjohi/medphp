@@ -32,6 +32,7 @@ import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { useCreateDeliveryNote } from '@/hooks/useQuotationItems';
 import { mapDeliveryNoteForDatabase } from '@/utils/deliveryNoteMapper';
 import { validateDeliveryNoteData } from '@/utils/deliveryNoteValidation';
+import { generateDocumentNumberAPI } from '@/utils/documentNumbering';
 import { toast } from 'sonner';
 
 interface DeliveryItem {
@@ -86,7 +87,11 @@ export const CreateDeliveryNoteModal = ({
 
   useEffect(() => {
     if (open) {
-      setDeliveryNoteNumber(`DN-${Date.now()}`);
+      // Generate delivery note number using sequential API
+      generateDocumentNumberAPI('delivery_note').then(setDeliveryNoteNumber).catch((error) => {
+        console.error('Failed to generate delivery note number:', error);
+        toast.error('Failed to generate delivery note number');
+      });
     }
   }, [open]);
 

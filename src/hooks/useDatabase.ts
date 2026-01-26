@@ -1216,11 +1216,14 @@ export function useCreateOverpaymentCreditNote() {
         );
 
         if (numberError) {
-          console.warn('Failed to generate credit note number via RPC, using fallback');
-          // Fallback generation
-          const timestamp = Date.now().toString().slice(-6);
-          const year = new Date().getFullYear();
-          var finalCreditNoteNumber = `CN-${year}-${timestamp}`;
+          console.warn('Failed to generate credit note number via RPC, using API fallback');
+          // Fallback to the sequential API
+          try {
+            var finalCreditNoteNumber = await generateDocumentNumberAPI('credit_note');
+          } catch (apiError) {
+            console.error('Failed to generate credit note number via API fallback:', apiError);
+            throw new Error('Failed to generate credit note number: ' + (apiError instanceof Error ? apiError.message : String(apiError)));
+          }
         } else {
           var finalCreditNoteNumber = creditNoteNumber as string;
         }

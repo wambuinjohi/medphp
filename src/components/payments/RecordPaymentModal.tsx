@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
+import { generateDocumentNumberAPI } from '@/utils/documentNumbering';
 import { useCreatePayment, usePaymentMethods, useCreatePaymentMethod, useCreateOverpaymentCreditNote } from '@/hooks/useDatabase';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
@@ -160,8 +161,8 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
 
     setIsSubmitting(true);
     try {
-      // Generate payment number
-      const paymentNumber = `PAY-${Date.now()}`;
+      // Generate payment number using sequential API
+      const paymentNumber = await generateDocumentNumberAPI('payment');
 
       const paymentRecord = {
         company_id: selectedInvoice?.company_id || currentCompany.id,

@@ -11,6 +11,7 @@ import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { useCreateCreditBalance as useCreateCreditBalanceHook } from '@/hooks/useCustomerCreditBalances';
+import { generateDocumentNumberAPI } from '@/utils/documentNumbering';
 
 export interface ExcessPaymentInput {
   receiptId: string;
@@ -52,8 +53,8 @@ export const useCreateChangeNote = () => {
 
       const db = getDatabase();
 
-      // Generate credit note number
-      const creditNoteNumber = `CN-${Date.now()}`;
+      // Generate credit note number using sequential API
+      const creditNoteNumber = await generateDocumentNumberAPI('credit_note');
 
       const creditNoteData = {
         company_id: input.companyId,

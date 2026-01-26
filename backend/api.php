@@ -1897,6 +1897,93 @@ try {
         // Return the external API response as-is
         echo is_string($external_response) ? $external_response : json_encode($decoded_response);
     }
+
+    /**
+     * Helper function to get next document number internally (not via HTTP)
+     * Uses the document_sequences table to maintain sequential numbering
+     *
+     * @param string $type Document type (INV, PAY, REC, etc.)
+     * @param string|null $year Optional year (defaults to current year)
+     * @param mysqli $conn Optional database connection (uses global if not provided)
+     * @return string Formatted document number (e.g., "INV-2026-0001")
+     */
+    function getNextDocumentNumberInternal($type, $year = null, $conn = null) {
+        global $conn as $global_conn;
+
+        // Use provided connection or fall back to global
+        $database_conn = $conn ?? $global_conn;
+        if (!$database_conn) {
+            throw new Exception("Database connection not available");
+        }
+
+        // Validate document type
+        $valid_types = ['INV', 'PRO', 'QT', 'PO', 'LPO', 'DN', 'CN', 'PAY', 'REC', 'RA', 'REM'];
+        if (!in_array($type, $valid_types)) {
+            throw new Exception("Invalid document type: $type. Valid types are: " . implode(', ', $valid_types));
+        }
+
+        // Default to current year if not provided
+        if (!$year) {
+            $year = date('Y');
+        } else {
+            $year = (int)$year;
+            // Validate year is reasonable
+            if ($year < 2000 || $year > (date('Y') + 10)) {
+                throw new Exception("Invalid year: $year");
+            }
+        }
+
+        // Ensure document_sequences table exists
+        $table_check = $database_conn->query("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_sequences'");
+        if (!$table_check || $table_check->num_rows === 0) {
+            $create_sql = "CREATE TABLE IF NOT EXISTS `document_sequences` (
+                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                document_type CHAR(3) NOT NULL,
+                year INT NOT NULL,
+                sequence_number INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_type_year (document_type, year),
+                INDEX idx_document_sequences_type (document_type)
+            )";
+            if (!$database_conn->query($create_sql)) {
+                throw new Exception("Failed to create document_sequences table: " . $database_conn->error);
+            }
+        }
+
+        // Check if this type-year combination exists, if not insert it
+        $escaped_type = escape($database_conn, $type);
+        $check_sql = "SELECT id, sequence_number FROM document_sequences WHERE document_type = '$escaped_type' AND year = $year LIMIT 1";
+        $result = $database_conn->query($check_sql);
+
+        if (!$result || $result->num_rows === 0) {
+            // Insert new entry with sequence 0
+            $insert_sql = "INSERT INTO document_sequences (document_type, year, sequence_number) VALUES ('$escaped_type', $year, 0)";
+            if (!$database_conn->query($insert_sql)) {
+                throw new Exception("Failed to initialize sequence: " . $database_conn->error);
+            }
+        }
+
+        // Increment the sequence number (atomic operation)
+        $update_sql = "UPDATE document_sequences SET sequence_number = sequence_number + 1 WHERE document_type = '$escaped_type' AND year = $year";
+        if (!$database_conn->query($update_sql)) {
+            throw new Exception("Failed to increment sequence: " . $database_conn->error);
+        }
+
+        // Get the updated sequence number
+        $fetch_sql = "SELECT sequence_number FROM document_sequences WHERE document_type = '$escaped_type' AND year = $year LIMIT 1";
+        $result = $database_conn->query($fetch_sql);
+        if (!$result || $result->num_rows === 0) {
+            throw new Exception("Failed to fetch sequence number");
+        }
+
+        $row = $result->fetch_assoc();
+        $sequence = (int)$row['sequence_number'];
+
+        // Format the number: TYPE-YEAR-NNNN (4-digit zero-padded)
+        return sprintf('%s-%d-%04d', $type, $year, $sequence);
+    }
+
     // Handle transaction-safe receipt creation
     elseif ($action === "create_receipt_with_items_transaction") {
         // Requires authorization for modifications
@@ -1916,6 +2003,31 @@ try {
         // Validate payment data
         if (empty($payment) || !isset($payment['amount'])) {
             throw new Exception("Missing or invalid payment data");
+        }
+
+        // Generate document numbers BEFORE transaction (to avoid transaction nesting)
+        // Generate invoice number if not provided
+        if (empty($invoiceData['invoice_number'])) {
+            try {
+                $invoiceNumber = getNextDocumentNumberInternal('INV');
+            } catch (Exception $e) {
+                error_log("Failed to generate invoice number: " . $e->getMessage());
+                throw new Exception("Failed to generate invoice number: " . $e->getMessage());
+            }
+        } else {
+            $invoiceNumber = $invoiceData['invoice_number'];
+        }
+
+        // Generate payment number if not provided
+        if (empty($payment['payment_number'])) {
+            try {
+                $paymentNumber = getNextDocumentNumberInternal('PAY');
+            } catch (Exception $e) {
+                error_log("Failed to generate payment number: " . $e->getMessage());
+                throw new Exception("Failed to generate payment number: " . $e->getMessage());
+            }
+        } else {
+            $paymentNumber = $payment['payment_number'];
         }
 
         // Start transaction
@@ -1954,9 +2066,6 @@ try {
                 $paidAmount = $paymentAmount;
                 $balanceDue = $invoiceAmount - $paymentAmount;
             }
-
-            // Generate invoice number
-            $invoiceNumber = $invoiceData['invoice_number'] ?? 'INV-' . time();
 
             // Step 1: Create invoice
             $companyId_e = escape($conn, $companyId);
@@ -2009,7 +2118,7 @@ try {
 
             // Step 3: Create payment
             $paymentMethod = $payment['payment_method'] ?? 'cash';
-            $paymentNumber = $payment['payment_number'] ?? 'PAY-' . time();
+            // $paymentNumber is already generated before the transaction
             $referenceNumber = $payment['reference_number'] ?? null;
 
             $paymentMethod_e = escape($conn, $paymentMethod);

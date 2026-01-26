@@ -27,6 +27,7 @@ import {
 import { useCustomers, useCompanies } from '@/hooks/useDatabase';
 import { useCreateDirectReceipt } from '@/hooks/useQuotationItems';
 import { useAuth } from '@/contexts/AuthContext';
+import { generateDocumentNumberAPI } from '@/utils/documentNumbering';
 import { toast } from 'sonner';
 
 interface CreateDirectReceiptModalProps {
@@ -94,8 +95,8 @@ export function CreateDirectReceiptModal({
     setIsSubmitting(true);
 
     try {
-      // Generate payment number
-      const paymentNumber = `REC-${Date.now().toString().slice(-8)}`;
+      // Generate payment number using sequential API
+      const paymentNumber = await generateDocumentNumberAPI('receipt');
 
       const paymentData = {
         payment_number: paymentNumber,

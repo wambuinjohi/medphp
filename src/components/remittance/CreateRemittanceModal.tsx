@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { useCreateRemittanceAdvice, useCreateRemittanceAdviceItems, useCustomers, useGenerateDocumentNumber } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { generateDocumentNumberAPI } from '@/utils/documentNumbering';
 import type { RemittanceAdviceItemFormData } from '@/types/remittance';
 
 interface CreateRemittanceModalProps {
@@ -83,9 +84,14 @@ export function CreateRemittanceModal({ open, onOpenChange, onSuccess }: CreateR
       setFormData(prev => ({ ...prev, adviceNumber: number }));
     } catch (error) {
       console.error('Error generating advice number:', error);
-      // Fallback to simple number generation
-      const fallbackNumber = `RA-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
-      setFormData(prev => ({ ...prev, adviceNumber: fallbackNumber }));
+      // Fallback to API generation
+      try {
+        const fallbackNumber = await generateDocumentNumberAPI('remittance');
+        setFormData(prev => ({ ...prev, adviceNumber: fallbackNumber }));
+      } catch (apiError) {
+        console.error('Failed to generate advice number via API fallback:', apiError);
+        toast.error('Failed to generate advice number');
+      }
     }
   };
 

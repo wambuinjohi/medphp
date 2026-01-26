@@ -35,6 +35,7 @@ import { useOptimizedProductSearch, usePopularProducts } from '@/hooks/useOptimi
 import { useCreateDirectReceiptWithItems } from '@/hooks/useQuotationItems';
 import { useCreateCreditBalance, useCustomerCreditBalances } from '@/hooks/useCustomerCreditBalances';
 import { useHandleExcessPayment } from '@/hooks/useHandleExcessPayment';
+import { generateDocumentNumberAPI } from '@/utils/documentNumbering';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExcessPaymentHandler, type ExcessPaymentData } from '@/components/payments/ExcessPaymentHandler';
 import { CustomerCreditBalanceViewer } from '@/components/payments/CustomerCreditBalanceViewer';
@@ -244,7 +245,7 @@ export function CreateDirectReceiptModalEnhanced({
     setIsSubmitting(true);
 
     try {
-      const paymentNumber = `REC-${Date.now().toString().slice(-8)}`;
+      const paymentNumber = await generateDocumentNumberAPI('receipt');
 
       const paymentData = {
         payment_number: paymentNumber,
