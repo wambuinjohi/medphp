@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePublicCompany } from '@/hooks/usePublicCompany';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +12,7 @@ import { handleAuthError } from '@/utils/authErrorHandler';
 
 export function SimpleLogin() {
   const { signIn, loading } = useAuth();
-  const { company: publicCompany } = usePublicCompany();
+  const companyConfig = useCompanyConfig();
 
   const [formData, setFormData] = useState({
     email: '',
