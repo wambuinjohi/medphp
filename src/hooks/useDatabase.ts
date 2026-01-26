@@ -1012,6 +1012,11 @@ export function useCreatePayment() {
 
         // Fallback: Insert payment directly via database adapter
         try {
+          // Generate payment_number if not provided
+          if (!paymentRecord.payment_number) {
+            paymentRecord.payment_number = await generateDocumentNumberAPI('payment');
+          }
+
           const db = getDatabase();
           const { data: paymentResult, error: insertError } = await db.insert('payments', paymentRecord);
 
