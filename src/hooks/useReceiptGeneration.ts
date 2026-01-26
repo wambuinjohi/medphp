@@ -39,8 +39,8 @@ export const useCreateReceipt = () => {
     mutationFn: async (input: ReceiptGenerationInput) => {
       const db = getDatabase();
 
-      // Generate receipt number using centralized utility
-      const receiptNumber = generateReceiptNumber(input.companyId);
+      // Generate receipt number using centralized utility (now async)
+      const receiptNumber = await generateReceiptNumber(input.companyId);
       const receiptDate = new Date().toISOString().split('T')[0];
 
       // Create receipt record
