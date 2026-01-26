@@ -23,7 +23,8 @@ export default function Landing() {
       title: `Home - ${companyConfig.name}`,
       description: companyConfig.description || 'Trusted distributor of critical care supplies, hospital consumables, and furniture. Over 10 years of serving healthcare facilities across Africa.',
       keywords: 'medical supplies, hospital equipment, critical care, healthcare distributor, Africa',
-      url: companyConfig.logo_url || 'https://medplusafrica.com/',
+      url: '/',
+      image: companyConfig.logo_url,
     },
     generateOrganizationSchema(companyConfig)
   );
