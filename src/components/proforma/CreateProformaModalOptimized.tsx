@@ -84,8 +84,6 @@ export const CreateProformaModalOptimized = ({
   }, [open, proformaNumber]);
 
   const generateProformaNumber = () => {
-    setFunctionError('');
-
     try {
       console.log('🔢 Generating proforma number...');
 
@@ -98,7 +96,6 @@ export const CreateProformaModalOptimized = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('❌ Proforma number generation failed:', error);
-      setFunctionError(errorMessage);
       toast.error(`Failed to generate proforma number: ${errorMessage}`);
     }
   };
