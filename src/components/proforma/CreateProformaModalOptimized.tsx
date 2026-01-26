@@ -260,22 +260,6 @@ export const CreateProformaModalOptimized = ({
 
         {!isLoading && (
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Error Notifications */}
-            {(functionError || createError) && (
-              <ProformaErrorSolution
-                error={functionError || createError}
-                onResolved={() => {
-                  setFunctionError('');
-                  setCreateError('');
-                  // Regenerate number if function was fixed
-                  if (functionError && !createError) {
-                    generateProformaNumber();
-                  }
-                }}
-                compact={true}
-              />
-            )}
-            
             {/* Header Information */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
