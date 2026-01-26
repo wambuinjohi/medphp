@@ -225,20 +225,23 @@ export const generateCollectionSchema = (products: Array<{
 /**
  * Generate Contact Page schema
  */
-export const generateContactPageSchema = () => ({
-  '@context': 'https://schema.org',
-  '@type': 'ContactPage',
-  name: 'Contact &gt;&gt; Medical Supplies',
-  description: 'Get in touch with &gt;&gt; Medical Supplies for inquiries and support regarding medical supplies and hospital equipment.',
-  url: `${SITE_CONFIG.url}/contact`,
-  contactPoint: {
-    '@type': 'ContactPoint',
-    telephone: SITE_CONFIG.phone,
-    contactType: 'Customer Service',
-    email: SITE_CONFIG.email,
-    areaServed: 'East Africa',
-  },
-});
+export const generateContactPageSchema = (companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ContactPage',
+    name: `Contact ${config.siteName}`,
+    description: `Get in touch with ${config.siteName} for inquiries and support regarding medical supplies and hospital equipment.`,
+    url: `${config.url}/contact`,
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: config.phone,
+      contactType: 'Customer Service',
+      email: config.email,
+      areaServed: 'East Africa',
+    },
+  };
+};
 
 /**
  * Generate FAQ schema
