@@ -569,31 +569,21 @@ export const useCreateProformaWithItems = () => {
     mutationFn: async ({ proforma, items }: { proforma: any; items: any[] }) => {
       const db = getDatabase();
 
-      // Ensure created_by defaults to the authenticated user
-      let cleanProforma = { ...proforma } as any;
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        const authUserId = userData?.user?.id || null;
-        if (authUserId) {
-          cleanProforma.created_by = authUserId;
-        } else if (typeof cleanProforma.created_by === 'undefined' || cleanProforma.created_by === null) {
-          cleanProforma.created_by = null;
-        }
-      } catch {
-        if (typeof cleanProforma.created_by === 'undefined') {
-          cleanProforma.created_by = null;
-        }
-      }
-
       // Create the proforma invoice using database adapter
-      const proformaInsertResult = await db.insert('proforma_invoices', cleanProforma);
+      // Note: proforma_invoices table does not have a created_by column
+      const { created_by, ...cleanProforma } = proforma as any;
+
+      let proformaInsertResult = await db.insert('proforma_invoices', cleanProforma);
       if (proformaInsertResult.error) {
-        // Fallback: if FK violation on created_by, retry with created_by = null
-        if (String(proformaInsertResult.error.message || '').includes('created_by')) {
-          const retryPayload = { ...cleanProforma, created_by: null };
-          const retryResult = await db.insert('proforma_invoices', retryPayload);
+        const errorMessage = String(proformaInsertResult.error.message || '').toLowerCase();
+
+        // Fallback: if valid_until column missing, retry without it
+        if (errorMessage.includes('valid_until')) {
+          const { valid_until, ...dataWithoutValidUntil } = cleanProforma;
+          const retryResult = await db.insert('proforma_invoices', dataWithoutValidUntil);
           if (retryResult.error) throw retryResult.error;
           if (!retryResult.id) throw new Error('Failed to create proforma: no ID returned');
+          proformaInsertResult = retryResult;
         } else {
           throw proformaInsertResult.error;
         }
