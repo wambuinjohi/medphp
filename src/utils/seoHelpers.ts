@@ -51,25 +51,28 @@ export const SITE_CONFIG = DEFAULT_SITE_CONFIG;
 /**
  * Generate structured data for Organization
  */
-export const generateOrganizationSchema = () => ({
-  '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: SITE_CONFIG.siteName,
-  url: SITE_CONFIG.url,
-  logo: SITE_CONFIG.logo,
-  description: SITE_CONFIG.description,
-  email: SITE_CONFIG.email,
-  telephone: SITE_CONFIG.phone,
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: SITE_CONFIG.address,
-    addressCountry: 'KE',
-  },
-  sameAs: [
-    'https://www.facebook.com/medplusafrica',
-    'https://www.instagram.com/medplusafrica',
-  ],
-});
+export const generateOrganizationSchema = (companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: config.siteName,
+    url: config.url,
+    logo: config.logo,
+    description: config.description,
+    email: config.email,
+    telephone: config.phone,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: config.address,
+      addressCountry: 'KE',
+    },
+    sameAs: [
+      'https://www.facebook.com/medplusafrica',
+      'https://www.instagram.com/medplusafrica',
+    ],
+  };
+};
 
 /**
  * Generate structured data for WebPage
