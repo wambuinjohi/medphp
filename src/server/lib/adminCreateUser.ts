@@ -1,6 +1,6 @@
 /**
  * Admin Create User - External API Version
- * Uses med.wayrus.co.ke/api.php for user creation
+ * Uses med.layonsconstruction.com/api.php for user creation
  */
 
 interface CreateUserRequest {
@@ -23,16 +23,16 @@ interface CreateUserResponse {
 
 /**
  * Creates a new user account via external API
- * This function calls med.wayrus.co.ke/api.php with the admin_create_user action
+ * This function calls med.layonsconstruction.com/api.php with the admin_create_user action
  *
  * @param request - User creation request with email, password, role, company_id, etc.
- * @param apiUrl - External API URL (med.wayrus.co.ke/api.php)
+ * @param apiUrl - External API URL (med.layonsconstruction.com/api.php)
  * @param authToken - Admin authentication token for the API
  * @returns Response with success status and user_id or error message
  */
 export async function adminCreateUser(
   request: CreateUserRequest,
-  apiUrl: string = 'https://med.wayrus.co.ke/api.php',
+  apiUrl: string = 'https://med.layonsconstruction.com/api.php',
   authToken?: string
 ): Promise<CreateUserResponse> {
   // Validate required fields
