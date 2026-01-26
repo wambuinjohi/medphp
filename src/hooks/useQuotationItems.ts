@@ -815,17 +815,10 @@ export const useConvertQuotationToProforma = () => {
       if (proformaInsertResult.error) {
         const errorMessage = String(proformaInsertResult.error.message || '').toLowerCase();
 
-        // Fallback: if column missing, retry without valid_until
+        // Fallback: if valid_until column missing, retry without it
         if (errorMessage.includes('valid_until')) {
           const { valid_until, ...dataWithoutValidUntil } = proformaData;
           const retryResult = await db.insert('proforma_invoices', dataWithoutValidUntil);
-          if (retryResult.error) throw retryResult.error;
-          proformaInsertResult = retryResult;
-        }
-        // Fallback: if FK violation on created_by, retry with created_by = null
-        else if (errorMessage.includes('created_by')) {
-          const retryPayload = { ...proformaData, created_by: null };
-          const retryResult = await db.insert('proforma_invoices', retryPayload);
           if (retryResult.error) throw retryResult.error;
           proformaInsertResult = retryResult;
         } else {
