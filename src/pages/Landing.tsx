@@ -20,12 +20,12 @@ export default function Landing() {
 
   useSEO(
     {
-      title: 'Home - Medical Supplies & Hospital Equipment',
-      description: 'Medplus Africa - Trusted distributor of critical care supplies, hospital consumables, and furniture. Over 10 years of serving healthcare facilities across Africa.',
+      title: `Home - ${companyConfig.name}`,
+      description: companyConfig.description || 'Trusted distributor of critical care supplies, hospital consumables, and furniture. Over 10 years of serving healthcare facilities across Africa.',
       keywords: 'medical supplies, hospital equipment, critical care, healthcare distributor, Africa',
-      url: 'https://medplusafrica.com/',
+      url: companyConfig.logo_url || 'https://medplusafrica.com/',
     },
-    generateOrganizationSchema()
+    generateOrganizationSchema(companyConfig)
   );
 
   const navigationItems = [
