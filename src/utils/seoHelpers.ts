@@ -164,16 +164,19 @@ export const generateLocalBusinessSchema = (companyConfig?: CompanyConfig | null
 /**
  * Generate breadcrumb schema
  */
-export const generateBreadcrumbSchema = (items: Array<{ name: string; url: string }>) => ({
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListElement: items.map((item, index) => ({
-    '@type': 'ListItem',
-    position: index + 1,
-    name: item.name,
-    item: `${SITE_CONFIG.url}${item.url}`,
-  })),
-});
+export const generateBreadcrumbSchema = (items: Array<{ name: string; url: string }>, companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: `${config.url}${item.url}`,
+    })),
+  };
+};
 
 /**
  * Use breadcrumb schema and add to page
