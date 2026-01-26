@@ -1,5 +1,13 @@
 import { getDatabase } from '@/integrations/database';
 
+/**
+ * @deprecated This file contains Supabase RPC-based setup for proforma database tables.
+ * Proforma number generation has been migrated to API-based generation using the backend PHP endpoint.
+ * See src/utils/documentNumbering.ts for the new API-based generateDocumentNumberAPI() function.
+ * The database tables and RPC functions defined here are kept for reference only.
+ * For new deployments, use the backend PHP API endpoint (src/backend/api.php) for document number generation.
+ */
+
 // SQL script to create proforma invoice tables
 const PROFORMA_TABLES_SQL = `
 -- Create proforma_invoices table
