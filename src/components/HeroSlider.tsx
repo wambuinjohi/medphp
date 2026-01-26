@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 
 interface Slide {
   id: number;
@@ -11,8 +11,7 @@ interface Slide {
 
 export default function HeroSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const { currentCompany } = useCurrentCompany();
-  const companyName = currentCompany?.name || '>> Medical Supplies';
+  const companyConfig = useCompanyConfig();
 
   const slides: Slide[] = [
     {
