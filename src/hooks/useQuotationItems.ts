@@ -1421,9 +1421,9 @@ export const useCreateDirectReceiptWithItems = () => {
       }
 
       // CREATE RECEIPT RECORD
-      // Generate receipt number using centralized utility
+      // Generate receipt number using centralized utility (now async)
       const { generateReceiptNumber } = await import('@/utils/documentNumbering');
-      const receiptNumber = generateReceiptNumber(companyId);
+      const receiptNumber = await generateReceiptNumber(companyId);
 
       const excessAmount = paymentAmount > invoiceAmount ? paymentAmount - invoiceAmount : 0;
 
