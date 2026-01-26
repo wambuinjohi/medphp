@@ -41,13 +41,15 @@ const queryClient = new QueryClient();
 const root = createRoot(document.getElementById("root")!);
 root.render(
   <QueryClientProvider client={queryClient}>
-    <AuthErrorBoundary>
-      <AuthProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </AuthProvider>
-    </AuthErrorBoundary>
+    <CompanyConfigProvider>
+      <AuthErrorBoundary>
+        <AuthProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </AuthProvider>
+      </AuthErrorBoundary>
+    </CompanyConfigProvider>
   </QueryClientProvider>
 );
 
