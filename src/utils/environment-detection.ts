@@ -188,7 +188,7 @@ export function getHostingType(): HostingType {
  * This is the main export used by the database adapter
  */
 export function getAPIBaseURL(): string {
-  return getAPIBaseURL();
+  return getAPIBaseURLInternal();
 }
 
 /**
