@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
 
 # Uploaded files (but keep the directory structure)
 public/uploads/*
