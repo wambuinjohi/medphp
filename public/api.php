@@ -108,7 +108,10 @@ function verifyPassword($password, $hash) {
 
 // Create JWT token
 function createJWT($user_id, $user_email, $user_role) {
-    $secret = $_ENV['JWT_SECRET'] ?? 'wayrus-secret-key-2024';
+    $secret = $_ENV['JWT_SECRET'] ?? null;
+    if (!$secret) {
+        throw new Exception('JWT_SECRET environment variable is not configured');
+    }
     $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
     $payload = base64_encode(json_encode([
         'sub' => $user_id,
