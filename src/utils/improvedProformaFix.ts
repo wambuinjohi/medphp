@@ -42,7 +42,7 @@ export async function validateProformaData(): Promise<ProformaValidationResult> 
     const { data: duplicates, error: duplicatesError } = await supabase
       .from('proforma_invoices')
       .select('proforma_number')
-      .neq('proforma_number', null);
+      .not('proforma_number', 'is', null);
 
     if (duplicatesError) {
       result.errors.push(`Failed to check duplicates: ${duplicatesError.message}`);
