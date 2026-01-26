@@ -10,13 +10,12 @@ import { PublicFooter } from '@/components/PublicFooter';
 import { useWebCategories } from '@/hooks/useWebCategories';
 import { useSEO } from '@/hooks/useSEO';
 import { generateOrganizationSchema } from '@/utils/seoHelpers';
-import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 
 export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [productsDropdownOpen, setProductsDropdownOpen] = useState(false);
-  const { currentCompany } = useCurrentCompany();
-  const companyName = currentCompany?.name || '>> Medical Supplies';
+  const companyConfig = useCompanyConfig();
   const { categories } = useWebCategories();
 
   useSEO(
