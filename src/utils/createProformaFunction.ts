@@ -1,6 +1,11 @@
 import { getDatabase } from '@/integrations/database';
 
 /**
+ * @deprecated This file contains RPC function definitions for Supabase.
+ * Proforma number generation has been migrated to API-based generation using the backend PHP endpoint.
+ * See src/utils/documentNumbering.ts for the new API-based generateDocumentNumberAPI() function.
+ * This file is kept for reference only and should not be used for new code.
+ *
  * SQL to create the generate_proforma_number function
  */
 const CREATE_PROFORMA_FUNCTION_SQL = `
