@@ -181,8 +181,8 @@ export const generateBreadcrumbSchema = (items: Array<{ name: string; url: strin
 /**
  * Use breadcrumb schema and add to page
  */
-export const useBreadcrumbSchema = (items: Array<{ name: string; url: string }>) => {
-  addStructuredData(generateBreadcrumbSchema(items));
+export const useBreadcrumbSchema = (items: Array<{ name: string; url: string }>, companyConfig?: CompanyConfig | null) => {
+  addStructuredData(generateBreadcrumbSchema(items, companyConfig));
 };
 
 /**
