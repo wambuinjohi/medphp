@@ -438,7 +438,13 @@ export function useQuotations(companyId?: string) {
     companyId ? { company_id: companyId } : undefined,
     [companyId]
   );
-  return useSelect('quotations', filter);
+  const result = useSelect('quotations', filter);
+
+  // Add refetch as an alias for retry for backward compatibility
+  return {
+    ...result,
+    refetch: result.retry
+  };
 }
 
 /**

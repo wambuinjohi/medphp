@@ -25,7 +25,8 @@ import {
   Receipt,
   Trash2
 } from 'lucide-react';
-import { useQuotations, useCompanies } from '@/hooks/useDatabase';
+import { useCompanies } from '@/hooks/useDatabase';
+import { useQuotationsFixed } from '@/hooks/useQuotationsFixed';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDeleteQuotation, useConvertQuotationToProforma, useConvertQuotationToInvoice } from '@/hooks/useQuotationItems';
 import { toast } from 'sonner';
@@ -95,7 +96,7 @@ export default function Quotations() {
   const { profile, loading: authLoading } = useAuth();
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: quotations, isLoading, error, refetch } = useQuotations(currentCompany?.id);
+  const { data: quotations, isLoading, error, refetch } = useQuotationsFixed(currentCompany?.id);
   const deleteQuotation = useDeleteQuotation();
   const convertToProforma = useConvertQuotationToProforma();
   const convertToInvoice = useConvertQuotationToInvoice();

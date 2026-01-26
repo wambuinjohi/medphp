@@ -73,15 +73,17 @@ export async function generateDocumentNumberAPI(
       console.warn('[DOC_NUM] Could not detect API base URL, using /api.php fallback', error);
     }
 
-    console.log(`[DOC_NUM] Sending request to: ${apiUrl}`);
+    // Build the API URL with action in query string, parameters in POST body
+    const fullUrl = `${apiUrl}?action=get_next_document_number`;
     const requestBody = {
-      action: 'get_next_document_number',
       type: apiType,
       year: currentYear,
     };
-    console.log(`[DOC_NUM] Request body:`, requestBody);
 
-    const response = await fetch(apiUrl, {
+    console.log(`[DOC_NUM] Sending request to: ${fullUrl}`);
+    console.log(`[DOC_NUM] Request parameters:`, requestBody);
+
+    const response = await fetch(fullUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
