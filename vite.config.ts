@@ -162,9 +162,6 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       // Ensure build output is properly structured for SPA
-      rollupOptions: {
-        input: 'index.html',
-      },
     },
   };
 });
