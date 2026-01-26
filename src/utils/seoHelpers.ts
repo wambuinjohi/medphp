@@ -138,25 +138,28 @@ export const generateProductSchema = (product: {
 /**
  * Generate structured data for LocalBusiness
  */
-export const generateLocalBusinessSchema = () => ({
-  '@context': 'https://schema.org',
-  '@type': 'LocalBusiness',
-  name: SITE_CONFIG.siteName,
-  description: SITE_CONFIG.description,
-  url: SITE_CONFIG.url,
-  logo: SITE_CONFIG.logo,
-  telephone: SITE_CONFIG.phone,
-  email: SITE_CONFIG.email,
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: SITE_CONFIG.address,
-    addressCountry: 'KE',
-  },
-  areaServed: {
-    '@type': 'Region',
-    name: 'East Africa',
-  },
-});
+export const generateLocalBusinessSchema = (companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: config.siteName,
+    description: config.description,
+    url: config.url,
+    logo: config.logo,
+    telephone: config.phone,
+    email: config.email,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: config.address,
+      addressCountry: 'KE',
+    },
+    areaServed: {
+      '@type': 'Region',
+      name: 'East Africa',
+    },
+  };
+};
 
 /**
  * Generate breadcrumb schema
