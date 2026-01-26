@@ -27,6 +27,7 @@ import {
 import { useCustomers, useCompanies } from '@/hooks/useDatabase';
 import { useCreateDirectReceipt } from '@/hooks/useQuotationItems';
 import { useAuth } from '@/contexts/AuthContext';
+import { generateDocumentNumberAPI } from '@/utils/documentNumbering';
 import { toast } from 'sonner';
 
 interface CreateDirectReceiptModalProps {
