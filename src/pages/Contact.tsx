@@ -10,27 +10,29 @@ import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { useSEO } from '@/hooks/useSEO';
 import { generateContactPageSchema, useBreadcrumbSchema } from '@/utils/seoHelpers';
 import { useWebCategories } from '@/hooks/useWebCategories';
-import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 import emailjs from 'emailjs-com';
 import { Mail, MessageCircle } from 'lucide-react';
 
 export default function Contact() {
   const { categories } = useWebCategories();
+  const companyConfig = useCompanyConfig();
+
   useSEO(
     {
       title: 'Contact Us',
-      description: 'Get in touch with Medplus Africa Limited. Located at Siens Plaza River Road, Nairobi. Call +254 713 416 022 or +254 786 830 610, or email sales@medplusafrica.com for inquiries and support.',
-      keywords: 'contact medplus, medical supplies contact, customer support, healthcare inquiries, hospital equipment support, nairobi',
-      url: 'https://medplusafrica.com/contact',
+      description: `Get in touch with ${companyConfig.name}. ${companyConfig.address ? `Located at ${companyConfig.address}` : ''}${companyConfig.phone ? `. Call ${companyConfig.phone}` : ''}${companyConfig.email ? ` or email ${companyConfig.email}` : ''} for inquiries and support.`,
+      keywords: 'contact, support, customer service, healthcare inquiries, hospital equipment support',
+      url: '/contact',
       type: 'website',
     },
-    generateContactPageSchema()
+    generateContactPageSchema(companyConfig)
   );
 
   useBreadcrumbSchema([
     { name: 'Home', url: '/' },
     { name: 'Contact Us', url: '/contact' }
-  ]);
+  ], companyConfig);
 
   // Initialize EmailJS
   emailjs.init('dK906nDGwBHoPvOsr');
