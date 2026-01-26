@@ -19,7 +19,7 @@ export interface UploadResult {
 }
 
 // Use direct API URL (no proxy) for consistency across all environments
-const API_BASE_URL = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+const API_BASE_URL = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
 const UPLOAD_BASE_URL = API_BASE_URL.replace(/\/api\.php$/, '') + '/uploads';
 
 /**
