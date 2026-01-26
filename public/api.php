@@ -82,13 +82,18 @@ function escape($conn, $val) {
 $action = $_POST['action'] ?? ($_GET['action'] ?? null);
 $table = $_POST['table'] ?? ($_GET['table'] ?? null);
 
-// Parse request body
+// Parse request body once
 $request_body = json_decode(file_get_contents('php://input'), true) ?? [];
 
-// For POST/GET overrides and for data that might be in body
-$data = $_POST['data'] ?? ($request_body['data'] ?? (is_array($request_body) && !isset($request_body['id']) ? $request_body : []));
-$where = $_POST['where'] ?? ($_GET['where'] ?? $request_body['where'] ?? null);
-$order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? $request_body['order_by'] ?? null);
+// Get parameters from POST/GET with fallback to request body
+$data = $_POST['data'] ?? ($request_body['data'] ?? []);
+$where = $_POST['where'] ?? ($_GET['where'] ?? null);
+$order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
+
+// For read operations, if where is not in POST/GET and body is not explicitly 'data', treat body as where
+if ($action === 'read' && empty($where) && is_array($request_body) && !isset($request_body['data'])) {
+    $where = $request_body;
+}
 
 // Validate action
 if (!$action) {
