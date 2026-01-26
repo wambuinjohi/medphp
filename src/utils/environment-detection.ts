@@ -140,7 +140,7 @@ function ensureApiPhpSuffix(url: string): string {
  * Get complete environment configuration
  */
 function getEnvironmentConfig(): EnvironmentConfig {
-  const apiBaseUrl = getAPIBaseURL();
+  const apiBaseUrl = getAPIBaseURLInternal();
   const isLocal = detectLocalHosting();
   const hostingType: HostingType = isLocal ? 'apache' : 'cloud';
   const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
