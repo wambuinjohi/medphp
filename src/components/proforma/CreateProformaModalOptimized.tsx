@@ -188,8 +188,6 @@ export const CreateProformaModalOptimized = ({
       return;
     }
 
-    setCreateError(''); // Clear previous errors
-
     try {
       const totals = calculateTotals();
 
@@ -212,14 +210,13 @@ export const CreateProformaModalOptimized = ({
         items: items
       });
 
+      toast.success('Proforma invoice created successfully!');
       onSuccess?.();
       handleClose();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('Error creating proforma:', errorMessage);
-      setCreateError(errorMessage);
-
-      // Don't show toast as the error will be displayed in the component
+      toast.error(`Error creating proforma: ${errorMessage}`);
     }
   };
 
