@@ -119,46 +119,26 @@ export const CreateProformaModalFixed = ({
 
   useEffect(() => {
     if (open && tablesStatus === 'ready') {
-      // Generate proforma number with auto-fix
+      // Generate proforma number using API
       generateProformaNumber.mutate(companyId, {
         onSuccess: (number) => {
           setProformaNumber(number);
           setFunctionError(''); // Clear any previous errors
-          console.log('Proforma number generated successfully:', number);
+          console.log('✅ Proforma number generated successfully:', number);
         },
-        onError: async (error) => {
+        onError: (error) => {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.warn('Proforma number generation failed, attempting auto-fix:', errorMessage);
-
-          // Check if this is a function not found error
-          if (errorMessage.includes('generate_proforma_number') ||
-              errorMessage.includes('schema cache') ||
-              errorMessage.includes('function') ||
-              errorMessage.includes('does not exist')) {
-
-            console.log('🔧 Attempting automatic function fix...');
-            toast.info('Database function missing. Attempting automatic fix...');
-
-            try {
-              // Try automatic fix
-              const fixedNumber = await autoFixProformaFunction();
-              setProformaNumber(fixedNumber);
-              setFunctionError(''); // Clear error since we fixed it
-              toast.success(`Function fixed! Generated number: ${fixedNumber}`);
-              console.log('✅ Auto-fix successful, generated:', fixedNumber);
-              return;
-            } catch (fixError) {
-              console.error('❌ Auto-fix failed:', fixError);
-              // Fall through to manual error handling
-            }
-          }
-
-          // Set error for notification (if auto-fix failed or different error)
+          console.error('❌ Proforma number generation failed:', errorMessage);
           setFunctionError(errorMessage);
 
-          const timestamp = Date.now().toString().slice(-6);
+          // Use fallback format: PRO-YYYY-XXXX (random alphanumeric)
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+          let random = '';
+          for (let i = 0; i < 4; i++) {
+            random += chars.charAt(Math.floor(Math.random() * chars.length));
+          }
           const year = new Date().getFullYear();
-          const fallbackNumber = `PF-${year}-${timestamp}`;
+          const fallbackNumber = `PRO-${year}-${random}`;
           setProformaNumber(fallbackNumber);
 
           console.info('Using fallback proforma number:', fallbackNumber);
