@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Heart, Globe, Users } from 'lucide-react';
-import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 
 export default function IntroSection() {
-  const { currentCompany } = useCurrentCompany();
-  const companyName = currentCompany?.name || '>> Medical Supplies';
+  const companyConfig = useCompanyConfig();
 
   return (
     <section className="py-12 sm:py-24 bg-gradient-to-b from-white via-blue-50/20 to-white">
