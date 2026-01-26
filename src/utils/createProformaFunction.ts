@@ -1,12 +1,31 @@
 import { getDatabase } from '@/integrations/database';
 
 /**
- * @deprecated This file contains RPC function definitions for Supabase.
- * Proforma number generation has been migrated to API-based generation using the backend PHP endpoint.
- * See src/utils/documentNumbering.ts for the new API-based generateDocumentNumberAPI() function.
- * This file is kept for reference only and should not be used for new code.
+ * @deprecated LEGACY RPC FUNCTION DEFINITIONS - DO NOT USE FOR NEW CODE
  *
- * SQL to create the generate_proforma_number function
+ * This file contains legacy Supabase RPC function definitions for proforma number generation.
+ * These functions have been completely replaced by the centralized API-based system.
+ *
+ * MIGRATION GUIDE:
+ * - Old way: db.rpc('generate_proforma_number', { company_uuid: ... })
+ * - New way: generateDocumentNumberAPI('proforma')
+ *
+ * MIGRATION STATUS:
+ * ✅ Proforma number generation: MIGRATED to API endpoint (/backend/api.php?action=get_next_document_number)
+ * ✅ All hooks updated: useConvertProformaToInvoice() now uses generateDocumentNumberAPI()
+ * ✅ Timestamp fallbacks removed: No more INV-${Date.now()} in conversion flows
+ *
+ * REFERENCE:
+ * - New implementation: src/utils/documentNumbering.ts
+ * - Supported types: 'invoice', 'proforma', 'quotation', 'receipt', 'po', 'lpo', 'delivery_note', 'credit_note', 'payment'
+ * - Backend API: src/backend/api.php (handles ?action=get_next_document_number)
+ *
+ * BACKWARD COMPATIBILITY:
+ * This file is kept for reference only and for potential rollback scenarios.
+ * All functions remain in place but should NOT be used for new development.
+ * If you need to use this code, please file an issue explaining the use case.
+ *
+ * SQL to create the generate_proforma_number function (LEGACY - for reference only)
  */
 const CREATE_PROFORMA_FUNCTION_SQL = `
 -- Create function to generate proforma numbers
