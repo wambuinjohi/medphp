@@ -6,27 +6,30 @@ import { BreadcrumbNav } from '@/components/ui/breadcrumb-nav';
 import { useSEO } from '@/hooks/useSEO';
 import { generateWebPageSchema, useBreadcrumbSchema } from '@/utils/seoHelpers';
 import { useWebCategories } from '@/hooks/useWebCategories';
+import { useCompanyConfig } from '@/hooks/useCompanyConfig';
 
 export default function AboutUs() {
   const { categories } = useWebCategories();
+  const companyConfig = useCompanyConfig();
+
   useSEO(
     {
-      title: 'About Us',
-      description: 'Learn about &gt;&gt; Medical Supplies, our journey, mission, and commitment to healthcare excellence. Over 10 years of trusted service in medical supplies and hospital equipment distribution.',
-      keywords: 'about medplus, healthcare distributor, medical supplies, hospital equipment, Africa',
-      url: 'https://medplusafrica.com/about-us',
+      title: `About ${companyConfig.name}`,
+      description: `Learn about ${companyConfig.name}, our journey, mission, and commitment to healthcare excellence. Over 10 years of trusted service in medical supplies and hospital equipment distribution.`,
+      keywords: 'about company, healthcare distributor, medical supplies, hospital equipment, Africa',
+      url: '/about-us',
     },
     generateWebPageSchema({
-      title: 'About &gt;&gt; Medical Supplies',
+      title: `About ${companyConfig.name}`,
       description: 'Learn about our company, mission, and commitment to healthcare excellence',
-      url: 'https://medplusafrica.com/about-us',
-    })
+      url: '/about-us',
+    }, companyConfig)
   );
 
   useBreadcrumbSchema([
     { name: 'Home', url: '/' },
     { name: 'About Us', url: '/about-us' }
-  ]);
+  ], companyConfig);
   return (
     <div className="min-h-screen bg-white">
       <PublicHeader currentPage="about" />
