@@ -738,7 +738,10 @@ try {
     // Helper function to verify JWT token
     function verifyJWT($token) {
         if (!$token) return null;
-        $secret = $_ENV['JWT_SECRET'] ?? 'wayrus-secret-key-2024';
+        $secret = $_ENV['JWT_SECRET'] ?? null;
+        if (!$secret) {
+            throw new Exception('JWT_SECRET environment variable is not configured');
+        }
         $parts = explode('.', $token);
         if (count($parts) !== 3) return null;
 
