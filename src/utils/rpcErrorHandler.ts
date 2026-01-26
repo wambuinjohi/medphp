@@ -2,6 +2,10 @@
  * RPC Error Handler
  * Provides graceful fallbacks when Supabase RPC functions are not available
  * (which is the case when using external MySQL API)
+ *
+ * @deprecated Document number generation RPC functions have been replaced with API-based generation.
+ * For document numbering, use generateDocumentNumberAPI() from src/utils/documentNumbering.ts instead.
+ * The general RPC error handling utilities remain available for other RPC functions.
  */
 
 export interface RPCCallOptions {
