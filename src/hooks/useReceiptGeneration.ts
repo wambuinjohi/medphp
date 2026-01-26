@@ -19,11 +19,13 @@ export interface ReceiptGenerationInput {
 }
 
 /**
- * Hook to generate receipt number in format REC-XXXXXXXXXX
- * Uses centralized number generation utility
+ * Hook to generate receipt number in format REC-YYYY-NNNN
+ * Uses centralized number generation utility (API-based)
  */
 export const useGenerateReceiptNumber = () => {
-  return (companyId: string) => generateReceiptNumber(companyId);
+  return useMutation({
+    mutationFn: (companyId: string) => generateReceiptNumber(companyId)
+  });
 };
 
 /**
