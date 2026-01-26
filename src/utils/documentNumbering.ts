@@ -40,7 +40,7 @@ export interface DocumentNumberResponse {
 /**
  * Generate a unique document number via the backend API
  * Format: TYPE-YYYY-NNNN (e.g., INV-2026-0001)
- * 
+ *
  * @param type - Document type (e.g., 'invoice', 'proforma', 'quotation')
  * @param year - Optional year (defaults to current year)
  * @returns Promise resolving to the generated document number
@@ -57,8 +57,19 @@ export async function generateDocumentNumberAPI(
     }
 
     const currentYear = year || new Date().getFullYear();
-    
-    const response = await fetch('/api.php', {
+
+    // Get API base URL with proper environment detection
+    // This handles both local (/api.php) and cloud (external API URL) setups
+    let apiUrl = '/api.php';
+    try {
+      const { getAPIBaseURL } = await import('./environment-detection');
+      apiUrl = getAPIBaseURL();
+    } catch {
+      // Fallback to relative path if environment detection fails
+      console.warn('Could not detect API base URL, using /api.php fallback');
+    }
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
