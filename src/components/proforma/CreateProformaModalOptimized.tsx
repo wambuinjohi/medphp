@@ -87,14 +87,13 @@ export const CreateProformaModalOptimized = ({
     }
   }, [open, proformaNumber, isGeneratingNumber]);
 
-  const generateProformaNumber = async () => {
-    setIsGeneratingNumber(true);
+  const generateProformaNumber = () => {
     setFunctionError('');
 
     try {
       console.log('🔢 Generating proforma number...');
 
-      const proformaNumber = await generateNextProformaNumber();
+      const proformaNumber = generateNextProformaNumber();
       setProformaNumber(proformaNumber);
 
       console.log('✅ Proforma number generated:', proformaNumber);
@@ -103,19 +102,8 @@ export const CreateProformaModalOptimized = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('❌ Proforma number generation failed:', error);
-
       setFunctionError(errorMessage);
-
-      // Generate fallback number
-      const timestamp = Date.now().toString().slice(-6);
-      const year = new Date().getFullYear();
-      const fallbackNumber = `PF-${year}-${timestamp}`;
-      setProformaNumber(fallbackNumber);
-
-      toast.warning(`Using fallback number: ${fallbackNumber}`);
-
-    } finally {
-      setIsGeneratingNumber(false);
+      toast.error(`Failed to generate proforma number: ${errorMessage}`);
     }
   };
 
