@@ -81,9 +81,14 @@ function escape($conn, $val) {
 // Get request parameters
 $action = $_POST['action'] ?? ($_GET['action'] ?? null);
 $table = $_POST['table'] ?? ($_GET['table'] ?? null);
-$data = $_POST['data'] ?? (json_decode(file_get_contents('php://input'), true) ?? []);
-$where = $_POST['where'] ?? ($_GET['where'] ?? null);
-$order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
+
+// Parse request body
+$request_body = json_decode(file_get_contents('php://input'), true) ?? [];
+
+// For POST/GET overrides and for data that might be in body
+$data = $_POST['data'] ?? ($request_body['data'] ?? (is_array($request_body) && !isset($request_body['id']) ? $request_body : []));
+$where = $_POST['where'] ?? ($_GET['where'] ?? $request_body['where'] ?? null);
+$order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? $request_body['order_by'] ?? null);
 
 // Validate action
 if (!$action) {
