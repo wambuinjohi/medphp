@@ -42,7 +42,7 @@ export async function validateProformaData(): Promise<ProformaValidationResult> 
     const { data: duplicates, error: duplicatesError } = await supabase
       .from('proforma_invoices')
       .select('proforma_number')
-      .neq('proforma_number', null);
+      .not('proforma_number', 'is', null);
 
     if (duplicatesError) {
       result.errors.push(`Failed to check duplicates: ${duplicatesError.message}`);
@@ -102,33 +102,23 @@ export async function validateProformaData(): Promise<ProformaValidationResult> 
 }
 
 /**
- * Generates the next proforma number in sequence
+ * Generates a unique proforma number using timestamp-based approach
+ * Format: PF-YYYY-MMDDHHMMSS-XXXX (e.g., PF-2024-01151430-5829)
  */
-export async function generateNextProformaNumber(): Promise<string> {
+export function generateNextProformaNumber(): string {
   try {
-    const { data: lastProforma, error } = await supabase
-      .from('proforma_invoices')
-      .select('proforma_number')
-      .neq('proforma_number', null)
-      .order('created_at', { ascending: false })
-      .limit(1);
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
 
-    if (error) {
-      throw new Error(`Failed to get last proforma number: ${error.message}`);
-    }
+    // Generate a random 4-digit suffix to ensure uniqueness for same-second generations
+    const randomSuffix = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 
-    let nextNumber = 1;
-    if (lastProforma && lastProforma.length > 0) {
-      const lastNumber = lastProforma[0].proforma_number;
-      // Extract number from format like PF-2024-001
-      const match = lastNumber.match(/PF-\d{4}-(\d+)/);
-      if (match) {
-        nextNumber = parseInt(match[1], 10) + 1;
-      }
-    }
-
-    const year = new Date().getFullYear();
-    return `PF-${year}-${nextNumber.toString().padStart(3, '0')}`;
+    return `PF-${year}-${month}${day}${hours}${minutes}-${randomSuffix}`;
   } catch (error) {
     throw new Error(`Failed to generate proforma number: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }

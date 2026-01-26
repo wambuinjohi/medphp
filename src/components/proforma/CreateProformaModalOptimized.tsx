@@ -61,7 +61,6 @@ export const CreateProformaModalOptimized = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showProductSearch, setShowProductSearch] = useState(false);
   const [proformaNumber, setProformaNumber] = useState('');
-  const [isGeneratingNumber, setIsGeneratingNumber] = useState(false);
   const [functionError, setFunctionError] = useState<string>('');
   const [createError, setCreateError] = useState<string>('');
 
@@ -74,9 +73,9 @@ export const CreateProformaModalOptimized = ({
 
   // Generate proforma number when modal opens
   useEffect(() => {
-    if (open && !proformaNumber && !isGeneratingNumber) {
+    if (open && !proformaNumber) {
       generateProformaNumber();
-      
+
       // Set default valid until date (30 days from today)
       const validUntil = new Date();
       validUntil.setDate(validUntil.getDate() + 30);
@@ -85,16 +84,15 @@ export const CreateProformaModalOptimized = ({
         valid_until: validUntil.toISOString().split('T')[0]
       }));
     }
-  }, [open, proformaNumber, isGeneratingNumber]);
+  }, [open, proformaNumber]);
 
-  const generateProformaNumber = async () => {
-    setIsGeneratingNumber(true);
+  const generateProformaNumber = () => {
     setFunctionError('');
 
     try {
       console.log('🔢 Generating proforma number...');
 
-      const proformaNumber = await generateNextProformaNumber();
+      const proformaNumber = generateNextProformaNumber();
       setProformaNumber(proformaNumber);
 
       console.log('✅ Proforma number generated:', proformaNumber);
@@ -103,19 +101,8 @@ export const CreateProformaModalOptimized = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('❌ Proforma number generation failed:', error);
-
       setFunctionError(errorMessage);
-
-      // Generate fallback number
-      const timestamp = Date.now().toString().slice(-6);
-      const year = new Date().getFullYear();
-      const fallbackNumber = `PF-${year}-${timestamp}`;
-      setProformaNumber(fallbackNumber);
-
-      toast.warning(`Using fallback number: ${fallbackNumber}`);
-
-    } finally {
-      setIsGeneratingNumber(false);
+      toast.error(`Failed to generate proforma number: ${errorMessage}`);
     }
   };
 
@@ -260,7 +247,7 @@ export const CreateProformaModalOptimized = ({
   };
 
   const totals = calculateTotals();
-  const isLoading = customersLoading || productsLoading || isGeneratingNumber;
+  const isLoading = customersLoading || productsLoading;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -304,17 +291,12 @@ export const CreateProformaModalOptimized = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="proforma_number">Proforma Number</Label>
-                <div className="relative">
-                  <Input
-                    id="proforma_number"
-                    value={proformaNumber}
-                    disabled
-                    className="bg-muted"
-                  />
-                  {isGeneratingNumber && (
-                    <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin" />
-                  )}
-                </div>
+                <Input
+                  id="proforma_number"
+                  value={proformaNumber}
+                  disabled
+                  className="bg-muted"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="customer_id">Customer *</Label>
@@ -556,9 +538,9 @@ export const CreateProformaModalOptimized = ({
               <Button type="button" variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                disabled={!formData.customer_id || items.length === 0 || createProforma.isPending || isGeneratingNumber}
+              <Button
+                type="submit"
+                disabled={!formData.customer_id || items.length === 0 || createProforma.isPending}
               >
                 {createProforma.isPending ? (
                   <>
