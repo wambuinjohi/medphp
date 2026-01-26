@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { getDatabase, getDatabaseProvider } from '@/integrations/database';
 import type { IDatabase, DatabaseProvider } from '@/integrations/database';
 import { useForceTaxSettings } from '@/hooks/useForceTaxSettings';
+import { generateDocumentNumberAPI } from '@/utils/documentNumbering';
 
 let errorToastShown = false;
 
