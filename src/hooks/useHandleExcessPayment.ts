@@ -11,6 +11,7 @@ import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { useCreateCreditBalance as useCreateCreditBalanceHook } from '@/hooks/useCustomerCreditBalances';
+import { generateDocumentNumberAPI } from '@/utils/documentNumbering';
 
 export interface ExcessPaymentInput {
   receiptId: string;
