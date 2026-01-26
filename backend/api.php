@@ -1929,10 +1929,10 @@ try {
      * @return string Formatted document number (e.g., "INV-2026-0001")
      */
     function getNextDocumentNumberInternal($type, $year = null, $conn = null) {
-        global $conn as $global_conn;
+        global $conn;
 
         // Use provided connection or fall back to global
-        $database_conn = $conn ?? $global_conn;
+        $database_conn = $conn ?? $GLOBALS['conn'];
         if (!$database_conn) {
             throw new Exception("Database connection not available");
         }
