@@ -89,7 +89,7 @@ export default function Landing() {
                     key={item.label}
                     to="/about-us"
                     className="text-gray-700 hover:text-primary transition-colors font-medium text-sm lg:text-base px-2 py-2 rounded hover:bg-gray-100"
-                    aria-label={`About Us - Learn about ${companyName}`}
+                    aria-label={`About Us - Learn about ${companyConfig.name}`}
                   >
                     {item.label}
                   </Link>
