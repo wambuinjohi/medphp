@@ -25,6 +25,9 @@ export default defineConfig(({ mode }) => {
       host: "::",
       port: 8080,
       hmr: false,
+      // SPA routing fallback: serve index.html for all non-file requests
+      // This ensures page refresh works on nested routes without 404
+      middlewareMode: false,
       proxy: {
         // ===== CRITICAL: Proxy all /proxy routes to bypass CORS =====
         // This acts as a bridge between frontend and backend
