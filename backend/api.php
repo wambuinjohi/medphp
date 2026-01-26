@@ -1792,7 +1792,7 @@ try {
         ]);
     }
     elseif ($action === "proxy_external_api") {
-        // Forward requests to external API (e.g., https://med.wayrus.co.ke/api.php)
+        // Forward requests to external API (e.g., https://med.layonsconstruction.com/api.php)
         $external_api_url = $_POST['external_api_url'] ?? ($_GET['external_api_url'] ?? null);
         $external_action = $_POST['external_action'] ?? ($_GET['external_action'] ?? null);
         $external_method = $_POST['external_method'] ?? ($_GET['external_method'] ?? 'POST');
