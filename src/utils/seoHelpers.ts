@@ -107,30 +107,33 @@ export const generateProductSchema = (product: {
   url?: string;
   category?: string;
   price?: number;
-}) => ({
-  '@context': 'https://schema.org',
-  '@type': 'Product',
-  name: product.name,
-  description: product.description,
-  image: product.image || SITE_CONFIG.logo,
-  url: product.url,
-  category: product.category,
-  brand: {
-    '@type': 'Brand',
-    name: SITE_CONFIG.siteName,
-  },
-  offers: {
-    '@type': 'AggregateOffer',
-    availability: 'https://schema.org/InStock',
-    priceCurrency: 'KES',
-    ...(product.price && { highPrice: product.price.toString() }),
-  },
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.8',
-    reviewCount: '150',
-  },
-});
+}, companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description,
+    image: product.image || config.logo,
+    url: product.url,
+    category: product.category,
+    brand: {
+      '@type': 'Brand',
+      name: config.siteName,
+    },
+    offers: {
+      '@type': 'AggregateOffer',
+      availability: 'https://schema.org/InStock',
+      priceCurrency: 'KES',
+      ...(product.price && { highPrice: product.price.toString() }),
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.8',
+      reviewCount: '150',
+    },
+  };
+};
 
 /**
  * Generate structured data for LocalBusiness
