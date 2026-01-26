@@ -12,6 +12,7 @@ import type {
   UpdateResult,
   DeleteResult,
 } from './types';
+import { getAPIBaseURL } from '../../utils/environment-detection';
 
 export class ExternalAPIAdapter implements IDatabase {
   private apiBase: string;
