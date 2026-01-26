@@ -116,13 +116,37 @@ export async function callRPCWithFallback(
 }
 
 /**
- * Fallback implementations for commonly used RPC functions
+ * ⚠️  DEPRECATED: Legacy RPC Fallback Functions
+ *
+ * These functions were used as fallbacks when Supabase RPC functions were unavailable.
+ * They are NO LONGER USED in production code and are kept here for historical reference only.
+ *
+ * All document number generation has been migrated to the sequential API system.
+ * See src/utils/documentNumbering.ts for the new implementation.
+ *
+ * MIGRATION GUIDE:
+ * Old System (RPC-based - OBSOLETE):
+ *   db.rpc('generate_invoice_number', { company_id: '...' })
+ *
+ * New System (API-based - USE THIS):
+ *   import { generateDocumentNumberAPI } from '@/utils/documentNumbering';
+ *   const invoiceNumber = await generateDocumentNumberAPI('invoice');
+ *
+ * Backend Implementation:
+ * - Endpoint: /backend/api.php?action=get_next_document_number
+ * - Maintains sequential counter per document type per year
+ * - Database table: document_sequences
+ * - Pattern: TYPE-YEAR-NNNN (e.g., INV-2026-0001, PAY-2026-0002)
  */
 export const RPCFallbacks = {
   /**
-   * @deprecated Use generateDocumentNumberAPI('invoice') instead
-   * Fallback for legacy RPC: generate_invoice_number
-   * This is obsolete - the new API system has its own fallback mechanism
+   * @deprecated OBSOLETE - Do not use in new code
+   * Legacy fallback for RPC: generate_invoice_number
+   *
+   * MIGRATION: Use generateDocumentNumberAPI('invoice') instead
+   * Returns sequential format: INV-YYYY-NNNN
+   *
+   * Location of API call: generateDocumentNumberAPI('invoice') in src/utils/documentNumbering.ts
    */
   generateInvoiceNumber: (companyId?: string) => {
     const year = new Date().getFullYear();
@@ -132,9 +156,13 @@ export const RPCFallbacks = {
   },
 
   /**
-   * @deprecated Use generateDocumentNumberAPI('quotation') instead
-   * Fallback for legacy RPC: generate_quotation_number
-   * This is obsolete - the new API system has its own fallback mechanism
+   * @deprecated OBSOLETE - Do not use in new code
+   * Legacy fallback for RPC: generate_quotation_number
+   *
+   * MIGRATION: Use generateDocumentNumberAPI('quotation') instead
+   * Returns sequential format: QT-YYYY-NNNN
+   *
+   * Location of API call: generateDocumentNumberAPI('quotation') in src/utils/documentNumbering.ts
    */
   generateQuotationNumber: (companyId?: string) => {
     const year = new Date().getFullYear();
@@ -143,10 +171,14 @@ export const RPCFallbacks = {
   },
 
   /**
-   * @deprecated Use generateDocumentNumberAPI('proforma') instead
-   * Fallback for legacy RPC: generate_proforma_number
-   * This is obsolete - the new API system has its own fallback mechanism
-   * Note: Old format was 'PF-', new system uses 'PRO-' prefix
+   * @deprecated OBSOLETE - Do not use in new code
+   * Legacy fallback for RPC: generate_proforma_number
+   * Note: Old format used 'PF-', new system uses 'PRO-' prefix
+   *
+   * MIGRATION: Use generateDocumentNumberAPI('proforma') instead
+   * Returns sequential format: PRO-YYYY-NNNN
+   *
+   * Location of API call: generateDocumentNumberAPI('proforma') in src/utils/documentNumbering.ts
    */
   generateProformaNumber: (companyId?: string) => {
     const year = new Date().getFullYear();
@@ -155,9 +187,13 @@ export const RPCFallbacks = {
   },
 
   /**
-   * @deprecated Use generateDocumentNumberAPI('credit_note') instead
-   * Fallback for legacy RPC: generate_credit_note_number
-   * This is obsolete - the new API system has its own fallback mechanism
+   * @deprecated OBSOLETE - Do not use in new code
+   * Legacy fallback for RPC: generate_credit_note_number
+   *
+   * MIGRATION: Use generateDocumentNumberAPI('credit_note') instead
+   * Returns sequential format: CN-YYYY-NNNN
+   *
+   * Location of API call: generateDocumentNumberAPI('credit_note') in src/utils/documentNumbering.ts
    */
   generateCreditNoteNumber: (companyId?: string) => {
     const timestamp = Date.now().toString().slice(-6);
@@ -165,9 +201,13 @@ export const RPCFallbacks = {
   },
 
   /**
-   * @deprecated Use generateDocumentNumberAPI('payment') instead
-   * Fallback for legacy RPC: generate_payment_number
-   * This is obsolete - the new API system has its own fallback mechanism
+   * @deprecated OBSOLETE - Do not use in new code
+   * Legacy fallback for RPC: generate_payment_number
+   *
+   * MIGRATION: Use generateDocumentNumberAPI('payment') instead
+   * Returns sequential format: PAY-YYYY-NNNN
+   *
+   * Location of API call: generateDocumentNumberAPI('payment') in src/utils/documentNumbering.ts
    */
   generatePaymentNumber: (companyId?: string) => {
     const year = new Date().getFullYear();
@@ -176,9 +216,13 @@ export const RPCFallbacks = {
   },
 
   /**
-   * @deprecated Use generateDocumentNumberAPI('delivery_note') instead
-   * Fallback for legacy RPC: generate_delivery_number
-   * This is obsolete - the new API system has its own fallback mechanism
+   * @deprecated OBSOLETE - Do not use in new code
+   * Legacy fallback for RPC: generate_delivery_number
+   *
+   * MIGRATION: Use generateDocumentNumberAPI('delivery_note') instead
+   * Returns sequential format: DN-YYYY-NNNN
+   *
+   * Location of API call: generateDocumentNumberAPI('delivery_note') in src/utils/documentNumbering.ts
    */
   generateDeliveryNumber: (companyId?: string) => {
     const year = new Date().getFullYear();
