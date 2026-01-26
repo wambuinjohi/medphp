@@ -4,8 +4,16 @@
  * (which is the case when using external MySQL API)
  *
  * @deprecated Document number generation RPC functions have been replaced with API-based generation.
- * For document numbering, use generateDocumentNumberAPI() from src/utils/documentNumbering.ts instead.
- * The general RPC error handling utilities remain available for other RPC functions.
+ * See DEPRECATION NOTES below for details on each fallback function.
+ *
+ * DOCUMENT NUMBER GENERATION MIGRATION:
+ * - ❌ OLD: db.rpc('generate_invoice_number'), db.rpc('generate_proforma_number'), etc.
+ * - ✅ NEW: generateDocumentNumberAPI() from src/utils/documentNumbering.ts
+ * - 📍 Endpoint: /backend/api.php?action=get_next_document_number
+ *
+ * The fallback functions below are kept for reference but should NOT be used.
+ * They used to be RPC function fallbacks but are now obsolete with the new API system.
+ * The new generateDocumentNumberAPI() has its own robust fallback mechanism.
  */
 
 export interface RPCCallOptions {
