@@ -39,9 +39,10 @@ header("Content-Type: application/json; charset=utf-8");
 // The $_SERVER['CONTENT_TYPE'] is the REQUEST content-type (multipart/form-data for file uploads)
 // This is the correct behavior - requests can be multipart, but responses should be JSON
 
+// Handle CORS preflight requests (OPTIONS)
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
-    exit();
+    exit(0);
 }
 
 // Database Configuration - all required, no fallback defaults
