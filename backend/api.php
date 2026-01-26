@@ -2004,7 +2004,7 @@ try {
     }
 
     // Handle transaction-safe receipt creation
-    elseif ($action === "create_receipt_with_items_transaction") {
+    if ($action === "create_receipt_with_items_transaction") {
         // Requires authorization for modifications
         $auth = requireAuthForModification($action, 'receipts');
 
