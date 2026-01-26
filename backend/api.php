@@ -1193,10 +1193,19 @@ try {
 
     // Document Number Generation
     elseif ($action === "get_next_document_number") {
+        error_log("[DOC_NUM] 🔵 API HANDLER: Received get_next_document_number request");
+        error_log("[DOC_NUM] Request method: " . $_SERVER['REQUEST_METHOD']);
+        error_log("[DOC_NUM] JSON body: " . json_encode($json_body));
+        error_log("[DOC_NUM] POST data: " . json_encode($_POST));
+
         $type = $_POST['type'] ?? ($json_body['type'] ?? null);
         $year = $_POST['year'] ?? ($json_body['year'] ?? null);
 
+        error_log("[DOC_NUM] Extracted type: " . var_export($type, true));
+        error_log("[DOC_NUM] Extracted year: " . var_export($year, true));
+
         if (!$type) {
+            error_log("[DOC_NUM] ❌ ERROR: Missing document type");
             http_response_code(400);
             throw new Exception("Missing document type");
         }
@@ -1204,6 +1213,7 @@ try {
         // Validate document type
         $valid_types = ['INV', 'PRO', 'QT', 'PO', 'LPO', 'DN', 'CN', 'PAY', 'REC'];
         if (!in_array($type, $valid_types)) {
+            error_log("[DOC_NUM] ❌ ERROR: Invalid document type: $type");
             http_response_code(400);
             throw new Exception("Invalid document type: $type. Valid types are: " . implode(', ', $valid_types));
         }
@@ -1211,18 +1221,23 @@ try {
         // Default to current year if not provided
         if (!$year) {
             $year = date('Y');
+            error_log("[DOC_NUM] Year not provided, defaulting to: $year");
         } else {
             $year = (int)$year;
+            error_log("[DOC_NUM] Year provided as: $year");
             // Validate year is reasonable (between 2000 and next 10 years)
             if ($year < 2000 || $year > (date('Y') + 10)) {
+                error_log("[DOC_NUM] ❌ ERROR: Invalid year: $year");
                 http_response_code(400);
                 throw new Exception("Invalid year: $year");
             }
         }
 
         // Ensure document_sequences table exists
+        error_log("[DOC_NUM] Checking if document_sequences table exists...");
         $table_check = $conn->query("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_sequences'");
         if (!$table_check || $table_check->num_rows === 0) {
+            error_log("[DOC_NUM] Table does not exist, creating...");
             // Create the table if it doesn't exist
             $create_sql = "CREATE TABLE IF NOT EXISTS `document_sequences` (
                 id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -1235,60 +1250,86 @@ try {
                 INDEX idx_document_sequences_type (document_type)
             )";
             if (!$conn->query($create_sql)) {
+                error_log("[DOC_NUM] ❌ ERROR: Failed to create document_sequences table: " . $conn->error);
                 throw new Exception("Failed to create document_sequences table: " . $conn->error);
             }
+            error_log("[DOC_NUM] ✅ Created document_sequences table");
+        } else {
+            error_log("[DOC_NUM] ✅ document_sequences table exists");
         }
 
         // Use a transaction to ensure atomicity
+        error_log("[DOC_NUM] Starting transaction...");
         $conn->begin_transaction();
 
         try {
             // Check if this type-year combination exists, if not insert it
-            $check_sql = "SELECT id, sequence_number FROM document_sequences WHERE document_type = '" . escape($conn, $type) . "' AND year = $year LIMIT 1";
+            $escaped_type = escape($conn, $type);
+            $check_sql = "SELECT id, sequence_number FROM document_sequences WHERE document_type = '$escaped_type' AND year = $year LIMIT 1";
+            error_log("[DOC_NUM] Check SQL: $check_sql");
             $result = $conn->query($check_sql);
 
             if (!$result || $result->num_rows === 0) {
+                error_log("[DOC_NUM] No existing sequence found, initializing...");
                 // Insert new entry with sequence 0
-                $insert_sql = "INSERT INTO document_sequences (document_type, year, sequence_number) VALUES ('" . escape($conn, $type) . "', $year, 0)";
+                $insert_sql = "INSERT INTO document_sequences (document_type, year, sequence_number) VALUES ('$escaped_type', $year, 0)";
+                error_log("[DOC_NUM] Insert SQL: $insert_sql");
                 if (!$conn->query($insert_sql)) {
+                    error_log("[DOC_NUM] ❌ ERROR: Failed to initialize sequence: " . $conn->error);
                     throw new Exception("Failed to initialize sequence: " . $conn->error);
                 }
+                error_log("[DOC_NUM] ✅ Sequence initialized");
+            } else {
+                error_log("[DOC_NUM] ✅ Existing sequence found");
             }
 
             // Increment the sequence number (atomic operation)
-            $update_sql = "UPDATE document_sequences SET sequence_number = sequence_number + 1 WHERE document_type = '" . escape($conn, $type) . "' AND year = $year";
+            $update_sql = "UPDATE document_sequences SET sequence_number = sequence_number + 1 WHERE document_type = '$escaped_type' AND year = $year";
+            error_log("[DOC_NUM] Update SQL: $update_sql");
             if (!$conn->query($update_sql)) {
+                error_log("[DOC_NUM] ❌ ERROR: Failed to increment sequence: " . $conn->error);
                 throw new Exception("Failed to increment sequence: " . $conn->error);
             }
+            error_log("[DOC_NUM] ✅ Sequence incremented");
 
             // Get the updated sequence number
-            $fetch_sql = "SELECT sequence_number FROM document_sequences WHERE document_type = '" . escape($conn, $type) . "' AND year = $year LIMIT 1";
+            $fetch_sql = "SELECT sequence_number FROM document_sequences WHERE document_type = '$escaped_type' AND year = $year LIMIT 1";
+            error_log("[DOC_NUM] Fetch SQL: $fetch_sql");
             $result = $conn->query($fetch_sql);
             if (!$result || $result->num_rows === 0) {
+                error_log("[DOC_NUM] ❌ ERROR: Failed to fetch sequence number");
                 throw new Exception("Failed to fetch sequence number");
             }
 
             $row = $result->fetch_assoc();
             $sequence = (int)$row['sequence_number'];
+            error_log("[DOC_NUM] ✅ Fetched sequence: $sequence");
 
             // Commit transaction
+            error_log("[DOC_NUM] Committing transaction...");
             $conn->commit();
+            error_log("[DOC_NUM] ✅ Transaction committed");
 
             // Format the number: TYPE-YEAR-NNNN (4-digit zero-padded)
             $document_number = sprintf('%s-%d-%04d', $type, $year, $sequence);
 
-            error_log("✅ Generated document number: $document_number");
+            error_log("[DOC_NUM] ✅ Generated document number: $document_number");
 
-            echo json_encode([
+            $response = [
                 'success' => true,
                 'number' => $document_number,
                 'type' => $type,
                 'year' => $year,
                 'sequence' => $sequence
-            ]);
+            ];
+            error_log("[DOC_NUM] Sending response: " . json_encode($response));
+            echo json_encode($response);
         } catch (Exception $e) {
             // Rollback on error
+            error_log("[DOC_NUM] ❌ Exception caught: " . $e->getMessage());
+            error_log("[DOC_NUM] Rolling back transaction...");
             $conn->rollback();
+            error_log("[DOC_NUM] ✅ Transaction rolled back");
             throw $e;
         }
         exit();
