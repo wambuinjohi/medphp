@@ -1190,6 +1190,110 @@ try {
             ]
         ]);
     }
+
+    // Document Number Generation
+    elseif ($action === "get_next_document_number") {
+        $type = $_POST['type'] ?? ($json_body['type'] ?? null);
+        $year = $_POST['year'] ?? ($json_body['year'] ?? null);
+
+        if (!$type) {
+            http_response_code(400);
+            throw new Exception("Missing document type");
+        }
+
+        // Validate document type
+        $valid_types = ['INV', 'PRO', 'QT', 'PO', 'LPO', 'DN', 'CN', 'PAY', 'REC'];
+        if (!in_array($type, $valid_types)) {
+            http_response_code(400);
+            throw new Exception("Invalid document type: $type. Valid types are: " . implode(', ', $valid_types));
+        }
+
+        // Default to current year if not provided
+        if (!$year) {
+            $year = date('Y');
+        } else {
+            $year = (int)$year;
+            // Validate year is reasonable (between 2000 and next 10 years)
+            if ($year < 2000 || $year > (date('Y') + 10)) {
+                http_response_code(400);
+                throw new Exception("Invalid year: $year");
+            }
+        }
+
+        // Ensure document_sequences table exists
+        $table_check = $conn->query("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_sequences'");
+        if (!$table_check || $table_check->num_rows === 0) {
+            // Create the table if it doesn't exist
+            $create_sql = "CREATE TABLE IF NOT EXISTS `document_sequences` (
+                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                document_type CHAR(3) NOT NULL,
+                year INT NOT NULL,
+                sequence_number INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_type_year (document_type, year),
+                INDEX idx_document_sequences_type (document_type)
+            )";
+            if (!$conn->query($create_sql)) {
+                throw new Exception("Failed to create document_sequences table: " . $conn->error);
+            }
+        }
+
+        // Use a transaction to ensure atomicity
+        $conn->begin_transaction();
+
+        try {
+            // Check if this type-year combination exists, if not insert it
+            $check_sql = "SELECT id, sequence_number FROM document_sequences WHERE document_type = '" . escape($conn, $type) . "' AND year = $year LIMIT 1";
+            $result = $conn->query($check_sql);
+
+            if (!$result || $result->num_rows === 0) {
+                // Insert new entry with sequence 0
+                $insert_sql = "INSERT INTO document_sequences (document_type, year, sequence_number) VALUES ('" . escape($conn, $type) . "', $year, 0)";
+                if (!$conn->query($insert_sql)) {
+                    throw new Exception("Failed to initialize sequence: " . $conn->error);
+                }
+            }
+
+            // Increment the sequence number (atomic operation)
+            $update_sql = "UPDATE document_sequences SET sequence_number = sequence_number + 1 WHERE document_type = '" . escape($conn, $type) . "' AND year = $year";
+            if (!$conn->query($update_sql)) {
+                throw new Exception("Failed to increment sequence: " . $conn->error);
+            }
+
+            // Get the updated sequence number
+            $fetch_sql = "SELECT sequence_number FROM document_sequences WHERE document_type = '" . escape($conn, $type) . "' AND year = $year LIMIT 1";
+            $result = $conn->query($fetch_sql);
+            if (!$result || $result->num_rows === 0) {
+                throw new Exception("Failed to fetch sequence number");
+            }
+
+            $row = $result->fetch_assoc();
+            $sequence = (int)$row['sequence_number'];
+
+            // Commit transaction
+            $conn->commit();
+
+            // Format the number: TYPE-YEAR-NNNN (4-digit zero-padded)
+            $document_number = sprintf('%s-%d-%04d', $type, $year, $sequence);
+
+            error_log("✅ Generated document number: $document_number");
+
+            echo json_encode([
+                'success' => true,
+                'number' => $document_number,
+                'type' => $type,
+                'year' => $year,
+                'sequence' => $sequence
+            ]);
+        } catch (Exception $e) {
+            // Rollback on error
+            $conn->rollback();
+            throw $e;
+        }
+        exit();
+    }
+
     // CRUD Operations
     elseif ($action === "create") {
         if (!$table) {
