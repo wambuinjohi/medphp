@@ -210,8 +210,8 @@ export async function testCORSConfiguration(
   apiUrl: string = 'https://med.layonsconstruction.com/api.php'
 ): Promise<NetworkDiagnostic> {
   try {
-    const response = await fetch(apiUrl, {
-      method: 'OPTIONS',
+    const response = await fetch(`${apiUrl}?action=health`, {
+      method: 'GET',
       headers: {
         'Origin': window.location.origin,
         'Access-Control-Request-Method': 'POST',
