@@ -1,4 +1,32 @@
 <?php
+// CORS headers MUST be set first, before anything else
+// This ensures CORS headers are sent in all responses, including error responses
+
+// Set CORS response headers - allow credentials with specific origin (not wildcard)
+// Note: Cannot use wildcard (*) with credentials=true; must specify exact origin
+if (isset($_SERVER['HTTP_ORIGIN'])) {
+    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+    header("Access-Control-Allow-Credentials: true");
+} else {
+    // If no origin header sent, allow requests without credentials
+    header("Access-Control-Allow-Origin: *");
+}
+
+// Set additional CORS headers for all requests
+header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With");
+header("Access-Control-Max-Age: 86400");
+header("Access-Control-Expose-Headers: Content-Type, X-Total-Count, X-Page, X-Page-Size");
+
+// Always set response Content-Type to JSON
+header("Content-Type: application/json; charset=utf-8");
+
+// Handle CORS preflight requests (OPTIONS) - respond immediately
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit(0);
+}
+
 // Load .env file if it exists
 if (file_exists(__DIR__ . '/.env')) {
     $env_file = file_get_contents(__DIR__ . '/.env');
@@ -14,35 +42,6 @@ if (file_exists(__DIR__ . '/.env')) {
         putenv("$key=$value");
         $_ENV[$key] = $value;
     }
-}
-
-// CORS headers - allow credentials with specific origin (not wildcard)
-// Note: Cannot use wildcard (*) with credentials=true; must specify exact origin
-if (isset($_SERVER['HTTP_ORIGIN'])) {
-    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
-    header("Access-Control-Allow-Credentials: true");
-} else {
-    // If no origin header sent, allow requests without credentials
-    header("Access-Control-Allow-Origin: *");
-}
-
-// Set CORS headers for all requests
-header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With");
-header("Access-Control-Max-Age: 86400");
-header("Access-Control-Expose-Headers: Content-Type, X-Total-Count, X-Page, X-Page-Size");
-
-// Always set response Content-Type to JSON
-header("Content-Type: application/json; charset=utf-8");
-
-// Note: The above correctly sets the RESPONSE content-type
-// The $_SERVER['CONTENT_TYPE'] is the REQUEST content-type (multipart/form-data for file uploads)
-// This is the correct behavior - requests can be multipart, but responses should be JSON
-
-// Handle CORS preflight requests (OPTIONS)
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit(0);
 }
 
 // Database Configuration - all required, no fallback defaults
