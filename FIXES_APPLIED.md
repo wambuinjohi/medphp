@@ -87,7 +87,7 @@ The application was experiencing "Failed to fetch" errors when trying to connect
 
 ## Backend Team: Next Steps
 
-The backend at `https://med.wayrus.co.ke/api.php` needs to add CORS headers:
+The backend at `https://med.layonsconstruction.com/api.php` needs to add CORS headers:
 
 ```php
 // Add to api.php
@@ -140,7 +140,7 @@ If you need to use a different API endpoint:
 VITE_EXTERNAL_API_URL=https://your-custom-api.com/api.php
 ```
 
-The app will use this instead of the default `https://med.wayrus.co.ke/api.php`.
+The app will use this instead of the default `https://med.layonsconstruction.com/api.php`.
 
 ---
 
