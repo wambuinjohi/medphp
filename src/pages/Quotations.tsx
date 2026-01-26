@@ -96,7 +96,7 @@ export default function Quotations() {
   const { profile, loading: authLoading } = useAuth();
   const { data: companies } = useCompanies();
   const currentCompany = companies?.[0];
-  const { data: quotations, isLoading, error, refetch } = useQuotations(currentCompany?.id);
+  const { data: quotations, isLoading, error, refetch } = useQuotationsFixed(currentCompany?.id);
   const deleteQuotation = useDeleteQuotation();
   const convertToProforma = useConvertQuotationToProforma();
   const convertToInvoice = useConvertQuotationToInvoice();
