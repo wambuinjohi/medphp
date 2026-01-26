@@ -538,9 +538,9 @@ export const CreateProformaModalOptimized = ({
               <Button type="button" variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                disabled={!formData.customer_id || items.length === 0 || createProforma.isPending || isGeneratingNumber}
+              <Button
+                type="submit"
+                disabled={!formData.customer_id || items.length === 0 || createProforma.isPending}
               >
                 {createProforma.isPending ? (
                   <>
