@@ -2118,7 +2118,7 @@ try {
 
             // Step 3: Create payment
             $paymentMethod = $payment['payment_method'] ?? 'cash';
-            $paymentNumber = $payment['payment_number'] ?? 'PAY-' . time();
+            // $paymentNumber is already generated before the transaction
             $referenceNumber = $payment['reference_number'] ?? null;
 
             $paymentMethod_e = escape($conn, $paymentMethod);
