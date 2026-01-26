@@ -1,5 +1,6 @@
 import { lightenColor, getColorAsHslVar } from './colorUtils';
 import { renderHeaderHTML, getTemplateCSS, TemplateName } from './pdfTemplates';
+import { generateDocumentNumberAPI } from './documentNumbering';
 
 // PDF Generation utility using HTML to print/PDF conversion
 // Since we don't have jsPDF installed, I'll create a simple HTML-to-print function
