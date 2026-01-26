@@ -495,18 +495,14 @@ export const useDeleteProforma = () => {
 };
 
 /**
- * Hook to generate proforma number
+ * Hook to generate proforma number using the centralized API
  */
 export const useGenerateProformaNumber = () => {
   return useMutation({
     mutationFn: async (companyId: string) => {
-      // Generate proforma number client-side using timestamp
-      const timestamp = Date.now().toString().slice(-6);
-      const year = new Date().getFullYear();
-      const proformaNumber = `PF-${year}-${timestamp}`;
-
-      console.info('Generated proforma number:', proformaNumber);
-      return proformaNumber;
+      // Use the centralized document number generation API
+      const { generateDocumentNumberAPI } = await import('@/utils/documentNumbering');
+      return generateDocumentNumberAPI('proforma');
     },
   });
 };
