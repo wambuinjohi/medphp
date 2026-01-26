@@ -1,6 +1,6 @@
 /**
  * External API Authentication Handler
- * Manages JWT token-based authentication with med.wayrus.co.ke/api.php
+ * Manages JWT token-based authentication with med.layonsconstruction.com/api.php
  */
 
 export interface AuthToken {
@@ -19,7 +19,7 @@ class ExternalAPIAuthHandler {
   private tokenKey = 'med_api_auth_token';
   private userKey = 'med_api_auth_user';
 
-  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
+  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php') {
     this.apiUrl = apiUrl;
 
     // Always use the direct URL (no proxy) for consistency across all environments
