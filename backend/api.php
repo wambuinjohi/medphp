@@ -1209,9 +1209,6 @@ try {
         $columns = [];
         $values = [];
 
-        // Log the incoming data structure for debugging
-        error_log("DEBUG: Raw data received for INSERT into $table: " . json_encode($data));
-
         foreach ($data as $col => $val) {
             // Convert boolean values to 0/1 for proper MySQL handling
             if (is_bool($val)) {
@@ -1225,7 +1222,7 @@ try {
 
         $sql = "INSERT INTO `$table` (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $values) . ")";
 
-        error_log("DEBUG: Generated SQL INSERT: " . $sql);
+        error_log("SQL INSERT: " . $sql);
 
         if (!$conn->query($sql)) {
             error_log("MySQL Error: " . $conn->error . " | SQL: " . $sql);
