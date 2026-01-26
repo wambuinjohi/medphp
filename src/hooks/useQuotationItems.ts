@@ -779,8 +779,9 @@ export const useConvertQuotationToProforma = () => {
       if (itemsResult.error) throw itemsResult.error;
       const quotationItems = itemsResult.data || [];
 
-      // Generate proforma number using timestamp
-      const proformaNumber = `PROFORMA-${Date.now()}`;
+      // Generate proforma number using centralized API
+      const { generateDocumentNumberAPI } = await import('@/utils/documentNumbering');
+      const proformaNumber = await generateDocumentNumberAPI('proforma');
 
       // Create proforma from quotation
       let createdBy: string | null = null;

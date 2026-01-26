@@ -50,6 +50,8 @@ export async function generateDocumentNumberAPI(
   year?: number
 ): Promise<string> {
   try {
+    console.log(`[DOC_NUM] Starting document number generation for type: ${type}`);
+
     // Map internal type name to API type code
     const apiType = DOCUMENT_TYPE_MAP[type];
     if (!apiType) {
@@ -57,6 +59,7 @@ export async function generateDocumentNumberAPI(
     }
 
     const currentYear = year || new Date().getFullYear();
+    console.log(`[DOC_NUM] Mapped type: ${type} -> ${apiType}, year: ${currentYear}`);
 
     // Get API base URL with proper environment detection
     // This handles both local (/api.php) and cloud (external API URL) setups
@@ -64,43 +67,55 @@ export async function generateDocumentNumberAPI(
     try {
       const { getAPIBaseURL } = await import('./environment-detection');
       apiUrl = getAPIBaseURL();
-    } catch {
+      console.log(`[DOC_NUM] Successfully detected API URL:`, apiUrl);
+    } catch (error) {
       // Fallback to relative path if environment detection fails
-      console.warn('Could not detect API base URL, using /api.php fallback');
+      console.warn('[DOC_NUM] Could not detect API base URL, using /api.php fallback', error);
     }
+
+    console.log(`[DOC_NUM] Sending request to: ${apiUrl}`);
+    const requestBody = {
+      action: 'get_next_document_number',
+      type: apiType,
+      year: currentYear,
+    };
+    console.log(`[DOC_NUM] Request body:`, requestBody);
 
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        action: 'get_next_document_number',
-        type: apiType,
-        year: currentYear,
-      }),
+      body: JSON.stringify(requestBody),
     });
+
+    console.log(`[DOC_NUM] Response status:`, response.status, response.statusText);
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.warn(`Failed to generate document number (${response.status}):`, errorData);
+      console.error(`[DOC_NUM] Failed to generate document number (${response.status}):`, errorData);
+      console.warn(`[DOC_NUM] Falling back to random number generation`);
       // Return fallback format on API error
       return generateFallbackNumber(apiType, currentYear);
     }
 
     const data = await response.json() as DocumentNumberResponse;
+    console.log(`[DOC_NUM] API Response:`, data);
 
     if (!data.success || !data.number) {
-      console.warn('API returned unsuccessful response:', data);
+      console.error('[DOC_NUM] API returned unsuccessful response:', data);
+      console.warn(`[DOC_NUM] Falling back to random number generation`);
       return generateFallbackNumber(apiType, currentYear);
     }
 
+    console.log(`[DOC_NUM] Successfully generated document number:`, data.number);
     return data.number;
   } catch (error) {
-    console.warn('Error generating document number via API:', error);
+    console.error('[DOC_NUM] Error generating document number via API:', error);
     // Return fallback format on network/parsing error
     const apiType = DOCUMENT_TYPE_MAP[type] || type.toUpperCase().substring(0, 3);
     const currentYear = year || new Date().getFullYear();
+    console.warn(`[DOC_NUM] Falling back to random number generation`);
     return generateFallbackNumber(apiType, currentYear);
   }
 }
@@ -108,7 +123,7 @@ export async function generateDocumentNumberAPI(
 /**
  * Generate a fallback document number when API is unavailable
  * Format: TYPE-YYYY-XXXX where XXXX is random alphanumeric
- * 
+ *
  * @param type - Document type code (e.g., 'INV', 'PRO')
  * @param year - Year for the number
  * @returns Fallback number string
@@ -120,7 +135,9 @@ function generateFallbackNumber(type: string, year: number): string {
   for (let i = 0; i < 4; i++) {
     random += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return `${type}-${year}-${random}`;
+  const fallbackNumber = `${type}-${year}-${random}`;
+  console.warn(`[DOC_NUM] Generated FALLBACK number (API unavailable):`, fallbackNumber);
+  return fallbackNumber;
 }
 
 /**

@@ -82,21 +82,27 @@ export const CreateProformaModal = ({
 
   useEffect(() => {
     if (open) {
-      // Generate proforma number
+      // Generate proforma number using API
       generateDocumentNumber.mutate(
         { companyId, type: 'proforma' },
         {
           onSuccess: (number) => {
-            setProformaNumber(`PF-${number}`);
+            // API returns PRO-YYYY-NNNN format, use as-is
+            setProformaNumber(number);
+            console.log('✅ Proforma number generated:', number);
           },
           onError: (error) => {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.warn('Proforma number generation failed, using fallback:', errorMessage);
 
-            // Generate a fallback number using timestamp and random number
-            const timestamp = Date.now().toString().slice(-6);
+            // Generate a fallback number: PRO-YYYY-XXXX (random alphanumeric)
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let random = '';
+            for (let i = 0; i < 4; i++) {
+              random += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
             const year = new Date().getFullYear();
-            const fallbackNumber = `PF-${year}-${timestamp}`;
+            const fallbackNumber = `PRO-${year}-${random}`;
             setProformaNumber(fallbackNumber);
 
             console.info('Using fallback proforma number:', fallbackNumber);

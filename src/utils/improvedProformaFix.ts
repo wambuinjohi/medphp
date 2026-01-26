@@ -104,22 +104,22 @@ export async function validateProformaData(): Promise<ProformaValidationResult> 
 /**
  * Generates a unique proforma number using timestamp-based approach
  * @deprecated Use API-based generateDocumentNumberAPI('proforma') instead
- * Format: PRO-YYYY-MMDDHHMMSS-XXXX (e.g., PRO-2024-01151430-5829)
+ * Format: PRO-YYYY-XXXX (e.g., PRO-2026-A1B2)
+ * This is kept for backward compatibility only - new proformas should use the API
  */
 export function generateNextProformaNumber(): string {
   try {
     const now = new Date();
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
 
-    // Generate a random 4-digit suffix to ensure uniqueness for same-second generations
-    const randomSuffix = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+    // Generate random 4 alphanumeric characters for fallback
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let random = '';
+    for (let i = 0; i < 4; i++) {
+      random += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
 
-    return `PRO-${year}-${month}${day}${hours}${minutes}-${randomSuffix}`;
+    return `PRO-${year}-${random}`;
   } catch (error) {
     throw new Error(`Failed to generate proforma number: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }

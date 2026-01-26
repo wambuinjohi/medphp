@@ -30,9 +30,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { useCustomers, useProducts, useTaxSettings } from '@/hooks/useDatabase';
-import { useCreateProforma, type ProformaItem } from '@/hooks/useProforma';
+import { useCreateProforma, useGenerateProformaNumber, type ProformaItem } from '@/hooks/useProforma';
 import { calculateItemTax, calculateDocumentTotals, formatCurrency, type TaxableItem } from '@/utils/taxCalculation';
-import { generateNextProformaNumber } from '@/utils/improvedProformaFix';
 import { toast } from 'sonner';
 
 interface CreateProformaModalOptimizedProps {
@@ -42,11 +41,11 @@ interface CreateProformaModalOptimizedProps {
   companyId?: string;
 }
 
-export const CreateProformaModalOptimized = ({ 
-  open, 
-  onOpenChange, 
+export const CreateProformaModalOptimized = ({
+  open,
+  onOpenChange,
   onSuccess,
-  companyId = '550e8400-e29b-41d4-a716-446655440000' 
+  companyId = '550e8400-e29b-41d4-a716-446655440000'
 }: CreateProformaModalOptimizedProps) => {
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -64,6 +63,7 @@ export const CreateProformaModalOptimized = ({
   const { data: customers, isLoading: customersLoading } = useCustomers(companyId);
   const { data: products, isLoading: productsLoading } = useProducts(companyId);
   const { data: taxSettings } = useTaxSettings(companyId);
+  const generateProformaNumberMutation = useGenerateProformaNumber();
   const createProforma = useCreateProforma();
 
   const defaultTaxRate = taxSettings?.find(t => t.is_default)?.rate || 0;
@@ -71,7 +71,7 @@ export const CreateProformaModalOptimized = ({
   // Generate proforma number when modal opens
   useEffect(() => {
     if (open && !proformaNumber) {
-      generateProformaNumber();
+      generateProformaNumberAPI();
 
       // Set default valid until date (30 days from today)
       const validUntil = new Date();
@@ -83,21 +83,19 @@ export const CreateProformaModalOptimized = ({
     }
   }, [open, proformaNumber]);
 
-  const generateProformaNumber = () => {
-    try {
-      console.log('🔢 Generating proforma number...');
-
-      const proformaNumber = generateNextProformaNumber();
-      setProformaNumber(proformaNumber);
-
-      console.log('✅ Proforma number generated:', proformaNumber);
-      toast.success(`Proforma number generated: ${proformaNumber}`);
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error('❌ Proforma number generation failed:', error);
-      toast.error(`Failed to generate proforma number: ${errorMessage}`);
-    }
+  const generateProformaNumberAPI = () => {
+    generateProformaNumberMutation.mutate(companyId, {
+      onSuccess: (number) => {
+        setProformaNumber(number);
+        console.log('✅ Proforma number generated:', number);
+        toast.success(`Proforma number generated: ${number}`);
+      },
+      onError: (error) => {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error('❌ Proforma number generation failed:', error);
+        toast.error(`Failed to generate proforma number: ${errorMessage}`);
+      }
+    });
   };
 
   const filteredProducts = products?.filter(product =>
