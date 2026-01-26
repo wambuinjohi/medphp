@@ -161,8 +161,8 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
 
     setIsSubmitting(true);
     try {
-      // Generate payment number
-      const paymentNumber = `PAY-${Date.now()}`;
+      // Generate payment number using sequential API
+      const paymentNumber = await generateDocumentNumberAPI('payment');
 
       const paymentRecord = {
         company_id: selectedInvoice?.company_id || currentCompany.id,
