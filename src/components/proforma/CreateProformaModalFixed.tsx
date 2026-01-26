@@ -36,7 +36,6 @@ import { useCreateProforma, useGenerateProformaNumber, type ProformaItem } from 
 import { calculateItemTax, calculateDocumentTotals, formatCurrency, type TaxableItem } from '@/utils/taxCalculation';
 import { setupProformaTables, checkProformaTables } from '@/utils/proformaDatabaseSetup';
 import { ProformaErrorNotification } from '@/components/fixes/ProformaErrorNotification';
-import { autoFixProformaFunction } from '@/utils/immediateProformaFix';
 import { toast } from 'sonner';
 
 interface CreateProformaModalProps {
