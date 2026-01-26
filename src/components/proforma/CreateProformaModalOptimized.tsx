@@ -232,8 +232,6 @@ export const CreateProformaModalOptimized = ({
     setSearchTerm('');
     setShowProductSearch(false);
     setProformaNumber('');
-    setFunctionError('');
-    setCreateError('');
     onOpenChange(false);
   };
 
