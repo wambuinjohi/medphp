@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Create First Admin User - External API Version
- * 
- * This script creates the first admin user via med.wayrus.co.ke/api.php
+ *
+ * This script creates the first admin user via med.layonsconstruction.com/api.php
  * 
  * Usage: 
  *   node scripts/create-first-admin.js [email] [password] [fullName]
@@ -16,7 +16,7 @@
 
 const readline = require('readline');
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
 const AUTH_TOKEN = process.env.API_AUTH_TOKEN || null;
 
 const rl = readline.createInterface({

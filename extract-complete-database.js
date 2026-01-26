@@ -2,11 +2,11 @@
 
 /**
  * Complete Database Extraction - External API Version
- * This script now calls the external API (med.wayrus.co.ke/api.php)
+ * This script now calls the external API (med.layonsconstruction.com/api.php)
  * for database operations instead of Supabase
  */
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
 const AUTH_TOKEN = process.env.API_AUTH_TOKEN || null;
 
 if (!EXTERNAL_API_URL) {
