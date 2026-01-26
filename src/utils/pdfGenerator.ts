@@ -1248,9 +1248,20 @@ export const generateCustomerStatementPDF = async (customer: any, invoices: any[
 
 // Function for generating remittance advice PDF
 export const downloadRemittancePDF = async (remittance: any, company?: CompanyDetails) => {
+  // Generate document number using API if not provided
+  let remittanceNumber = remittance.adviceNumber || remittance.advice_number;
+  if (!remittanceNumber) {
+    try {
+      remittanceNumber = await generateDocumentNumberAPI('remittance');
+    } catch (error) {
+      console.error('Failed to generate remittance number:', error);
+      remittanceNumber = `REM-${Date.now()}`; // Last resort fallback
+    }
+  }
+
   const documentData: DocumentData = {
     type: 'remittance',
-    number: remittance.adviceNumber || remittance.advice_number || `REM-${Date.now()}`,
+    number: remittanceNumber,
     date: remittance.adviceDate || remittance.advice_date || new Date().toISOString().split('T')[0],
     company: company, // Pass company details
     customer: {
