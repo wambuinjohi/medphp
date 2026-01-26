@@ -806,8 +806,8 @@ export const useConvertQuotationToProforma = () => {
         tax_amount: quotation.tax_amount,
         total_amount: quotation.total_amount,
         notes: `Converted from quotation ${quotation.quotation_number}`,
-        terms_and_conditions: quotation.terms_and_conditions,
-        created_by: createdBy
+        terms_and_conditions: quotation.terms_and_conditions
+        // Note: created_by column does not exist in proforma_invoices table
       };
 
       // Create proforma using database adapter
