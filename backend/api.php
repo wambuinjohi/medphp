@@ -16,12 +16,17 @@ if (file_exists(__DIR__ . '/.env')) {
     }
 }
 
-// CORS headers - allow credentials with dynamic origin
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
-header("Access-Control-Allow-Origin: $origin");
+// CORS headers - allow credentials with specific origin (not wildcard)
+// Note: Cannot use wildcard (*) with credentials=true; must specify exact origin
+if (isset($_SERVER['HTTP_ORIGIN'])) {
+    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+    header("Access-Control-Allow-Credentials: true");
+} else {
+    // If no origin header sent, allow requests without credentials
+    header("Access-Control-Allow-Origin: *");
+}
 header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With");
-header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Max-Age: 86400");
 
 // Always set response Content-Type to JSON
@@ -36,11 +41,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Database Configuration
-$db_host = $_ENV['DB_HOST'] ?? 'localhost';
-$db_user = $_ENV['DB_USER'] ?? 'layonsc1_med';
-$db_pass = $_ENV['DB_PASS'] ?? 'Sirgeorge.12';
-$db_name = $_ENV['DB_NAME'] ?? 'layonsc1_med';
+// Database Configuration - all required, no fallback defaults
+$db_host = $_ENV['DB_HOST'] ?? null;
+$db_user = $_ENV['DB_USER'] ?? null;
+$db_pass = $_ENV['DB_PASS'] ?? null;
+$db_name = $_ENV['DB_NAME'] ?? null;
+
+// Validate required database configuration
+if (!$db_host || !$db_user || !$db_pass || !$db_name) {
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Database configuration missing. Please set DB_HOST, DB_USER, DB_PASS, and DB_NAME in .env file.'
+    ]);
+    exit();
+}
 
 // Create connection
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
@@ -702,7 +717,10 @@ try {
 
     // Helper function to create JWT token
     function createJWT($user_id, $user_email, $user_role, $company_id = null, $status = 'active') {
-        $secret = $_ENV['JWT_SECRET'] ?? 'wayrus-secret-key-2024';
+        $secret = $_ENV['JWT_SECRET'] ?? null;
+        if (!$secret) {
+            throw new Exception('JWT_SECRET environment variable is not configured');
+        }
         $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
         $payload = base64_encode(json_encode([
             'sub' => $user_id,
@@ -720,7 +738,10 @@ try {
     // Helper function to verify JWT token
     function verifyJWT($token) {
         if (!$token) return null;
-        $secret = $_ENV['JWT_SECRET'] ?? 'wayrus-secret-key-2024';
+        $secret = $_ENV['JWT_SECRET'] ?? null;
+        if (!$secret) {
+            throw new Exception('JWT_SECRET environment variable is not configured');
+        }
         $parts = explode('.', $token);
         if (count($parts) !== 3) return null;
 
