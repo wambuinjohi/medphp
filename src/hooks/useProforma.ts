@@ -529,8 +529,9 @@ export const useConvertProformaToInvoice = () => {
       if (itemsResult.error) throw itemsResult.error;
       const proformaItems = itemsResult.data || [];
 
-      // Generate invoice number using timestamp
-      const invoiceNumber = `INV-${Date.now()}`;
+      // Generate invoice number using centralized API
+      const { generateDocumentNumberAPI } = await import('@/utils/documentNumbering');
+      const invoiceNumber = await generateDocumentNumberAPI('invoice');
 
       // Get current user
       let createdBy: string | null = null;
