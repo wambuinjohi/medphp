@@ -111,10 +111,11 @@ export const CreateLPOModal = ({
         },
         onError: (error) => {
           console.error('Failed to generate LPO number:', error);
-          // Fallback LPO number generation
-          const fallbackNumber = `LPO-${new Date().getFullYear()}-${Date.now()}`;
-          setLpoNumber(fallbackNumber);
-          toast.error('Failed to generate LPO number. Using fallback number.');
+          // Fallback to API generation
+          generateDocumentNumberAPI('lpo').then(setLpoNumber).catch((apiError) => {
+            console.error('Failed to generate LPO number via API fallback:', apiError);
+            toast.error('Failed to generate LPO number');
+          });
         }
       });
     }
