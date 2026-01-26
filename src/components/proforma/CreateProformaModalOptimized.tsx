@@ -247,7 +247,7 @@ export const CreateProformaModalOptimized = ({
   };
 
   const totals = calculateTotals();
-  const isLoading = customersLoading || productsLoading || isGeneratingNumber;
+  const isLoading = customersLoading || productsLoading;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
