@@ -15,10 +15,13 @@ export default defineConfig(({ mode }) => {
     apiUrl = process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com';
   }
 
+  // Ensure proper API endpoint formatting
+  const apiEndpoint = apiUrl.includes('/api.php') ? apiUrl : `${apiUrl}/api.php`;
+
   if (useLocalAuth) {
     console.log('✅ Using LOCAL authentication server at http://localhost:3001');
   } else {
-    console.log(`🌐 Using REMOTE API at ${apiUrl}`);
+    console.log(`🌐 Using REMOTE API at ${apiEndpoint}`);
   }
 
   return {
