@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
   const useLocalAuth = process.env.VITE_USE_LOCAL_AUTH === 'true';
   const apiUrl = useLocalAuth
     ? 'http://localhost:3001'
-    : (process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com');
+    : (process.env.VITE_EXTERNAL_API_URL || process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com');
 
   if (useLocalAuth) {
     console.log('✅ Using LOCAL authentication server at http://localhost:3001');
