@@ -1,0 +1,212 @@
+/**
+ * Environment Detection Module
+ * Automatically detects hosting environment (local/Apache vs. cloud) and configures API routing accordingly
+ */
+
+type HostingType = 'apache' | 'cloud';
+
+interface EnvironmentConfig {
+  apiBaseUrl: string;
+  isLocal: boolean;
+  hostingType: HostingType;
+  hostname: string;
+  protocol: string;
+  port: string;
+}
+
+/**
+ * Check if a hostname is a private/local IP address
+ */
+function isPrivateIP(hostname: string): boolean {
+  // IPv4 private ranges:
+  // - 10.0.0.0/8 (10.0.0.0 - 10.255.255.255)
+  // - 172.16.0.0/12 (172.16.0.0 - 172.31.255.255)
+  // - 192.168.0.0/16 (192.168.0.0 - 192.168.255.255)
+  // - 127.0.0.0/8 (localhost)
+
+  const parts = hostname.split('.');
+
+  // Check for IPv4 format
+  if (parts.length === 4 && parts.every((part) => /^\d+$/.test(part))) {
+    const [a, b, c, d] = parts.map(Number);
+
+    // 10.x.x.x
+    if (a === 10) return true;
+
+    // 172.16-31.x.x
+    if (a === 172 && b >= 16 && b <= 31) return true;
+
+    // 192.168.x.x
+    if (a === 192 && b === 168) return true;
+
+    // 127.x.x.x (loopback)
+    if (a === 127) return true;
+
+    // 0.0.0.0/8
+    if (a === 0) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Check if a hostname is localhost or loopback
+ */
+function isLocalhost(hostname: string): boolean {
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '[::1]' ||
+    hostname === '::1' ||
+    hostname.startsWith('localhost:')
+  );
+}
+
+/**
+ * Check if a hostname is a .local domain (common for local networks)
+ */
+function isLocalDomain(hostname: string): boolean {
+  return hostname.endsWith('.local');
+}
+
+/**
+ * Determine if the current environment is local/Apache-based or cloud-based
+ */
+function detectLocalHosting(): boolean {
+  // If running in SSR context (no window), assume cloud
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const hostname = window.location.hostname;
+
+  return isLocalhost(hostname) || isPrivateIP(hostname) || isLocalDomain(hostname);
+}
+
+/**
+ * Get the API base URL based on environment detection
+ * Hybrid approach: respects VITE_EXTERNAL_API_URL if set, otherwise auto-detects
+ */
+function getAPIBaseURLInternal(): string {
+  // If running in SSR context, require explicit config
+  if (typeof window === 'undefined') {
+    const envUrl = import.meta.env.VITE_EXTERNAL_API_URL;
+    if (!envUrl) {
+      throw new Error('VITE_EXTERNAL_API_URL is required for non-browser environments');
+    }
+    return ensureApiPhpSuffix(envUrl);
+  }
+
+  // Priority 1: Use explicit environment variable if set
+  const explicitUrl = import.meta.env.VITE_EXTERNAL_API_URL;
+  if (explicitUrl) {
+    console.log('🌐 Using explicit VITE_EXTERNAL_API_URL:', explicitUrl);
+    return ensureApiPhpSuffix(explicitUrl);
+  }
+
+  // Priority 2: Auto-detect based on hostname
+  const isLocal = detectLocalHosting();
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  const port = window.location.port ? `:${window.location.port}` : '';
+
+  if (isLocal) {
+    // Local/Apache mode: use /api.php endpoint at root
+    const localUrl = `${protocol}//${hostname}${port}/api.php`;
+    console.log('🏠 Local hosting detected - using /api.php endpoint:', localUrl);
+    return localUrl;
+  }
+
+  // Cloud mode without explicit config: error
+  throw new Error(
+    `Cloud hosting detected (${hostname}) but VITE_EXTERNAL_API_URL is not configured. ` +
+    `Please set VITE_EXTERNAL_API_URL environment variable with the API endpoint URL.`
+  );
+}
+
+/**
+ * Ensure API URL ends with /api.php
+ */
+function ensureApiPhpSuffix(url: string): string {
+  if (url.includes('/api.php')) {
+    return url;
+  }
+  // Remove trailing slash if present
+  const cleanUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+  return `${cleanUrl}/api.php`;
+}
+
+/**
+ * Get complete environment configuration
+ */
+function getEnvironmentConfig(): EnvironmentConfig {
+  const apiBaseUrl = getAPIBaseURLInternal();
+  const isLocal = detectLocalHosting();
+  const hostingType: HostingType = isLocal ? 'apache' : 'cloud';
+  const protocol = typeof window !== 'undefined' ? window.location.protocol : 'https:';
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
+  const port = typeof window !== 'undefined' && window.location.port ? window.location.port : '';
+
+  return {
+    apiBaseUrl,
+    isLocal,
+    hostingType,
+    hostname,
+    protocol,
+    port,
+  };
+}
+
+/**
+ * Check if current deployment is local/Apache hosting
+ */
+export function isLocalHosting(): boolean {
+  try {
+    const config = getEnvironmentConfig();
+    return config.isLocal;
+  } catch (error) {
+    // If error (likely cloud without explicit config), it's not local
+    return false;
+  }
+}
+
+/**
+ * Get the hosting type
+ */
+export function getHostingType(): HostingType {
+  try {
+    const config = getEnvironmentConfig();
+    return config.hostingType;
+  } catch (error) {
+    // Default to cloud if error
+    return 'cloud';
+  }
+}
+
+/**
+ * Get the API base URL for the current environment
+ * This is the main export used by the database adapter
+ */
+export function getAPIBaseURL(): string {
+  return getAPIBaseURLInternal();
+}
+
+/**
+ * Log environment detection info (useful for debugging)
+ */
+export function logEnvironmentConfig(): void {
+  if (typeof window === 'undefined') {
+    console.log('📍 Environment detection: SSR mode');
+    return;
+  }
+
+  const config = getEnvironmentConfig();
+  console.log('📍 Environment Configuration:', {
+    apiBaseUrl: config.apiBaseUrl,
+    isLocal: config.isLocal,
+    hostingType: config.hostingType,
+    hostname: config.hostname,
+    protocol: config.protocol,
+    port: config.port || '(default)',
+  });
+}

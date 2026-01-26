@@ -11,12 +11,19 @@ let sharedAdapter: ExternalAPIAdapter | null = null;
 /**
  * Get or create the shared ExternalAPIAdapter instance
  * All database operations should use this single instance to ensure consistent authentication
+ * The adapter will use environment detection to determine the correct API URL
  */
 export function getSharedExternalAdapter(): ExternalAPIAdapter {
   if (!sharedAdapter) {
-    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
-    sharedAdapter = new ExternalAPIAdapter(apiUrl);
-    console.log('🎯 Shared ExternalAPIAdapter instance created - all DB operations will use this');
+    // Initialize adapter without explicit URL - it will use environment detection
+    // This allows automatic detection of local vs cloud hosting
+    try {
+      sharedAdapter = new ExternalAPIAdapter();
+      console.log('🎯 Shared ExternalAPIAdapter instance created - all DB operations will use this');
+    } catch (error) {
+      console.error('❌ Failed to create shared adapter:', error);
+      throw error;
+    }
   }
   return sharedAdapter;
 }
