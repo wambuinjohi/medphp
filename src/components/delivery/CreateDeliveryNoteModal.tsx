@@ -87,7 +87,11 @@ export const CreateDeliveryNoteModal = ({
 
   useEffect(() => {
     if (open) {
-      setDeliveryNoteNumber(`DN-${Date.now()}`);
+      // Generate delivery note number using sequential API
+      generateDocumentNumberAPI('delivery_note').then(setDeliveryNoteNumber).catch((error) => {
+        console.error('Failed to generate delivery note number:', error);
+        toast.error('Failed to generate delivery note number');
+      });
     }
   }, [open]);
 
