@@ -102,7 +102,7 @@ export default function HeroSlider() {
                   <div className="pt-4 sm:pt-6">
                     <Link to="/about-us" className="block sm:inline-block">
                       <button className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 sm:px-8 py-3 sm:py-3 rounded-lg font-semibold hover:shadow-lg active:shadow-md transform hover:scale-105 active:scale-100 transition-all duration-200 text-base sm:text-base min-h-[44px] sm:min-h-auto flex items-center justify-center"
-                        aria-label={`Learn more about ${companyName}`}>
+                        aria-label={`Learn more about ${companyConfig.name}`}>
                         Learn More
                       </button>
                     </Link>
