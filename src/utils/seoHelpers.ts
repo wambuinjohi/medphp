@@ -77,22 +77,25 @@ export const generateOrganizationSchema = (companyConfig?: CompanyConfig | null)
 /**
  * Generate structured data for WebPage
  */
-export const generateWebPageSchema = (metadata: SEOMetadata) => ({
-  '@context': 'https://schema.org',
-  '@type': 'WebPage',
-  name: metadata.title,
-  description: metadata.description,
-  url: metadata.url || SITE_CONFIG.url,
-  image: metadata.image || SITE_CONFIG.logo,
-  publisher: {
-    '@type': 'Organization',
-    name: SITE_CONFIG.siteName,
-    logo: {
-      '@type': 'ImageObject',
-      url: SITE_CONFIG.logo,
+export const generateWebPageSchema = (metadata: SEOMetadata, companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: metadata.title,
+    description: metadata.description,
+    url: metadata.url || config.url,
+    image: metadata.image || config.logo,
+    publisher: {
+      '@type': 'Organization',
+      name: config.siteName,
+      logo: {
+        '@type': 'ImageObject',
+        url: config.logo,
+      },
     },
-  },
-});
+  };
+};
 
 /**
  * Generate structured data for Product
