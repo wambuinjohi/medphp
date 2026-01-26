@@ -194,30 +194,33 @@ export const generateCollectionSchema = (products: Array<{
   image?: string;
   url?: string;
   price?: number;
-}>) => ({
-  '@context': 'https://schema.org',
-  '@type': 'CollectionPage',
-  name: 'Product Collection',
-  description: 'Collection of medical products and equipment',
-  url: `${SITE_CONFIG.url}/products`,
-  mainEntity: products.map((product) => ({
-    '@type': 'Product',
-    name: product.name,
-    description: product.description,
-    image: product.image || SITE_CONFIG.logo,
-    url: product.url || `${SITE_CONFIG.url}/products`,
-    brand: {
-      '@type': 'Brand',
-      name: SITE_CONFIG.siteName,
-    },
-    offers: {
-      '@type': 'AggregateOffer',
-      availability: 'https://schema.org/InStock',
-      priceCurrency: 'KES',
-      ...(product.price && { highPrice: product.price.toString() }),
-    },
-  })),
-});
+}>, companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Product Collection',
+    description: 'Collection of medical products and equipment',
+    url: `${config.url}/products`,
+    mainEntity: products.map((product) => ({
+      '@type': 'Product',
+      name: product.name,
+      description: product.description,
+      image: product.image || config.logo,
+      url: product.url || `${config.url}/products`,
+      brand: {
+        '@type': 'Brand',
+        name: config.siteName,
+      },
+      offers: {
+        '@type': 'AggregateOffer',
+        availability: 'https://schema.org/InStock',
+        priceCurrency: 'KES',
+        ...(product.price && { highPrice: product.price.toString() }),
+      },
+    })),
+  };
+};
 
 /**
  * Generate Contact Page schema
