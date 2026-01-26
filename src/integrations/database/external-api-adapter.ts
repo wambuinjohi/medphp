@@ -18,20 +18,33 @@ export class ExternalAPIAdapter implements IDatabase {
   private apiBase: string;
   private externalApiUrl: string;
 
-  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
-    // Always use the direct external API URL (no proxy) for consistency across all environments
-    // Ensure the URL includes /api.php
-    this.externalApiUrl = apiUrl.includes('/api.php') ? apiUrl : apiUrl + '/api.php';
-    this.apiBase = this.externalApiUrl;
+  constructor(apiUrl?: string) {
+    try {
+      // Priority 1: Use explicit apiUrl parameter if provided
+      if (apiUrl) {
+        this.externalApiUrl = apiUrl.includes('/api.php') ? apiUrl : apiUrl + '/api.php';
+        console.log('✅ Using explicit API URL from constructor parameter');
+      } else {
+        // Priority 2: Use environment detection (auto-detect or VITE_EXTERNAL_API_URL)
+        this.externalApiUrl = getAPIBaseURL();
+        console.log('✅ Using API URL from environment detection');
+      }
 
-    console.log('✅ Using DIRECT API URL (no proxy) for consistency across environments');
-    console.log('📡 API endpoint:', this.apiBase);
+      this.apiBase = this.externalApiUrl;
 
-    // NOTE: We no longer cache the token on construction.
-    // This prevents timing/initialization issues where the adapter
-    // might be created before the token is available in localStorage.
-    // All methods now read the token fresh from localStorage.
-    // Token refresh is automatic - we check for expiration and refresh before each API call.
+      console.log('✅ Using DIRECT API URL (no proxy) for consistency across environments');
+      console.log('📡 API endpoint:', this.apiBase);
+
+      // NOTE: We no longer cache the token on construction.
+      // This prevents timing/initialization issues where the adapter
+      // might be created before the token is available in localStorage.
+      // All methods now read the token fresh from localStorage.
+      // Token refresh is automatic - we check for expiration and refresh before each API call.
+    } catch (error) {
+      // If environment detection fails and no explicit URL provided, throw error
+      console.error('❌ Failed to initialize ExternalAPIAdapter:', error);
+      throw error;
+    }
   }
 
   setAuthToken(token: string) {
