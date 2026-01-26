@@ -245,7 +245,7 @@ export function CreateDirectReceiptModalEnhanced({
     setIsSubmitting(true);
 
     try {
-      const paymentNumber = `REC-${Date.now().toString().slice(-8)}`;
+      const paymentNumber = await generateDocumentNumberAPI('receipt');
 
       const paymentData = {
         payment_number: paymentNumber,
