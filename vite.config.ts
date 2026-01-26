@@ -164,5 +164,11 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
+    build: {
+      // Ensure build output is properly structured for SPA
+      rollupOptions: {
+        input: 'index.html',
+      },
+    },
   };
 });
