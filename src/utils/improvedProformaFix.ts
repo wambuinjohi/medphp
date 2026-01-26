@@ -103,7 +103,8 @@ export async function validateProformaData(): Promise<ProformaValidationResult> 
 
 /**
  * Generates a unique proforma number using timestamp-based approach
- * Format: PF-YYYY-MMDDHHMMSS-XXXX (e.g., PF-2024-01151430-5829)
+ * @deprecated Use API-based generateDocumentNumberAPI('proforma') instead
+ * Format: PRO-YYYY-MMDDHHMMSS-XXXX (e.g., PRO-2024-01151430-5829)
  */
 export function generateNextProformaNumber(): string {
   try {
@@ -118,7 +119,7 @@ export function generateNextProformaNumber(): string {
     // Generate a random 4-digit suffix to ensure uniqueness for same-second generations
     const randomSuffix = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 
-    return `PF-${year}-${month}${day}${hours}${minutes}-${randomSuffix}`;
+    return `PRO-${year}-${month}${day}${hours}${minutes}-${randomSuffix}`;
   } catch (error) {
     throw new Error(`Failed to generate proforma number: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
