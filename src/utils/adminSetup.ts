@@ -1,6 +1,6 @@
 /**
  * Admin Setup Utility - External API Version
- * Uses med.wayrus.co.ke/api.php for admin user creation
+ * Uses med.layonsconstruction.com/api.php for admin user creation
  */
 
 const EXTERNAL_API_URL = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
