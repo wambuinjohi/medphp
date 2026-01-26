@@ -87,14 +87,14 @@ function detectLocalHosting(): boolean {
  * Get the API base URL based on environment detection
  * Hybrid approach: respects VITE_EXTERNAL_API_URL if set, otherwise auto-detects
  */
-function getAPIBaseURL(): string {
+function getAPIBaseURLInternal(): string {
   // If running in SSR context, require explicit config
   if (typeof window === 'undefined') {
     const envUrl = import.meta.env.VITE_EXTERNAL_API_URL;
     if (!envUrl) {
       throw new Error('VITE_EXTERNAL_API_URL is required for non-browser environments');
     }
-    return envUrl;
+    return ensureApiPhpSuffix(envUrl);
   }
 
   // Priority 1: Use explicit environment variable if set
