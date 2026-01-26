@@ -414,11 +414,9 @@ export function useDeleteCreditNote() {
 export function useGenerateCreditNoteNumber() {
   return useMutation({
     mutationFn: async (companyId: string) => {
-      const db = getDatabase();
-      const { data, error } = await db.rpc<string>('generate_credit_note_number', { company_uuid: companyId });
-
-      if (error) throw error;
-      return data as string;
+      // Use the centralized document number generation API
+      const { generateDocumentNumberAPI } = await import('@/utils/documentNumbering');
+      return generateDocumentNumberAPI('credit_note');
     },
     onError: (error: any) => {
       console.error('Error generating credit note number:', error);
