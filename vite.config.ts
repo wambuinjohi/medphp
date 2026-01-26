@@ -7,7 +7,7 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => {
   // Use local auth server for development if VITE_USE_LOCAL_AUTH is set
   const useLocalAuth = process.env.VITE_USE_LOCAL_AUTH === 'true';
-  const apiUrl = useLocalAuth 
+  const apiUrl = useLocalAuth
     ? 'http://localhost:3001'
     : (process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke');
 
@@ -18,9 +18,6 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    define: {
-      'process.env': process.env,
-    },
     server: {
       host: "::",
       port: 8080,
