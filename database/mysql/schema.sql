@@ -897,7 +897,12 @@ BEGIN
     SET p_proforma_number = CONCAT('PF-', v_year_part, '-', LPAD(v_next_number, 3, '0'));
 END$$
 
--- Procedure to generate LPO number
+-- @DEPRECATED: Procedure to generate LPO number
+-- MIGRATION STATUS: This stored procedure has been DEPRECATED in favor of API-based generation
+-- NEW SYSTEM: Use the centralized API endpoint /backend/api.php?action=get_next_document_number
+-- REFERENCE: See src/utils/documentNumbering.ts for generateDocumentNumberAPI() function
+-- STATUS: Kept for schema compatibility and potential rollback scenarios
+-- All new code should use: generateDocumentNumberAPI('lpo')
 CREATE PROCEDURE generate_lpo_number(
     IN p_company_id CHAR(36),
     OUT p_lpo_number VARCHAR(100)
@@ -905,17 +910,17 @@ CREATE PROCEDURE generate_lpo_number(
 BEGIN
     DECLARE v_company_code VARCHAR(10);
     DECLARE v_lpo_count INT;
-    
+
     SELECT COALESCE(UPPER(LEFT(name, 3)), 'LPO')
     INTO v_company_code
-    FROM companies 
+    FROM companies
     WHERE id = p_company_id;
-    
+
     SELECT COUNT(*) + 1
     INTO v_lpo_count
     FROM lpos
     WHERE company_id = p_company_id;
-    
+
     SET p_lpo_number = CONCAT(v_company_code, '-LPO-', YEAR(CURDATE()), '-', LPAD(v_lpo_count, 4, '0'));
 END$$
 
