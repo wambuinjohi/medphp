@@ -22,7 +22,7 @@ export default function AdminInitExternal() {
   const [customEmail, setCustomEmail] = useState('admin@mail.com');
   const [customPassword, setCustomPassword] = useState('Pass123');
   const [apiUrl, setApiUrl] = useState(
-    import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php'
+    import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php'
   );
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [diagnosticsRunning, setDiagnosticsRunning] = useState(false);

@@ -16,7 +16,7 @@ enableResizeObserverErrorSuppression();
 const initializeAppBackground = () => {
   try {
     const provider = import.meta.env.VITE_DATABASE_PROVIDER || 'external-api';
-    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
 
     console.log(`🔧 Initializing app with ${provider} provider`);
     console.log(`📍 Using API: ${apiUrl}`);

@@ -37,9 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Database Configuration
 $db_host = $_ENV['DB_HOST'] ?? 'localhost';
-$db_user = $_ENV['DB_USER'] ?? 'wayrusc1_med';
+$db_user = $_ENV['DB_USER'] ?? 'layonsc1_med';
 $db_pass = $_ENV['DB_PASS'] ?? 'Sirgeorge.12';
-$db_name = $_ENV['DB_NAME'] ?? 'wayrusc1_med';
+$db_name = $_ENV['DB_NAME'] ?? 'layonsc1_med';
 
 // Create connection
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);

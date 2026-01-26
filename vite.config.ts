@@ -7,14 +7,18 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => {
   // Use local auth server for development if VITE_USE_LOCAL_AUTH is set
   const useLocalAuth = process.env.VITE_USE_LOCAL_AUTH === 'true';
+
+  // API configuration - updated to use new Layons Construction endpoint
   const apiUrl = useLocalAuth
     ? 'http://localhost:3001'
-    : (process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke');
+    : 'https://med.layonsconstruction.com';
+
+  const apiEndpoint = `${apiUrl}/api.php`;
 
   if (useLocalAuth) {
     console.log('✅ Using LOCAL authentication server at http://localhost:3001');
   } else {
-    console.log(`🌐 Using REMOTE API at ${apiUrl}`);
+    console.log(`🌐 Using REMOTE API at ${apiEndpoint}`);
   }
 
   return {
