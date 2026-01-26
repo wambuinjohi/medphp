@@ -128,12 +128,13 @@ export const RPCFallbacks = {
   },
 
   /**
-   * Fallback for generate_proforma_number
+   * Fallback for generate_proforma_number (deprecated - use API-based generation)
+   * Updated to use PRO prefix instead of PF
    */
   generateProformaNumber: (companyId?: string) => {
     const year = new Date().getFullYear();
     const timestamp = Date.now().toString().slice(-5);
-    return `PF-${year}-${timestamp}`;
+    return `PRO-${year}-${timestamp}`;
   },
 
   /**
