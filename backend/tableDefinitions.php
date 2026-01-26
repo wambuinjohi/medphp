@@ -70,7 +70,10 @@ function getTableDefinitions() {
         // Audit - Aligned with actual MySQL schema (INT ids)
         'audit_logs' => 'id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, company_id INT, actor_user_id INT, action VARCHAR(50) NOT NULL, entity_type VARCHAR(100) NOT NULL, record_id INT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
         'migration_logs' => 'id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, migration_name VARCHAR(255) NOT NULL, executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
-        
+
+        // Document Numbering - Global sequential number tracking
+        'document_sequences' => 'id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, document_type CHAR(3) NOT NULL, year INT NOT NULL, sequence_number INT DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, UNIQUE KEY unique_type_year (document_type, year), INDEX idx_document_sequences_type (document_type)',
+
         // Legacy tables (for backward compatibility with external API)
         'users' => 'id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, email VARCHAR(255), password TEXT, role VARCHAR(50), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE KEY email (email)',
         'contacts' => 'id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), email VARCHAR(255), message TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP',
