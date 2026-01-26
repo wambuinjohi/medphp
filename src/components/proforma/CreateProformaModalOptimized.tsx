@@ -291,17 +291,12 @@ export const CreateProformaModalOptimized = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="proforma_number">Proforma Number</Label>
-                <div className="relative">
-                  <Input
-                    id="proforma_number"
-                    value={proformaNumber}
-                    disabled
-                    className="bg-muted"
-                  />
-                  {isGeneratingNumber && (
-                    <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin" />
-                  )}
-                </div>
+                <Input
+                  id="proforma_number"
+                  value={proformaNumber}
+                  disabled
+                  className="bg-muted"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="customer_id">Customer *</Label>
