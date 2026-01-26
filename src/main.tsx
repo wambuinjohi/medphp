@@ -6,6 +6,7 @@ import { CompanyConfigProvider } from '@/contexts/CompanyConfigContext';
 import { AuthErrorBoundary } from '@/components/auth/AuthErrorBoundary';
 import { enableResizeObserverErrorSuppression } from '@/utils/resizeObserverErrorHandler';
 import { initializeDatabase } from '@/integrations/database';
+import { getAPIBaseURL } from '@/utils/environment-detection';
 import App from './App.tsx'
 import './index.css'
 
@@ -16,7 +17,7 @@ enableResizeObserverErrorSuppression();
 const initializeAppBackground = () => {
   try {
     const provider = import.meta.env.VITE_DATABASE_PROVIDER || 'external-api';
-    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
+    const apiUrl = getAPIBaseURL();
 
     console.log(`🔧 Initializing app with ${provider} provider`);
     console.log(`📍 Using API: ${apiUrl}`);

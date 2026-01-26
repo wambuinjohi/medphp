@@ -81,9 +81,19 @@ function escape($conn, $val) {
 // Get request parameters
 $action = $_POST['action'] ?? ($_GET['action'] ?? null);
 $table = $_POST['table'] ?? ($_GET['table'] ?? null);
-$data = $_POST['data'] ?? (json_decode(file_get_contents('php://input'), true) ?? []);
+
+// Parse request body once
+$request_body = json_decode(file_get_contents('php://input'), true) ?? [];
+
+// Get parameters from POST/GET with fallback to request body
+$data = $_POST['data'] ?? ($request_body['data'] ?? []);
 $where = $_POST['where'] ?? ($_GET['where'] ?? null);
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
+
+// For read operations, if where is not in POST/GET and body is not explicitly 'data', treat body as where
+if ($action === 'read' && empty($where) && is_array($request_body) && !isset($request_body['data'])) {
+    $where = $request_body;
+}
 
 // Validate action
 if (!$action) {
@@ -108,7 +118,10 @@ function verifyPassword($password, $hash) {
 
 // Create JWT token
 function createJWT($user_id, $user_email, $user_role) {
-    $secret = $_ENV['JWT_SECRET'] ?? 'wayrus-secret-key-2024';
+    $secret = $_ENV['JWT_SECRET'] ?? null;
+    if (!$secret) {
+        throw new Exception('JWT_SECRET environment variable is not configured');
+    }
     $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
     $payload = base64_encode(json_encode([
         'sub' => $user_id,
@@ -124,7 +137,10 @@ function createJWT($user_id, $user_email, $user_role) {
 // Verify JWT token
 function verifyJWT($token) {
     if (!$token) return null;
-    $secret = $_ENV['JWT_SECRET'] ?? 'wayrus-secret-key-2024';
+    $secret = $_ENV['JWT_SECRET'] ?? null;
+    if (!$secret) {
+        throw new Exception('JWT_SECRET environment variable is not configured');
+    }
     $parts = explode('.', $token);
     if (count($parts) !== 3) return null;
 
