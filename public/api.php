@@ -1695,11 +1695,13 @@ try {
         }
 
         error_log("✅ READ: About to echo response with " . count($rows) . " rows");
-        echo json_encode([
+        $response = [
             'status' => 'success',
             'data' => $rows,
-            'count' => count($rows)
-        ]);
+            'count' => count($rows),
+            '_unique_marker_' => 'READ_ENDPOINT_CALLED_' . time()
+        ];
+        echo json_encode($response);
         error_log("✅ READ: About to call exit()");
         exit();
     }
