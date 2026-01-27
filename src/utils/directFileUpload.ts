@@ -1,6 +1,6 @@
 /**
  * Direct File Upload Handler
- * Uploads files directly to me.wayrus.co.ke/uploads
+ * Uploads files directly to med.wayrus.co.ke/uploads
  * Replaces Supabase storage which is not available with external API
  */
 
