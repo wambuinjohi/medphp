@@ -1354,6 +1354,7 @@ try {
                 'All critical configuration checks passed. JWT and CORS should be working.' :
                 'One or more critical configuration issues found. See checks array for details.'
         ]);
+        exit();
     }
 
     // Document Number Generation
