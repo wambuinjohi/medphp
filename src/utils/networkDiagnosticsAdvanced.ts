@@ -434,7 +434,7 @@ export function generateNetworkDiagnosticReport(results: NetworkDiagnostic[]): s
       report += `   2. If on corporate network, check with IT about proxy settings\n`;
       report += `   3. Verify internet connection is active\n`;
       report += `   4. Try connecting from different network (mobile hotspot) to isolate issue\n`;
-      report += `   5. Check server status: is me.wayrus.co.ke online?\n\n`;
+      report += `   5. Check server status: is med.wayrus.co.ke online?\n\n`;
     }
 
     if (corsError && !connectError) {
