@@ -157,6 +157,10 @@ if ($action) {
     $action = strtolower($action);
 }
 
+// CRITICAL DEBUG: Log normalized action
+$action_debug_msg = "🔴 ACTION AFTER NORMALIZATION: [" . var_export($action, true) . "] | Length: " . strlen($action ?? '') . " | Hex: " . bin2hex($action ?? 'NULL');
+error_log($action_debug_msg);
+
 // DEBUG: Log initial request state
 error_log("🔍 API DEBUG - Initial Request State:");
 error_log("  Method: " . $_SERVER['REQUEST_METHOD']);
