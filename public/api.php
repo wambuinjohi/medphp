@@ -1274,6 +1274,7 @@ try {
                 'decoded_payload' => 'The decoded contents of the JWT (without sensitive expiration)'
             ]
         ]);
+        exit();
     }
     elseif ($action === "config_debug") {
         // Configuration debug endpoint - checks JWT_SECRET and environment setup
