@@ -141,12 +141,16 @@ if (in_array($request_method, ['POST', 'PUT', 'PATCH'])) {
 }
 
 // Get request parameters
-$action = $_POST['action'] ?? ($_GET['action'] ?? null);
-$table = $_POST['table'] ?? ($_GET['table'] ?? null);
+$action = trim($_POST['action'] ?? ($_GET['action'] ?? ''));
+$table = trim($_POST['table'] ?? ($_GET['table'] ?? ''));
 $data = $_POST['data'] ?? ($json_body ?? []);
 $where = $_POST['where'] ?? ($_GET['where'] ?? null);
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
+
+// Ensure empty strings are treated as null
+if (empty($action)) $action = null;
+if (empty($table)) $table = null;
 
 // DEBUG: Log initial request state
 error_log("🔍 API DEBUG - Initial Request State:");
