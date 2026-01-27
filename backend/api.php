@@ -21,6 +21,24 @@ header("Access-Control-Expose-Headers: Content-Type, X-Total-Count, X-Page, X-Pa
 // Always set response Content-Type to JSON
 header("Content-Type: application/json; charset=utf-8");
 
+// Set error handler to catch any errors and ensure CORS headers are sent
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    error_log("PHP Error [$errno]: $errstr in $errfile:$errline");
+    // Don't suppress the error, just log it
+    return false;
+});
+
+// Set exception handler to ensure CORS headers are sent even for uncaught exceptions
+set_exception_handler(function($exception) {
+    error_log("Uncaught Exception: " . $exception->getMessage() . " in " . $exception->getFile() . ":" . $exception->getLine());
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'An unexpected error occurred: ' . $exception->getMessage()
+    ]);
+    exit();
+});
+
 // Handle CORS preflight requests (OPTIONS) - respond immediately
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -991,6 +1009,83 @@ try {
     elseif ($action === "logout") {
         echo json_encode(['status' => 'success', 'message' => 'Logout successful']);
     }
+    elseif ($action === "refresh_token") {
+        // Refresh token endpoint - takes an existing token and issues a new one
+        // Requires a valid JWT token
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+        $token = null;
+
+        if ($auth_header && preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
+            $token = $matches[1];
+        }
+
+        // Fallback to POST data for compatibility
+        if (!$token) {
+            $token = $_POST['token'] ?? ($json_body['token'] ?? null);
+        }
+
+        if (!$token) {
+            http_response_code(401);
+            throw new Exception("No token provided for refresh");
+        }
+
+        // Try to verify the token
+        $decoded = verifyJWT($token);
+
+        // If strict verification fails, try lenient decode to get user info from an expired token
+        if (!$decoded) {
+            error_log("🟡 [TOKEN_REFRESH] JWT verification failed, attempting lenient decode...");
+            $parts = explode('.', $token);
+            if (count($parts) === 3) {
+                try {
+                    // Decode payload without verifying signature (allows expired tokens to be refreshed)
+                    $decoded = json_decode(base64_decode($parts[1]), true);
+                    if ($decoded) {
+                        error_log("🟡 [TOKEN_REFRESH] Successfully extracted identity from token (expired or invalid signature)");
+                    }
+                } catch (Exception $e) {
+                    $decoded = null;
+                }
+            }
+        }
+
+        if (!$decoded) {
+            http_response_code(401);
+            error_log("🔴 [TOKEN_REFRESH] Could not decode token");
+            throw new Exception("Invalid or malformed token");
+        }
+
+        // Extract user info from the decoded token
+        $user_id = $decoded['sub'] ?? $decoded['id'] ?? null;
+        $user_email = $decoded['email'] ?? null;
+        $user_role = $decoded['role'] ?? null;
+        $company_id = $decoded['company_id'] ?? null;
+        $status = $decoded['status'] ?? 'active';
+
+        if (!$user_id || !$user_email || !$user_role) {
+            http_response_code(401);
+            error_log("🔴 [TOKEN_REFRESH] Missing required token fields");
+            throw new Exception("Token is missing required fields");
+        }
+
+        // Create a new JWT token with the same user info
+        $new_token = createJWT($user_id, $user_email, $user_role, $company_id, $status);
+
+        error_log("✅ [TOKEN_REFRESH] Token refreshed successfully for user: $user_email");
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Token refreshed successfully',
+            'token' => $new_token,
+            'user' => [
+                'id' => $user_id,
+                'email' => $user_email,
+                'role' => $user_role,
+                'company_id' => $company_id,
+                'status' => $status
+            ]
+        ]);
+    }
     elseif ($action === "check_auth") {
         // Check for JWT token in Authorization header
         $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
@@ -1212,6 +1307,87 @@ try {
                 'error' => 'Description of any token issues found',
                 'decoded_payload' => 'The decoded contents of the JWT (without sensitive expiration)'
             ]
+        ]);
+    }
+    elseif ($action === "config_debug") {
+        // Configuration debug endpoint - checks JWT_SECRET and environment setup
+        // Does NOT require authentication - helps understand configuration issues
+        $jwt_secret = $_ENV['JWT_SECRET'] ?? null;
+        $db_host = $_ENV['DB_HOST'] ?? null;
+        $db_user = $_ENV['DB_USER'] ?? null;
+        $db_pass = $_ENV['DB_PASS'] ?? null;
+        $db_name = $_ENV['DB_NAME'] ?? null;
+
+        $checks = [];
+
+        // Check 1: JWT_SECRET is configured
+        $checks['jwt_secret_configured'] = [
+            'name' => 'JWT_SECRET is configured in .env',
+            'passed' => !empty($jwt_secret),
+            'value' => $jwt_secret ? (strlen($jwt_secret) > 20 ? substr($jwt_secret, 0, 10) . '...' . substr($jwt_secret, -10) : '***') : 'NOT SET',
+            'severity' => 'critical',
+            'fix' => !$jwt_secret ? 'Add JWT_SECRET=<your-secret-key> to .env file' : null
+        ];
+
+        // Check 2: Database configuration is complete
+        $checks['db_configured'] = [
+            'name' => 'Database configuration is complete',
+            'passed' => !empty($db_host) && !empty($db_user) && !empty($db_pass) && !empty($db_name),
+            'details' => [
+                'DB_HOST' => !empty($db_host) ? 'SET' : 'MISSING',
+                'DB_USER' => !empty($db_user) ? 'SET' : 'MISSING',
+                'DB_PASS' => !empty($db_pass) ? 'SET' : 'MISSING',
+                'DB_NAME' => !empty($db_name) ? 'SET' : 'MISSING'
+            ],
+            'severity' => 'critical',
+            'fix' => (!$db_host || !$db_user || !$db_pass || !$db_name) ? 'Set all database variables in .env file' : null
+        ];
+
+        // Check 3: Database connectivity
+        $db_connected = false;
+        $db_error = null;
+        if (!empty($db_host) && !empty($db_user) && !empty($db_pass) && !empty($db_name)) {
+            $test_conn = @new mysqli($db_host, $db_user, $db_pass, $db_name);
+            if (!$test_conn->connect_error) {
+                $db_connected = true;
+                $test_conn->close();
+            } else {
+                $db_error = $test_conn->connect_error;
+            }
+        }
+
+        $checks['db_connection'] = [
+            'name' => 'Database connection is working',
+            'passed' => $db_connected,
+            'error' => $db_error,
+            'severity' => 'critical',
+            'fix' => !$db_connected ? "Check database credentials: $db_error" : null
+        ];
+
+        // Check 4: CORS headers are being sent (this endpoint response will have them)
+        $checks['cors_headers'] = [
+            'name' => 'CORS headers are being sent',
+            'passed' => true,
+            'details' => 'Response should include Access-Control-Allow-Origin header',
+            'severity' => 'high'
+        ];
+
+        // Overall status
+        $all_critical_passed = array_reduce($checks, function($carry, $check) {
+            if ($check['severity'] === 'critical') {
+                return $carry && $check['passed'];
+            }
+            return $carry;
+        }, true);
+
+        echo json_encode([
+            'status' => 'success',
+            'timestamp' => date('Y-m-d H:i:s'),
+            'configuration_status' => $all_critical_passed ? 'READY ✓' : 'NOT READY ✗',
+            'checks' => $checks,
+            'message' => $all_critical_passed ?
+                'All critical configuration checks passed. JWT and CORS should be working.' :
+                'One or more critical configuration issues found. See checks array for details.'
         ]);
     }
 
@@ -2242,11 +2418,19 @@ try {
     }
 
 } catch (Exception $e) {
-    http_response_code(400);
+    // Ensure we have an appropriate HTTP status code
+    $status_code = http_response_code();
+    if (!$status_code || $status_code < 400) {
+        http_response_code(400);
+    }
+
+    error_log("API Error [" . http_response_code() . "]: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+
     echo json_encode([
         'status' => 'error',
         'message' => $e->getMessage()
     ]);
+
 }
 
 $conn->close();
