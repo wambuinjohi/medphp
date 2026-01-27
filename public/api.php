@@ -161,19 +161,6 @@ if ($action) {
     $action = strtolower($action);
 }
 
-// CRITICAL DEBUG: Log normalized action
-$action_debug_msg = "🔴 ACTION AFTER NORMALIZATION: [" . var_export($action, true) . "] | Length: " . strlen($action ?? '') . " | Hex: " . bin2hex($action ?? 'NULL');
-error_log($action_debug_msg);
-
-// DEBUG: Log initial request state
-error_log("🔍 API DEBUG - Initial Request State:");
-error_log("  Method: " . $_SERVER['REQUEST_METHOD']);
-error_log("  URI: " . $_SERVER['REQUEST_URI']);
-error_log("  Initial Action: " . var_export($action, true));
-error_log("  Initial Table: " . var_export($table, true));
-error_log("  GET params: " . json_encode($_GET));
-error_log("  POST params: " . json_encode($_POST));
-
 // Handle file uploads endpoint
 $request_uri = $_SERVER['REQUEST_URI'] ?? '';
 $path_info = $_SERVER['PATH_INFO'] ?? '';
