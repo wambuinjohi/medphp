@@ -1614,10 +1614,12 @@ try {
         exit();
     }
     elseif ($action === "read") {
+        error_log("✅ ENTERING READ ACTION - action=[" . var_export($action, true) . "], table=[" . var_export($table, true) . "]");
         if (!$table) {
             throw new Exception("Missing table");
         }
 
+        error_log("✅ READ: About to execute SQL query on table: " . $table);
         $sql = "SELECT * FROM `$table`";
 
         if (!empty($where)) {
