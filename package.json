@@ -13,6 +13,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
+    "start": "node server.js",
     "admin:create-user": "ts-node scripts/admin/create-user.ts",
     "admin:reset-password": "ts-node scripts/admin/reset-password.ts",
     "admin:fix-rls": "ts-node scripts/admin/fix-rls.ts",
