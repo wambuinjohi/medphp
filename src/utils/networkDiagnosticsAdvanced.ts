@@ -151,7 +151,7 @@ export async function testProxyDetection(
  * Test DNS resolution
  */
 export async function testDNSResolution(
-  domain: string = 'me.wayrus.co.ke'
+  domain: string = 'med.wayrus.co.ke'
 ): Promise<NetworkDiagnostic> {
   try {
     // Use public DNS API to resolve domain
