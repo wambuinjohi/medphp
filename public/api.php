@@ -3,11 +3,13 @@
 // This is critical for CORS headers to work in all error scenarios
 ob_start();
 
-// ENDPOINT IDENTIFIER - Log which API file is executing
-error_log("🟢 [ENDPOINT] Using public/api.php (main API)");
-
-// CORS headers MUST be set immediately, before any other output
+// ═══════════════════════════════════════════════════════════════════════════════
+// CORS headers MUST be set IMMEDIATELY, before any output or logging
 // This ensures CORS headers are sent in all responses, including error responses
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Always set response Content-Type to JSON first
+header("Content-Type: application/json; charset=utf-8");
 
 // Set CORS response headers - allow credentials with specific origin (not wildcard)
 // Note: Cannot use wildcard (*) with credentials=true; must specify exact origin
@@ -25,8 +27,8 @@ header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Req
 header("Access-Control-Max-Age: 86400");
 header("Access-Control-Expose-Headers: Content-Type, X-Total-Count, X-Page, X-Page-Size");
 
-// Always set response Content-Type to JSON
-header("Content-Type: application/json; charset=utf-8");
+// ENDPOINT IDENTIFIER - Log which API file is executing (after headers are set)
+error_log("🟢 [ENDPOINT] Using public/api.php (main API)");
 
 // Set error handler to catch any errors and ensure CORS headers are sent
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
@@ -52,18 +54,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Configuration Variables - Hardcoded for med.layonsconstruction.com
+// Configuration Variables - med.wayrus.co.ke
 // JWT Configuration
 $JWT_SECRET = 'Sirgeorge.123';
 
 // Database Configuration
 $db_host = 'localhost';
-$db_user = 'layonsc1_med';
+$db_user = 'wayrusc1_med';
 $db_pass = 'Sirgeorge.12';
-$db_name = 'layonsc1_med';
+$db_name = 'wayrusc1_med';
 
 // Uploads Configuration
-$UPLOADS_DIR = '/home/layonsc1/med.layonsconstruction.com/uploads';
+$UPLOADS_DIR = '/home/wayrusc1/med.wayrus.co.ke/uploads';
 
 // Validate required database configuration
 if (!$db_host || !$db_user || !$db_pass || !$db_name) {
@@ -146,11 +148,17 @@ $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
 
 // Normalize action to always be a string (handle case where it's submitted as an array)
+// This handles cases where the same parameter name appears multiple times in the query string
 if (is_array($action)) {
+    // If it's an array, take the first element
     $action = $action[0] ?? null;
+    error_log("🟡 [ACTION] Received action as array, extracted first element: " . (is_string($action) ? $action : json_encode($action)));
 }
-if ($action) {
+
+// Convert to string and trim
+if ($action !== null) {
     $action = trim((string)$action);
+    error_log("🟢 [ACTION] Normalized action parameter to: '$action' (type: " . gettype($action) . ", length: " . strlen($action) . ")");
 }
 
 // Handle file uploads endpoint
@@ -961,9 +969,11 @@ try {
                 'status' => $profile ? $profile['status'] : 'active'
             ]
         ]);
+        exit();
     }
     elseif ($action === "logout") {
         echo json_encode(['status' => 'success', 'message' => 'Logout successful']);
+        exit();
     }
     elseif ($action === "refresh_token") {
         // Refresh token endpoint - takes an existing token and issues a new one
@@ -1041,6 +1051,7 @@ try {
                 'status' => $status
             ]
         ]);
+        exit();
     }
     elseif ($action === "check_auth") {
         // Check for JWT token in Authorization header
@@ -1073,6 +1084,7 @@ try {
             'email' => $decoded['email'],
             'role' => $decoded['role']
         ]);
+        exit();
     }
     elseif ($action === "diagnose_authorization") {
         // Diagnostic endpoint to check authorization status
@@ -1191,6 +1203,7 @@ try {
                 'User is authorized to save company settings' :
                 'User is missing one or more requirements to save company settings'
         ]);
+        exit();
     }
     elseif ($action === "token_debug") {
         // Simple diagnostic endpoint to debug token issues
@@ -1264,6 +1277,7 @@ try {
                 'decoded_payload' => 'The decoded contents of the JWT (without sensitive expiration)'
             ]
         ]);
+        exit();
     }
     elseif ($action === "config_debug") {
         // Configuration debug endpoint - checks JWT_SECRET and environment setup
@@ -1343,6 +1357,7 @@ try {
                 'All critical configuration checks passed. JWT and CORS should be working.' :
                 'One or more critical configuration issues found. See checks array for details.'
         ]);
+        exit();
     }
 
     // Document Number Generation
