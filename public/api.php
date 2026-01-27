@@ -163,8 +163,6 @@ if ($action) {
 }
 
 // CRITICAL DEBUG: Log normalized action
-// THIS INTENTIONAL SYNTAX ERROR TO TEST IF FILE IS BEING READ
-INTENTIONAL_SYNTAX_ERROR_TO_TEST;
 $action_debug_msg = "🔴 ACTION AFTER NORMALIZATION: [" . var_export($action, true) . "] | Length: " . strlen($action ?? '') . " | Hex: " . bin2hex($action ?? 'NULL');
 error_log($action_debug_msg);
 
