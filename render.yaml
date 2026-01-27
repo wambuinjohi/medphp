@@ -4,11 +4,13 @@ services:
     env: node
     plan: free
     buildCommand: npm install && npm run build
-    startCommand: npm run preview
+    startCommand: node server.js
     envVars:
       - key: NODE_VERSION
         value: "20"
       - key: VITE_EXTERNAL_API_URL
         value: https://med.layonsconstruction.com/api.php
-    staticPublishPath: dist
     autoDeploy: false
+    routes:
+      - path: /
+        destination: /
