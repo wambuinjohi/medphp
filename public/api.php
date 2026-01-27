@@ -1747,6 +1747,7 @@ try {
         ];
         error_log("✅ Sending JSON response: " . json_encode($response));
         echo json_encode($response);
+        exit();
     }
     elseif ($action === "delete") {
         if (!$table || !$where) {
