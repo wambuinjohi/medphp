@@ -577,8 +577,20 @@ export function CreateDirectReceiptModalEnhanced({
                             className="w-full text-right h-10"
                           />
                         </TableCell>
-                        <TableCell className="w-20 text-center">
-                          <span className="text-sm font-medium">{item.tax_percentage}%</span>
+                        <TableCell className="w-32">
+                          <Select
+                            value={item.tax_percentage.toString()}
+                            onValueChange={(value) => updateItemTaxPercentage(item.id, parseFloat(value))}
+                          >
+                            <SelectTrigger className="h-10">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">0% (None)</SelectItem>
+                              <SelectItem value="8">8% VAT</SelectItem>
+                              <SelectItem value="16">16% VAT</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell className="w-28 font-semibold text-right">
                           {formatCurrency(item.line_total)}
