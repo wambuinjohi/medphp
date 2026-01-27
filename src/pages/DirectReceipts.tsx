@@ -217,7 +217,7 @@ export default function DirectReceipts() {
           payment_method: payment?.payment_method || 'unknown',
           reference_number: payment?.reference_number,
           status: invoice?.status || 'draft',
-          invoice_items: itemsMap.get(receipt.invoice_id) || [],
+          invoice_items: itemsMap.get(receipt.id) || [],
           created_by: receipt.created_by,
           created_by_profile: receipt.created_by_profile
         };
