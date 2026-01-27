@@ -145,7 +145,7 @@ if (in_array($request_method, ['POST', 'PUT', 'PATCH'])) {
 }
 
 // Get request parameters
-$action = trim($_POST['action'] ?? ($_GET['action'] ?? ''));
+$action = trim($_POST['action'] ?? ($_GET['action'] ?? ($json_body['action'] ?? '')));
 $table = trim($_POST['table'] ?? ($_GET['table'] ?? ''));
 $data = $_POST['data'] ?? ($json_body ?? []);
 $where = $_POST['where'] ?? ($_GET['where'] ?? null);
