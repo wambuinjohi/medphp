@@ -100,8 +100,8 @@ if (is_array($action)) {
     error_log("✅ [backend/api-auth-optional.php] Extracted first element: '$action'");
 }
 
-// Trim action to remove whitespace
-$action = trim($action ?? '');
+// Trim action to remove whitespace and normalize to lowercase
+$action = strtolower(trim($action ?? ''));
 
 // Validate action
 if (!$action) {
