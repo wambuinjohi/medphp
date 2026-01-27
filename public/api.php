@@ -3,6 +3,9 @@
 // This is critical for CORS headers to work in all error scenarios
 ob_start();
 
+// ENDPOINT IDENTIFIER - Log which API file is executing
+error_log("🟢 [ENDPOINT] Using public/api.php (main API)");
+
 // CORS headers MUST be set immediately, before any other output
 // This ensures CORS headers are sent in all responses, including error responses
 
