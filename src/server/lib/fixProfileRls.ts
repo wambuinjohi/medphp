@@ -13,12 +13,12 @@ interface FixRlsResponse {
 
 /**
  * This function is deprecated and no longer needed
- * The external API (med.layonsconstruction.com/api.php) handles all security policy management
+ * The external API (med.wayrus.co.ke/api.php) handles all security policy management
  *
  * @returns Response indicating this operation is no longer supported
  */
 export async function fixProfileRls(
-  apiUrl: string = 'https://med.layonsconstruction.com/api.php',
+  apiUrl: string = 'https://med.wayrus.co.ke/api.php',
   authToken?: string
 ): Promise<FixRlsResponse> {
   return {
