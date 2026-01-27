@@ -331,7 +331,7 @@ export async function testDevProxyConnectivity(
  * Run all network diagnostics
  */
 export async function runFullNetworkDiagnostics(
-  apiUrl: string = 'https://me.wayrus.co.ke/api.php'
+  apiUrl: string = 'https://med.wayrus.co.ke/api.php'
 ): Promise<NetworkDiagnostic[]> {
   console.log('🔧 Running full network diagnostics...\n');
 
