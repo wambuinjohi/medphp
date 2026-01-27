@@ -1818,6 +1818,7 @@ try {
             'message' => 'Record deleted',
             'affected_rows' => $conn->affected_rows
         ]);
+        exit();
     }
     elseif ($action === "copy_record") {
         // Copy a database record with optional field modifications
