@@ -175,18 +175,20 @@ export default function DirectReceipts() {
         console.warn('Could not fetch customer details:', e);
       }
 
-      // Fetch invoice items
+      // Fetch invoice items only for the invoices we're displaying
       try {
-        const { data: items } = await apiClient.select('invoice_items', {});
-        if (Array.isArray(items)) {
-          items.forEach((item: any) => {
-            if (invoiceIds.includes(item.invoice_id)) {
-              if (!itemsMap.has(item.invoice_id)) {
-                itemsMap.set(item.invoice_id, []);
-              }
-              itemsMap.get(item.invoice_id).push(item);
+        // Fetch items for each invoice to avoid loading all historical items
+        for (const invoiceId of invoiceIds) {
+          try {
+            const { data: items } = await apiClient.select('invoice_items', {
+              invoice_id: invoiceId
+            });
+            if (Array.isArray(items) && items.length > 0) {
+              itemsMap.set(invoiceId, items);
             }
-          });
+          } catch (e) {
+            console.warn(`Could not fetch items for invoice ${invoiceId}:`, e);
+          }
         }
       } catch (e) {
         console.warn('Could not fetch invoice items:', e);
