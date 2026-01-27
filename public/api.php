@@ -152,6 +152,12 @@ $where = $_POST['where'] ?? ($_GET['where'] ?? null);
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
 
+// Defensive: Handle case where action is received as an array
+if (is_array($action)) {
+    $action = isset($action[0]) ? $action[0] : '';
+    error_log("⚠️ Action received as array, extracted first element: $action");
+}
+
 // Ensure empty strings are treated as null
 if (empty($action)) $action = null;
 if (empty($table)) $table = null;
