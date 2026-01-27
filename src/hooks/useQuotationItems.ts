@@ -1426,7 +1426,7 @@ export const useCreateDirectReceiptWithItems = () => {
       // CREATE RECEIPT ITEMS
       // Copy items to receipt_items table to maintain a snapshot of items at receipt creation
       let receiptItemsResult = [];
-      if (receiptRecord && is_array(items) && items.length > 0) {
+      if (receiptRecord && Array.isArray(items) && items.length > 0) {
         receiptItemsResult = await Promise.all(
           items.map((item, index) =>
             db.insert('receipt_items', {
