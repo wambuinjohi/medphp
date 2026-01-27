@@ -297,6 +297,13 @@ if ($request_param && !$action) {
     }
 }
 
+// DEBUG: Log action before validation
+error_log("🔍 API DEBUG - Before action validation:");
+error_log("  Final action: [" . var_export($action, true) . "]");
+error_log("  Action length: " . strlen($action ?? ''));
+error_log("  Action bytes: " . bin2hex($action ?? ''));
+error_log("  Table: " . var_export($table, true));
+
 // Validate action
 if (!$action) {
     http_response_code(400);
