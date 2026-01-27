@@ -15,7 +15,7 @@ interface NetworkDiagnostic {
  * Test direct connectivity to API endpoint
  */
 export async function testDirectConnectivity(
-  apiUrl: string = 'https://me.wayrus.co.ke/api.php'
+  apiUrl: string = 'https://med.wayrus.co.ke/api.php'
 ): Promise<NetworkDiagnostic> {
   const startTime = performance.now();
   
