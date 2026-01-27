@@ -98,7 +98,7 @@ export async function testDirectConnectivity(
  * Test if connection is using a proxy
  */
 export async function testProxyDetection(
-  apiUrl: string = 'https://me.wayrus.co.ke/api.php'
+  apiUrl: string = 'https://med.wayrus.co.ke/api.php'
 ): Promise<NetworkDiagnostic> {
   try {
     // Try to fetch and check response headers for proxy indicators
