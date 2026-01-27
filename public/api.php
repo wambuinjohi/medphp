@@ -436,7 +436,6 @@ if ($action === "proxy_external_api") {
         if (!empty($body_data)) {
             $request_body = json_encode($body_data);
             stream_context_set_option($context, 'http', 'content', $request_body);
-            error_log('🔀 Request body size: ' . strlen($request_body) . ' bytes');
         }
     }
 
