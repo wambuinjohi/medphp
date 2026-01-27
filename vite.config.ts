@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
   // API configuration - updated to use new Wayrus endpoint
   const apiUrl = useLocalAuth
     ? 'http://localhost:3001'
-    : 'https://me.wayrus.co.ke';
+    : 'https://med.wayrus.co.ke';
 
   const apiEndpoint = `${apiUrl}/api.php`;
 

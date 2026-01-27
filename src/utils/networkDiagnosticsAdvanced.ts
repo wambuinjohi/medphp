@@ -15,7 +15,7 @@ interface NetworkDiagnostic {
  * Test direct connectivity to API endpoint
  */
 export async function testDirectConnectivity(
-  apiUrl: string = 'https://me.wayrus.co.ke/api.php'
+  apiUrl: string = 'https://med.wayrus.co.ke/api.php'
 ): Promise<NetworkDiagnostic> {
   const startTime = performance.now();
   
@@ -55,7 +55,7 @@ export async function testDirectConnectivity(
     if (error.name === 'AbortError') {
       message = `Connection timeout after 10 seconds (${duration.toFixed(0)}ms)`;
       recommendations.push('❌ API server is slow or unresponsive');
-      recommendations.push('💡 Check if me.wayrus.co.ke is online');
+      recommendations.push('💡 Check if med.wayrus.co.ke is online');
       recommendations.push('💡 Verify network connectivity to external internet');
       recommendations.push('💡 Check firewall rules blocking outbound HTTPS (port 443)');
     } else if (error.message.includes('Failed to fetch')) {
@@ -63,12 +63,12 @@ export async function testDirectConnectivity(
       recommendations.push('❌ Frontend cannot reach backend directly');
       recommendations.push('💡 This is expected - using Vite proxy as workaround');
       recommendations.push('💡 Verify CORS headers are configured on backend');
-      recommendations.push('💡 Check if corporate firewall blocks me.wayrus.co.ke');
+      recommendations.push('💡 Check if corporate firewall blocks med.wayrus.co.ke');
     } else if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
-      message = 'DNS resolution failed for me.wayrus.co.ke';
+      message = 'DNS resolution failed for med.wayrus.co.ke';
       recommendations.push('❌ Cannot resolve domain name');
       recommendations.push('💡 Check DNS server configuration');
-      recommendations.push('💡 Verify domain me.wayrus.co.ke is valid');
+      recommendations.push('💡 Verify domain med.wayrus.co.ke is valid');
       recommendations.push('💡 Try pinging domain from terminal');
     } else if (error.message.includes('ECONNREFUSED')) {
       message = 'Connection refused - server is not listening on that port';
@@ -98,7 +98,7 @@ export async function testDirectConnectivity(
  * Test if connection is using a proxy
  */
 export async function testProxyDetection(
-  apiUrl: string = 'https://me.wayrus.co.ke/api.php'
+  apiUrl: string = 'https://med.wayrus.co.ke/api.php'
 ): Promise<NetworkDiagnostic> {
   try {
     // Try to fetch and check response headers for proxy indicators
@@ -127,7 +127,7 @@ export async function testProxyDetection(
         recommendations: [
           'ℹ️ Your request is being proxied',
           '💡 If this is a corporate environment, contact IT about proxy settings',
-          '💡 Verify proxy allows HTTPS connections to me.wayrus.co.ke',
+          '💡 Verify proxy allows HTTPS connections to med.wayrus.co.ke',
         ],
       };
     }
@@ -151,7 +151,7 @@ export async function testProxyDetection(
  * Test DNS resolution
  */
 export async function testDNSResolution(
-  domain: string = 'me.wayrus.co.ke'
+  domain: string = 'med.wayrus.co.ke'
 ): Promise<NetworkDiagnostic> {
   try {
     // Use public DNS API to resolve domain
@@ -207,7 +207,7 @@ export async function testDNSResolution(
  * Test CORS configuration
  */
 export async function testCORSConfiguration(
-  apiUrl: string = 'https://me.wayrus.co.ke/api.php'
+  apiUrl: string = 'https://med.wayrus.co.ke/api.php'
 ): Promise<NetworkDiagnostic> {
   try {
     const response = await fetch(`${apiUrl}?action=health`, {
@@ -331,7 +331,7 @@ export async function testDevProxyConnectivity(
  * Run all network diagnostics
  */
 export async function runFullNetworkDiagnostics(
-  apiUrl: string = 'https://me.wayrus.co.ke/api.php'
+  apiUrl: string = 'https://med.wayrus.co.ke/api.php'
 ): Promise<NetworkDiagnostic[]> {
   console.log('🔧 Running full network diagnostics...\n');
 
@@ -363,7 +363,7 @@ export async function runFullNetworkDiagnostics(
 export function generateNetworkDiagnosticReport(results: NetworkDiagnostic[]): string {
   let report = '\n╔════════════════════════════════════════════════════════════╗\n';
   report += '║           NETWORK DIAGNOSTIC REPORT                          ║\n';
-  report += '║         me.wayrus.co.ke Connectivity              ║\n';
+  report += '║         med.wayrus.co.ke Connectivity              ║\n';
   report += '╚════════════════════════════════════════════════════════════╝\n\n';
 
   const errors = results.filter((r) => r.status === 'error');
@@ -425,16 +425,16 @@ export function generateNetworkDiagnosticReport(results: NetworkDiagnostic[]): s
       report += `   1. Check your DNS settings\n`;
       report += `   2. Flush DNS cache: ipconfig /flushdns (Windows) or sudo dscacheutil -flushcache (Mac)\n`;
       report += `   3. Try using public DNS: 8.8.8.8 or 1.1.1.1\n`;
-      report += `   4. Verify domain me.wayrus.co.ke is correct\n\n`;
+      report += `   4. Verify domain med.wayrus.co.ke is correct\n\n`;
     }
 
     if (connectError) {
       report += `🔴 Connection Issue Detected\n`;
-      report += `   1. Check if firewall allows HTTPS (port 443) to me.wayrus.co.ke\n`;
+      report += `   1. Check if firewall allows HTTPS (port 443) to med.wayrus.co.ke\n`;
       report += `   2. If on corporate network, check with IT about proxy settings\n`;
       report += `   3. Verify internet connection is active\n`;
       report += `   4. Try connecting from different network (mobile hotspot) to isolate issue\n`;
-      report += `   5. Check server status: is me.wayrus.co.ke online?\n\n`;
+      report += `   5. Check server status: is med.wayrus.co.ke online?\n\n`;
     }
 
     if (corsError && !connectError) {

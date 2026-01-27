@@ -3,7 +3,7 @@
  * Handles checking and creating missing database tables on the remote MySQL server
  */
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://me.wayrus.co.ke/api.php';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
 
 // List of all required tables
 const REQUIRED_TABLES = [

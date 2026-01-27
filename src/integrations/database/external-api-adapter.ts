@@ -32,7 +32,7 @@ export class ExternalAPIAdapter implements IDatabase {
 
       this.apiBase = this.externalApiUrl;
 
-      console.log('✅ Using DIRECT API URL (no proxy) for consistency across environments');
+      console.log('✅ Using external API at https://med.wayrus.co.ke/api.php');
       console.log('📡 API endpoint:', this.apiBase);
 
       // NOTE: We no longer cache the token on construction.
@@ -161,6 +161,7 @@ export class ExternalAPIAdapter implements IDatabase {
   private async attemptTokenRefresh(): Promise<void> {
     try {
       const userId = localStorage.getItem('med_api_user_id');
+      // Use the stored external API URL for token refresh endpoint construction
       const refreshUrl = `${this.apiBase}?action=refresh_token`;
 
       const response = await fetch(refreshUrl, {
