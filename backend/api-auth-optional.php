@@ -84,13 +84,31 @@ function escape($conn, $val) {
     return $conn->real_escape_string((string)$val);
 }
 
+// Read JSON body once to avoid stream exhaustion
+$json_body = null;
+$content_type = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
+if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'PATCH'])) {
+    if (strpos($content_type, 'application/json') !== false) {
+        $raw_input = file_get_contents('php://input');
+        if ($raw_input) {
+            $json_body = json_decode($raw_input, true);
+        }
+    }
+}
+
 // Get request parameters
-$action = $_POST['action'] ?? ($_GET['action'] ?? null);
+$action = $_POST['action'] ?? ($_GET['action'] ?? ($json_body['action'] ?? null));
 $table = $_POST['table'] ?? ($_GET['table'] ?? null);
-$data = $_POST['data'] ?? (json_decode(file_get_contents('php://input'), true) ?? []);
+$data = $_POST['data'] ?? ($json_body ?? []);
 $where = $_POST['where'] ?? ($_GET['where'] ?? null);
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
+
+// Log request details for debugging
+error_log("📝 [Request Debug] Method: " . $_SERVER['REQUEST_METHOD'] .
+          ", POST['action']: " . json_encode($_POST['action'] ?? 'NOT SET') .
+          ", GET['action']: " . json_encode($_GET['action'] ?? 'NOT SET') .
+          ", JSON body action: " . json_encode($json_body['action'] ?? 'NOT SET'));
 
 // CRITICAL FIX: Handle array case BEFORE type checking
 // If action is received as an array, extract first element
