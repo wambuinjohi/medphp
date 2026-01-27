@@ -88,9 +88,10 @@ class ExternalAPIAuthHandler {
         });
       }
 
-      // Clear local storage
+      // Clear local storage - remove all auth-related keys
       localStorage.removeItem(this.tokenKey);
       localStorage.removeItem(this.userKey);
+      localStorage.removeItem('med_api_user_email');
 
       return {};
     } catch (error) {
