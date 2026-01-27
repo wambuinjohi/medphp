@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Configuration Variables - Hardcoded for med.wayrus.co.ke
+// Configuration Variables - Hardcoded for med.layonsconstruction.com
 // JWT Configuration
 $JWT_SECRET = 'Sirgeorge.123';
 
@@ -63,7 +63,7 @@ $db_pass = 'Sirgeorge.12';
 $db_name = 'layonsc1_med';
 
 // Uploads Configuration
-$UPLOADS_DIR = '/home/layonsc1/med.wayrus.co.ke/uploads';
+$UPLOADS_DIR = '/home/layonsc1/med.layonsconstruction.com/uploads';
 
 // Validate required database configuration
 if (!$db_host || !$db_user || !$db_pass || !$db_name) {
@@ -1911,7 +1911,7 @@ try {
         exit();
     }
     elseif ($action === "proxy_external_api") {
-        // Forward requests to external API (e.g., https://med.wayrus.co.ke/api.php)
+        // Forward requests to external API (e.g., https://med.layonsconstruction.com/api.php)
         $external_api_url = $_POST['external_api_url'] ?? ($_GET['external_api_url'] ?? null);
         $external_action = $_POST['external_action'] ?? ($_GET['external_action'] ?? null);
         $external_method = $_POST['external_method'] ?? ($_GET['external_method'] ?? 'POST');
