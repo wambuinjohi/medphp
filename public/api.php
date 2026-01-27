@@ -146,11 +146,17 @@ $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
 
 // Normalize action to always be a string (handle case where it's submitted as an array)
+// This handles cases where the same parameter name appears multiple times in the query string
 if (is_array($action)) {
+    // If it's an array, take the first element
     $action = $action[0] ?? null;
+    error_log("🟡 [ACTION] Received action as array, extracted first element: " . (is_string($action) ? $action : json_encode($action)));
 }
-if ($action) {
+
+// Convert to string and trim
+if ($action !== null) {
     $action = trim((string)$action);
+    error_log("🟢 [ACTION] Normalized action parameter to: '$action' (type: " . gettype($action) . ", length: " . strlen($action) . ")");
 }
 
 // Handle file uploads endpoint
