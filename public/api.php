@@ -601,11 +601,8 @@ try {
         // Define fallback logo path (always the same path)
         $fallback_logo_path = $public_dir . '/fallback-logo.png';
 
-        error_log('📝 Saving fallback logo to: ' . $fallback_logo_path);
-
         // Remove old fallback logo if it exists
         if (file_exists($fallback_logo_path)) {
-            error_log('🗑️ Removing old fallback logo');
             if (!unlink($fallback_logo_path)) {
                 throw new Exception("Failed to remove old fallback logo");
             }
@@ -616,8 +613,6 @@ try {
             throw new Exception("Failed to save fallback logo to $fallback_logo_path");
         }
 
-        error_log('✅ Fallback logo saved successfully');
-
         // Verify file was saved
         if (!file_exists($fallback_logo_path)) {
             throw new Exception("File was moved but cannot be found at $fallback_logo_path");
@@ -627,8 +622,6 @@ try {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'];
         $fallback_logo_url = "$protocol://$host/fallback-logo.png";
-
-        error_log('🔗 Fallback logo URL: ' . $fallback_logo_url);
 
         echo json_encode([
             'status' => 'success',
