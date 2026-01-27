@@ -1658,15 +1658,11 @@ try {
             $rows[] = $row;
         }
 
-        error_log("✅ READ: About to echo response with " . count($rows) . " rows");
-        $response = [
+        echo json_encode([
             'status' => 'success',
             'data' => $rows,
-            'count' => count($rows),
-            '_unique_marker_' => 'READ_ENDPOINT_CALLED_' . time()
-        ];
-        echo json_encode($response);
-        error_log("✅ READ: About to call exit()");
+            'count' => count($rows)
+        ]);
         exit();
     }
     elseif ($action === "update") {
