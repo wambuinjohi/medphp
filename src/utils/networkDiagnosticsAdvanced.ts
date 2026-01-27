@@ -363,7 +363,7 @@ export async function runFullNetworkDiagnostics(
 export function generateNetworkDiagnosticReport(results: NetworkDiagnostic[]): string {
   let report = '\n╔════════════════════════════════════════════════════════════╗\n';
   report += '║           NETWORK DIAGNOSTIC REPORT                          ║\n';
-  report += '║         me.wayrus.co.ke Connectivity              ║\n';
+  report += '║         med.wayrus.co.ke Connectivity              ║\n';
   report += '╚════════════════════════════════════════════════════════════╝\n\n';
 
   const errors = results.filter((r) => r.status === 'error');
