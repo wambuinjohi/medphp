@@ -172,7 +172,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' &&
      preg_match('/uploads?/i', $request_param_check)) &&
     isset($_FILES['file'])) {
     $action = 'upload_file';
-    error_log('🔵 File upload detected - action set to upload_file');
 }
 
 // Debug logging for update operations
