@@ -170,6 +170,7 @@ export class ExternalAPIAdapter implements IDatabase {
   private async attemptTokenRefresh(): Promise<void> {
     try {
       const userId = localStorage.getItem('med_api_user_id');
+      // Use the stored external API URL for token refresh endpoint construction
       const refreshUrl = `${this.apiBase}?action=refresh_token`;
 
       const response = await fetch(refreshUrl, {
