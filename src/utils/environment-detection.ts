@@ -111,6 +111,13 @@ function getAPIBaseURLInternal(): string {
     return ensureApiPhpSuffix(explicitUrl);
   }
 
+  // Priority 1b: Fallback to hardcoded production API URL for cloud deployments
+  const productionApiUrl = 'https://med.layonsconstruction.com/api.php';
+  if (hostname !== 'localhost' && !isPrivateIP(hostname) && !isLocalDomain(hostname)) {
+    console.log('[ENV_DETECT] 🌐 Cloud hosting detected - using hardcoded production API:', productionApiUrl);
+    return productionApiUrl;
+  }
+
   // Priority 2: Auto-detect based on hostname
   console.log('[ENV_DETECT] No explicit URL, auto-detecting...');
   const isLocal = detectLocalHosting();

@@ -54,22 +54,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Configuration Variables - Hardcoded for med.layonsconstruction.com
 // JWT Configuration
-$_ENV['JWT_SECRET'] = 'Sirgeorge.123';
+$JWT_SECRET = 'Sirgeorge.123';
 
 // Database Configuration
-$_ENV['DB_HOST'] = 'localhost';
-$_ENV['DB_USER'] = 'layonsc1_med';
-$_ENV['DB_PASS'] = 'Sirgeorge.12';
-$_ENV['DB_NAME'] = 'layonsc1_med';
+$db_host = 'localhost';
+$db_user = 'layonsc1_med';
+$db_pass = 'Sirgeorge.12';
+$db_name = 'layonsc1_med';
 
 // Uploads Configuration
-$_ENV['UPLOADS_DIR'] = '/home/layonsc1/med.layonsconstruction.com/uploads';
-
-// Database Configuration Variables
-$db_host = $_ENV['DB_HOST'];
-$db_user = $_ENV['DB_USER'];
-$db_pass = $_ENV['DB_PASS'];
-$db_name = $_ENV['DB_NAME'];
+$UPLOADS_DIR = '/home/layonsc1/med.layonsconstruction.com/uploads';
 
 // Validate required database configuration
 if (!$db_host || !$db_user || !$db_pass || !$db_name) {
@@ -143,34 +137,13 @@ if (in_array($request_method, ['POST', 'PUT', 'PATCH'])) {
     }
 }
 
-// Get request parameters - get raw values first (before trimming)
-$action = $_POST['action'] ?? ($_GET['action'] ?? ($json_body['action'] ?? ''));
-$table = $_POST['table'] ?? ($_GET['table'] ?? '');
+// Get request parameters
+$action = $_POST['action'] ?? ($_GET['action'] ?? null);
+$table = $_POST['table'] ?? ($_GET['table'] ?? null);
 $data = $_POST['data'] ?? ($json_body ?? []);
 $where = $_POST['where'] ?? ($_GET['where'] ?? null);
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
-
-// CRITICAL FIX: Handle array case BEFORE trimming
-// If action is received as an array, extract first element
-if (is_array($action)) {
-    error_log("⚠️ Action received as array: " . json_encode($action));
-    $action = isset($action[0]) ? $action[0] : '';
-    error_log("✅ Extracted first element: '$action'");
-}
-
-// Now trim and normalize - action should be a string at this point
-$action = trim($action ?? '');
-$table = trim($table ?? '');
-
-// Ensure empty strings are treated as null
-if (empty($action)) $action = null;
-if (empty($table)) $table = null;
-
-// Normalize action to lowercase for consistent comparison
-if ($action) {
-    $action = strtolower($action);
-}
 
 // Handle file uploads endpoint
 $request_uri = $_SERVER['REQUEST_URI'] ?? '';
@@ -517,7 +490,8 @@ try {
         }
 
         // Create uploads directory if it doesn't exist (in public folder)
-        $uploads_dir = $_ENV['UPLOADS_DIR'] ?? (dirname(__DIR__) . '/public/uploads');
+        global $UPLOADS_DIR;
+        $uploads_dir = $UPLOADS_DIR;
         if (!is_dir($uploads_dir)) {
             if (!mkdir($uploads_dir, 0755, true)) {
                 throw new Exception("Failed to create uploads directory at $uploads_dir");
@@ -716,10 +690,8 @@ try {
 
     // Helper function to create JWT token
     function createJWT($user_id, $user_email, $user_role, $company_id = null, $status = 'active') {
-        $secret = $_ENV['JWT_SECRET'] ?? null;
-        if (!$secret) {
-            throw new Exception('JWT_SECRET environment variable is not configured');
-        }
+        global $JWT_SECRET;
+        $secret = $JWT_SECRET;
         $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
         $payload = base64_encode(json_encode([
             'sub' => $user_id,
@@ -737,10 +709,8 @@ try {
     // Helper function to verify JWT token
     function verifyJWT($token) {
         if (!$token) return null;
-        $secret = $_ENV['JWT_SECRET'] ?? null;
-        if (!$secret) {
-            throw new Exception('JWT_SECRET environment variable is not configured');
-        }
+        global $JWT_SECRET;
+        $secret = $JWT_SECRET;
         $parts = explode('.', $token);
         if (count($parts) !== 3) return null;
 
@@ -1290,11 +1260,9 @@ try {
     elseif ($action === "config_debug") {
         // Configuration debug endpoint - checks JWT_SECRET and environment setup
         // Does NOT require authentication - helps understand configuration issues
-        $jwt_secret = $_ENV['JWT_SECRET'] ?? null;
-        $db_host = $_ENV['DB_HOST'] ?? null;
-        $db_user = $_ENV['DB_USER'] ?? null;
-        $db_pass = $_ENV['DB_PASS'] ?? null;
-        $db_name = $_ENV['DB_NAME'] ?? null;
+        global $JWT_SECRET, $db_host, $db_user, $db_pass, $db_name;
+        $jwt_secret = $JWT_SECRET;
+        // Note: db credentials are already available as globals
 
         $checks = [];
 
@@ -1826,7 +1794,8 @@ try {
         }
 
         // Build full source path
-        $uploads_dir = $_ENV['UPLOADS_DIR'] ?? (dirname(__DIR__) . '/public/uploads');
+        global $UPLOADS_DIR;
+        $uploads_dir = $UPLOADS_DIR;
         $full_source_path = $uploads_dir . '/' . $source_file;
 
         // Verify the source file exists and is within uploads directory
