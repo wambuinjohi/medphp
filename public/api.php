@@ -967,9 +967,11 @@ try {
                 'status' => $profile ? $profile['status'] : 'active'
             ]
         ]);
+        exit();
     }
     elseif ($action === "logout") {
         echo json_encode(['status' => 'success', 'message' => 'Logout successful']);
+        exit();
     }
     elseif ($action === "refresh_token") {
         // Refresh token endpoint - takes an existing token and issues a new one
