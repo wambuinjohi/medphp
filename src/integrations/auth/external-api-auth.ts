@@ -55,15 +55,10 @@ class ExternalAPIAuthHandler {
       const user = result.user;
 
       if (token && user) {
-        // Store token and user info
-        const authData: AuthToken = {
-          token,
-          user,
-          expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-        };
-
-        localStorage.setItem(this.tokenKey, JSON.stringify(authData));
-        localStorage.setItem(this.userKey, JSON.stringify(user));
+        // Store token and user info - match the format used by external-api-adapter
+        localStorage.setItem(this.tokenKey, token);
+        localStorage.setItem(this.userKey, user.id);
+        localStorage.setItem('med_api_user_email', result.email || '');
 
         return { token, user };
       }
