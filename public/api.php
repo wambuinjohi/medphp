@@ -140,6 +140,11 @@ if (in_array($request_method, ['POST', 'PUT', 'PATCH'])) {
     }
 }
 
+// DEBUG: Log raw request variables
+error_log("🔴 RAW REQUEST - \$_POST['action']: " . var_export($_POST['action'] ?? 'NOT_SET', true));
+error_log("🔴 RAW REQUEST - \$_GET['action']: " . var_export($_GET['action'] ?? 'NOT_SET', true));
+error_log("🔴 RAW REQUEST - Full \$_GET: " . json_encode($_GET));
+
 // Get request parameters
 $action = trim($_POST['action'] ?? ($_GET['action'] ?? ''));
 $table = trim($_POST['table'] ?? ($_GET['table'] ?? ''));
