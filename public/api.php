@@ -1081,6 +1081,7 @@ try {
             'email' => $decoded['email'],
             'role' => $decoded['role']
         ]);
+        exit();
     }
     elseif ($action === "diagnose_authorization") {
         // Diagnostic endpoint to check authorization status
