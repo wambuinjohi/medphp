@@ -322,42 +322,6 @@ error_log("  Action length: " . strlen($action ?? ''));
 error_log("  Action bytes: " . bin2hex($action ?? ''));
 error_log("  Table: " . var_export($table, true));
 
-// Test endpoint for debugging (BEFORE any action logic)
-if ($_GET['debug'] === 'true' || $_POST['debug'] === 'true') {
-    echo json_encode([
-        'status' => 'debug',
-        'message' => 'Full request debugging',
-        'action_final' => $action,
-        'action_bytes' => bin2hex($action ?? 'NULL'),
-        'action_length' => strlen($action ?? ''),
-        'GET_all' => $_GET,
-        'POST_all' => $_POST,
-        'GET_action_raw' => $_GET['action'] ?? 'not_set',
-        'POST_action_raw' => $_POST['action'] ?? 'not_set',
-        'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'],
-        'REQUEST_URI' => $_SERVER['REQUEST_URI'],
-        'PATH_INFO' => $_SERVER['PATH_INFO'] ?? 'not_set'
-    ]);
-    exit();
-}
-
-// Test endpoint for debugging
-if ($action === 'test_action') {
-    echo json_encode([
-        'status' => 'debug',
-        'message' => 'Action value test',
-        'action_value' => $action,
-        'action_bytes' => bin2hex($action ?? 'NULL'),
-        'action_length' => strlen($action ?? ''),
-        'all_params' => [
-            'POST_action' => $_POST['action'] ?? 'not_set',
-            'GET_action' => $_GET['action'] ?? 'not_set',
-            'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'],
-            'REQUEST_URI' => $_SERVER['REQUEST_URI']
-        ]
-    ]);
-    exit();
-}
 
 // Validate action
 if (!$action) {
