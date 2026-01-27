@@ -525,14 +525,10 @@ try {
 
         $upload_path = $uploads_dir . '/' . $safe_filename;
 
-        error_log('📝 Saving file to: ' . $upload_path);
-
         // Move uploaded file
         if (!move_uploaded_file($file['tmp_name'], $upload_path)) {
             throw new Exception("Failed to save uploaded file to $upload_path");
         }
-
-        error_log('✅ File saved successfully');
 
         // Verify file was saved
         if (!file_exists($upload_path)) {
@@ -543,8 +539,6 @@ try {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'];
         $file_url = "$protocol://$host/uploads/$safe_filename";
-
-        error_log('🔗 File URL: ' . $file_url);
 
         echo json_encode([
             'status' => 'success',
