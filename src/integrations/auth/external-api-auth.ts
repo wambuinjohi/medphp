@@ -119,8 +119,12 @@ class ExternalAPIAuthHandler {
    */
   getUser(): any {
     try {
-      const user = localStorage.getItem(this.userKey);
-      return user ? JSON.parse(user) : null;
+      const userId = localStorage.getItem(this.userKey);
+      const email = localStorage.getItem('med_api_user_email');
+      if (userId) {
+        return { id: userId, email: email || '' };
+      }
+      return null;
     } catch (error) {
       return null;
     }
