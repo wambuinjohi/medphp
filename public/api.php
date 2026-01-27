@@ -49,35 +49,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Load .env file if it exists
-if (file_exists(__DIR__ . '/.env')) {
-    $env_file = file_get_contents(__DIR__ . '/.env');
-    $lines = explode("\n", $env_file);
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if (empty($line) || strpos($line, '#') === 0) continue;
-        if (strpos($line, '=') === false) continue;
+// Configuration Variables - Hardcoded for med.layonsconstruction.com
+// JWT Configuration
+$_ENV['JWT_SECRET'] = 'Sirgeorge.123';
 
-        list($key, $value) = explode('=', $line, 2);
-        $key = trim($key);
-        $value = trim($value, " \"'");
-        putenv("$key=$value");
-        $_ENV[$key] = $value;
-    }
-}
+// Database Configuration
+$_ENV['DB_HOST'] = 'localhost';
+$_ENV['DB_USER'] = 'layonsc1_med';
+$_ENV['DB_PASS'] = 'Sirgeorge.12';
+$_ENV['DB_NAME'] = 'layonsc1_med';
 
-// Database Configuration - all required, no fallback defaults
-$db_host = $_ENV['DB_HOST'] ?? null;
-$db_user = $_ENV['DB_USER'] ?? null;
-$db_pass = $_ENV['DB_PASS'] ?? null;
-$db_name = $_ENV['DB_NAME'] ?? null;
+// Uploads Configuration
+$_ENV['UPLOADS_DIR'] = '/home/layonsc1/med.layonsconstruction.com/uploads';
+
+// Database Configuration Variables
+$db_host = $_ENV['DB_HOST'];
+$db_user = $_ENV['DB_USER'];
+$db_pass = $_ENV['DB_PASS'];
+$db_name = $_ENV['DB_NAME'];
 
 // Validate required database configuration
 if (!$db_host || !$db_user || !$db_pass || !$db_name) {
     http_response_code(500);
     echo json_encode([
         'status' => 'error',
-        'message' => 'Database configuration missing. Please set DB_HOST, DB_USER, DB_PASS, and DB_NAME in .env file.'
+        'message' => 'Database configuration is missing.'
     ]);
     exit();
 }
@@ -145,7 +141,7 @@ if (in_array($request_method, ['POST', 'PUT', 'PATCH'])) {
 }
 
 // Get request parameters
-$action = trim($_POST['action'] ?? ($_GET['action'] ?? ''));
+$action = trim($_POST['action'] ?? ($_GET['action'] ?? ($json_body['action'] ?? '')));
 $table = trim($_POST['table'] ?? ($_GET['table'] ?? ''));
 $data = $_POST['data'] ?? ($json_body ?? []);
 $where = $_POST['where'] ?? ($_GET['where'] ?? null);
