@@ -1611,6 +1611,7 @@ try {
             'id' => $conn->insert_id,
             'data' => array_merge($data, ['id' => $conn->insert_id])
         ]);
+        exit();
     }
     elseif ($action === "read") {
         if (!$table) {
