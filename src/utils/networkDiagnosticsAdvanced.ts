@@ -65,7 +65,7 @@ export async function testDirectConnectivity(
       recommendations.push('💡 Verify CORS headers are configured on backend');
       recommendations.push('💡 Check if corporate firewall blocks med.wayrus.co.ke');
     } else if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
-      message = 'DNS resolution failed for me.wayrus.co.ke';
+      message = 'DNS resolution failed for med.wayrus.co.ke';
       recommendations.push('❌ Cannot resolve domain name');
       recommendations.push('💡 Check DNS server configuration');
       recommendations.push('💡 Verify domain me.wayrus.co.ke is valid');
