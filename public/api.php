@@ -2431,5 +2431,7 @@ try {
         'message' => $e->getMessage()
     ]);
 
+}
+
 $conn->close();
 ?>
