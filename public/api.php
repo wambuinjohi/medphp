@@ -178,12 +178,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' &&
 // Handle REST-style requests from .htaccess rewrite
 $request_param = $_GET['request'] ?? null;
 if ($request_param && !$action) {
-    error_log("🔍 API DEBUG - Processing REST request: " . $request_param);
     $rest = parseRestRequest($request_param);
     $segments = $rest['segments'];
     $method = $rest['method'];
-    error_log("  Parsed segments: " . json_encode($segments));
-    error_log("  Parsed method: " . $method);
 
     // Map REST routes to PHP API actions
     if (count($segments) >= 1) {
