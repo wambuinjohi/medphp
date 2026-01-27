@@ -649,14 +649,10 @@ try {
             exit();
         }
 
-        error_log('🗑️ Deleting fallback logo from: ' . $fallback_logo_path);
-
         // Delete the file
         if (!unlink($fallback_logo_path)) {
             throw new Exception("Failed to delete fallback logo from $fallback_logo_path");
         }
-
-        error_log('✅ Fallback logo deleted successfully');
 
         echo json_encode([
             'status' => 'success',
