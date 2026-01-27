@@ -152,6 +152,11 @@ $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
 if (empty($action)) $action = null;
 if (empty($table)) $table = null;
 
+// Normalize action to lowercase for consistent comparison
+if ($action) {
+    $action = strtolower($action);
+}
+
 // DEBUG: Log initial request state
 error_log("🔍 API DEBUG - Initial Request State:");
 error_log("  Method: " . $_SERVER['REQUEST_METHOD']);
