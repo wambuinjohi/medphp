@@ -103,18 +103,11 @@ class ExternalAPIAuthHandler {
    */
   getToken(): string | null {
     try {
-      const authData = localStorage.getItem(this.tokenKey);
-      if (!authData) return null;
+      const token = localStorage.getItem(this.tokenKey);
+      if (!token) return null;
 
-      const auth: AuthToken = JSON.parse(authData);
-
-      // Check if token is expired
-      if (auth.expiresAt && Date.now() > auth.expiresAt) {
-        this.logout().catch(() => {});
-        return null;
-      }
-
-      return auth.token;
+      // Token is stored as plain string, no expiration metadata
+      return token;
     } catch (error) {
       return null;
     }
