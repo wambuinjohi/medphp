@@ -54,22 +54,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Configuration Variables - Hardcoded for med.layonsconstruction.com
 // JWT Configuration
-$_ENV['JWT_SECRET'] = 'Sirgeorge.123';
+$JWT_SECRET = 'Sirgeorge.123';
 
 // Database Configuration
-$_ENV['DB_HOST'] = 'localhost';
-$_ENV['DB_USER'] = 'layonsc1_med';
-$_ENV['DB_PASS'] = 'Sirgeorge.12';
-$_ENV['DB_NAME'] = 'layonsc1_med';
+$db_host = 'localhost';
+$db_user = 'layonsc1_med';
+$db_pass = 'Sirgeorge.12';
+$db_name = 'layonsc1_med';
 
 // Uploads Configuration
-$_ENV['UPLOADS_DIR'] = '/home/layonsc1/med.layonsconstruction.com/uploads';
-
-// Database Configuration Variables
-$db_host = $_ENV['DB_HOST'];
-$db_user = $_ENV['DB_USER'];
-$db_pass = $_ENV['DB_PASS'];
-$db_name = $_ENV['DB_NAME'];
+$UPLOADS_DIR = '/home/layonsc1/med.layonsconstruction.com/uploads';
 
 // Validate required database configuration
 if (!$db_host || !$db_user || !$db_pass || !$db_name) {
@@ -496,7 +490,8 @@ try {
         }
 
         // Create uploads directory if it doesn't exist (in public folder)
-        $uploads_dir = $_ENV['UPLOADS_DIR'] ?? (dirname(__DIR__) . '/public/uploads');
+        global $UPLOADS_DIR;
+        $uploads_dir = $UPLOADS_DIR;
         if (!is_dir($uploads_dir)) {
             if (!mkdir($uploads_dir, 0755, true)) {
                 throw new Exception("Failed to create uploads directory at $uploads_dir");
@@ -695,7 +690,8 @@ try {
 
     // Helper function to create JWT token
     function createJWT($user_id, $user_email, $user_role, $company_id = null, $status = 'active') {
-        $secret = $_ENV['JWT_SECRET'] ?? 'wayrus-secret-key-2024';
+        global $JWT_SECRET;
+        $secret = $JWT_SECRET;
         $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
         $payload = base64_encode(json_encode([
             'sub' => $user_id,
@@ -713,7 +709,8 @@ try {
     // Helper function to verify JWT token
     function verifyJWT($token) {
         if (!$token) return null;
-        $secret = $_ENV['JWT_SECRET'] ?? 'wayrus-secret-key-2024';
+        global $JWT_SECRET;
+        $secret = $JWT_SECRET;
         $parts = explode('.', $token);
         if (count($parts) !== 3) return null;
 
