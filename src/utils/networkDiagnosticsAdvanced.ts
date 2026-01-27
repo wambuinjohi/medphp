@@ -425,7 +425,7 @@ export function generateNetworkDiagnosticReport(results: NetworkDiagnostic[]): s
       report += `   1. Check your DNS settings\n`;
       report += `   2. Flush DNS cache: ipconfig /flushdns (Windows) or sudo dscacheutil -flushcache (Mac)\n`;
       report += `   3. Try using public DNS: 8.8.8.8 or 1.1.1.1\n`;
-      report += `   4. Verify domain me.wayrus.co.ke is correct\n\n`;
+      report += `   4. Verify domain med.wayrus.co.ke is correct\n\n`;
     }
 
     if (connectError) {
