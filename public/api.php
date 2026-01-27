@@ -396,9 +396,6 @@ if ($action === "proxy_external_api") {
         exit();
     }
 
-    error_log('🔀 Proxying [' . $external_method . '] request to: ' . $external_api_url);
-    error_log('   Action: ' . $external_action . ($external_table ? ' | Table: ' . $external_table : ''));
-
     // Build proxy request to external API
     $proxy_params = [
         'action' => $external_action
@@ -407,8 +404,6 @@ if ($action === "proxy_external_api") {
     if ($external_where) $proxy_params['where'] = $external_where;
 
     $proxy_url = $external_api_url . '?' . http_build_query($proxy_params);
-
-    error_log('🔀 Proxy URL: ' . $proxy_url);
 
     $headers = [
         'Content-Type: application/json',
