@@ -68,7 +68,7 @@ export async function testDirectConnectivity(
       message = 'DNS resolution failed for med.wayrus.co.ke';
       recommendations.push('❌ Cannot resolve domain name');
       recommendations.push('💡 Check DNS server configuration');
-      recommendations.push('💡 Verify domain me.wayrus.co.ke is valid');
+      recommendations.push('💡 Verify domain med.wayrus.co.ke is valid');
       recommendations.push('💡 Try pinging domain from terminal');
     } else if (error.message.includes('ECONNREFUSED')) {
       message = 'Connection refused - server is not listening on that port';
