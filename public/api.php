@@ -3,11 +3,13 @@
 // This is critical for CORS headers to work in all error scenarios
 ob_start();
 
-// ENDPOINT IDENTIFIER - Log which API file is executing
-error_log("🟢 [ENDPOINT] Using public/api.php (main API)");
-
-// CORS headers MUST be set immediately, before any other output
+// ═══════════════════════════════════════════════════════════════════════════════
+// CORS headers MUST be set IMMEDIATELY, before any output or logging
 // This ensures CORS headers are sent in all responses, including error responses
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Always set response Content-Type to JSON first
+header("Content-Type: application/json; charset=utf-8");
 
 // Set CORS response headers - allow credentials with specific origin (not wildcard)
 // Note: Cannot use wildcard (*) with credentials=true; must specify exact origin
@@ -25,8 +27,8 @@ header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Req
 header("Access-Control-Max-Age: 86400");
 header("Access-Control-Expose-Headers: Content-Type, X-Total-Count, X-Page, X-Page-Size");
 
-// Always set response Content-Type to JSON
-header("Content-Type: application/json; charset=utf-8");
+// ENDPOINT IDENTIFIER - Log which API file is executing (after headers are set)
+error_log("🟢 [ENDPOINT] Using public/api.php (main API)");
 
 // Set error handler to catch any errors and ensure CORS headers are sent
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
