@@ -92,6 +92,17 @@ $where = $_POST['where'] ?? ($_GET['where'] ?? null);
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
 
+// CRITICAL FIX: Handle array case BEFORE type checking
+// If action is received as an array, extract first element
+if (is_array($action)) {
+    error_log("⚠️ [backend/api-auth-optional.php] Action received as array: " . json_encode($action));
+    $action = isset($action[0]) ? $action[0] : '';
+    error_log("✅ [backend/api-auth-optional.php] Extracted first element: '$action'");
+}
+
+// Trim action to remove whitespace
+$action = trim($action ?? '');
+
 // Validate action
 if (!$action) {
     http_response_code(400);
