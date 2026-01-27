@@ -30,18 +30,9 @@ export class ExternalAPIAdapter implements IDatabase {
         console.log('✅ Using API URL from environment detection');
       }
 
-      // CRITICAL FIX: In browser environments, use the proxy route (/api.php) instead of direct API URL
-      // This ensures CORS issues are handled by the Vite dev proxy
-      if (typeof window !== 'undefined') {
-        // Browser environment: use proxy route
-        this.apiBase = '/api.php';
-        console.log('✅ Browser environment detected - using Vite proxy route for CORS');
-      } else {
-        // SSR/Server environment: use full external URL
-        this.apiBase = this.externalApiUrl;
-        console.log('✅ SSR environment detected - using direct external API URL');
-      }
+      this.apiBase = this.externalApiUrl;
 
+      console.log('✅ Using external API at https://med.wayrus.co.ke/api.php');
       console.log('📡 API endpoint:', this.apiBase);
 
       // NOTE: We no longer cache the token on construction.
