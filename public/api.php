@@ -2021,6 +2021,7 @@ try {
             'status' => 'success',
             'message' => 'API is healthy'
         ]);
+        exit();
     }
     elseif ($action === "proxy_external_api") {
         // Forward requests to external API (e.g., https://med.layonsconstruction.com/api.php)
