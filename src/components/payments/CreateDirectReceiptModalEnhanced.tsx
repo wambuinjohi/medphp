@@ -74,7 +74,8 @@ export function CreateDirectReceiptModalEnhanced({
   const [amount, setAmount] = useState('');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [notes, setNotes] = useState('');
-  
+  const [defaultVatPercentage, setDefaultVatPercentage] = useState<number | null>(null);
+
   const [items, setItems] = useState<ReceiptItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExcessPaymentHandler, setShowExcessPaymentHandler] = useState(false);
