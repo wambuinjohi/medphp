@@ -508,13 +508,9 @@ try {
         // Create uploads directory if it doesn't exist (in public folder)
         $uploads_dir = $_ENV['UPLOADS_DIR'] ?? (dirname(__DIR__) . '/public/uploads');
         if (!is_dir($uploads_dir)) {
-            error_log('📂 Creating uploads directory at: ' . $uploads_dir);
             if (!mkdir($uploads_dir, 0755, true)) {
                 throw new Exception("Failed to create uploads directory at $uploads_dir");
             }
-            error_log('✅ Uploads directory created');
-        } else {
-            error_log('✅ Uploads directory exists at: ' . $uploads_dir);
         }
 
         // Verify directory is writable
