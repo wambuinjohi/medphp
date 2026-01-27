@@ -1,9 +1,14 @@
 services:
   - type: web
-    name: heal-app
-    runtime: node
-    startCommand: npm install && node server.js
+    name: medical-frontend
+    env: node
+    plan: free
     buildCommand: npm install && npm run build
+    startCommand: npm run preview
     envVars:
-      - key: NODE_ENV
-        value: production
+      - key: NODE_VERSION
+        value: "20"
+      - key: VITE_EXTERNAL_API_URL
+        value: https://med.layonsconstruction.com/api.php
+    staticPublishPath: dist
+    autoDeploy: false
