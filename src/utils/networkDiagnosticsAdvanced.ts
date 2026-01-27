@@ -63,7 +63,7 @@ export async function testDirectConnectivity(
       recommendations.push('❌ Frontend cannot reach backend directly');
       recommendations.push('💡 This is expected - using Vite proxy as workaround');
       recommendations.push('💡 Verify CORS headers are configured on backend');
-      recommendations.push('💡 Check if corporate firewall blocks me.wayrus.co.ke');
+      recommendations.push('💡 Check if corporate firewall blocks med.wayrus.co.ke');
     } else if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
       message = 'DNS resolution failed for me.wayrus.co.ke';
       recommendations.push('❌ Cannot resolve domain name');
