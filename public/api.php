@@ -1260,11 +1260,9 @@ try {
     elseif ($action === "config_debug") {
         // Configuration debug endpoint - checks JWT_SECRET and environment setup
         // Does NOT require authentication - helps understand configuration issues
-        $jwt_secret = $_ENV['JWT_SECRET'] ?? null;
-        $db_host = $_ENV['DB_HOST'] ?? null;
-        $db_user = $_ENV['DB_USER'] ?? null;
-        $db_pass = $_ENV['DB_PASS'] ?? null;
-        $db_name = $_ENV['DB_NAME'] ?? null;
+        global $JWT_SECRET, $db_host, $db_user, $db_pass, $db_name;
+        $jwt_secret = $JWT_SECRET;
+        // Note: db credentials are already available as globals
 
         $checks = [];
 
@@ -1796,7 +1794,8 @@ try {
         }
 
         // Build full source path
-        $uploads_dir = $_ENV['UPLOADS_DIR'] ?? (dirname(__DIR__) . '/public/uploads');
+        global $UPLOADS_DIR;
+        $uploads_dir = $UPLOADS_DIR;
         $full_source_path = $uploads_dir . '/' . $source_file;
 
         // Verify the source file exists and is within uploads directory
