@@ -430,7 +430,7 @@ export function generateNetworkDiagnosticReport(results: NetworkDiagnostic[]): s
 
     if (connectError) {
       report += `🔴 Connection Issue Detected\n`;
-      report += `   1. Check if firewall allows HTTPS (port 443) to me.wayrus.co.ke\n`;
+      report += `   1. Check if firewall allows HTTPS (port 443) to med.wayrus.co.ke\n`;
       report += `   2. If on corporate network, check with IT about proxy settings\n`;
       report += `   3. Verify internet connection is active\n`;
       report += `   4. Try connecting from different network (mobile hotspot) to isolate issue\n`;
