@@ -1650,6 +1650,7 @@ try {
             'data' => $rows,
             'count' => count($rows)
         ]);
+        exit();
     }
     elseif ($action === "update") {
         if (!$table || !$where) {
