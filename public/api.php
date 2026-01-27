@@ -1049,6 +1049,7 @@ try {
                 'status' => $status
             ]
         ]);
+        exit();
     }
     elseif ($action === "check_auth") {
         // Check for JWT token in Authorization header
