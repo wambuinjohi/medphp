@@ -18,5 +18,5 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📍 API URL: ${process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php'}`);
+  console.log(`📍 API URL: ${process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php'}`);
 });
