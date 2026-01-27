@@ -1423,6 +1423,37 @@ export const useCreateDirectReceiptWithItems = () => {
         }
       }
 
+      // CREATE RECEIPT ITEMS
+      // Copy items to receipt_items table to maintain a snapshot of items at receipt creation
+      let receiptItemsResult = [];
+      if (receiptRecord && is_array(items) && items.length > 0) {
+        receiptItemsResult = await Promise.all(
+          items.map((item, index) =>
+            db.insert('receipt_items', {
+              receipt_id: receiptRecord.id,
+              product_id: item.product_id || null,
+              description: item.description,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              tax_percentage: item.tax_percentage || 0,
+              tax_amount: item.tax_amount || 0,
+              tax_inclusive: item.tax_inclusive || false,
+              discount_before_vat: item.discount_before_vat || 0,
+              line_total: item.line_total,
+              sort_order: index + 1
+            })
+          )
+        );
+
+        // Check for errors in receipt item creation
+        for (const result of receiptItemsResult) {
+          if (result.error) {
+            console.warn('Warning: Error creating receipt item:', result.error);
+            // Don't throw - receipt was created successfully, but log for debugging
+          }
+        }
+      }
+
       // HANDLE EXCESS PAYMENT
       // If there's excess payment, note it for future credit balance/change note handling
       let excessPaymentData = null;
