@@ -3,14 +3,14 @@
 /**
  * Medical Supplies - External API Database Setup Script
  * Node.js version for cross-platform compatibility
- * 
+ *
  * Usage:
  *   node scripts/setup-external-api.js [options]
  *   npm run setup:external-api
  */
 
-const https = require('https');
-const http = require('http');
+import https from 'https';
+import http from 'http';
 
 // Colors for console output
 const colors = {
