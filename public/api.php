@@ -444,7 +444,6 @@ if ($action === "proxy_external_api") {
 
         if ($response === false) {
             $error = error_get_last();
-            error_log('❌ Proxy error: ' . ($error ? $error['message'] : 'Unknown error'));
             http_response_code(503);
             echo json_encode([
                 'status' => 'error',
@@ -456,12 +455,10 @@ if ($action === "proxy_external_api") {
         }
 
         // Forward the response from external API
-        error_log('✅ Proxy request successful');
         header('Content-Type: application/json');
         echo $response;
         exit();
     } catch (Exception $e) {
-        error_log('❌ Proxy exception: ' . $e->getMessage());
         http_response_code(503);
         echo json_encode([
             'status' => 'error',
