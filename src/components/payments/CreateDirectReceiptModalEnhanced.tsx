@@ -302,6 +302,7 @@ export function CreateDirectReceiptModalEnhanced({
     setAmount('');
     setReferenceNumber('');
     setNotes('');
+    setDefaultVatPercentage(null);
     setItems([]);
     setShowExcessPaymentHandler(false);
     setExcessPaymentData(null);
