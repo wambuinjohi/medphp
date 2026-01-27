@@ -207,7 +207,7 @@ export async function testDNSResolution(
  * Test CORS configuration
  */
 export async function testCORSConfiguration(
-  apiUrl: string = 'https://me.wayrus.co.ke/api.php'
+  apiUrl: string = 'https://med.wayrus.co.ke/api.php'
 ): Promise<NetworkDiagnostic> {
   try {
     const response = await fetch(`${apiUrl}?action=health`, {
