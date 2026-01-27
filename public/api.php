@@ -246,17 +246,14 @@ if ($request_param && !$action) {
         }
         // Handle table CRUD routes (contacts, quotations, portfolios, etc.)
         elseif (in_array($segments[0], ['contacts', 'quotations', 'portfolios', 'web_app_leads', 'web-leads', 'logs'])) {
-            error_log("🔍 API DEBUG - Handling table CRUD route: " . $segments[0]);
             $table_name = $segments[0];
             if ($segments[0] === 'web-leads') $table_name = 'web_app_leads';
             if ($segments[0] === 'discovery-leads' || $segments[0] === 'discovery_leads') $table_name = 'leads';
 
             $table = $table_name;
-            error_log("  Table set to: " . $table);
 
             if ($method === 'GET') {
                 $action = 'read';
-                error_log("  Action set to: read (GET request)");
                 // Parse query parameters for filtering
                 foreach ($_GET as $key => $value) {
                     if ($key !== 'request' && $value) {
