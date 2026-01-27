@@ -23,7 +23,7 @@ interface SetupResult {
  */
 export async function initializeExternalAPI(options: SetupOptions = {}): Promise<SetupResult> {
   const {
-    apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php',
+    apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://me.wayrus.co.ke/api.php',
     email,
     password,
     onProgress,

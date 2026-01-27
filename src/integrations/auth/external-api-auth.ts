@@ -1,6 +1,6 @@
 /**
  * External API Authentication Handler
- * Manages JWT token-based authentication with med.wayrus.co.ke/api.php
+ * Manages JWT token-based authentication with me.wayrus.co.ke/api.php
  */
 
 export interface AuthToken {

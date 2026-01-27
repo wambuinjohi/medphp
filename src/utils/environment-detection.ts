@@ -119,7 +119,7 @@ function getAPIBaseURLInternal(): string {
   const port = window.location.port ? `:${window.location.port}` : '';
 
   // Priority 1b: Fallback to hardcoded production API URL for cloud deployments
-  const productionApiUrl = 'https://med.wayrus.co.ke/api.php';
+  const productionApiUrl = 'https://me.wayrus.co.ke/api.php';
   if (hostname !== 'localhost' && !isPrivateIP(hostname) && !isLocalDomain(hostname)) {
     console.log('[ENV_DETECT] 🌐 Cloud hosting detected - using hardcoded production API:', productionApiUrl);
     return productionApiUrl;

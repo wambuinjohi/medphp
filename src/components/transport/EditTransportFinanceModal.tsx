@@ -130,8 +130,7 @@ export function EditTransportFinanceModal({
 
     try {
       setIsSubmitting(true);
-      await updateFinance.mutateAsync({
-        id: finance.id,
+      await updateFinance.update(finance.id, {
         vehicle_id: formData.vehicle_id,
         material_id: formData.material_id,
         buying_price: parseFloat(formData.buying_price) || 0,
@@ -145,7 +144,7 @@ export function EditTransportFinanceModal({
         date: formData.date,
         company_id: companyId,
       });
-      
+
       toast.success('Finance record updated successfully');
       onSuccess();
     } catch (error) {

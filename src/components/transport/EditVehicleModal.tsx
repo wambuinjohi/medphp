@@ -66,15 +66,14 @@ export function EditVehicleModal({ open, onOpenChange, vehicle, onSuccess, compa
 
     try {
       setIsSubmitting(true);
-      await updateVehicle.mutateAsync({
-        id: vehicle.id,
+      await updateVehicle.update(vehicle.id, {
         vehicle_number: formData.vehicle_number,
         vehicle_type: formData.vehicle_type || undefined,
         capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
         status: formData.status,
         company_id: companyId,
       });
-      
+
       toast.success('Vehicle updated successfully');
       onSuccess();
     } catch (error) {
