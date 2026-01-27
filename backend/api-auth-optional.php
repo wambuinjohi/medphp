@@ -1,18 +1,24 @@
 <?php
 /**
  * MEDICAL PHP API - AUTH OPTIONAL VERSION
- * 
+ *
  * This version allows ALL REQUESTS regardless of authentication.
  * Authentication tokens are optional - the API works with or without them.
- * 
+ *
  * KEY CHANGES FROM ORIGINAL:
  * - ALL CRUD operations are allowed without authentication
  * - Permission checks are completely disabled
  * - Any user can create, read, update, or delete records
- * 
+ *
  * This is suitable for development and testing with remote JavaScript clients.
  * For production, add proper authentication and authorization.
  */
+
+// ENDPOINT IDENTIFIER - Log which API file is executing
+error_log("🟡 [ENDPOINT] Using backend/api-auth-optional.php (auth-optional API)");
+
+// Start output buffering for consistent error handling
+ob_start();
 
 // Load .env file if it exists
 if (file_exists(__DIR__ . '/.env')) {
