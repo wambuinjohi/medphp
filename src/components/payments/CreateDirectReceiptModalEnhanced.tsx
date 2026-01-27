@@ -200,6 +200,17 @@ export function CreateDirectReceiptModalEnhanced({
     }));
   };
 
+  const updateItemTaxPercentage = (itemId: string, newTaxPercentage: number) => {
+    setItems(items.map(item => {
+      if (item.id === itemId) {
+        const updatedItem = { ...item, tax_percentage: newTaxPercentage };
+        const { lineTotal, taxAmount } = calculateLineTotal(updatedItem);
+        return { ...updatedItem, line_total: lineTotal, tax_amount: taxAmount };
+      }
+      return item;
+    }));
+  };
+
   const removeItem = (itemId: string) => {
     const removedItem = items.find(item => item.id === itemId);
     setItems(items.filter(item => item.id !== itemId));
