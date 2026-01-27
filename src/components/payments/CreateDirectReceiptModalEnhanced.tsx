@@ -137,7 +137,7 @@ export function CreateDirectReceiptModalEnhanced({
       quantity: 1,
       unit_price: price,
       discount_before_vat: 0,
-      tax_percentage: defaultTaxRate,
+      tax_percentage: defaultVatPercentage !== null ? defaultVatPercentage : defaultTaxRate,
       tax_amount: 0,
       tax_inclusive: true,
       line_total: price
