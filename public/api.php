@@ -2436,6 +2436,11 @@ try {
         }
     }
     else {
+        error_log("❌ API ERROR - Reaching Unknown action clause:");
+        error_log("  Action value: [" . var_export($action, true) . "]");
+        error_log("  Action length: " . strlen($action ?? ''));
+        error_log("  Action bytes: " . bin2hex($action ?? ''));
+        error_log("  Checking against: read, create, update, delete, upload_file, login, logout, check_auth");
         throw new Exception("Unknown action: $action");
     }
 
