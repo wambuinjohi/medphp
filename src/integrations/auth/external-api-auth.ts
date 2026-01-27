@@ -58,7 +58,7 @@ class ExternalAPIAuthHandler {
         // Store token and user info - match the format used by external-api-adapter
         localStorage.setItem(this.tokenKey, token);
         localStorage.setItem(this.userKey, user.id);
-        localStorage.setItem('med_api_user_email', result.email || '');
+        localStorage.setItem('med_api_user_email', email);
 
         return { token, user };
       }
