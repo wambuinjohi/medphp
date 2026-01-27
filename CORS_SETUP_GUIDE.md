@@ -141,7 +141,7 @@ curl -i -X OPTIONS \
   -H "Origin: https://your-frontend.fly.dev" \
   -H "Access-Control-Request-Method: POST" \
   -H "Access-Control-Request-Headers: Content-Type" \
-  https://med.layonsconstruction.com/api.php?action=login
+  https://med.wayrus.co.ke/api.php?action=login
 ```
 
 Look for these headers in the response:
