@@ -1,5 +1,9 @@
 <?php
-// CORS headers MUST be set first, before anything else
+// Output buffering ensures headers can be sent even if content is already output
+// This is critical for CORS headers to work in all error scenarios
+ob_start();
+
+// CORS headers MUST be set immediately, before any other output
 // This ensures CORS headers are sent in all responses, including error responses
 
 // Set CORS response headers - allow credentials with specific origin (not wildcard)
