@@ -127,7 +127,7 @@ export async function testProxyDetection(
         recommendations: [
           'ℹ️ Your request is being proxied',
           '💡 If this is a corporate environment, contact IT about proxy settings',
-          '💡 Verify proxy allows HTTPS connections to me.wayrus.co.ke',
+          '💡 Verify proxy allows HTTPS connections to med.wayrus.co.ke',
         ],
       };
     }
