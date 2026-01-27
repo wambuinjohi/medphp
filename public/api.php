@@ -553,8 +553,6 @@ try {
 
     // Upload fallback logo endpoint
     if ($action === "upload_fallback_logo") {
-        error_log('🎯 Processing fallback logo upload...');
-
         if (!isset($_FILES['file'])) {
             http_response_code(400);
             throw new Exception("No file provided");
@@ -562,8 +560,6 @@ try {
 
         $file = $_FILES['file'];
         $filename = 'fallback-logo.png'; // Always use fixed filename
-
-        error_log('📁 Fallback logo file info - Name: ' . $file['name'] . ' | Size: ' . $file['size'] . ' | Type: ' . $file['type']);
 
         // Validate file
         if ($file['error'] !== UPLOAD_ERR_OK) {
