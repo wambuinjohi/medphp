@@ -1,6 +1,6 @@
 /**
  * External API Authentication Handler
- * Manages JWT token-based authentication with med.layonsconstruction.com/api.php
+ * Manages JWT token-based authentication with med.wayrus.co.ke/api.php
  */
 
 export interface AuthToken {
@@ -16,10 +16,10 @@ export interface AuthToken {
 class ExternalAPIAuthHandler {
   private apiUrl: string;
   private fetchUrl: string;
-  private tokenKey = 'med_api_auth_token';
-  private userKey = 'med_api_auth_user';
+  private tokenKey = 'med_api_token';
+  private userKey = 'med_api_user_id';
 
-  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php') {
+  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
     this.apiUrl = apiUrl;
 
     // Always use the direct URL (no proxy) for consistency across all environments
@@ -55,15 +55,10 @@ class ExternalAPIAuthHandler {
       const user = result.user;
 
       if (token && user) {
-        // Store token and user info
-        const authData: AuthToken = {
-          token,
-          user,
-          expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-        };
-
-        localStorage.setItem(this.tokenKey, JSON.stringify(authData));
-        localStorage.setItem(this.userKey, JSON.stringify(user));
+        // Store token and user info - match the format used by external-api-adapter
+        localStorage.setItem(this.tokenKey, token);
+        localStorage.setItem(this.userKey, user.id);
+        localStorage.setItem('med_api_user_email', email);
 
         return { token, user };
       }
@@ -93,9 +88,10 @@ class ExternalAPIAuthHandler {
         });
       }
 
-      // Clear local storage
+      // Clear local storage - remove all auth-related keys
       localStorage.removeItem(this.tokenKey);
       localStorage.removeItem(this.userKey);
+      localStorage.removeItem('med_api_user_email');
 
       return {};
     } catch (error) {
@@ -108,18 +104,11 @@ class ExternalAPIAuthHandler {
    */
   getToken(): string | null {
     try {
-      const authData = localStorage.getItem(this.tokenKey);
-      if (!authData) return null;
+      const token = localStorage.getItem(this.tokenKey);
+      if (!token) return null;
 
-      const auth: AuthToken = JSON.parse(authData);
-
-      // Check if token is expired
-      if (auth.expiresAt && Date.now() > auth.expiresAt) {
-        this.logout().catch(() => {});
-        return null;
-      }
-
-      return auth.token;
+      // Token is stored as plain string, no expiration metadata
+      return token;
     } catch (error) {
       return null;
     }
@@ -130,8 +119,12 @@ class ExternalAPIAuthHandler {
    */
   getUser(): any {
     try {
-      const user = localStorage.getItem(this.userKey);
-      return user ? JSON.parse(user) : null;
+      const userId = localStorage.getItem(this.userKey);
+      const email = localStorage.getItem('med_api_user_email');
+      if (userId) {
+        return { id: userId, email: email || '' };
+      }
+      return null;
     } catch (error) {
       return null;
     }

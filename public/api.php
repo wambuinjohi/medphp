@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Configuration Variables - Hardcoded for med.wayrus.co.ke
+// Configuration Variables - Hardcoded for med.layonsconstruction.com
 // JWT Configuration
 $JWT_SECRET = 'Sirgeorge.123';
 
@@ -63,7 +63,7 @@ $db_pass = 'Sirgeorge.12';
 $db_name = 'layonsc1_med';
 
 // Uploads Configuration
-$UPLOADS_DIR = '/home/layonsc1/med.wayrus.co.ke/uploads';
+$UPLOADS_DIR = '/home/layonsc1/med.layonsconstruction.com/uploads';
 
 // Validate required database configuration
 if (!$db_host || !$db_user || !$db_pass || !$db_name) {
@@ -1909,112 +1909,6 @@ try {
             'message' => 'API is healthy'
         ]);
         exit();
-    }
-    elseif ($action === "proxy_external_api") {
-        // Forward requests to external API (e.g., https://med.wayrus.co.ke/api.php)
-        $external_api_url = $_POST['external_api_url'] ?? ($_GET['external_api_url'] ?? null);
-        $external_action = $_POST['external_action'] ?? ($_GET['external_action'] ?? null);
-        $external_method = $_POST['external_method'] ?? ($_GET['external_method'] ?? 'POST');
-        $external_table = $_POST['external_table'] ?? ($_GET['external_table'] ?? null);
-        $external_where = $_POST['external_where'] ?? ($_GET['external_where'] ?? null);
-
-        if (!$external_api_url || !$external_action) {
-            throw new Exception("Missing required proxy parameters: external_api_url and external_action");
-        }
-
-        // Build the external API URL
-        $external_params = [
-            'action' => $external_action
-        ];
-
-        if ($external_table) {
-            $external_params['table'] = $external_table;
-        }
-
-        if ($external_where) {
-            $external_params['where'] = $external_where;
-        }
-
-        $external_url = $external_api_url . '?' . http_build_query($external_params);
-
-        // Prepare headers for the external API call
-        $headers = [
-            'Content-Type: application/json',
-            'Accept: application/json'
-        ];
-
-        // Include authorization header if available
-        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
-        if ($auth_header) {
-            $headers[] = 'Authorization: ' . $auth_header;
-        }
-
-        // Prepare request body (data)
-        $request_body = null;
-        if ($json_body && is_array($json_body)) {
-            $request_body = json_encode($json_body);
-        }
-
-        // Initialize cURL for external API call
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $external_url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_CUSTOMREQUEST => strtoupper($external_method),
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-        ]);
-
-        // Add body if present
-        if ($request_body) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $request_body);
-        }
-
-        // Execute the request
-        $external_response = curl_exec($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curl_error = curl_error($ch);
-        curl_close($ch);
-
-        // Check for cURL errors
-        if ($curl_error) {
-            http_response_code(502);
-            echo json_encode([
-                'status' => 'error',
-                'message' => "Failed to reach external API: $curl_error"
-            ]);
-            exit();
-        }
-
-        // Ensure we have a valid response
-        if (!$external_response) {
-            http_response_code(502);
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Empty response from external API'
-            ]);
-            exit();
-        }
-
-        // Try to decode the external API response
-        $decoded_response = json_decode($external_response, true);
-        if ($decoded_response === null && json_last_error() !== JSON_ERROR_NONE) {
-            http_response_code(502);
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Invalid JSON response from external API'
-            ]);
-            exit();
-        }
-
-        // Pass through the HTTP status code from external API
-        http_response_code($http_code);
-
-        // Return the external API response as-is
-        echo is_string($external_response) ? $external_response : json_encode($decoded_response);
     }
 
     /**
