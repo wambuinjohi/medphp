@@ -98,25 +98,27 @@ export function ViewReceiptModal({
   const calculateTotals = () => {
     if (!receipt.invoice_items || receipt.invoice_items.length === 0) {
       return {
-        subtotal: receipt.total_amount,
+        subtotal: receipt.total_amount || 0,
         totalTax: 0,
-        total: receipt.total_amount
+        total: receipt.total_amount || 0
       };
     }
 
     let subtotal = 0;
     let totalTax = 0;
+    let lineItemsTotal = 0;
 
     receipt.invoice_items.forEach(item => {
       const itemSubtotal = item.quantity * item.unit_price;
       subtotal += itemSubtotal;
       totalTax += item.tax_amount || 0;
+      lineItemsTotal += item.line_total || 0;
     });
 
     return {
       subtotal: Math.round(subtotal * 100) / 100,
       totalTax: Math.round(totalTax * 100) / 100,
-      total: receipt.total_amount
+      total: receipt.total_amount || Math.round(lineItemsTotal * 100) / 100
     };
   };
 

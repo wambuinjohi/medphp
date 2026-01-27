@@ -22,7 +22,7 @@ export default function AdminInitExternal() {
   const [customEmail, setCustomEmail] = useState('admin@mail.com');
   const [customPassword, setCustomPassword] = useState('Pass123');
   const [apiUrl, setApiUrl] = useState(
-    import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php'
+    import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php'
   );
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [diagnosticsRunning, setDiagnosticsRunning] = useState(false);
@@ -167,7 +167,7 @@ export default function AdminInitExternal() {
                   onChange={e => setApiUrl(e.target.value)}
                   disabled={initializing || adminExists}
                   className="mt-2"
-                  placeholder="https://med.layonsconstruction.com/api.php"
+                  placeholder="https://med.wayrus.co.ke/api.php"
                 />
               </div>
               {databaseInfo && (

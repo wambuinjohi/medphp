@@ -40,15 +40,15 @@ All of the following fixes have been successfully applied to your application:
 
 **Expected Output:**
 ```
-🌐 Using REMOTE API at https://med.layonsconstruction.com
+🌐 Using REMOTE API at https://med.wayrus.co.ke
 📡 [POST] health - Starting request...
-✅ External API health check passed: https://med.layonsconstruction.com/api.php
+✅ External API health check passed: https://med.wayrus.co.ke/api.php
 ```
 
 **If CORS Error:**
 ```
 ❌ Network Error for health on API
-API Endpoint: https://med.layonsconstruction.com/api.php
+API Endpoint: https://med.wayrus.co.ke/api.php
 🔍 Troubleshooting:
 1. CORS Issue (Most Common):
    - Backend needs: Access-Control-Allow-Origin header
@@ -129,7 +129,7 @@ VITE_EXTERNAL_API_URL=https://your-api-domain.com/api.php
 2. Implement CORS headers in `api.php` or your API layer
 3. Test with curl command:
    ```bash
-   curl -i -X OPTIONS https://med.layonsconstruction.com/api.php?action=health
+   curl -i -X OPTIONS https://med.wayrus.co.ke/api.php?action=health
    ```
 4. Verify response includes CORS headers
 5. Notify frontend team when ready

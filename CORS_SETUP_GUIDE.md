@@ -141,7 +141,7 @@ curl -i -X OPTIONS \
   -H "Origin: https://your-frontend.fly.dev" \
   -H "Access-Control-Request-Method: POST" \
   -H "Access-Control-Request-Headers: Content-Type" \
-  https://med.layonsconstruction.com/api.php?action=login
+  https://med.wayrus.co.ke/api.php?action=login
 ```
 
 Look for these headers in the response:
@@ -211,7 +211,7 @@ Verify backend has CORS headers:
 curl -i -X OPTIONS \
   -H "Origin: https://your-frontend-domain.fly.dev" \
   -H "Access-Control-Request-Method: POST" \
-  https://med.layonsconstruction.com/api.php?action=login
+  https://med.wayrus.co.ke/api.php?action=login
 
 # Expected response headers:
 # access-control-allow-origin: https://your-frontend-domain.fly.dev

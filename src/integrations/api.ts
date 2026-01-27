@@ -1,6 +1,6 @@
 /**
  * Unified API Client
- * Direct integration with https://med.layonsconstruction.com/api.php
+ * Direct integration with https://med.wayrus.co.ke/api.php
  * Replaces all Supabase calls
  */
 

@@ -74,7 +74,8 @@ export function CreateDirectReceiptModalEnhanced({
   const [amount, setAmount] = useState('');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [notes, setNotes] = useState('');
-  
+  const [defaultVatPercentage, setDefaultVatPercentage] = useState<number | null>(null);
+
   const [items, setItems] = useState<ReceiptItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showExcessPaymentHandler, setShowExcessPaymentHandler] = useState(false);
@@ -136,7 +137,7 @@ export function CreateDirectReceiptModalEnhanced({
       quantity: 1,
       unit_price: price,
       discount_before_vat: 0,
-      tax_percentage: defaultTaxRate,
+      tax_percentage: defaultVatPercentage !== null ? defaultVatPercentage : defaultTaxRate,
       tax_amount: 0,
       tax_inclusive: true,
       line_total: price
@@ -192,6 +193,17 @@ export function CreateDirectReceiptModalEnhanced({
     setItems(items.map(item => {
       if (item.id === itemId) {
         const updatedItem = { ...item, unit_price: newPrice };
+        const { lineTotal, taxAmount } = calculateLineTotal(updatedItem);
+        return { ...updatedItem, line_total: lineTotal, tax_amount: taxAmount };
+      }
+      return item;
+    }));
+  };
+
+  const updateItemTaxPercentage = (itemId: string, newTaxPercentage: number) => {
+    setItems(items.map(item => {
+      if (item.id === itemId) {
+        const updatedItem = { ...item, tax_percentage: newTaxPercentage };
         const { lineTotal, taxAmount } = calculateLineTotal(updatedItem);
         return { ...updatedItem, line_total: lineTotal, tax_amount: taxAmount };
       }
@@ -301,6 +313,7 @@ export function CreateDirectReceiptModalEnhanced({
     setAmount('');
     setReferenceNumber('');
     setNotes('');
+    setDefaultVatPercentage(null);
     setItems([]);
     setShowExcessPaymentHandler(false);
     setExcessPaymentData(null);
@@ -445,6 +458,55 @@ export function CreateDirectReceiptModalEnhanced({
               <CardTitle className="text-sm">Receipt Items</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* VAT Selection */}
+              <div className="space-y-2">
+                <Label>Default VAT for New Items</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={defaultVatPercentage === null ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setDefaultVatPercentage(null)}
+                    className={defaultVatPercentage === null ? 'gradient-primary' : ''}
+                  >
+                    Not Selected (0%)
+                  </Button>
+                  <Button
+                    variant={defaultVatPercentage === 0 ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setDefaultVatPercentage(0)}
+                    className={defaultVatPercentage === 0 ? 'gradient-primary' : ''}
+                  >
+                    No VAT (0%)
+                  </Button>
+                  <Button
+                    variant={defaultVatPercentage === 8 ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setDefaultVatPercentage(8)}
+                    className={defaultVatPercentage === 8 ? 'gradient-primary' : ''}
+                  >
+                    8% VAT
+                  </Button>
+                  <Button
+                    variant={defaultVatPercentage === 16 ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setDefaultVatPercentage(16)}
+                    className={defaultVatPercentage === 16 ? 'gradient-primary' : ''}
+                  >
+                    16% VAT
+                  </Button>
+                </div>
+                {defaultVatPercentage !== null && (
+                  <p className="text-xs text-muted-foreground">
+                    New items will be added with {defaultVatPercentage}% VAT
+                  </p>
+                )}
+                {defaultVatPercentage === null && (
+                  <p className="text-xs text-muted-foreground">
+                    New items will be added with 0% VAT (Not Selected)
+                  </p>
+                )}
+              </div>
+
               {/* Product Search */}
               <div className="space-y-2">
                 <Label htmlFor="productSearch">Add Products</Label>
@@ -515,8 +577,20 @@ export function CreateDirectReceiptModalEnhanced({
                             className="w-full text-right h-10"
                           />
                         </TableCell>
-                        <TableCell className="w-20 text-center">
-                          <span className="text-sm font-medium">{item.tax_percentage}%</span>
+                        <TableCell className="w-32">
+                          <Select
+                            value={item.tax_percentage.toString()}
+                            onValueChange={(value) => updateItemTaxPercentage(item.id, parseFloat(value))}
+                          >
+                            <SelectTrigger className="h-10">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">0% (None)</SelectItem>
+                              <SelectItem value="8">8% VAT</SelectItem>
+                              <SelectItem value="16">16% VAT</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell className="w-28 font-semibold text-right">
                           {formatCurrency(item.line_total)}

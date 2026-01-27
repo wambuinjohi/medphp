@@ -59,7 +59,7 @@ The application includes a `Dockerfile` configured for cloud hosting:
 
 **Example Render Environment Variables**:
 ```
-VITE_EXTERNAL_API_URL=https://med.layonsconstruction.com/api.php
+VITE_EXTERNAL_API_URL=https://med.wayrus.co.ke/api.php
 ```
 
 ### 2. Local Apache Hosting

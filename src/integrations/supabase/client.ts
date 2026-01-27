@@ -1,6 +1,6 @@
 /**
  * Supabase Client Replacement
- * Provides backward-compatible interface backed by external API (me.wayrus.co.ke/api.php)
+ * Provides backward-compatible interface backed by external API (med.wayrus.co.ke/api.php)
  * All Supabase-style calls map to the external API
  */
 
