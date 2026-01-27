@@ -1,5 +1,9 @@
 <?php
-// CORS headers MUST be set first, before anything else
+// Output buffering ensures headers can be sent even if content is already output
+// This is critical for CORS headers to work in all error scenarios
+ob_start();
+
+// CORS headers MUST be set immediately, before any other output
 // This ensures CORS headers are sent in all responses, including error responses
 
 // Set CORS response headers - allow credentials with specific origin (not wildcard)
@@ -141,12 +145,21 @@ if (in_array($request_method, ['POST', 'PUT', 'PATCH'])) {
 }
 
 // Get request parameters
-$action = $_POST['action'] ?? ($_GET['action'] ?? null);
-$table = $_POST['table'] ?? ($_GET['table'] ?? null);
+$action = trim($_POST['action'] ?? ($_GET['action'] ?? ''));
+$table = trim($_POST['table'] ?? ($_GET['table'] ?? ''));
 $data = $_POST['data'] ?? ($json_body ?? []);
 $where = $_POST['where'] ?? ($_GET['where'] ?? null);
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
+
+// Ensure empty strings are treated as null
+if (empty($action)) $action = null;
+if (empty($table)) $table = null;
+
+// Normalize action to lowercase for consistent comparison
+if ($action) {
+    $action = strtolower($action);
+}
 
 // Handle file uploads endpoint
 $request_uri = $_SERVER['REQUEST_URI'] ?? '';
@@ -159,16 +172,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' &&
      preg_match('/uploads?/i', $request_param_check)) &&
     isset($_FILES['file'])) {
     $action = 'upload_file';
-    error_log('🔵 File upload detected - action set to upload_file');
 }
 
-// Debug logging for update operations
-if ($action === 'update') {
-    error_log("🟦 UPDATE DEBUG: Table: " . $table . " | Where: " . json_encode($where));
-    error_log("🟦 UPDATE DEBUG: Data count: " . count($data) . " | Data: " . json_encode($data));
-    $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? 'NOT_SET';
-    error_log("🟦 UPDATE DEBUG: Authorization header: " . $auth_header);
-}
 
 // Handle REST-style requests from .htaccess rewrite
 $request_param = $_GET['request'] ?? null;
@@ -391,9 +396,6 @@ if ($action === "proxy_external_api") {
         exit();
     }
 
-    error_log('🔀 Proxying [' . $external_method . '] request to: ' . $external_api_url);
-    error_log('   Action: ' . $external_action . ($external_table ? ' | Table: ' . $external_table : ''));
-
     // Build proxy request to external API
     $proxy_params = [
         'action' => $external_action
@@ -402,8 +404,6 @@ if ($action === "proxy_external_api") {
     if ($external_where) $proxy_params['where'] = $external_where;
 
     $proxy_url = $external_api_url . '?' . http_build_query($proxy_params);
-
-    error_log('🔀 Proxy URL: ' . $proxy_url);
 
     $headers = [
         'Content-Type: application/json',
@@ -436,7 +436,6 @@ if ($action === "proxy_external_api") {
         if (!empty($body_data)) {
             $request_body = json_encode($body_data);
             stream_context_set_option($context, 'http', 'content', $request_body);
-            error_log('🔀 Request body size: ' . strlen($request_body) . ' bytes');
         }
     }
 
@@ -445,7 +444,6 @@ if ($action === "proxy_external_api") {
 
         if ($response === false) {
             $error = error_get_last();
-            error_log('❌ Proxy error: ' . ($error ? $error['message'] : 'Unknown error'));
             http_response_code(503);
             echo json_encode([
                 'status' => 'error',
@@ -457,12 +455,10 @@ if ($action === "proxy_external_api") {
         }
 
         // Forward the response from external API
-        error_log('✅ Proxy request successful');
         header('Content-Type: application/json');
         echo $response;
         exit();
     } catch (Exception $e) {
-        error_log('❌ Proxy exception: ' . $e->getMessage());
         http_response_code(503);
         echo json_encode([
             'status' => 'error',
@@ -475,8 +471,6 @@ if ($action === "proxy_external_api") {
 try {
     // File upload endpoint - supports logo and branding uploads
     if ($action === "upload_file") {
-        error_log('🎯 Processing file upload...');
-
         if (!isset($_FILES['file'])) {
             http_response_code(400);
             throw new Exception("No file provided");
@@ -484,8 +478,6 @@ try {
 
         $file = $_FILES['file'];
         $filename = $_POST['filename'] ?? $file['name'];
-
-        error_log('📁 File info - Name: ' . $file['name'] . ' | Size: ' . $file['size'] . ' | Type: ' . $file['type']);
 
         // Validate file
         if ($file['error'] !== UPLOAD_ERR_OK) {
@@ -516,13 +508,9 @@ try {
         // Create uploads directory if it doesn't exist (in public folder)
         $uploads_dir = $_ENV['UPLOADS_DIR'] ?? (dirname(__DIR__) . '/public/uploads');
         if (!is_dir($uploads_dir)) {
-            error_log('📂 Creating uploads directory at: ' . $uploads_dir);
             if (!mkdir($uploads_dir, 0755, true)) {
                 throw new Exception("Failed to create uploads directory at $uploads_dir");
             }
-            error_log('✅ Uploads directory created');
-        } else {
-            error_log('✅ Uploads directory exists at: ' . $uploads_dir);
         }
 
         // Verify directory is writable
@@ -537,14 +525,10 @@ try {
 
         $upload_path = $uploads_dir . '/' . $safe_filename;
 
-        error_log('📝 Saving file to: ' . $upload_path);
-
         // Move uploaded file
         if (!move_uploaded_file($file['tmp_name'], $upload_path)) {
             throw new Exception("Failed to save uploaded file to $upload_path");
         }
-
-        error_log('✅ File saved successfully');
 
         // Verify file was saved
         if (!file_exists($upload_path)) {
@@ -555,8 +539,6 @@ try {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'];
         $file_url = "$protocol://$host/uploads/$safe_filename";
-
-        error_log('🔗 File URL: ' . $file_url);
 
         echo json_encode([
             'status' => 'success',
@@ -571,8 +553,6 @@ try {
 
     // Upload fallback logo endpoint
     if ($action === "upload_fallback_logo") {
-        error_log('🎯 Processing fallback logo upload...');
-
         if (!isset($_FILES['file'])) {
             http_response_code(400);
             throw new Exception("No file provided");
@@ -580,8 +560,6 @@ try {
 
         $file = $_FILES['file'];
         $filename = 'fallback-logo.png'; // Always use fixed filename
-
-        error_log('📁 Fallback logo file info - Name: ' . $file['name'] . ' | Size: ' . $file['size'] . ' | Type: ' . $file['type']);
 
         // Validate file
         if ($file['error'] !== UPLOAD_ERR_OK) {
@@ -623,11 +601,8 @@ try {
         // Define fallback logo path (always the same path)
         $fallback_logo_path = $public_dir . '/fallback-logo.png';
 
-        error_log('📝 Saving fallback logo to: ' . $fallback_logo_path);
-
         // Remove old fallback logo if it exists
         if (file_exists($fallback_logo_path)) {
-            error_log('🗑️ Removing old fallback logo');
             if (!unlink($fallback_logo_path)) {
                 throw new Exception("Failed to remove old fallback logo");
             }
@@ -638,8 +613,6 @@ try {
             throw new Exception("Failed to save fallback logo to $fallback_logo_path");
         }
 
-        error_log('✅ Fallback logo saved successfully');
-
         // Verify file was saved
         if (!file_exists($fallback_logo_path)) {
             throw new Exception("File was moved but cannot be found at $fallback_logo_path");
@@ -649,8 +622,6 @@ try {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'];
         $fallback_logo_url = "$protocol://$host/fallback-logo.png";
-
-        error_log('🔗 Fallback logo URL: ' . $fallback_logo_url);
 
         echo json_encode([
             'status' => 'success',
@@ -678,14 +649,10 @@ try {
             exit();
         }
 
-        error_log('🗑️ Deleting fallback logo from: ' . $fallback_logo_path);
-
         // Delete the file
         if (!unlink($fallback_logo_path)) {
             throw new Exception("Failed to delete fallback logo from $fallback_logo_path");
         }
-
-        error_log('✅ Fallback logo deleted successfully');
 
         echo json_encode([
             'status' => 'success',
@@ -1393,19 +1360,10 @@ try {
 
     // Document Number Generation
     elseif ($action === "get_next_document_number") {
-        error_log("[DOC_NUM] 🔵 API HANDLER: Received get_next_document_number request");
-        error_log("[DOC_NUM] Request method: " . $_SERVER['REQUEST_METHOD']);
-        error_log("[DOC_NUM] JSON body: " . json_encode($json_body));
-        error_log("[DOC_NUM] POST data: " . json_encode($_POST));
-
         $type = $_POST['type'] ?? ($json_body['type'] ?? null);
         $year = $_POST['year'] ?? ($json_body['year'] ?? null);
 
-        error_log("[DOC_NUM] Extracted type: " . var_export($type, true));
-        error_log("[DOC_NUM] Extracted year: " . var_export($year, true));
-
         if (!$type) {
-            error_log("[DOC_NUM] ❌ ERROR: Missing document type");
             http_response_code(400);
             throw new Exception("Missing document type");
         }
@@ -1413,7 +1371,6 @@ try {
         // Validate document type
         $valid_types = ['INV', 'PRO', 'QT', 'PO', 'LPO', 'DN', 'CN', 'PAY', 'REC'];
         if (!in_array($type, $valid_types)) {
-            error_log("[DOC_NUM] ❌ ERROR: Invalid document type: $type");
             http_response_code(400);
             throw new Exception("Invalid document type: $type. Valid types are: " . implode(', ', $valid_types));
         }
@@ -1421,23 +1378,18 @@ try {
         // Default to current year if not provided
         if (!$year) {
             $year = date('Y');
-            error_log("[DOC_NUM] Year not provided, defaulting to: $year");
         } else {
             $year = (int)$year;
-            error_log("[DOC_NUM] Year provided as: $year");
             // Validate year is reasonable (between 2000 and next 10 years)
             if ($year < 2000 || $year > (date('Y') + 10)) {
-                error_log("[DOC_NUM] ❌ ERROR: Invalid year: $year");
                 http_response_code(400);
                 throw new Exception("Invalid year: $year");
             }
         }
 
         // Ensure document_sequences table exists
-        error_log("[DOC_NUM] Checking if document_sequences table exists...");
         $table_check = $conn->query("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_sequences'");
         if (!$table_check || $table_check->num_rows === 0) {
-            error_log("[DOC_NUM] Table does not exist, creating...");
             // Create the table if it doesn't exist
             $create_sql = "CREATE TABLE IF NOT EXISTS `document_sequences` (
                 id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -1450,70 +1402,48 @@ try {
                 INDEX idx_document_sequences_type (document_type)
             )";
             if (!$conn->query($create_sql)) {
-                error_log("[DOC_NUM] ❌ ERROR: Failed to create document_sequences table: " . $conn->error);
                 throw new Exception("Failed to create document_sequences table: " . $conn->error);
             }
-            error_log("[DOC_NUM] ✅ Created document_sequences table");
-        } else {
-            error_log("[DOC_NUM] ✅ document_sequences table exists");
         }
 
         // Use a transaction to ensure atomicity
-        error_log("[DOC_NUM] Starting transaction...");
         $conn->begin_transaction();
 
         try {
             // Check if this type-year combination exists, if not insert it
             $escaped_type = escape($conn, $type);
             $check_sql = "SELECT id, sequence_number FROM document_sequences WHERE document_type = '$escaped_type' AND year = $year LIMIT 1";
-            error_log("[DOC_NUM] Check SQL: $check_sql");
             $result = $conn->query($check_sql);
 
             if (!$result || $result->num_rows === 0) {
-                error_log("[DOC_NUM] No existing sequence found, initializing...");
                 // Insert new entry with sequence 0
                 $insert_sql = "INSERT INTO document_sequences (document_type, year, sequence_number) VALUES ('$escaped_type', $year, 0)";
-                error_log("[DOC_NUM] Insert SQL: $insert_sql");
                 if (!$conn->query($insert_sql)) {
-                    error_log("[DOC_NUM] ❌ ERROR: Failed to initialize sequence: " . $conn->error);
                     throw new Exception("Failed to initialize sequence: " . $conn->error);
                 }
-                error_log("[DOC_NUM] ✅ Sequence initialized");
-            } else {
-                error_log("[DOC_NUM] ✅ Existing sequence found");
             }
 
             // Increment the sequence number (atomic operation)
             $update_sql = "UPDATE document_sequences SET sequence_number = sequence_number + 1 WHERE document_type = '$escaped_type' AND year = $year";
-            error_log("[DOC_NUM] Update SQL: $update_sql");
             if (!$conn->query($update_sql)) {
-                error_log("[DOC_NUM] ❌ ERROR: Failed to increment sequence: " . $conn->error);
                 throw new Exception("Failed to increment sequence: " . $conn->error);
             }
-            error_log("[DOC_NUM] ✅ Sequence incremented");
 
             // Get the updated sequence number
             $fetch_sql = "SELECT sequence_number FROM document_sequences WHERE document_type = '$escaped_type' AND year = $year LIMIT 1";
-            error_log("[DOC_NUM] Fetch SQL: $fetch_sql");
             $result = $conn->query($fetch_sql);
             if (!$result || $result->num_rows === 0) {
-                error_log("[DOC_NUM] ❌ ERROR: Failed to fetch sequence number");
                 throw new Exception("Failed to fetch sequence number");
             }
 
             $row = $result->fetch_assoc();
             $sequence = (int)$row['sequence_number'];
-            error_log("[DOC_NUM] ✅ Fetched sequence: $sequence");
 
             // Commit transaction
-            error_log("[DOC_NUM] Committing transaction...");
             $conn->commit();
-            error_log("[DOC_NUM] ✅ Transaction committed");
 
             // Format the number: TYPE-YEAR-NNNN (4-digit zero-padded)
             $document_number = sprintf('%s-%d-%04d', $type, $year, $sequence);
-
-            error_log("[DOC_NUM] ✅ Generated document number: $document_number");
 
             $response = [
                 'success' => true,
@@ -1522,14 +1452,10 @@ try {
                 'year' => $year,
                 'sequence' => $sequence
             ];
-            error_log("[DOC_NUM] Sending response: " . json_encode($response));
             echo json_encode($response);
         } catch (Exception $e) {
             // Rollback on error
-            error_log("[DOC_NUM] ❌ Exception caught: " . $e->getMessage());
-            error_log("[DOC_NUM] Rolling back transaction...");
             $conn->rollback();
-            error_log("[DOC_NUM] ✅ Transaction rolled back");
             throw $e;
         }
         exit();
@@ -1580,6 +1506,7 @@ try {
             'id' => $conn->insert_id,
             'data' => array_merge($data, ['id' => $conn->insert_id])
         ]);
+        exit();
     }
     elseif ($action === "read") {
         if (!$table) {
@@ -1619,6 +1546,7 @@ try {
             'data' => $rows,
             'count' => count($rows)
         ]);
+        exit();
     }
     elseif ($action === "update") {
         if (!$table || !$where) {
@@ -1714,6 +1642,7 @@ try {
         ];
         error_log("✅ Sending JSON response: " . json_encode($response));
         echo json_encode($response);
+        exit();
     }
     elseif ($action === "delete") {
         if (!$table || !$where) {
@@ -1784,6 +1713,7 @@ try {
             'message' => 'Record deleted',
             'affected_rows' => $conn->affected_rows
         ]);
+        exit();
     }
     elseif ($action === "copy_record") {
         // Copy a database record with optional field modifications
@@ -1990,6 +1920,7 @@ try {
             'status' => 'success',
             'message' => 'API is healthy'
         ]);
+        exit();
     }
     elseif ($action === "proxy_external_api") {
         // Forward requests to external API (e.g., https://med.layonsconstruction.com/api.php)
@@ -2414,6 +2345,11 @@ try {
         }
     }
     else {
+        error_log("❌ API ERROR - Reaching Unknown action clause:");
+        error_log("  Action value: [" . var_export($action, true) . "]");
+        error_log("  Action length: " . strlen($action ?? ''));
+        error_log("  Action bytes: " . bin2hex($action ?? ''));
+        error_log("  Checking against: read, create, update, delete, upload_file, login, logout, check_auth");
         throw new Exception("Unknown action: $action");
     }
 
