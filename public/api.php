@@ -471,8 +471,6 @@ if ($action === "proxy_external_api") {
 try {
     // File upload endpoint - supports logo and branding uploads
     if ($action === "upload_file") {
-        error_log('🎯 Processing file upload...');
-
         if (!isset($_FILES['file'])) {
             http_response_code(400);
             throw new Exception("No file provided");
@@ -480,8 +478,6 @@ try {
 
         $file = $_FILES['file'];
         $filename = $_POST['filename'] ?? $file['name'];
-
-        error_log('📁 File info - Name: ' . $file['name'] . ' | Size: ' . $file['size'] . ' | Type: ' . $file['type']);
 
         // Validate file
         if ($file['error'] !== UPLOAD_ERR_OK) {
