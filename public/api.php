@@ -1201,6 +1201,7 @@ try {
                 'User is authorized to save company settings' :
                 'User is missing one or more requirements to save company settings'
         ]);
+        exit();
     }
     elseif ($action === "token_debug") {
         // Simple diagnostic endpoint to debug token issues
