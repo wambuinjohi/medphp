@@ -190,7 +190,7 @@ export function getPublicUrl(path: string): string {
 export async function deleteFile(path: string): Promise<UploadResult> {
   try {
     // Use direct API URL (no proxy) for consistency across all environments
-    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://me.wayrus.co.ke/api.php';
     const response = await fetch(`${apiUrl}?action=delete_file`, {
       method: 'POST',
       headers: {
