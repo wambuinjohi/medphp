@@ -67,14 +67,13 @@ export function EditMaterialModal({ open, onOpenChange, material, onSuccess, com
 
     try {
       setIsSubmitting(true);
-      await updateMaterial.mutateAsync({
-        id: material.id,
+      await updateMaterial.update(material.id, {
         ...formData,
         description: formData.description || undefined,
         unit: formData.unit || undefined,
         company_id: companyId,
       });
-      
+
       toast.success('Material updated successfully');
       onSuccess();
     } catch (error) {
