@@ -145,6 +145,14 @@ $where = $_POST['where'] ?? ($_GET['where'] ?? null);
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
 
+// Normalize action to always be a string (handle case where it's submitted as an array)
+if (is_array($action)) {
+    $action = $action[0] ?? null;
+}
+if ($action) {
+    $action = trim((string)$action);
+}
+
 // Handle file uploads endpoint
 $request_uri = $_SERVER['REQUEST_URI'] ?? '';
 $path_info = $_SERVER['PATH_INFO'] ?? '';
