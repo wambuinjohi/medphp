@@ -66,12 +66,11 @@ export function EditDriverModal({ open, onOpenChange, driver, onSuccess, company
 
     try {
       setIsSubmitting(true);
-      await updateDriver.mutateAsync({
-        id: driver.id,
+      await updateDriver.update(driver.id, {
         ...formData,
         company_id: companyId,
       });
-      
+
       toast.success('Driver updated successfully');
       onSuccess();
     } catch (error) {
