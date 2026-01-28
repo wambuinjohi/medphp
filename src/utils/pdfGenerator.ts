@@ -8,10 +8,13 @@ import { generateDocumentNumberAPI } from './documentNumbering';
 //
 // IMPORTANT: All PDFs (invoices, receipts, quotations, etc.) are GUARANTEED to include line items:
 // - Invoices: Uses invoice_items from the database
-// - Receipts: Uses invoice_items if available, falls back to payment_allocations, then creates single line item
+// - Receipts: Uses receipt_items (snapshot from payment time) if available, falls back to invoice_items, then payment_allocations, then creates single line item
+//   * receipt_items is the authoritative source - it captures the items at the time the receipt was created
+//   * Fallback to invoice_items ensures we have items even if receipt_items snapshot wasn't created
+//   * Payment allocations are a last resort for payment-only receipts
 // - Quotations: Uses quotation_items from the database
 // - Delivery Notes: Uses invoice_items or delivery items
-// This ensures every PDF document has detailed line-item breakdown
+// This ensures every PDF document has detailed line-item breakdown and receipts show the correct items from the payment moment
 
 export interface DocumentData {
   type: 'quotation' | 'invoice' | 'remittance' | 'proforma' | 'delivery' | 'statement' | 'receipt' | 'lpo';
