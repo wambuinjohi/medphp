@@ -484,7 +484,7 @@ export const useDeleteProforma = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['proforma_invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['proforma_invoices'], exact: false });
       toast.success('Proforma invoice deleted successfully!');
     },
     onError: (error) => {
