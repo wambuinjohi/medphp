@@ -54,6 +54,8 @@ export default function Proforma() {
   const [selectedProforma, setSelectedProforma] = useState<ProformaWithItems | null>(null);
   const [isLoadingConversionData, setIsLoadingConversionData] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [proformaToDelete, setProformaToDelete] = useState<ProformaWithItems | null>(null);
+  const [showDeletePopover, setShowDeletePopover] = useState<string | null>(null);
 
 
   // Get company data
