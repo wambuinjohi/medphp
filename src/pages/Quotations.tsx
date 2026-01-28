@@ -398,6 +398,11 @@ Email: ${companyEmail}`;
     }
   };
 
+  const handleViewModalDelete = () => {
+    refetch();
+    setSelectedQuotation(null);
+  };
+
   const handleFilter = () => {
     toast.info('Advanced filter functionality coming soon!');
   };
