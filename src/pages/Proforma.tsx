@@ -259,12 +259,7 @@ export default function Proforma() {
     try {
       await deleteProforma.mutateAsync(proforma.id!);
       setShowDeletePopover(null);
-      refetch();
       setSelectedProforma(null);
-      // Refresh the page after successful deletion
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
     } catch (error) {
       console.error('Error deleting proforma:', error);
     }
