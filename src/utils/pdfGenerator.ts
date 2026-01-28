@@ -1001,6 +1001,8 @@ export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyD
 };
 
 // Specific function for invoice PDF generation
+// For receipts: The caller (DirectReceipts.tsx) should have already populated invoice.invoice_items
+// with receipt_items (snapshot) if available, otherwise with invoice_items or payment_allocations
 export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' | 'PROFORMA' | 'RECEIPT' = 'INVOICE', company?: CompanyDetails) => {
   let docType: 'proforma' | 'invoice' | 'receipt' = 'invoice';
 
@@ -1010,7 +1012,9 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     docType = 'receipt';
   }
 
-  // Ensure line items are present, especially for receipts
+  // For receipts: invoice_items should contain receipt_items (snapshot from payment time)
+  // prioritized over current invoice_items. The caller is responsible for this prioritization.
+  // This ensures the receipt PDF shows the items as they were when the payment was made.
   let lineItems = invoice.invoice_items || [];
 
   // If no line items and this is a receipt or invoice, create a fallback item from the total
