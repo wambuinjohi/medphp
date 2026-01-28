@@ -1012,7 +1012,7 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     const taxAmount = invoice.tax_amount || 0;
 
     lineItems = [{
-      description: docType === 'receipt' ? 'Payment Received' : invoice.invoice_number ? `Invoice ${invoice.invoice_number}` : 'Service/Product',
+      description: docType === 'receipt' ? (invoice.invoice_number ? `Invoice ${invoice.invoice_number} - Payment Received` : 'Payment Received') : invoice.invoice_number ? `Invoice ${invoice.invoice_number}` : 'Service/Product',
       quantity: 1,
       unit_price: subtotal,
       discount_percentage: 0,
