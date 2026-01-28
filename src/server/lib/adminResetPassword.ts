@@ -1,6 +1,6 @@
 /**
  * Admin Reset Password - External API Version
- * Uses med.wayrus.co.ke/api.php for password reset operations
+ * Uses med.layonsconstruction.com/api.php for password reset operations
  */
 
 interface ResetPasswordRequest {
@@ -17,7 +17,7 @@ interface ResetPasswordResponse {
 
 /**
  * Sends a password reset email via external API
- * This function calls med.wayrus.co.ke/api.php with the admin_reset_password action
+ * This function calls med.layonsconstruction.com/api.php with the admin_reset_password action
  *
  * @param request - Password reset request with email, user_id, admin_id
  * @param apiUrl - External API URL (med.layonsconstruction.com/api.php)
