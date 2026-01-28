@@ -1,4 +1,4 @@
-import { SimpleLogin } from '@/components/auth/SimpleLogin';
+import { EnhancedLogin } from '@/components/auth/EnhancedLogin';
 import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -18,5 +18,5 @@ export default function Login() {
     }
   }, [isAuthenticated, loading, navigate]);
 
-  return <SimpleLogin />;
+  return <EnhancedLogin />;
 }

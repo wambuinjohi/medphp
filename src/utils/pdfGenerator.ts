@@ -8,10 +8,13 @@ import { generateDocumentNumberAPI } from './documentNumbering';
 //
 // IMPORTANT: All PDFs (invoices, receipts, quotations, etc.) are GUARANTEED to include line items:
 // - Invoices: Uses invoice_items from the database
-// - Receipts: Uses invoice_items if available, falls back to payment_allocations, then creates single line item
+// - Receipts: Uses receipt_items (snapshot from payment time) if available, falls back to invoice_items, then payment_allocations, then creates single line item
+//   * receipt_items is the authoritative source - it captures the items at the time the receipt was created
+//   * Fallback to invoice_items ensures we have items even if receipt_items snapshot wasn't created
+//   * Payment allocations are a last resort for payment-only receipts
 // - Quotations: Uses quotation_items from the database
 // - Delivery Notes: Uses invoice_items or delivery items
-// This ensures every PDF document has detailed line-item breakdown
+// This ensures every PDF document has detailed line-item breakdown and receipts show the correct items from the payment moment
 
 export interface DocumentData {
   type: 'quotation' | 'invoice' | 'remittance' | 'proforma' | 'delivery' | 'statement' | 'receipt' | 'lpo';
@@ -998,6 +1001,8 @@ export const generatePaymentReceiptPDF = async (payment: any, company?: CompanyD
 };
 
 // Specific function for invoice PDF generation
+// For receipts: The caller (DirectReceipts.tsx) should have already populated invoice.invoice_items
+// with receipt_items (snapshot) if available, otherwise with invoice_items or payment_allocations
 export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' | 'PROFORMA' | 'RECEIPT' = 'INVOICE', company?: CompanyDetails) => {
   let docType: 'proforma' | 'invoice' | 'receipt' = 'invoice';
 
@@ -1007,7 +1012,9 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     docType = 'receipt';
   }
 
-  // Ensure line items are present, especially for receipts
+  // For receipts: invoice_items should contain receipt_items (snapshot from payment time)
+  // prioritized over current invoice_items. The caller is responsible for this prioritization.
+  // This ensures the receipt PDF shows the items as they were when the payment was made.
   let lineItems = invoice.invoice_items || [];
 
   // If no line items and this is a receipt or invoice, create a fallback item from the total
