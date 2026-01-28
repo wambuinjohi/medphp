@@ -741,6 +741,33 @@ export default function DirectReceipts() {
           onDownload={() => handleDownloadReceipt(selectedReceipt)}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <AlertDialogTitle>Delete Receipt</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription>
+              Are you sure you want to delete receipt <strong>{receiptToDelete?.receipt_number}</strong>?
+              <br />
+              This action cannot be undone. This will permanently delete the receipt and all related data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
