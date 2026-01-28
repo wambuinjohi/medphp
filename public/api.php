@@ -2265,6 +2265,124 @@ try {
             throw new Exception("Receipt creation failed: " . $e->getMessage());
         }
     }
+    elseif ($action === "delete_receipt_with_cascade") {
+        // Transaction-safe receipt deletion that cascades to all related records
+        // Requires authorization for modifications
+        $auth = requireAuthForModification($action, 'receipts');
+
+        // Extract receipt ID from request
+        $receiptId = $json_body['receipt_id'] ?? $_POST['receipt_id'] ?? null;
+
+        if (!$receiptId) {
+            throw new Exception("Missing receipt_id parameter");
+        }
+
+        // Escape the receipt ID for safe use in SQL
+        $receiptId_e = escape($conn, $receiptId);
+
+        // Start transaction for atomicity
+        if (!$conn->begin_transaction()) {
+            throw new Exception("Failed to start transaction");
+        }
+
+        try {
+            // Step 1: Fetch receipt details before deletion (for audit/response)
+            $receipt_sql = "SELECT * FROM receipts WHERE id = '$receiptId_e' LIMIT 1";
+            $receipt_result = $conn->query($receipt_sql);
+            if (!$receipt_result || $receipt_result->num_rows === 0) {
+                throw new Exception("Receipt not found");
+            }
+            $receipt = $receipt_result->fetch_assoc();
+            $receiptNumber = $receipt['receipt_number'];
+            $invoiceId = $receipt['invoice_id'];
+            $paymentId = $receipt['payment_id'];
+
+            // Step 2: Delete receipt items (snapshot)
+            // These have CASCADE delete on receipt_id, but we delete explicitly for clarity
+            $delete_items_sql = "DELETE FROM receipt_items WHERE receipt_id = '$receiptId_e'";
+            if (!$conn->query($delete_items_sql)) {
+                throw new Exception("Failed to delete receipt items: " . $conn->error);
+            }
+
+            // Step 3: Delete payment allocations
+            if ($paymentId) {
+                $paymentId_e = escape($conn, $paymentId);
+                // With CASCADE constraint on payment_allocations, this will auto-delete related records
+                // But we can also manually delete for clarity and control
+                $delete_allocations_sql = "DELETE FROM payment_allocations WHERE payment_id = '$paymentId_e'";
+                if (!$conn->query($delete_allocations_sql)) {
+                    throw new Exception("Failed to delete payment allocations: " . $conn->error);
+                }
+            }
+
+            // Step 4: Delete the payment record
+            if ($paymentId) {
+                $paymentId_e = escape($conn, $paymentId);
+                $delete_payment_sql = "DELETE FROM payments WHERE id = '$paymentId_e'";
+                if (!$conn->query($delete_payment_sql)) {
+                    throw new Exception("Failed to delete payment: " . $conn->error);
+                }
+            }
+
+            // Step 5: Revert invoice status if it was marked as paid/partial
+            if ($invoiceId) {
+                $invoiceId_e = escape($conn, $invoiceId);
+
+                // First, fetch the current invoice to check its status
+                $invoice_check_sql = "SELECT status, total_amount FROM invoices WHERE id = '$invoiceId_e' LIMIT 1";
+                $invoice_check_result = $conn->query($invoice_check_sql);
+
+                if ($invoice_check_result && $invoice_check_result->num_rows > 0) {
+                    $invoice_check = $invoice_check_result->fetch_assoc();
+
+                    if ($invoice_check['status'] === 'paid' || $invoice_check['status'] === 'partial') {
+                        // Revert to draft since the receipt is being deleted
+                        $total_amount = $invoice_check['total_amount'] ?? 0;
+                        $update_invoice_sql = "UPDATE invoices SET
+                            status = 'draft',
+                            paid_amount = 0,
+                            balance_due = '$total_amount',
+                            updated_at = NOW()
+                            WHERE id = '$invoiceId_e'";
+
+                        if (!$conn->query($update_invoice_sql)) {
+                            throw new Exception("Failed to update invoice status: " . $conn->error);
+                        }
+                    }
+                }
+            }
+
+            // Step 6: Delete the receipt record itself
+            // This will cascade to receipt_items (though we already deleted them)
+            $delete_receipt_sql = "DELETE FROM receipts WHERE id = '$receiptId_e'";
+            if (!$conn->query($delete_receipt_sql)) {
+                throw new Exception("Failed to delete receipt: " . $conn->error);
+            }
+
+            // Commit transaction
+            if (!$conn->commit()) {
+                throw new Exception("Failed to commit transaction: " . $conn->error);
+            }
+
+            // Return success response
+            echo json_encode([
+                'status' => 'success',
+                'message' => "Receipt $receiptNumber and all related records deleted successfully",
+                'data' => [
+                    'receipt_id' => $receiptId,
+                    'receipt_number' => $receiptNumber,
+                    'invoice_id' => $invoiceId,
+                    'payment_id' => $paymentId
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            // Rollback on any error
+            $conn->rollback();
+            error_log("Receipt deletion transaction failed: " . $e->getMessage());
+            throw new Exception("Receipt deletion failed: " . $e->getMessage());
+        }
+    }
     else {
         error_log("❌ API ERROR - Reaching Unknown action clause:");
         error_log("  Action value: [" . var_export($action, true) . "]");
