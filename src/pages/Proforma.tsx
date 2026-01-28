@@ -258,7 +258,6 @@ export default function Proforma() {
   const handleDeleteProforma = async (proforma: ProformaWithItems) => {
     try {
       await deleteProforma.mutateAsync(proforma.id!);
-      refetch();
       setShowDeletePopover(null);
       setSelectedProforma(null);
     } catch (error) {
