@@ -689,7 +689,7 @@ Email: ${companyEmail}`;
         onChangeStatus={() => selectedQuotation && handleOpenStatusModal(selectedQuotation)}
         onConvertToProforma={() => selectedQuotation && handleConvertToProforma(selectedQuotation)}
         onConvertToInvoice={() => selectedQuotation && handleConvertToInvoice(selectedQuotation)}
-        onDelete={() => selectedQuotation && handleDeleteQuotation(selectedQuotation)}
+        onDelete={handleViewModalDelete}
       />
 
       <EditQuotationModal
