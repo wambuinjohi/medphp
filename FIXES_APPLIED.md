@@ -2,7 +2,7 @@
 
 ## Summary
 
-The application was experiencing "Failed to fetch" errors when trying to connect to the remote API at `https://med.wayrus.co.ke/api.php`. This is a common CORS (Cross-Origin Resource Sharing) issue.
+The application was experiencing "Failed to fetch" errors when trying to connect to the remote API at `https://helixgeneralhardware.com/api.php`. This is a common CORS (Cross-Origin Resource Sharing) issue.
 
 **All fixes have been applied. The app should now work better with improved error handling and diagnostics.**
 
