@@ -557,6 +557,10 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
               label: 'Valid Until',
               value: formatDate(data.valid_until)
             }] : []),
+            ...(data.invoice_number && data.type === 'receipt' ? [{
+              label: 'Related Invoice',
+              value: data.invoice_number
+            }] : []),
             ...(data.lpo_number && data.type !== 'lpo' ? [{
               label: 'LPO Number',
               value: data.lpo_number
