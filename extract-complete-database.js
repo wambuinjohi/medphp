@@ -2,7 +2,7 @@
 
 /**
  * Complete Database Extraction - External API Version
- * This script now calls the external API (med.layonsconstruction.com/api.php)
+ * This script now calls the external API (helixgeneralhardware.com/api.php)
  * for database operations instead of Supabase
  */
 

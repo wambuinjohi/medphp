@@ -66,7 +66,7 @@ DB_HOST=localhost
 DB_USER=layonsc1_med
 DB_PASS=Sirgeorge.12
 DB_NAME=layonsc1_med
-UPLOADS_DIR=/home/layonsc1/med.layonsconsruction.com/uploads
+UPLOADS_DIR=/home/layonsc1/helixgeneralhardware.com/uploads
 VITE_EXTERNAL_API_URL=https://helixgeneralhardware.com/api.php
 ```
 

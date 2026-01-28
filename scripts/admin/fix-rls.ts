@@ -16,7 +16,7 @@
 import { fixProfileRls } from '../../src/server/lib/fixProfileRls';
 
 async function main() {
-  const apiUrl = process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
+  const apiUrl = process.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
   const authToken = process.env.API_AUTH_TOKEN;
 
   console.log('\n🔐 Fixing RLS policies via external API...\n');
