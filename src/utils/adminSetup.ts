@@ -1,6 +1,6 @@
 /**
  * Admin Setup Utility - External API Version
- * Uses med.layonsconstruction.com/api.php for admin user creation
+ * Uses helixgeneralhardware.com/api.php for admin user creation
  */
 
 const EXTERNAL_API_URL = import.meta.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
