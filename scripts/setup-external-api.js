@@ -31,7 +31,7 @@ const log = {
 
 // Parse command line arguments
 const args = process.argv.slice(2);
-let apiUrl = process.env.API_URL || 'https://med.wayrus.co.ke/api.php';
+let apiUrl = process.env.API_URL || 'https://med.layonsconstruction.com/api.php';
 let adminEmail = process.env.ADMIN_EMAIL || 'admin@biolegend.local';
 let adminPassword = process.env.ADMIN_PASSWORD || 'Biolegend2024!Admin';
 let dryRun = false;
