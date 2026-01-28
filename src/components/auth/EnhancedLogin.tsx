@@ -118,9 +118,18 @@ export function EnhancedLogin() {
             </div>
 
             <div className="space-y-2 sm:space-y-3">
-              <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 bg-clip-text text-transparent">
-                {companyName}
-              </CardTitle>
+              {companyLoading ? (
+                <div className="h-10 sm:h-12 md:h-14 flex items-center justify-center">
+                  <div className="inline-flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-orange-500 border-t-transparent"></div>
+                    <span className="text-sm sm:text-base text-gray-600">Loading...</span>
+                  </div>
+                </div>
+              ) : (
+                <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 bg-clip-text text-transparent">
+                  {companyName}
+                </CardTitle>
+              )}
               <p className="text-sm sm:text-base text-gray-600 font-medium">
                 💼 Sign in to access your business management system
               </p>

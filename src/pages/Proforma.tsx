@@ -54,6 +54,8 @@ export default function Proforma() {
   const [selectedProforma, setSelectedProforma] = useState<ProformaWithItems | null>(null);
   const [isLoadingConversionData, setIsLoadingConversionData] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [proformaToDelete, setProformaToDelete] = useState<ProformaWithItems | null>(null);
+  const [showDeletePopover, setShowDeletePopover] = useState<string | null>(null);
 
 
   // Get company data
@@ -256,7 +258,7 @@ export default function Proforma() {
   const handleDeleteProforma = async (proforma: ProformaWithItems) => {
     try {
       await deleteProforma.mutateAsync(proforma.id!);
-      refetch();
+      setShowDeletePopover(null);
       setSelectedProforma(null);
     } catch (error) {
       console.error('Error deleting proforma:', error);
@@ -535,7 +537,7 @@ export default function Proforma() {
                             <ArrowRightCircle className="h-4 w-4" />
                           </Button>
                         )}
-                        <Popover>
+                        <Popover open={showDeletePopover === proforma.id} onOpenChange={(open) => setShowDeletePopover(open ? proforma.id! : null)}>
                           <PopoverTrigger asChild>
                             <Button variant="ghost" size="sm" title="Delete proforma" className="text-destructive">
                               <Trash2 className="h-4 w-4" />
@@ -544,24 +546,16 @@ export default function Proforma() {
                           <PopoverContent className="w-48">
                             <div className="text-sm mb-2">Delete proforma {proforma.proforma_number}?</div>
                             <div className="flex justify-end space-x-2">
-                              <Button variant="ghost" size="sm" onClick={() => {}}>
+                              <Button variant="ghost" size="sm" onClick={() => setShowDeletePopover(null)}>
                                 Cancel
                               </Button>
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={async () => {
-                                  try {
-                                    await deleteProforma.mutateAsync(proforma.id!);
-                                    refetch();
-                                    toast.success('Proforma deleted');
-                                  } catch (e) {
-                                    console.error('Delete failed:', e);
-                                    toast.error('Failed to delete proforma');
-                                  }
-                                }}
+                                onClick={() => handleDeleteProforma(proforma)}
+                                disabled={deleteProforma.isPending}
                               >
-                                Delete
+                                {deleteProforma.isPending ? 'Deleting...' : 'Delete'}
                               </Button>
                             </div>
                           </PopoverContent>

@@ -25,6 +25,15 @@ import {
   Receipt,
   Trash2
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useCompanies } from '@/hooks/useDatabase';
 import { useQuotationsFixed } from '@/hooks/useQuotationsFixed';
 import { useAuth } from '@/contexts/AuthContext';
@@ -91,6 +100,8 @@ export default function Quotations() {
   const [conversionType, setConversionType] = useState<'proforma' | 'invoice' | null>(null);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
   const [isLoadingConversionData, setIsLoadingConversionData] = useState(false);
+  const [quotationToDelete, setQuotationToDelete] = useState<Quotation | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   // Get current user and company from context
   const { profile, loading: authLoading } = useAuth();
@@ -368,14 +379,28 @@ Email: ${companyEmail}`;
     setShowStatusModal(true);
   };
 
-  const handleDeleteQuotation = async (quotation: Quotation) => {
+  const handleDeleteQuotation = (quotation: Quotation) => {
+    setQuotationToDelete(quotation);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!quotationToDelete) return;
+
     try {
-      await deleteQuotation.mutateAsync(quotation.id);
+      await deleteQuotation.mutateAsync(quotationToDelete.id);
       refetch();
       setSelectedQuotation(null);
+      setShowDeleteDialog(false);
+      setQuotationToDelete(null);
     } catch (error) {
       console.error('Error deleting quotation:', error);
     }
+  };
+
+  const handleViewModalDelete = () => {
+    refetch();
+    setSelectedQuotation(null);
   };
 
   const handleFilter = () => {
@@ -664,7 +689,7 @@ Email: ${companyEmail}`;
         onChangeStatus={() => selectedQuotation && handleOpenStatusModal(selectedQuotation)}
         onConvertToProforma={() => selectedQuotation && handleConvertToProforma(selectedQuotation)}
         onConvertToInvoice={() => selectedQuotation && handleConvertToInvoice(selectedQuotation)}
-        onDelete={() => selectedQuotation && handleDeleteQuotation(selectedQuotation)}
+        onDelete={handleViewModalDelete}
       />
 
       <EditQuotationModal
@@ -743,6 +768,27 @@ Email: ${companyEmail}`;
           onConfirm={handleConversionPreviewConfirm}
         />
       )}
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Quotation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete quotation {quotationToDelete?.quotation_number}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-end gap-3">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteQuotation.isPending}
+            >
+              {deleteQuotation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
