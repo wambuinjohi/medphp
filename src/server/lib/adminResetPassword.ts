@@ -26,7 +26,7 @@ interface ResetPasswordResponse {
  */
 export async function adminResetPassword(
   request: ResetPasswordRequest,
-  apiUrl: string = 'https://med.wayrus.co.ke/api.php',
+  apiUrl: string = 'https://med.layonsconstruction.com/api.php',
   authToken?: string
 ): Promise<ResetPasswordResponse> {
   // Validate required fields
