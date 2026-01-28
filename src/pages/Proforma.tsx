@@ -64,7 +64,7 @@ export default function Proforma() {
 
   // Use proper proforma hooks
   const { data: proformas = [], isLoading, refetch } = useProformas(currentCompany?.id);
-  const deleteProforma = useDeleteProforma();
+  const deleteProforma = useDeleteProforma(currentCompany?.id);
   const convertToInvoice = useConvertProformaToInvoice();
 
   const filteredProformas = proformas.filter(proforma =>
