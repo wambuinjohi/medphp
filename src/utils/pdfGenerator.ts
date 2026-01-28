@@ -1056,6 +1056,7 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     date: invoice.date || invoice.payment_date || invoice.invoice_date || invoice.receipt_date || new Date().toISOString().split('T')[0],
     due_date: invoice.due_date,
     lpo_number: invoice.lpo_number,
+    invoice_number: docType === 'receipt' ? invoice.invoice_number : undefined, // Pass invoice_number for receipts
     company: company, // Pass company details
     customer: {
       name: invoice.customers?.name || 'Unknown Customer',
