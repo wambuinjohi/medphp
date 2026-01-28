@@ -72,6 +72,7 @@ interface ViewProformaModalProps {
   onSendEmail?: (proforma: Proforma) => void;
   onCreateInvoice?: (proforma: Proforma) => void;
   onDelete?: () => void;
+  companyId?: string;
 }
 
 export const ViewProformaModal = ({
@@ -81,10 +82,11 @@ export const ViewProformaModal = ({
   onDownloadPDF,
   onSendEmail,
   onCreateInvoice,
-  onDelete
+  onDelete,
+  companyId
 }: ViewProformaModalProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const deleteProforma = useDeleteProforma();
+  const deleteProforma = useDeleteProforma(companyId);
 
   if (!proforma) return null;
 
