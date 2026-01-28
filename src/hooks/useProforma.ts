@@ -457,12 +457,17 @@ export const useDeleteProforma = () => {
         companyId = (data as any)?.company_id ?? null;
       } catch {}
 
-      try {
-        const { logDeletion } = await import('@/utils/auditLogger');
-        await logDeletion('proforma', proformaId, snapshot, companyId);
-      } catch (e) {
-        console.warn('Proforma delete audit failed:', (e as any)?.message || e);
-      }
+      // Audit logging is best-effort and should not block deletion
+      Promise.resolve()
+        .then(async () => {
+          try {
+            const { logDeletion } = await import('@/utils/auditLogger');
+            await logDeletion('proforma', proformaId, snapshot, companyId);
+          } catch (e) {
+            console.warn('Proforma delete audit failed:', (e as any)?.message || e);
+          }
+        })
+        .catch(e => console.warn('Audit logging error:', e));
 
       // Delete child items first (best-effort)
       try {
