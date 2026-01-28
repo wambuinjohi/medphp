@@ -136,10 +136,10 @@ export async function testCORSPreflight(apiUrl: string = '/api'): Promise<Diagno
  */
 export async function testDNSResolution(): Promise<DiagnosticResult> {
   try {
-    console.log('🔍 Testing DNS resolution for med.layonsconstruction.com');
+    console.log('🔍 Testing DNS resolution for helixgeneralhardware.com');
 
     // Use public DNS API
-    const response = await fetch('https://dns.google/resolve?name=med.layonsconstruction.com', {
+    const response = await fetch('https://dns.google/resolve?name=helixgeneralhardware.com', {
       signal: AbortSignal.timeout(5000),
     });
 
@@ -151,7 +151,7 @@ export async function testDNSResolution(): Promise<DiagnosticResult> {
         test: 'DNS Resolution',
         status: hasAnswers ? 'success' : 'failed',
         message: hasAnswers ? '✅ DNS resolved successfully' : '❌ DNS resolution failed',
-        details: { domain: 'med.layonsconstruction.com', hasAnswers },
+        details: { domain: 'helixgeneralhardware.com', hasAnswers },
       };
     } else {
       return {

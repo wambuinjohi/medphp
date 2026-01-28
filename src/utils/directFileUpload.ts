@@ -1,6 +1,6 @@
 /**
  * Direct File Upload Handler
- * Uploads files directly to med.layonsconstruction.com/uploads
+ * Uploads files directly to helixgeneralhardware.com/uploads
  * Replaces Supabase storage which is not available with external API
  */
 
