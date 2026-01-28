@@ -175,15 +175,15 @@ export default function DirectReceipts() {
         console.warn('Could not fetch customer details:', e);
       }
 
-      // Fetch receipt items for each receipt
+      // Fetch invoice items for each receipt (items from the invoice that was paid)
       try {
         for (const receipt of allReceipts) {
           try {
-            const { data: items } = await apiClient.select('receipt_items', {
-              receipt_id: receipt.id
+            const { data: items } = await apiClient.select('invoice_items', {
+              invoice_id: receipt.invoice_id
             });
             if (Array.isArray(items) && items.length > 0) {
-              // Use receipt_id as key instead of invoice_id
+              // Use receipt_id as key so items display correctly in the modal
               itemsMap.set(receipt.id, items);
             }
           } catch (e) {
@@ -191,7 +191,7 @@ export default function DirectReceipts() {
           }
         }
       } catch (e) {
-        console.warn('Could not fetch receipt items:', e);
+        console.warn('Could not fetch invoice items:', e);
       }
 
       // Transform receipts
