@@ -32,7 +32,7 @@ interface CreateUserResponse {
  */
 export async function adminCreateUser(
   request: CreateUserRequest,
-  apiUrl: string = 'https://med.wayrus.co.ke/api.php',
+  apiUrl: string = 'https://med.layonsconstruction.com/api.php',
   authToken?: string
 ): Promise<CreateUserResponse> {
   // Validate required fields
