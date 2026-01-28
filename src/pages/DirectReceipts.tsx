@@ -33,7 +33,8 @@ import {
   Download,
   Calendar,
   Banknote,
-  Trash2
+  Trash2,
+  AlertCircle
 } from 'lucide-react';
 import { useCompanies } from '@/hooks/useDatabase';
 import { toast } from 'sonner';
@@ -42,6 +43,16 @@ import { downloadInvoicePDF } from '@/utils/pdfGenerator';
 import { CreateDirectReceiptModalEnhanced } from '@/components/payments/CreateDirectReceiptModalEnhanced';
 import { ViewReceiptModal } from '@/components/payments/ViewReceiptModal';
 import { apiClient } from '@/integrations/api';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Receipt {
   id: string;
