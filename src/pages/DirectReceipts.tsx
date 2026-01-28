@@ -33,7 +33,8 @@ import {
   Download,
   Calendar,
   Banknote,
-  Trash2
+  Trash2,
+  AlertCircle
 } from 'lucide-react';
 import { useCompanies } from '@/hooks/useDatabase';
 import { toast } from 'sonner';
@@ -42,6 +43,16 @@ import { downloadInvoicePDF } from '@/utils/pdfGenerator';
 import { CreateDirectReceiptModalEnhanced } from '@/components/payments/CreateDirectReceiptModalEnhanced';
 import { ViewReceiptModal } from '@/components/payments/ViewReceiptModal';
 import { apiClient } from '@/integrations/api';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Receipt {
   id: string;
@@ -89,6 +100,9 @@ export default function DirectReceipts() {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [receiptToDelete, setReceiptToDelete] = useState<Receipt | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState('all');
@@ -365,6 +379,104 @@ export default function DirectReceipts() {
     } catch (error) {
       console.error('Error downloading PDF:', error);
       toast.error('Failed to download receipt PDF. Please try again.');
+    }
+  };
+
+  const handleDeleteReceipt = (receipt: Receipt) => {
+    setReceiptToDelete(receipt);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!receiptToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      // Step 1: Delete receipt_items (line items snapshot)
+      try {
+        const { data: receiptItems } = await apiClient.select('receipt_items', {
+          receipt_id: receiptToDelete.id
+        });
+
+        if (Array.isArray(receiptItems) && receiptItems.length > 0) {
+          // Delete all receipt items related to this receipt
+          for (const item of receiptItems) {
+            await apiClient.delete('receipt_items', item.id);
+          }
+        }
+      } catch (e) {
+        console.warn('Error deleting receipt items:', e);
+        // Don't throw - proceed with receipt deletion
+      }
+
+      // Step 2: Delete payment allocation (linking payment to invoice)
+      try {
+        const { data: allocations } = await apiClient.select('payment_allocations', {
+          payment_id: receiptToDelete.payment_id
+        });
+
+        if (Array.isArray(allocations) && allocations.length > 0) {
+          for (const allocation of allocations) {
+            await apiClient.delete('payment_allocations', allocation.id);
+          }
+        }
+      } catch (e) {
+        console.warn('Error deleting payment allocations:', e);
+        // Don't throw - proceed with receipt deletion
+      }
+
+      // Step 3: Delete the payment record
+      if (receiptToDelete.payment_id) {
+        try {
+          await apiClient.delete('payments', receiptToDelete.payment_id);
+        } catch (e) {
+          console.warn('Error deleting payment record:', e);
+          // Don't throw - proceed with receipt deletion
+        }
+      }
+
+      // Step 4: Revert invoice status to draft if it was marked as paid/partial
+      if (receiptToDelete.invoice_id) {
+        try {
+          const { data: invoice } = await apiClient.selectOne('invoices', receiptToDelete.invoice_id);
+          if (invoice && (invoice.status === 'paid' || invoice.status === 'partial')) {
+            // Revert to draft since the receipt is being deleted
+            await apiClient.update('invoices', receiptToDelete.invoice_id, {
+              status: 'draft',
+              paid_amount: 0,
+              balance_due: invoice.total_amount
+            });
+          }
+        } catch (e) {
+          console.warn('Error updating invoice status:', e);
+          // Don't throw - proceed with receipt deletion
+        }
+      }
+
+      // Step 5: Delete the receipt record
+      const { error: receiptError } = await apiClient.delete('receipts', receiptToDelete.id);
+
+      if (receiptError) {
+        throw new Error(receiptError.message || 'Failed to delete receipt');
+      }
+
+      // Step 6: Remove from local state
+      setReceipts(receipts.filter(r => r.id !== receiptToDelete.id));
+
+      toast.success(`Receipt ${receiptToDelete.receipt_number} and all related records deleted successfully`);
+      setShowDeleteConfirm(false);
+      setReceiptToDelete(null);
+
+      // Step 7: Refresh the receipts list to ensure consistency
+      setTimeout(() => {
+        fetchDirectReceipts();
+      }, 500);
+    } catch (err) {
+      console.error('Error deleting receipt:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete receipt';
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -661,6 +773,15 @@ export default function DirectReceipts() {
                         >
                           <Download className="h-4 w-4" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteReceipt(receipt)}
+                          title="Delete receipt"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -687,6 +808,45 @@ export default function DirectReceipts() {
           onDownload={() => handleDownloadReceipt(selectedReceipt)}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <AlertDialogTitle>Delete Receipt</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-2">
+              <div>
+                Are you sure you want to delete receipt <strong>{receiptToDelete?.receipt_number}</strong>?
+              </div>
+              <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                <strong>This will also delete:</strong>
+                <ul className="list-disc list-inside mt-1 space-y-1">
+                  <li>Receipt line items snapshot</li>
+                  <li>Payment allocation</li>
+                  <li>Payment record</li>
+                  <li>Invoice status will revert to draft</li>
+                </ul>
+              </div>
+              <div className="text-sm font-medium text-destructive">
+                This action cannot be undone.
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

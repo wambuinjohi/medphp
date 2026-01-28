@@ -18,6 +18,7 @@ export interface DocumentData {
   number: string;
   date: string;
   lpo_number?: string;
+  invoice_number?: string; // For receipts to show related invoice
   pdfTemplate?: TemplateName; // PDF template to use (default, helix, compact, etc.)
   customer: {
     name: string;
@@ -556,6 +557,10 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
               label: 'Valid Until',
               value: formatDate(data.valid_until)
             }] : []),
+            ...(data.invoice_number && data.type === 'receipt' ? [{
+              label: 'Related Invoice',
+              value: data.invoice_number
+            }] : []),
             ...(data.lpo_number && data.type !== 'lpo' ? [{
               label: 'LPO Number',
               value: data.lpo_number
@@ -1055,6 +1060,7 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
     date: invoice.date || invoice.payment_date || invoice.invoice_date || invoice.receipt_date || new Date().toISOString().split('T')[0],
     due_date: invoice.due_date,
     lpo_number: invoice.lpo_number,
+    invoice_number: docType === 'receipt' ? invoice.invoice_number : undefined, // Pass invoice_number for receipts
     company: company, // Pass company details
     customer: {
       name: invoice.customers?.name || 'Unknown Customer',
