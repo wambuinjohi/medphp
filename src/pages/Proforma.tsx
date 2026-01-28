@@ -593,6 +593,7 @@ export default function Proforma() {
         onDownloadPDF={handleDownloadPDF}
         onSendEmail={handleSendEmail}
         onCreateInvoice={handleCreateInvoice}
+        companyId={currentCompany?.id}
       />
 
       <ChangeProformaStatusModal
