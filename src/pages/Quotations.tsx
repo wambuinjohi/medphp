@@ -100,6 +100,8 @@ export default function Quotations() {
   const [conversionType, setConversionType] = useState<'proforma' | 'invoice' | null>(null);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
   const [isLoadingConversionData, setIsLoadingConversionData] = useState(false);
+  const [quotationToDelete, setQuotationToDelete] = useState<Quotation | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   // Get current user and company from context
   const { profile, loading: authLoading } = useAuth();
