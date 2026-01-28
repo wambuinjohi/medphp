@@ -299,14 +299,14 @@ export default function DirectReceipts() {
       let enrichedReceipt: any = receipt;
       if (!receipt.invoice_items || receipt.invoice_items.length === 0) {
         try {
-          const { data: items } = await apiClient.select('receipt_items', {
-            receipt_id: receipt.id
+          const { data: items } = await apiClient.select('invoice_items', {
+            invoice_id: receipt.invoice_id
           });
           if (items && Array.isArray(items)) {
             enrichedReceipt = { ...receipt, invoice_items: items };
           }
         } catch (e) {
-          console.warn('Could not fetch receipt items for PDF:', e);
+          console.warn('Could not fetch invoice items for PDF:', e);
         }
       }
 
