@@ -87,7 +87,7 @@ The application was experiencing "Failed to fetch" errors when trying to connect
 
 ## Backend Team: Next Steps
 
-The backend at `https://med.wayrus.co.ke/api.php` needs to add CORS headers:
+The backend at `https://helixgeneralhardware.com/api.php` needs to add CORS headers:
 
 ```php
 // Add to api.php
