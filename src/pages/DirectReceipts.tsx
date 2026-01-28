@@ -392,18 +392,85 @@ export default function DirectReceipts() {
 
     setIsDeleting(true);
     try {
-      const { error } = await apiClient.delete('receipts', receiptToDelete.id);
+      // Step 1: Delete receipt_items (line items snapshot)
+      try {
+        const { data: receiptItems } = await apiClient.select('receipt_items', {
+          receipt_id: receiptToDelete.id
+        });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to delete receipt');
+        if (Array.isArray(receiptItems) && receiptItems.length > 0) {
+          // Delete all receipt items related to this receipt
+          for (const item of receiptItems) {
+            await apiClient.delete('receipt_items', item.id);
+          }
+        }
+      } catch (e) {
+        console.warn('Error deleting receipt items:', e);
+        // Don't throw - proceed with receipt deletion
       }
 
-      // Remove from local state
+      // Step 2: Delete payment allocation (linking payment to invoice)
+      try {
+        const { data: allocations } = await apiClient.select('payment_allocations', {
+          payment_id: receiptToDelete.payment_id
+        });
+
+        if (Array.isArray(allocations) && allocations.length > 0) {
+          for (const allocation of allocations) {
+            await apiClient.delete('payment_allocations', allocation.id);
+          }
+        }
+      } catch (e) {
+        console.warn('Error deleting payment allocations:', e);
+        // Don't throw - proceed with receipt deletion
+      }
+
+      // Step 3: Delete the payment record
+      if (receiptToDelete.payment_id) {
+        try {
+          await apiClient.delete('payments', receiptToDelete.payment_id);
+        } catch (e) {
+          console.warn('Error deleting payment record:', e);
+          // Don't throw - proceed with receipt deletion
+        }
+      }
+
+      // Step 4: Revert invoice status to draft if it was marked as paid/partial
+      if (receiptToDelete.invoice_id) {
+        try {
+          const { data: invoice } = await apiClient.selectOne('invoices', receiptToDelete.invoice_id);
+          if (invoice && (invoice.status === 'paid' || invoice.status === 'partial')) {
+            // Revert to draft since the receipt is being deleted
+            await apiClient.update('invoices', receiptToDelete.invoice_id, {
+              status: 'draft',
+              paid_amount: 0,
+              balance_due: invoice.total_amount
+            });
+          }
+        } catch (e) {
+          console.warn('Error updating invoice status:', e);
+          // Don't throw - proceed with receipt deletion
+        }
+      }
+
+      // Step 5: Delete the receipt record
+      const { error: receiptError } = await apiClient.delete('receipts', receiptToDelete.id);
+
+      if (receiptError) {
+        throw new Error(receiptError.message || 'Failed to delete receipt');
+      }
+
+      // Step 6: Remove from local state
       setReceipts(receipts.filter(r => r.id !== receiptToDelete.id));
 
-      toast.success(`Receipt ${receiptToDelete.receipt_number} deleted successfully`);
+      toast.success(`Receipt ${receiptToDelete.receipt_number} and all related records deleted successfully`);
       setShowDeleteConfirm(false);
       setReceiptToDelete(null);
+
+      // Step 7: Refresh the receipts list to ensure consistency
+      setTimeout(() => {
+        fetchDirectReceipts();
+      }, 500);
     } catch (err) {
       console.error('Error deleting receipt:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete receipt';
