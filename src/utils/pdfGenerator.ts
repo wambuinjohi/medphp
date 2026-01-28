@@ -18,6 +18,7 @@ export interface DocumentData {
   number: string;
   date: string;
   lpo_number?: string;
+  invoice_number?: string; // For receipts to show related invoice
   pdfTemplate?: TemplateName; // PDF template to use (default, helix, compact, etc.)
   customer: {
     name: string;
