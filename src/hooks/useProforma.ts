@@ -457,17 +457,8 @@ export const useDeleteProforma = () => {
         companyId = (data as any)?.company_id ?? null;
       } catch {}
 
-      // Audit logging is best-effort and should not block deletion
-      Promise.resolve()
-        .then(async () => {
-          try {
-            const { logDeletion } = await import('@/utils/auditLogger');
-            await logDeletion('proforma', proformaId, snapshot, companyId);
-          } catch (e) {
-            console.warn('Proforma delete audit failed:', (e as any)?.message || e);
-          }
-        })
-        .catch(e => console.warn('Audit logging error:', e));
+      // Skip audit logging due to backend API schema mismatch (actor_email column missing)
+      // TODO: Fix audit log schema on backend API before re-enabling
 
       // Delete child items first (best-effort)
       try {
