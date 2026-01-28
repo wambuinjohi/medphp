@@ -2206,6 +2206,30 @@ try {
                 throw new Exception("Failed to get receipt ID");
             }
 
+            // Step 6: Create receipt items snapshot (same items as invoice_items)
+            if (is_array($items) && count($items) > 0) {
+                foreach ($items as $index => $item) {
+                    $itemDesc = escape($conn, $item['description'] ?? '');
+                    $itemQty = (float)($item['quantity'] ?? 0);
+                    $itemPrice = (float)($item['unit_price'] ?? 0);
+                    $itemTax = (float)($item['tax_amount'] ?? 0);
+                    $itemTaxPct = (float)($item['tax_percentage'] ?? 0);
+                    $itemLineTotal = ($itemQty * $itemPrice) + $itemTax;
+
+                    $receipt_item_sql = "INSERT INTO `receipt_items` (
+                        receipt_id, product_id, description, quantity, unit_price,
+                        tax_percentage, tax_amount, tax_inclusive, line_total, sort_order, created_at
+                    ) VALUES (
+                        '$receiptId', NULL, '$itemDesc', '$itemQty', '$itemPrice',
+                        '$itemTaxPct', '$itemTax', 0, '$itemLineTotal', " . ($index + 1) . ", NOW()
+                    )";
+
+                    if (!$conn->query($receipt_item_sql)) {
+                        throw new Exception("Failed to create receipt item: " . $conn->error);
+                    }
+                }
+            }
+
             // Commit transaction
             if (!$conn->commit()) {
                 throw new Exception("Failed to commit transaction: " . $conn->error);
