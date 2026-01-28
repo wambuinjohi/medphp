@@ -817,10 +817,22 @@ export default function DirectReceipts() {
               <AlertCircle className="h-5 w-5 text-destructive" />
               <AlertDialogTitle>Delete Receipt</AlertDialogTitle>
             </div>
-            <AlertDialogDescription>
-              Are you sure you want to delete receipt <strong>{receiptToDelete?.receipt_number}</strong>?
-              <br />
-              This action cannot be undone. This will permanently delete the receipt and all related data.
+            <AlertDialogDescription className="space-y-2">
+              <div>
+                Are you sure you want to delete receipt <strong>{receiptToDelete?.receipt_number}</strong>?
+              </div>
+              <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                <strong>This will also delete:</strong>
+                <ul className="list-disc list-inside mt-1 space-y-1">
+                  <li>Receipt line items snapshot</li>
+                  <li>Payment allocation</li>
+                  <li>Payment record</li>
+                  <li>Invoice status will revert to draft</li>
+                </ul>
+              </div>
+              <div className="text-sm font-medium text-destructive">
+                This action cannot be undone.
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
