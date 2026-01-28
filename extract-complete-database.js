@@ -6,7 +6,7 @@
  * for database operations instead of Supabase
  */
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
 const AUTH_TOKEN = process.env.API_AUTH_TOKEN || null;
 
 if (!EXTERNAL_API_URL) {
