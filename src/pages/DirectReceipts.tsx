@@ -382,6 +382,37 @@ export default function DirectReceipts() {
     }
   };
 
+  const handleDeleteReceipt = (receipt: Receipt) => {
+    setReceiptToDelete(receipt);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!receiptToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await apiClient.delete('receipts', receiptToDelete.id);
+
+      if (error) {
+        throw new Error(error.message || 'Failed to delete receipt');
+      }
+
+      // Remove from local state
+      setReceipts(receipts.filter(r => r.id !== receiptToDelete.id));
+
+      toast.success(`Receipt ${receiptToDelete.receipt_number} deleted successfully`);
+      setShowDeleteConfirm(false);
+      setReceiptToDelete(null);
+    } catch (err) {
+      console.error('Error deleting receipt:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete receipt';
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleClearFilters = () => {
     setStatusFilter('all');
     setDateFromFilter('');
