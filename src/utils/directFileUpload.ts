@@ -19,7 +19,7 @@ export interface UploadResult {
 }
 
 // Use direct API URL (no proxy) for consistency across all environments
-const API_BASE_URL = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
+const API_BASE_URL = import.meta.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
 const UPLOAD_BASE_URL = API_BASE_URL.replace(/\/api\.php$/, '') + '/uploads';
 
 /**
@@ -190,7 +190,7 @@ export function getPublicUrl(path: string): string {
 export async function deleteFile(path: string): Promise<UploadResult> {
   try {
     // Use direct API URL (no proxy) for consistency across all environments
-    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
+    const apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
     const response = await fetch(`${apiUrl}?action=delete_file`, {
       method: 'POST',
       headers: {

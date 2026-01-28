@@ -211,7 +211,7 @@ export function getTroubleshootingSuggestions(errorType: string): string[] {
       '3. Check if corporate proxy is interfering with HTTPS requests',
       '4. Try disabling VPN temporarily',
       '5. Check with IT/Network team about allowed domains',
-      '6. Verify backend server is running at https://med.layonsconstruction.com',
+      '6. Verify backend server is running at https://helixgeneralhardware.com',
     ],
     timeout: [
       '1. Backend server appears to be slow or unresponsive',

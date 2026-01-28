@@ -3,7 +3,7 @@
  * Uses med.layonsconstruction.com/api.php for admin user creation
  */
 
-const EXTERNAL_API_URL = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php';
+const EXTERNAL_API_URL = import.meta.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
 
 export interface CreateAdminOptions {
   email: string;

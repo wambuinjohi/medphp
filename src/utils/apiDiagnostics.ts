@@ -11,7 +11,7 @@ interface DiagnosticResult {
 }
 
 export async function runApiDiagnostics(
-  apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php'
+  apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php'
 ): Promise<DiagnosticResult[]> {
   const results: DiagnosticResult[] = [];
 
