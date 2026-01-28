@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Configuration Variables - med.layonsconstruction.com
+// Configuration Variables - helixgeneralhardware.com
 // JWT Configuration
 $JWT_SECRET = 'Sirgeorge.123';
 
@@ -65,7 +65,7 @@ $db_pass = 'Sirgeorge.12';
 $db_name = 'layonsc1_med';
 
 // Uploads Configuration
-$UPLOADS_DIR = '/home/layonsc1/med.layonsconstruction.com/uploads';
+$UPLOADS_DIR = '/home/layonsc1/helixgeneralhardware.com/uploads';
 
 // Validate required database configuration
 if (!$db_host || !$db_user || !$db_pass || !$db_name) {
