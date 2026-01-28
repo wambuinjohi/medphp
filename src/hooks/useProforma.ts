@@ -480,6 +480,10 @@ export const useDeleteProforma = (companyId?: string) => {
       }
     },
     onSuccess: () => {
+      // Invalidate both the company-specific query and the general query
+      if (companyId) {
+        queryClient.invalidateQueries({ queryKey: ['proforma_invoices', companyId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['proforma_invoices'], exact: false });
       toast.success('Proforma invoice deleted successfully!');
     },
