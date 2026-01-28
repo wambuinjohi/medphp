@@ -439,7 +439,7 @@ export const useUpdateProforma = () => {
 /**
  * Hook to delete a proforma invoice
  */
-export const useDeleteProforma = () => {
+export const useDeleteProforma = (companyId?: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
