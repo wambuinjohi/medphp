@@ -100,6 +100,9 @@ export default function DirectReceipts() {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [receiptToDelete, setReceiptToDelete] = useState<Receipt | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState('all');
