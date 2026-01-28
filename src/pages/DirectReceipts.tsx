@@ -313,14 +313,28 @@ export default function DirectReceipts() {
       let enrichedReceipt: any = receipt;
       if (!receipt.invoice_items || receipt.invoice_items.length === 0) {
         try {
-          const { data: items } = await apiClient.select('invoice_items', {
-            invoice_id: receipt.invoice_id
+          // Try to fetch receipt_items (snapshot from payment time) first
+          const { data: receiptItems } = await apiClient.select('receipt_items', {
+            receipt_id: receipt.id
           });
-          if (items && Array.isArray(items)) {
-            enrichedReceipt = { ...receipt, invoice_items: items };
+
+          if (receiptItems && Array.isArray(receiptItems) && receiptItems.length > 0) {
+            enrichedReceipt = { ...receipt, invoice_items: receiptItems };
+          } else {
+            // Fall back to current invoice_items if snapshot doesn't exist
+            try {
+              const { data: invoiceItems } = await apiClient.select('invoice_items', {
+                invoice_id: receipt.invoice_id
+              });
+              if (invoiceItems && Array.isArray(invoiceItems)) {
+                enrichedReceipt = { ...receipt, invoice_items: invoiceItems };
+              }
+            } catch (e) {
+              console.warn('Could not fetch invoice items for PDF:', e);
+            }
           }
         } catch (e) {
-          console.warn('Could not fetch invoice items for PDF:', e);
+          console.warn('Could not fetch receipt items for PDF:', e);
         }
       }
 
