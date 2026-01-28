@@ -772,24 +772,24 @@ export default function DirectReceipts() {
               <AlertCircle className="h-5 w-5 text-destructive" />
               <AlertDialogTitle>Delete Receipt</AlertDialogTitle>
             </div>
-            <AlertDialogDescription className="space-y-2">
-              <div>
-                Are you sure you want to delete receipt <strong>{receiptToDelete?.receipt_number}</strong>?
-              </div>
-              <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
-                <strong>This will also delete:</strong>
-                <ul className="list-disc list-inside mt-1 space-y-1">
-                  <li>Receipt line items snapshot</li>
-                  <li>Payment allocation</li>
-                  <li>Payment record</li>
-                  <li>Invoice status will revert to draft</li>
-                </ul>
-              </div>
-              <div className="text-sm font-medium text-destructive">
-                This action cannot be undone.
-              </div>
-            </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2">
+            <AlertDialogDescription>
+              Are you sure you want to delete receipt <strong>{receiptToDelete?.receipt_number}</strong>?
+            </AlertDialogDescription>
+            <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+              <strong>This will also delete:</strong>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                <li>Receipt line items snapshot</li>
+                <li>Payment allocation</li>
+                <li>Payment record</li>
+                <li>Invoice status will revert to draft</li>
+              </ul>
+            </div>
+            <div className="text-sm font-medium text-destructive">
+              This action cannot be undone.
+            </div>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
