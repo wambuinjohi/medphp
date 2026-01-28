@@ -175,23 +175,23 @@ export default function DirectReceipts() {
         console.warn('Could not fetch customer details:', e);
       }
 
-      // Fetch invoice items only for the invoices we're displaying
+      // Fetch receipt items for each receipt
       try {
-        // Fetch items for each invoice to avoid loading all historical items
-        for (const invoiceId of invoiceIds) {
+        for (const receipt of allReceipts) {
           try {
-            const { data: items } = await apiClient.select('invoice_items', {
-              invoice_id: invoiceId
+            const { data: items } = await apiClient.select('receipt_items', {
+              receipt_id: receipt.id
             });
             if (Array.isArray(items) && items.length > 0) {
-              itemsMap.set(invoiceId, items);
+              // Use receipt_id as key instead of invoice_id
+              itemsMap.set(receipt.id, items);
             }
           } catch (e) {
-            console.warn(`Could not fetch items for invoice ${invoiceId}:`, e);
+            console.warn(`Could not fetch items for receipt ${receipt.id}:`, e);
           }
         }
       } catch (e) {
-        console.warn('Could not fetch invoice items:', e);
+        console.warn('Could not fetch receipt items:', e);
       }
 
       // Transform receipts
@@ -217,7 +217,7 @@ export default function DirectReceipts() {
           payment_method: payment?.payment_method || 'unknown',
           reference_number: payment?.reference_number,
           status: invoice?.status || 'draft',
-          invoice_items: itemsMap.get(receipt.invoice_id) || [],
+          invoice_items: itemsMap.get(receipt.id) || [],
           created_by: receipt.created_by,
           created_by_profile: receipt.created_by_profile
         };
@@ -299,14 +299,14 @@ export default function DirectReceipts() {
       let enrichedReceipt: any = receipt;
       if (!receipt.invoice_items || receipt.invoice_items.length === 0) {
         try {
-          const { data: items } = await apiClient.select('invoice_items', {
-            invoice_id: receipt.invoice_id
+          const { data: items } = await apiClient.select('receipt_items', {
+            receipt_id: receipt.id
           });
           if (items && Array.isArray(items)) {
             enrichedReceipt = { ...receipt, invoice_items: items };
           }
         } catch (e) {
-          console.warn('Could not fetch invoice items for PDF:', e);
+          console.warn('Could not fetch receipt items for PDF:', e);
         }
       }
 

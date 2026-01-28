@@ -8,10 +8,10 @@ export default defineConfig(({ mode }) => {
   // Use local auth server for development if VITE_USE_LOCAL_AUTH is set
   const useLocalAuth = process.env.VITE_USE_LOCAL_AUTH === 'true';
 
-  // API configuration - updated to use new Wayrus endpoint
+  // API configuration - updated to use new Layons Construction endpoint
   const apiUrl = useLocalAuth
     ? 'http://localhost:3001'
-    : 'https://med.wayrus.co.ke';
+    : 'https://med.layonsconstruction.com';
 
   const apiEndpoint = `${apiUrl}/api.php`;
 
