@@ -379,11 +379,20 @@ Email: ${companyEmail}`;
     setShowStatusModal(true);
   };
 
-  const handleDeleteQuotation = async (quotation: Quotation) => {
+  const handleDeleteQuotation = (quotation: Quotation) => {
+    setQuotationToDelete(quotation);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!quotationToDelete) return;
+
     try {
-      await deleteQuotation.mutateAsync(quotation.id);
+      await deleteQuotation.mutateAsync(quotationToDelete.id);
       refetch();
       setSelectedQuotation(null);
+      setShowDeleteDialog(false);
+      setQuotationToDelete(null);
     } catch (error) {
       console.error('Error deleting quotation:', error);
     }
