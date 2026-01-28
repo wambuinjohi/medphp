@@ -172,7 +172,7 @@ The application logs environment detection information to the browser console:
 **Cloud Hosting Detection**:
 ```
 📍 Environment Configuration: {
-  apiBaseUrl: "https://med.layonsconstruction.com/api.php",
+  apiBaseUrl: "https://helixgeneralhardware.com/api.php",
   isLocal: false,
   hostingType: "cloud",
   hostname: "my-app.render.com",
