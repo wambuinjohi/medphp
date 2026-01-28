@@ -140,7 +140,7 @@ If you need to use a different API endpoint:
 VITE_EXTERNAL_API_URL=https://your-custom-api.com/api.php
 ```
 
-The app will use this instead of the default `https://med.wayrus.co.ke/api.php`.
+The app will use this instead of the default `https://helixgeneralhardware.com/api.php`.
 
 ---
 
