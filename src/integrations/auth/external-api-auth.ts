@@ -19,7 +19,7 @@ class ExternalAPIAuthHandler {
   private tokenKey = 'med_api_token';
   private userKey = 'med_api_user_id';
 
-  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php') {
+  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.layonsconstruction.com/api.php') {
     this.apiUrl = apiUrl;
 
     // Always use the direct URL (no proxy) for consistency across all environments
