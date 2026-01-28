@@ -1,6 +1,6 @@
 /**
  * Admin Reset Password - External API Version
- * Uses med.layonsconstruction.com/api.php for password reset operations
+ * Uses helixgeneralhardware.com/api.php for password reset operations
  */
 
 interface ResetPasswordRequest {
@@ -17,7 +17,7 @@ interface ResetPasswordResponse {
 
 /**
  * Sends a password reset email via external API
- * This function calls med.layonsconstruction.com/api.php with the admin_reset_password action
+ * This function calls helixgeneralhardware.com/api.php with the admin_reset_password action
  *
  * @param request - Password reset request with email, user_id, admin_id
  * @param apiUrl - External API URL (med.layonsconstruction.com/api.php)
@@ -26,7 +26,7 @@ interface ResetPasswordResponse {
  */
 export async function adminResetPassword(
   request: ResetPasswordRequest,
-  apiUrl: string = 'https://med.layonsconstruction.com/api.php',
+  apiUrl: string = 'https://helixgeneralhardware.com/api.php',
   authToken?: string
 ): Promise<ResetPasswordResponse> {
   // Validate required fields
