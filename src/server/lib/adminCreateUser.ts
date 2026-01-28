@@ -26,7 +26,7 @@ interface CreateUserResponse {
  * This function calls helixgeneralhardware.com/api.php with the admin_create_user action
  *
  * @param request - User creation request with email, password, role, company_id, etc.
- * @param apiUrl - External API URL (med.layonsconstruction.com/api.php)
+ * @param apiUrl - External API URL (helixgeneralhardware.com/api.php)
  * @param authToken - Admin authentication token for the API
  * @returns Response with success status and user_id or error message
  */

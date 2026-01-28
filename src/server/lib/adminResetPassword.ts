@@ -20,7 +20,7 @@ interface ResetPasswordResponse {
  * This function calls helixgeneralhardware.com/api.php with the admin_reset_password action
  *
  * @param request - Password reset request with email, user_id, admin_id
- * @param apiUrl - External API URL (med.layonsconstruction.com/api.php)
+ * @param apiUrl - External API URL (helixgeneralhardware.com/api.php)
  * @param authToken - Admin authentication token for the API
  * @returns Response with success status or error message
  */
