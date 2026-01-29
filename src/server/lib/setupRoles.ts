@@ -257,9 +257,10 @@ export async function createDefaultRoles(apiUrl?: string): Promise<RoleSetupResu
 /**
  * Setup permissions for roles
  */
-export async function setupRolePermissions(apiUrl: string = EXTERNAL_API_URL): Promise<RoleSetupResult> {
+export async function setupRolePermissions(apiUrl?: string): Promise<RoleSetupResult> {
+  const url = apiUrl || getServerApiUrl();
   try {
-    const response = await fetch(`${apiUrl}?action=setup_role_permissions`, {
+    const response = await fetch(`${url}?action=setup_role_permissions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
