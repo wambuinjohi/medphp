@@ -40,26 +40,29 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // ===== CRITICAL: Proxy /api.php requests (document number generation, etc.) =====
         // Document numbering and other API calls go directly to /api.php
-        '/api.php': {
-          target: apiUrl,
-          changeOrigin: true,
-          rewrite: (path) => {
-            // Keep /api.php as-is, just forward to backend
-            return path;
-          },
-          secure: false,
-          configure: (proxy, options) => {
-            proxy.on('proxyReq', (proxyReq, req, res) => {
-              console.log(`📡 [API.PHP] Proxying: ${req.method} ${req.url}`);
-            });
-            proxy.on('proxyRes', (proxyRes, req, res) => {
-              console.log(`✅ [API.PHP] Response: ${proxyRes.statusCode}`);
-            });
-            proxy.on('error', (err, req, res) => {
-              console.error(`❌ [API.PHP] Proxy error: ${err.message}`);
-            });
+        // Only proxy if external API URL is configured, otherwise let it through to backend
+        ...(apiUrl ? {
+          '/api.php': {
+            target: apiUrl,
+            changeOrigin: true,
+            rewrite: (path) => {
+              // Keep /api.php as-is, just forward to backend
+              return path;
+            },
+            secure: false,
+            configure: (proxy, options) => {
+              proxy.on('proxyReq', (proxyReq, req, res) => {
+                console.log(`📡 [API.PHP] Proxying: ${req.method} ${req.url}`);
+              });
+              proxy.on('proxyRes', (proxyRes, req, res) => {
+                console.log(`✅ [API.PHP] Response: ${proxyRes.statusCode}`);
+              });
+              proxy.on('error', (err, req, res) => {
+                console.error(`❌ [API.PHP] Proxy error: ${err.message}`);
+              });
+            }
           }
-        },
+        } : {}),
 
         // ===== CRITICAL: Proxy all /proxy routes to bypass CORS =====
         // This acts as a bridge between frontend and backend
