@@ -99,7 +99,7 @@ export default function Customers() {
   const isLoading = isCompanyLoading || isCustomersLoading;
 
   // Filter and search logic
-  const filteredCustomers = customers?.filter(customer => {
+  const filteredCustomers = (customers?.filter(customer => {
     // Search filter
     const matchesSearch =
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -121,7 +121,7 @@ export default function Customers() {
       (creditLimitFilter === 'with_limit' && customer.credit_limit);
 
     return matchesSearch && matchesStatus && matchesCity && matchesCreditLimit;
-  }) || [];
+  }) || []).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
