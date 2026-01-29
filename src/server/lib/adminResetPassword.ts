@@ -19,18 +19,19 @@ interface ResetPasswordResponse {
 
 /**
  * Sends a password reset email via external API
- * This function calls helixgeneralhardware.com/api.php with the admin_reset_password action
+ * This function calls the configured API endpoint with the admin_reset_password action
  *
  * @param request - Password reset request with email, user_id, admin_id
- * @param apiUrl - External API URL (helixgeneralhardware.com/api.php)
+ * @param apiUrl - External API URL (optional, defaults to configured API endpoint)
  * @param authToken - Admin authentication token for the API
  * @returns Response with success status or error message
  */
 export async function adminResetPassword(
   request: ResetPasswordRequest,
-  apiUrl: string = 'https://helixgeneralhardware.com/api.php',
+  apiUrl?: string,
   authToken?: string
 ): Promise<ResetPasswordResponse> {
+  const url = apiUrl || getServerApiUrl();
   // Validate required fields
   if (!request.email || !request.user_id || !request.admin_id) {
     return {
