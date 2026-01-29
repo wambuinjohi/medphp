@@ -155,11 +155,23 @@ export async function testProxyDetection(
  * Test DNS resolution
  */
 export async function testDNSResolution(
-  domain: string = 'helixgeneralhardware.com'
+  domain?: string
 ): Promise<NetworkDiagnostic> {
+  // Extract domain from API URL if not provided
+  let testDomain = domain;
+  if (!testDomain) {
+    const apiUrl = getClientApiUrl();
+    try {
+      const url = new URL(apiUrl, 'https://example.com');
+      testDomain = url.hostname;
+    } catch {
+      testDomain = 'api.example.com'; // Fallback for relative URLs
+    }
+  }
+
   try {
     // Use public DNS API to resolve domain
-    const response = await fetch(`https://dns.google/resolve?name=${domain}`, {
+    const response = await fetch(`https://dns.google/resolve?name=${testDomain}`, {
       signal: AbortSignal.timeout(5000),
     });
 
