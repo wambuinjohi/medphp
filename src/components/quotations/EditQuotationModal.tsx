@@ -205,12 +205,12 @@ export function EditQuotationModal({ open, onOpenChange, onSuccess, quotation }:
       product_name: product.name,
       description: product.description || product.name,
       quantity: 1,
-      unit_price: product.selling_price,
+      unit_price: Number(product.selling_price || 0),
       discount_percentage: 0,
       tax_percentage: 0,
       tax_amount: 0,
       tax_inclusive: false,
-      line_total: product.selling_price
+      line_total: Number(product.selling_price || 0)
     };
 
     setItems([...items, newItem]);
