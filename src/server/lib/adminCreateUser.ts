@@ -1,7 +1,9 @@
 /**
  * Admin Create User - External API Version
- * Uses helixgeneralhardware.com/api.php for user creation
+ * Uses configured API endpoint for user creation
  */
+
+import { getServerApiUrl } from '../../utils/getApiUrl';
 
 interface CreateUserRequest {
   email: string;
@@ -23,31 +25,24 @@ interface CreateUserResponse {
 
 /**
  * Creates a new user account via external API
- * This function calls helixgeneralhardware.com/api.php with the admin_create_user action
+ * This function calls the configured API endpoint with the admin_create_user action
  *
  * @param request - User creation request with email, password, role, company_id, etc.
- * @param apiUrl - External API URL (helixgeneralhardware.com/api.php)
+ * @param apiUrl - External API URL (optional, defaults to configured API endpoint)
  * @param authToken - Admin authentication token for the API
  * @returns Response with success status and user_id or error message
  */
 export async function adminCreateUser(
   request: CreateUserRequest,
-  apiUrl: string = 'https://helixgeneralhardware.com/api.php',
+  apiUrl?: string,
   authToken?: string
 ): Promise<CreateUserResponse> {
+  const url = apiUrl || getServerApiUrl();
   // Validate required fields
   if (!request.email || !request.password || !request.role || !request.company_id) {
     return {
       success: false,
       error: 'Missing required fields: email, password, role, company_id'
-    };
-  }
-
-  // Validate API URL
-  if (!apiUrl) {
-    return {
-      success: false,
-      error: 'Missing API URL configuration'
     };
   }
 
@@ -62,7 +57,7 @@ export async function adminCreateUser(
     }
 
     // Call external API to create user
-    const response = await fetch(`${apiUrl}?action=admin_create_user`, {
+    const response = await fetch(`${url}?action=admin_create_user`, {
       method: 'POST',
       headers,
       body: JSON.stringify({

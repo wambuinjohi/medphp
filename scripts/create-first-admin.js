@@ -2,21 +2,27 @@
 /**
  * Create First Admin User - External API Version
  *
- * This script creates the first admin user via helixgeneralhardware.com/api.php
- * 
- * Usage: 
- *   node scripts/create-first-admin.js [email] [password] [fullName]
+ * This script creates the first admin user via the configured API endpoint
+ *
+ * Usage:
+ *   VITE_EXTERNAL_API_URL=https://your-api.com/api.php node scripts/create-first-admin.js [email] [password] [fullName]
  *   OR set environment variables:
- *   ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=secure123 ADMIN_FULL_NAME="Admin User" node scripts/create-first-admin.js
- * 
+ *   VITE_EXTERNAL_API_URL=https://your-api.com/api.php ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=secure123 node scripts/create-first-admin.js
+ *
  * Examples:
- *   node scripts/create-first-admin.js admin@medplus.app "SecurePassword123!" "Admin User"
- *   ADMIN_EMAIL=admin@medplus.app ADMIN_PASSWORD=pass123 node scripts/create-first-admin.js
+ *   VITE_EXTERNAL_API_URL=https://api.example.com/api.php node scripts/create-first-admin.js admin@example.com "SecurePassword123!" "Admin User"
+ *   VITE_EXTERNAL_API_URL=/api.php ADMIN_EMAIL=admin@example.app ADMIN_PASSWORD=pass123 node scripts/create-first-admin.js
  */
 
 const readline = require('readline');
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL;
+if (!EXTERNAL_API_URL) {
+  console.error('❌ VITE_EXTERNAL_API_URL environment variable is required');
+  console.error('Usage: VITE_EXTERNAL_API_URL=https://your-api.com/api.php node scripts/create-first-admin.js');
+  process.exit(1);
+}
+
 const AUTH_TOKEN = process.env.API_AUTH_TOKEN || null;
 
 const rl = readline.createInterface({

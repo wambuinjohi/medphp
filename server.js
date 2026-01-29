@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getServerApiUrl } from './src/utils/getApiUrl.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,5 +19,5 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📍 API URL: ${process.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php'}`);
+  console.log(`📍 API URL: ${process.env.VITE_EXTERNAL_API_URL || '/api.php (relative to current host)'}`);
 });

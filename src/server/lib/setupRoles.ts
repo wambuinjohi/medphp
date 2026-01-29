@@ -3,7 +3,8 @@
  * Handles creating and configuring default roles and permissions on the remote API
  */
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+import { getServerApiUrl } from '../../utils/getApiUrl';
+
 const API_AUTH_TOKEN = process.env.API_AUTH_TOKEN || '';
 
 // Default roles to be created
@@ -102,9 +103,10 @@ interface RoleCheckResult {
 /**
  * Check which default roles exist in the system
  */
-export async function checkRolesStatus(apiUrl: string = EXTERNAL_API_URL): Promise<RoleCheckResult> {
+export async function checkRolesStatus(apiUrl?: string): Promise<RoleCheckResult> {
+  const url = apiUrl || getServerApiUrl();
   try {
-    const response = await fetch(`${apiUrl}?action=check_roles`, {
+    const response = await fetch(`${url}?action=check_roles`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -162,10 +164,11 @@ export async function checkRolesStatus(apiUrl: string = EXTERNAL_API_URL): Promi
 /**
  * Create default roles in the system
  */
-export async function createDefaultRoles(apiUrl: string = EXTERNAL_API_URL): Promise<RoleSetupResult> {
+export async function createDefaultRoles(apiUrl?: string): Promise<RoleSetupResult> {
+  const url = apiUrl || getServerApiUrl();
   try {
     // First check which roles exist
-    const checkResult = await checkRolesStatus(apiUrl);
+    const checkResult = await checkRolesStatus(url);
     
     if (!checkResult.success) {
       return {
@@ -198,7 +201,7 @@ export async function createDefaultRoles(apiUrl: string = EXTERNAL_API_URL): Pro
       }
 
       try {
-        const response = await fetch(`${apiUrl}?action=create_role`, {
+        const response = await fetch(`${url}?action=create_role`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -254,9 +257,10 @@ export async function createDefaultRoles(apiUrl: string = EXTERNAL_API_URL): Pro
 /**
  * Setup permissions for roles
  */
-export async function setupRolePermissions(apiUrl: string = EXTERNAL_API_URL): Promise<RoleSetupResult> {
+export async function setupRolePermissions(apiUrl?: string): Promise<RoleSetupResult> {
+  const url = apiUrl || getServerApiUrl();
   try {
-    const response = await fetch(`${apiUrl}?action=setup_role_permissions`, {
+    const response = await fetch(`${url}?action=setup_role_permissions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -306,7 +310,7 @@ export async function setupRolePermissions(apiUrl: string = EXTERNAL_API_URL): P
 /**
  * Complete role setup including both role creation and permission setup
  */
-export async function completeRoleSetup(apiUrl: string = EXTERNAL_API_URL): Promise<{
+export async function completeRoleSetup(apiUrl?: string): Promise<{
   success: boolean;
   message: string;
   rolesCreated: string[];
@@ -314,9 +318,10 @@ export async function completeRoleSetup(apiUrl: string = EXTERNAL_API_URL): Prom
   permissionsSetup: boolean;
   errors: string[];
 }> {
+  const url = apiUrl || getServerApiUrl();
   try {
     // Step 1: Create default roles
-    const rolesResult = await createDefaultRoles(apiUrl);
+    const rolesResult = await createDefaultRoles(url);
 
     if (!rolesResult.success && rolesResult.errors.length > 0) {
       return {
@@ -330,7 +335,7 @@ export async function completeRoleSetup(apiUrl: string = EXTERNAL_API_URL): Prom
     }
 
     // Step 2: Setup permissions
-    const permissionsResult = await setupRolePermissions(apiUrl);
+    const permissionsResult = await setupRolePermissions(url);
 
     return {
       success: rolesResult.success && permissionsResult.success,

@@ -3,6 +3,8 @@
  * Detects firewall, proxy, DNS, and connectivity issues
  */
 
+import { getClientApiUrl } from './getApiUrl';
+
 interface NetworkDiagnostic {
   test: string;
   status: 'success' | 'warning' | 'error' | 'info';
@@ -15,15 +17,16 @@ interface NetworkDiagnostic {
  * Test direct connectivity to API endpoint
  */
 export async function testDirectConnectivity(
-  apiUrl: string = 'https://helixgeneralhardware.com/api.php'
+  apiUrl?: string
 ): Promise<NetworkDiagnostic> {
+  const url = apiUrl || getClientApiUrl();
   const startTime = performance.now();
-  
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-    const response = await fetch(apiUrl, {
+    const response = await fetch(url, {
       method: 'HEAD',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
@@ -55,7 +58,7 @@ export async function testDirectConnectivity(
     if (error.name === 'AbortError') {
       message = `Connection timeout after 10 seconds (${duration.toFixed(0)}ms)`;
       recommendations.push('❌ API server is slow or unresponsive');
-      recommendations.push('💡 Check if helixgeneralhardware.com is online');
+      recommendations.push('💡 Check if API server is online');
       recommendations.push('💡 Verify network connectivity to external internet');
       recommendations.push('💡 Check firewall rules blocking outbound HTTPS (port 443)');
     } else if (error.message.includes('Failed to fetch')) {
@@ -63,12 +66,12 @@ export async function testDirectConnectivity(
       recommendations.push('❌ Frontend cannot reach backend directly');
       recommendations.push('💡 This is expected - using Vite proxy as workaround');
       recommendations.push('💡 Verify CORS headers are configured on backend');
-      recommendations.push('💡 Check if corporate firewall blocks helixgeneralhardware.com');
+      recommendations.push('💡 Check if corporate firewall blocks API server');
     } else if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
-      message = 'DNS resolution failed for helixgeneralhardware.com';
+      message = 'DNS resolution failed for API server';
       recommendations.push('❌ Cannot resolve domain name');
       recommendations.push('💡 Check DNS server configuration');
-      recommendations.push('💡 Verify domain helixgeneralhardware.com is valid');
+      recommendations.push('💡 Verify API domain is valid');
       recommendations.push('💡 Try pinging domain from terminal');
     } else if (error.message.includes('ECONNREFUSED')) {
       message = 'Connection refused - server is not listening on that port';
@@ -98,11 +101,12 @@ export async function testDirectConnectivity(
  * Test if connection is using a proxy
  */
 export async function testProxyDetection(
-  apiUrl: string = 'https://helixgeneralhardware.com/api.php'
+  apiUrl?: string
 ): Promise<NetworkDiagnostic> {
+  const url = apiUrl || getClientApiUrl();
   try {
     // Try to fetch and check response headers for proxy indicators
-    const response = await fetch(apiUrl, {
+    const response = await fetch(url, {
       method: 'OPTIONS',
       headers: {
         'Content-Type': 'application/json',
@@ -151,11 +155,23 @@ export async function testProxyDetection(
  * Test DNS resolution
  */
 export async function testDNSResolution(
-  domain: string = 'helixgeneralhardware.com'
+  domain?: string
 ): Promise<NetworkDiagnostic> {
+  // Extract domain from API URL if not provided
+  let testDomain = domain;
+  if (!testDomain) {
+    const apiUrl = getClientApiUrl();
+    try {
+      const url = new URL(apiUrl, 'https://example.com');
+      testDomain = url.hostname;
+    } catch {
+      testDomain = 'api.example.com'; // Fallback for relative URLs
+    }
+  }
+
   try {
     // Use public DNS API to resolve domain
-    const response = await fetch(`https://dns.google/resolve?name=${domain}`, {
+    const response = await fetch(`https://dns.google/resolve?name=${testDomain}`, {
       signal: AbortSignal.timeout(5000),
     });
 
@@ -172,9 +188,9 @@ export async function testDNSResolution(
       return {
         test: 'DNS Resolution',
         status: 'success',
-        message: `DNS resolved successfully for ${domain}`,
+        message: `DNS resolved successfully for ${testDomain}`,
         details: {
-          domain,
+          domain: testDomain,
           ips,
           recordCount: answers.length,
         },
@@ -183,11 +199,11 @@ export async function testDNSResolution(
       return {
         test: 'DNS Resolution',
         status: 'error',
-        message: `Failed to resolve ${domain}`,
-        details: { domain, answerCount: 0 },
+        message: `Failed to resolve ${testDomain}`,
+        details: { domain: testDomain, answerCount: 0 },
         recommendations: [
           '❌ Domain cannot be resolved',
-          `💡 Verify domain ${domain} exists`,
+          `💡 Verify domain ${testDomain} exists`,
           '💡 Check DNS server is accessible',
           '💡 Try flushing DNS cache: ipconfig /flushdns (Windows) or sudo dscacheutil -flushcache (Mac)',
         ],
@@ -207,10 +223,11 @@ export async function testDNSResolution(
  * Test CORS configuration
  */
 export async function testCORSConfiguration(
-  apiUrl: string = 'https://helixgeneralhardware.com/api.php'
+  apiUrl?: string
 ): Promise<NetworkDiagnostic> {
+  const url = apiUrl || getClientApiUrl();
   try {
-    const response = await fetch(`${apiUrl}?action=health`, {
+    const response = await fetch(`${url}?action=health`, {
       method: 'GET',
       headers: {
         'Origin': window.location.origin,
@@ -331,8 +348,9 @@ export async function testDevProxyConnectivity(
  * Run all network diagnostics
  */
 export async function runFullNetworkDiagnostics(
-  apiUrl: string = 'https://helixgeneralhardware.com/api.php'
+  apiUrl?: string
 ): Promise<NetworkDiagnostic[]> {
+  const url = apiUrl || getClientApiUrl();
   console.log('🔧 Running full network diagnostics...\n');
 
   const results: NetworkDiagnostic[] = [];
@@ -341,13 +359,13 @@ export async function runFullNetworkDiagnostics(
   results.push(await testDNSResolution());
 
   // Test direct connectivity
-  results.push(await testDirectConnectivity(apiUrl));
+  results.push(await testDirectConnectivity(url));
 
   // Test CORS
-  results.push(await testCORSConfiguration(apiUrl));
+  results.push(await testCORSConfiguration(url));
 
   // Test proxy detection
-  results.push(await testProxyDetection(apiUrl));
+  results.push(await testProxyDetection(url));
 
   // Test dev proxy (if in development)
   if (import.meta.env.DEV) {
