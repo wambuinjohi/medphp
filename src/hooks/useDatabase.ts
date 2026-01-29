@@ -532,13 +532,24 @@ export function useGenerateLPONumber() {
 
 /**
  * Hook to get all suppliers and customers
+ * Now returns suppliers only with proper structure for UI compatibility
  */
 export function useAllSuppliersAndCustomers(companyId?: string) {
   const filter = useMemo(() =>
     companyId ? { company_id: companyId } : undefined,
     [companyId]
   );
-  return useSelect('customers', filter);
+  const selectResult = useSelect('suppliers', filter);
+
+  // Return structured data for UI compatibility
+  return useMemo(() => ({
+    existing: selectResult.data || [],
+    all: selectResult.data || [],
+    isLoading: selectResult.isLoading,
+    error: selectResult.error,
+    retry: selectResult.retry,
+    refetch: selectResult.retry, // Alias for refetch capability
+  }), [selectResult.data, selectResult.isLoading, selectResult.error, selectResult.retry]);
 }
 
 /**
