@@ -61,42 +61,16 @@ export const useProformas = (companyId?: string) => {
     queryFn: async () => {
       if (!companyId) return [];
 
-      const { data, error } = await supabase
-        .from('proforma_invoices')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          proforma_items (
-            *,
-            products (
-              name
-            )
-          )
-        `)
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false });
+      console.log('📋 Fetching proformas for company:', companyId);
+      const result = await externalApiAdapter.selectBy('proforma_invoices', { company_id: companyId });
 
-      if (error) {
-        console.error('Error fetching proformas:', error);
-        throw error;
+      if (result.error) {
+        console.error('Error fetching proformas:', result.error);
+        throw result.error;
       }
 
-      // Map product names to items for compatibility
-      const proformasWithProductNames = data?.map(proforma => ({
-        ...proforma,
-        proforma_items: proforma.proforma_items?.map(item => ({
-          ...item,
-          product_name: item.products?.name || ''
-        }))
-      }));
-
-      return proformasWithProductNames as ProformaWithItems[];
+      console.log('✅ Fetched', result.data?.length || 0, 'proforma invoices');
+      return (result.data || []) as ProformaWithItems[];
     },
     enabled: !!companyId,
   });
