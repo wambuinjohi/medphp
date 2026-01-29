@@ -46,14 +46,6 @@ export async function adminCreateUser(
     };
   }
 
-  // Validate API URL
-  if (!apiUrl) {
-    return {
-      success: false,
-      error: 'Missing API URL configuration'
-    };
-  }
-
   try {
     // Prepare headers
     const headers: HeadersInit = {
@@ -65,7 +57,7 @@ export async function adminCreateUser(
     }
 
     // Call external API to create user
-    const response = await fetch(`${apiUrl}?action=admin_create_user`, {
+    const response = await fetch(`${url}?action=admin_create_user`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
