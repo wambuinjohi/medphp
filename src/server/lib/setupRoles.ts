@@ -201,7 +201,7 @@ export async function createDefaultRoles(apiUrl?: string): Promise<RoleSetupResu
       }
 
       try {
-        const response = await fetch(`${apiUrl}?action=create_role`, {
+        const response = await fetch(`${url}?action=create_role`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
