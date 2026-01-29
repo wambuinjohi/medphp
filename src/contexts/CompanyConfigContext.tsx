@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode, useEffect, useState, useCallback } from 'react';
 import { getDatabase } from '@/integrations/database';
 import { logError } from '@/utils/errorLogger';
+import { updateFavicon } from '@/utils/seoHelpers';
 
 /**
  * Company configuration interface for public-facing branding and SEO
