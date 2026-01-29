@@ -84,12 +84,12 @@ $$ LANGUAGE plpgsql;`;
   return (
     <Card className="border-warning/30 bg-warning/5">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-warning">
-          <AlertTriangle className="h-5 w-5" />
-          Manual Database Function Setup Required
+        <CardTitle className="flex items-center gap-2 text-success">
+          <CheckCircle className="h-5 w-5" />
+          Database Function Setup No Longer Required
         </CardTitle>
         <CardDescription>
-          The payment synchronization function needs to be created manually in your Supabase dashboard
+          Payment processing now uses the built-in client-side method and no longer requires the database function
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
