@@ -400,8 +400,9 @@ export const CreateLPOModal = ({
       email: '',
       phone: '',
       address: '',
-      city: '',
-      country: ''
+      contact_person: '',
+      payment_terms: '',
+      status: 'active'
     });
     onOpenChange(false);
   };
