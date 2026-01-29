@@ -1068,6 +1068,13 @@ export function useCreatePayment() {
             if (allocError) {
               console.warn('Failed to create payment allocation:', allocError?.message);
               allocation_failed = true;
+            } else {
+              // Reconcile invoice balance after successful allocation creation
+              try {
+                await reconcileInvoiceBalance(paymentRecord.invoice_id, true);
+              } catch (reconcileError: any) {
+                console.warn('Failed to reconcile invoice balance:', reconcileError?.message);
+              }
             }
           } catch (allocError: any) {
             console.warn('Payment allocation failed (table might not exist):', allocError?.message);
