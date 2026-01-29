@@ -470,7 +470,7 @@ export const CreateProformaModalFixed = ({
                             <div>
                               <p className="font-medium">{product.name}</p>
                               <p className="text-sm text-muted-foreground">
-                                {product.product_code} • {formatCurrency(product.selling_price)}
+                                {product.product_code} • {formatCurrency(Number.isFinite(Number(product.selling_price)) ? Number(product.selling_price) : 0)}
                               </p>
                             </div>
                             <Button size="sm" variant="ghost">
