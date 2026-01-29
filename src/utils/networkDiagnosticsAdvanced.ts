@@ -188,9 +188,9 @@ export async function testDNSResolution(
       return {
         test: 'DNS Resolution',
         status: 'success',
-        message: `DNS resolved successfully for ${domain}`,
+        message: `DNS resolved successfully for ${testDomain}`,
         details: {
-          domain,
+          domain: testDomain,
           ips,
           recordCount: answers.length,
         },
@@ -199,11 +199,11 @@ export async function testDNSResolution(
       return {
         test: 'DNS Resolution',
         status: 'error',
-        message: `Failed to resolve ${domain}`,
-        details: { domain, answerCount: 0 },
+        message: `Failed to resolve ${testDomain}`,
+        details: { domain: testDomain, answerCount: 0 },
         recommendations: [
           '❌ Domain cannot be resolved',
-          `💡 Verify domain ${domain} exists`,
+          `💡 Verify domain ${testDomain} exists`,
           '💡 Check DNS server is accessible',
           '💡 Try flushing DNS cache: ipconfig /flushdns (Windows) or sudo dscacheutil -flushcache (Mac)',
         ],
