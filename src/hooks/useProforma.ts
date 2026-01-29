@@ -444,48 +444,76 @@ export const useDeleteProforma = (companyId?: string) => {
 
   return useMutation({
     mutationFn: async (proformaId: string) => {
+      console.log('🗑️ Starting proforma deletion:', proformaId);
+
       // Snapshot for audit - get the record before deletion
       let recordCompanyId: string | null = null;
       try {
-        const { data } = await supabase
+        const { data, error: selectError } = await supabase
           .from('proforma_invoices')
           .select(`id, company_id, proforma_items(*)`)
           .eq('id', proformaId)
           .single();
-        recordCompanyId = (data as any)?.company_id ?? null;
-      } catch {}
+
+        if (selectError) {
+          console.warn('⚠️ Could not fetch proforma before delete:', selectError);
+        } else {
+          recordCompanyId = (data as any)?.company_id ?? null;
+          console.log('📋 Fetched proforma company_id:', recordCompanyId);
+        }
+      } catch (e) {
+        console.warn('⚠️ Error fetching proforma:', e);
+      }
 
       // Skip audit logging due to backend API schema mismatch (actor_email column missing)
       // TODO: Fix audit log schema on backend API before re-enabling
 
       // Delete child items first (best-effort)
       try {
-        await supabase.from('proforma_items').delete().eq('proforma_id', proformaId);
+        const { error: itemsError } = await supabase.from('proforma_items').delete().eq('proforma_id', proformaId);
+        if (itemsError) {
+          console.warn('⚠️ Error deleting proforma items:', itemsError);
+        } else {
+          console.log('✅ Proforma items deleted');
+        }
       } catch (e) {
         console.warn('Proforma items delete skipped/failed:', (e as any)?.message || e);
       }
 
       // Delete parent record
-      const { error } = await supabase
+      console.log('🔄 Deleting proforma invoice record:', proformaId);
+      const { data: deleteData, error } = await supabase
         .from('proforma_invoices')
         .delete()
-        .eq('id', proformaId);
+        .eq('id', proformaId)
+        .select();
+
+      console.log('📤 Delete response:', { deleteData, error, rowsAffected: deleteData?.length || 0 });
 
       if (error) {
         const errorMessage = serializeError(error);
-        console.error('Error deleting proforma:', errorMessage);
+        console.error('❌ Error deleting proforma:', errorMessage);
         throw new Error(`Failed to delete proforma: ${errorMessage}`);
+      }
+
+      if (!deleteData || deleteData.length === 0) {
+        console.warn('⚠️ Delete returned no rows - record may not have been deleted or RLS policy prevented it');
       }
 
       // Return the company ID for use in onSuccess
       return recordCompanyId || companyId;
     },
     onSuccess: (returnedCompanyId) => {
+      console.log('✅ Deletion successful, invalidating cache for company:', returnedCompanyId);
+
       // Invalidate both the company-specific query and the general query
       if (returnedCompanyId) {
+        console.log('🔄 Invalidating query for company:', returnedCompanyId);
         queryClient.invalidateQueries({ queryKey: ['proforma_invoices', returnedCompanyId] });
       }
+      console.log('🔄 Invalidating all proforma queries');
       queryClient.invalidateQueries({ queryKey: ['proforma_invoices'], exact: false });
+
       toast.success('Proforma invoice deleted successfully!');
     },
     onError: (error) => {
