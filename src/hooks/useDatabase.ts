@@ -983,7 +983,7 @@ export function useDeletePaymentMethod() {
 
 /**
  * Hook to create a payment
- * Attempts to use server-side RPC if available, falls back to client-side insertion
+ * Uses client-side insertion as the primary payment creation method
  */
 export function useCreatePayment() {
   const queryClient = useQueryClient();
