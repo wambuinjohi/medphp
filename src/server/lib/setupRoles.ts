@@ -103,7 +103,7 @@ interface RoleCheckResult {
 /**
  * Check which default roles exist in the system
  */
-export async function checkRolesStatus(apiUrl: string = EXTERNAL_API_URL): Promise<RoleCheckResult> {
+export async function checkRolesStatus(apiUrl: string = getServerApiUrl()): Promise<RoleCheckResult> {
   try {
     const response = await fetch(`${apiUrl}?action=check_roles`, {
       method: 'POST',
