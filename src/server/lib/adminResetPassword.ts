@@ -40,14 +40,6 @@ export async function adminResetPassword(
     };
   }
 
-  // Validate API URL
-  if (!apiUrl) {
-    return {
-      success: false,
-      error: 'Missing API URL configuration'
-    };
-  }
-
   try {
     // Prepare headers
     const headers: HeadersInit = {
@@ -59,7 +51,7 @@ export async function adminResetPassword(
     }
 
     // Call external API to reset password
-    const response = await fetch(`${apiUrl}?action=admin_reset_password`, {
+    const response = await fetch(`${url}?action=admin_reset_password`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
