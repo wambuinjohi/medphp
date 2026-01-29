@@ -16,7 +16,13 @@
 import { fixProfileRls } from '../../src/server/lib/fixProfileRls';
 
 async function main() {
-  const apiUrl = process.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
+  const apiUrl = process.env.VITE_EXTERNAL_API_URL;
+  if (!apiUrl) {
+    console.error('❌ VITE_EXTERNAL_API_URL environment variable is required');
+    console.error('Usage: VITE_EXTERNAL_API_URL=https://your-api.com npm run admin:fix-rls');
+    process.exit(1);
+  }
+
   const authToken = process.env.API_AUTH_TOKEN;
 
   console.log('\n🔐 Fixing RLS policies via external API...\n');
