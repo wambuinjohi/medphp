@@ -93,70 +93,35 @@ $$ LANGUAGE plpgsql;`;
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Alert className="border-info/30 bg-info/5">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Steps to complete setup:</strong>
-            <ol className="list-decimal list-inside mt-2 space-y-1 text-sm">
-              <li>Copy the SQL code below</li>
-              <li>Go to your Supabase dashboard</li>
-              <li>Open the SQL Editor (from the left sidebar)</li>
-              <li>Create a new query and paste the SQL</li>
-              <li>Run the query</li>
-              <li>Refresh this page - the status will update automatically</li>
-            </ol>
-          </AlertDescription>
-        </Alert>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h4 className="font-semibold text-sm">Database Function SQL:</h4>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleCopy}
-              className="gap-2"
-            >
-              {copied ? (
-                <>
-                  <CheckCircle className="h-4 w-4" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4" />
-                  Copy SQL
-                </>
-              )}
-            </Button>
-          </div>
-          <div className="relative">
-            <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto text-xs border border-slate-700 max-h-96">
-              <code>{functionSQL}</code>
-            </pre>
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              window.open('https://app.supabase.com/project/_/sql/new', '_blank');
-            }}
-            className="gap-2"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Open Supabase SQL Editor
-          </Button>
-        </div>
-
         <Alert className="border-success/30 bg-success/5">
           <CheckCircle className="h-4 w-4 text-success" />
           <AlertDescription className="text-success">
-            Once you've run the SQL in Supabase, refresh this page and the payment system will work automatically.
+            The payment system now uses a built-in client-side processing method. The database function is no longer required for payment creation to work.
           </AlertDescription>
         </Alert>
+
+        <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+          <h4 className="font-semibold text-sm">What Changed?</h4>
+          <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+            <li>Payments are now created directly without requiring the database function</li>
+            <li>All payment processing, allocation creation, and invoice balance updates work automatically</li>
+            <li>If you previously created the database function, it is safe to leave it in place but is no longer used</li>
+            <li>No additional setup or configuration is needed</li>
+          </ul>
+        </div>
+
+        {process.env.NODE_ENV === 'development' && (
+          <details className="p-3 bg-slate-100 rounded-lg text-sm cursor-pointer">
+            <summary className="font-semibold text-slate-900">
+              Legacy SQL Code (for reference only)
+            </summary>
+            <div className="mt-3 relative">
+              <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto text-xs border border-slate-700 max-h-96">
+                <code>{functionSQL}</code>
+              </pre>
+            </div>
+          </details>
+        )}
       </CardContent>
     </Card>
   );
