@@ -166,7 +166,7 @@ export default function Invoices() {
   }, [currentCompany?.id, isLoading, refetch]);
 
   // Filter and search logic
-  const filteredInvoices = invoices?.filter(invoice => {
+  const filteredInvoices = (invoices?.filter(invoice => {
     // Search filter
     const matchesSearch =
       invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -187,7 +187,7 @@ export default function Invoices() {
     const matchesAmountTo = !amountToFilter || (invoice.total_amount || 0) <= parseFloat(amountToFilter);
 
     return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo && matchesAmountFrom && matchesAmountTo;
-  }) || [];
+  }) || []).sort((a, b) => new Date(b.invoice_date).getTime() - new Date(a.invoice_date).getTime());
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
