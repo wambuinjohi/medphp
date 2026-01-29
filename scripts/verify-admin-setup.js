@@ -2,13 +2,19 @@
 /**
  * Verify Admin Setup - External API Version
  *
- * This script verifies that admin setup is complete via helixgeneralhardware.com/api.php
- * 
+ * This script verifies that admin setup is complete via the configured API endpoint
+ *
  * Usage:
- *   node scripts/verify-admin-setup.js
+ *   VITE_EXTERNAL_API_URL=https://your-api.com/api.php node scripts/verify-admin-setup.js
  */
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL;
+if (!EXTERNAL_API_URL) {
+  console.error('❌ VITE_EXTERNAL_API_URL environment variable is required');
+  console.error('Usage: VITE_EXTERNAL_API_URL=https://your-api.com/api.php node scripts/verify-admin-setup.js');
+  process.exit(1);
+}
+
 const AUTH_TOKEN = process.env.API_AUTH_TOKEN || null;
 
 async function verifyAdminSetup() {
