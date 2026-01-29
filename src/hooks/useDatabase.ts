@@ -244,30 +244,28 @@ export function useUpdate<T>(table: string) {
 
 /**
  * Hook to delete a record
- * @returns Delete function and mutation state
+ * @returns React Query mutation object with mutate/mutateAsync methods
  */
 export function useDelete(table: string) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
+  const queryClient = useQueryClient();
   const { db } = useDatabase();
 
-  const delete_ = async (id: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  return useMutation({
+    mutationFn: async (id: string) => {
       const result = await db.delete(table, id);
+      if (result.error) throw result.error;
       return result;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return { delete: delete_, isLoading, error };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [table] });
+      toast.success(`Record deleted successfully!`);
+    },
+    onError: (error: any) => {
+      console.error(`Error deleting from ${table}:`, error);
+      const message = error?.message || `Failed to delete record`;
+      toast.error(message);
+    },
+  });
 }
 
 // ============================================
