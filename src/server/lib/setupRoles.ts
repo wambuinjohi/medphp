@@ -168,7 +168,7 @@ export async function createDefaultRoles(apiUrl?: string): Promise<RoleSetupResu
   const url = apiUrl || getServerApiUrl();
   try {
     // First check which roles exist
-    const checkResult = await checkRolesStatus(apiUrl);
+    const checkResult = await checkRolesStatus(url);
     
     if (!checkResult.success) {
       return {
