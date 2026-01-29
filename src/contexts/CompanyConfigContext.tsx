@@ -101,6 +101,7 @@ export function CompanyConfigProvider({ children }: { children: ReactNode }) {
       });
       // Use fallback defaults on error
       setConfig(defaultConfig);
+      updateFavicon(defaultConfig.logo_url, defaultConfig);
       setError(error);
     } finally {
       setIsLoading(false);
