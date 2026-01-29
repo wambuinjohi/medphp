@@ -154,41 +154,33 @@ export default function Transport({ initialTab = 'drivers' }: TransportProps) {
 
   const handleDeleteDriver = async (driverId: string) => {
     try {
-      await deleteDriver.mutateAsync({ id: driverId, company_id: activeCompanyId });
-      toast.success('Driver deleted successfully');
-      retryDrivers();
+      await deleteDriver.mutateAsync(driverId);
     } catch (error) {
-      toast.error('Failed to delete driver');
+      // Error handling is done in the mutation's onError
     }
   };
 
   const handleDeleteVehicle = async (vehicleId: string) => {
     try {
-      await deleteVehicle.mutateAsync({ id: vehicleId, company_id: activeCompanyId });
-      toast.success('Vehicle deleted successfully');
-      retryVehicles();
+      await deleteVehicle.mutateAsync(vehicleId);
     } catch (error) {
-      toast.error('Failed to delete vehicle');
+      // Error handling is done in the mutation's onError
     }
   };
 
   const handleDeleteMaterial = async (materialId: string) => {
     try {
-      await deleteMaterial.mutateAsync({ id: materialId, company_id: activeCompanyId });
-      toast.success('Material deleted successfully');
-      retryMaterials();
+      await deleteMaterial.mutateAsync(materialId);
     } catch (error) {
-      toast.error('Failed to delete material');
+      // Error handling is done in the mutation's onError
     }
   };
 
   const handleDeleteFinance = async (financeId: string) => {
     try {
-      await deleteFinance.mutateAsync({ id: financeId, company_id: activeCompanyId });
-      toast.success('Finance record deleted successfully');
-      retryFinances();
+      await deleteFinance.mutateAsync(financeId);
     } catch (error) {
-      toast.error('Failed to delete finance record');
+      // Error handling is done in the mutation's onError
     }
   };
 
