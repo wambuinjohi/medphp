@@ -154,6 +154,9 @@ export const CreateLPOModal = ({
 
       const newSupplier = await createSupplier.mutateAsync(supplierPayload);
 
+      // Refetch suppliers list to ensure new supplier appears in dropdown
+      refetchSuppliers();
+
       // Set as selected supplier and mark as newly created
       setFormData(prev => ({ ...prev, supplier_id: newSupplier.id }));
       setNewlyCreatedSupplierId(newSupplier.id);
