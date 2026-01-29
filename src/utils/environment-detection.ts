@@ -239,7 +239,9 @@ export function logEnvironmentConfig(): void {
   }
 
   const config = getEnvironmentConfig();
+  const buildMode = import.meta.env.PROD ? 'Production' : 'Development';
   console.log('📍 Environment Configuration:', {
+    buildMode,
     apiBaseUrl: config.apiBaseUrl,
     isLocal: config.isLocal,
     hostingType: config.hostingType,
