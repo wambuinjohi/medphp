@@ -150,72 +150,47 @@ export const useCreateProforma = () => {
       // Ensure created_by defaults to authenticated user
       let cleanProforma = { ...proformaWithTotals } as any;
       try {
+        // Try to get user from Supabase auth
         const { data: userData } = await supabase.auth.getUser();
         const authUserId = userData?.user?.id || null;
         if (authUserId) {
           cleanProforma.created_by = authUserId;
-        } else if (typeof cleanProforma.created_by === 'undefined' || cleanProforma.created_by === null) {
+        } else {
           cleanProforma.created_by = null;
         }
       } catch {
-        if (typeof cleanProforma.created_by === 'undefined') {
-          cleanProforma.created_by = null;
+        cleanProforma.created_by = null;
+      }
+
+      // Create the proforma invoice via external API
+      console.log('📋 Creating proforma via external API');
+      let insertResult = await externalApiAdapter.insert('proforma_invoices', cleanProforma);
+      let proformaData: any;
+
+      // Fallback: if error includes created_by, retry without it
+      if (insertResult.error) {
+        const errorMsg = String(insertResult.error.message || '').toLowerCase();
+        console.warn('Proforma insert failed:', errorMsg);
+
+        if (errorMsg.includes('created_by')) {
+          console.log('🔄 Retrying without created_by field');
+          const { created_by, ...retryPayload } = cleanProforma;
+          insertResult = await externalApiAdapter.insert('proforma_invoices', retryPayload);
         }
       }
 
-      // Create the proforma invoice (retry without valid_until if column missing)
-      let proformaData;
-      let firstData; let proformaError: any;
-      {
-        const { data, error } = await supabase
-          .from('proforma_invoices')
-          .insert([cleanProforma])
-          .select()
-          .single();
-        firstData = data; proformaError = error as any;
+      if (insertResult.error) {
+        const errorMessage = serializeError(insertResult.error);
+        console.error('❌ Failed to create proforma:', errorMessage);
+        throw new Error(`Failed to create proforma: ${errorMessage}`);
       }
 
-      // Fallback: if error includes created_by (FK violation or column missing), retry without it
-      if (proformaError && String(proformaError.message || '').includes('created_by')) {
-        const { created_by, ...retryPayload } = cleanProforma;
-        const retryRes = await supabase
-          .from('proforma_invoices')
-          .insert([retryPayload])
-          .select()
-          .single();
-        firstData = retryRes.data; proformaError = retryRes.error as any;
-      }
-
-      if (proformaError) {
-        const errorMessage = serializeError(proformaError).toLowerCase();
-        console.warn('Proforma insert failed, checking for schema mismatch:', errorMessage);
-
-        // Fallback: if valid_until column missing, retry without it
-        if (errorMessage.includes('valid_until')) {
-          const { valid_until, created_by, ...withoutColumns } = cleanProforma as any;
-          const retry = await supabase
-            .from('proforma_invoices')
-            .insert([withoutColumns])
-            .select()
-            .single();
-
-          if (retry.error) {
-            const retryMessage = serializeError(retry.error);
-            console.error('Retry insert failed:', retryMessage);
-            throw new Error(`Failed to create proforma: ${retryMessage}`);
-          }
-
-          proformaData = retry.data;
-        } else {
-          throw new Error(`Failed to create proforma: ${serializeError(proformaError)}`);
-        }
-      } else {
-        proformaData = firstData;
-      }
+      proformaData = { id: insertResult.id, ...cleanProforma };
+      console.log('✅ Proforma created:', proformaData.id);
 
       // Create the proforma items
       if (items.length > 0) {
-        const proformaItemsFull = items.map(item => ({
+        const proformaItemsData = items.map(item => ({
           proforma_id: proformaData.id,
           product_id: item.product_id,
           description: item.description,
@@ -229,15 +204,14 @@ export const useCreateProforma = () => {
           line_total: item.line_total,
         }));
 
-        let { error: itemsError } = await supabase
-          .from('proforma_items')
-          .insert(proformaItemsFull);
+        console.log('📦 Creating proforma items');
+        let itemsInsertResult = await externalApiAdapter.insertMany('proforma_items', proformaItemsData);
 
-        if (itemsError) {
-          const firstMsg = serializeError(itemsError).toLowerCase();
-          console.warn('Proforma items insert failed, attempting reduced columns:', firstMsg);
+        // Fallback: if error, retry with reduced fields
+        if (itemsInsertResult.error) {
+          const errorMsg = String(itemsInsertResult.error.message || '').toLowerCase();
+          console.warn('Proforma items insert failed:', errorMsg);
 
-          // Retry without discount_amount / tax fields
           let proformaItemsReduced = items.map((item, index) => ({
             proforma_id: proformaData.id,
             product_id: item.product_id,
@@ -250,22 +224,23 @@ export const useCreateProforma = () => {
           }));
 
           // If discount_percentage column is missing, remove it too
-          if (firstMsg.includes('discount_percentage')) {
+          if (errorMsg.includes('discount_percentage')) {
             proformaItemsReduced = proformaItemsReduced.map(({ discount_percentage, ...rest }) => rest as any);
           }
 
-          const retry = await supabase
-            .from('proforma_items')
-            .insert(proformaItemsReduced);
-
-          if (retry.error) {
-            const retryMessage = serializeError(retry.error);
-            console.error('Retry creating proforma items failed:', retryMessage);
-            // Try to delete the proforma if items creation failed
-            await supabase.from('proforma_invoices').delete().eq('id', proformaData.id);
-            throw new Error(`Failed to create proforma items: ${retryMessage}`);
-          }
+          console.log('🔄 Retrying with reduced fields');
+          itemsInsertResult = await externalApiAdapter.insertMany('proforma_items', proformaItemsReduced);
         }
+
+        if (itemsInsertResult.error) {
+          const retryMessage = serializeError(itemsInsertResult.error);
+          console.error('❌ Failed to create proforma items:', retryMessage);
+          // Try to delete the proforma if items creation failed
+          await externalApiAdapter.delete('proforma_invoices', proformaData.id);
+          throw new Error(`Failed to create proforma items: ${retryMessage}`);
+        }
+
+        console.log('✅ Proforma items created');
       }
 
       return proformaData;
