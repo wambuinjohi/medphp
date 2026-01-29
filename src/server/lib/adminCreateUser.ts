@@ -1,7 +1,9 @@
 /**
  * Admin Create User - External API Version
- * Uses helixgeneralhardware.com/api.php for user creation
+ * Uses configured API endpoint for user creation
  */
+
+import { getServerApiUrl } from '../../utils/getApiUrl';
 
 interface CreateUserRequest {
   email: string;
