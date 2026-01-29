@@ -64,11 +64,11 @@ export default function LPOs() {
 
   // Note: Auto-migration removed - using manual migration guide instead
 
-  const filteredLPOs = lpos?.filter(lpo =>
+  const filteredLPOs = (lpos?.filter(lpo =>
     lpo.lpo_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     lpo.suppliers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     lpo.notes?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  ) || []).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const getStatusBadge = (status: string) => {
     switch (status) {
