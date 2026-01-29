@@ -90,10 +90,10 @@ export const useOptimizedProductSearch = (companyId?: string, enabled: boolean =
           name: product.name,
           product_code: product.product_code,
           unit_of_measure: product.unit_of_measure || 'pieces',
-          unit_price: product.selling_price || product.unit_price || 0,
+          unit_price: Number(product.selling_price || product.unit_price || 0),
           // Ensure both price fields are available for compatibility
-          selling_price: product.selling_price || product.unit_price || 0,
-          stock_quantity: product.stock_quantity || 0,
+          selling_price: Number(product.selling_price || product.unit_price || 0),
+          stock_quantity: Number(product.stock_quantity || 0),
           category_name: categoryMap.get(product.category_id) || 'Uncategorized'
         }));
 
@@ -197,10 +197,10 @@ export const usePopularProducts = (companyId?: string, limit: number = 20) => {
           name: product.name,
           product_code: product.product_code,
           unit_of_measure: product.unit_of_measure || 'pieces',
-          unit_price: product.selling_price || product.unit_price || 0,
+          unit_price: Number(product.selling_price || product.unit_price || 0),
           // Ensure both price fields are available for compatibility
-          selling_price: product.selling_price || product.unit_price || 0,
-          stock_quantity: product.stock_quantity || 0,
+          selling_price: Number(product.selling_price || product.unit_price || 0),
+          stock_quantity: Number(product.stock_quantity || 0),
           category_name: categoryMap.get(product.category_id) || 'Uncategorized'
         }));
 
@@ -268,10 +268,10 @@ export const useProductById = (productId?: string) => {
           name: product.name,
           product_code: product.product_code,
           unit_of_measure: product.unit_of_measure || 'pieces',
-          unit_price: product.selling_price || product.unit_price || 0,
+          unit_price: Number(product.selling_price || product.unit_price || 0),
           // Ensure both price fields are available for compatibility
-          selling_price: product.selling_price || product.unit_price || 0,
-          stock_quantity: product.stock_quantity || 0,
+          selling_price: Number(product.selling_price || product.unit_price || 0),
+          stock_quantity: Number(product.stock_quantity || 0),
           category_name: categoryName
         } as ProductSearchResult;
       } catch (error) {
@@ -402,9 +402,9 @@ export const useInventoryStats = (companyId?: string) => {
         };
 
         data.forEach(product => {
-          const stock = product.stock_quantity || 0;
-          const minStock = product.minimum_stock_level || 0;
-          const price = product.selling_price || product.unit_price || 0;
+          const stock = Number(product.stock_quantity || 0);
+          const minStock = Number(product.minimum_stock_level || 0);
+          const price = Number(product.selling_price || product.unit_price || 0);
 
           if (stock <= 0) stats.outOfStockItems++;
           else if (stock <= minStock) stats.lowStockItems++;
