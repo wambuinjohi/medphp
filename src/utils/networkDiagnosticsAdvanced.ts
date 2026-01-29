@@ -348,8 +348,9 @@ export async function testDevProxyConnectivity(
  * Run all network diagnostics
  */
 export async function runFullNetworkDiagnostics(
-  apiUrl: string = 'https://helixgeneralhardware.com/api.php'
+  apiUrl?: string
 ): Promise<NetworkDiagnostic[]> {
+  const url = apiUrl || getClientApiUrl();
   console.log('🔧 Running full network diagnostics...\n');
 
   const results: NetworkDiagnostic[] = [];
@@ -358,7 +359,7 @@ export async function runFullNetworkDiagnostics(
   results.push(await testDNSResolution());
 
   // Test direct connectivity
-  results.push(await testDirectConnectivity(apiUrl));
+  results.push(await testDirectConnectivity(url));
 
   // Test CORS
   results.push(await testCORSConfiguration(apiUrl));
