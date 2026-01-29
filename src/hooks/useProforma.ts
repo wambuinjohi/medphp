@@ -445,35 +445,27 @@ export const useDeleteProforma = (companyId?: string) => {
 
   return useMutation({
     mutationFn: async (proformaId: string) => {
-      console.log('🗑️ Starting proforma deletion:', proformaId);
+      console.log('🗑️ Starting proforma deletion via external API:', proformaId);
 
-      // Snapshot for audit - get the record before deletion
+      // Fetch the proforma to get company ID before deletion
       let recordCompanyId: string | null = null;
       try {
-        const { data, error: selectError } = await supabase
-          .from('proforma_invoices')
-          .select(`id, company_id, proforma_items(*)`)
-          .eq('id', proformaId)
-          .single();
-
-        if (selectError) {
-          console.warn('⚠️ Could not fetch proforma before delete:', selectError);
-        } else {
-          recordCompanyId = (data as any)?.company_id ?? null;
+        const selectResult = await externalApiAdapter.selectOne('proforma_invoices', proformaId);
+        if (selectResult.error) {
+          console.warn('⚠️ Could not fetch proforma before delete:', selectResult.error);
+        } else if (selectResult.data) {
+          recordCompanyId = (selectResult.data as any)?.company_id ?? null;
           console.log('📋 Fetched proforma company_id:', recordCompanyId);
         }
       } catch (e) {
         console.warn('⚠️ Error fetching proforma:', e);
       }
 
-      // Skip audit logging due to backend API schema mismatch (actor_email column missing)
-      // TODO: Fix audit log schema on backend API before re-enabling
-
       // Delete child items first (best-effort)
       try {
-        const { error: itemsError } = await supabase.from('proforma_items').delete().eq('proforma_id', proformaId);
-        if (itemsError) {
-          console.warn('⚠️ Error deleting proforma items:', itemsError);
+        const itemsDeleteResult = await externalApiAdapter.deleteMany('proforma_items', { proforma_id: proformaId });
+        if (itemsDeleteResult.error) {
+          console.warn('⚠️ Error deleting proforma items:', itemsDeleteResult.error);
         } else {
           console.log('✅ Proforma items deleted');
         }
@@ -481,19 +473,16 @@ export const useDeleteProforma = (companyId?: string) => {
         console.warn('Proforma items delete skipped/failed:', (e as any)?.message || e);
       }
 
-      // Delete parent record
+      // Delete parent record via external API
       console.log('🔄 Deleting proforma invoice record:', proformaId);
-      const { error } = await supabase
-        .from('proforma_invoices')
-        .delete()
-        .eq('id', proformaId);
+      const deleteResult = await externalApiAdapter.delete('proforma_invoices', proformaId);
 
-      console.log('📤 Delete response:', { error });
+      console.log('📤 Delete response:', { error: deleteResult.error });
 
-      if (error) {
-        const errorMessage = serializeError(error);
+      if (deleteResult.error) {
+        const errorMessage = serializeError(deleteResult.error);
         console.error('❌ Error deleting proforma:', errorMessage);
-        throw new Error(`Failed to delete proforma: ${errorMessage}`);
+        throw deleteResult.error;
       }
 
       console.log('✅ Proforma record deleted successfully');
