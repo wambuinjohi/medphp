@@ -619,29 +619,39 @@ export const useUpdateProformaStatus = () => {
 
       if (notes) {
         // Append note to existing notes
-        const { data: currentProforma } = await supabase
-          .from('proforma_invoices')
-          .select('notes')
-          .eq('id', proformaId)
-          .single();
+        console.log('📋 Fetching current proforma notes');
+        const currentResult = await externalApiAdapter.selectOne('proforma_invoices', proformaId);
 
-        if (currentProforma?.notes) {
-          updateData.notes = `${currentProforma.notes}\n[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
-        } else {
-          updateData.notes = `[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
+        if (currentResult.error) {
+          console.warn('⚠️ Could not fetch current proforma:', currentResult.error);
+        } else if (currentResult.data) {
+          const currentProforma = currentResult.data as any;
+          if (currentProforma?.notes) {
+            updateData.notes = `${currentProforma.notes}\n[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
+          } else {
+            updateData.notes = `[${new Date().toLocaleString()}] Status changed to ${status}: ${notes}`;
+          }
         }
       }
 
-      const { data, error } = await supabase
-        .from('proforma_invoices')
-        .update(updateData)
-        .eq('id', proformaId)
-        .select()
-        .single();
+      console.log('📝 Updating proforma status:', { proformaId, status });
+      const updateResult = await externalApiAdapter.update('proforma_invoices', proformaId, updateData);
 
-      if (error) throw error;
+      if (updateResult.error) {
+        console.error('❌ Error updating proforma status:', updateResult.error);
+        throw updateResult.error;
+      }
 
-      return data;
+      console.log('✅ Proforma status updated');
+
+      // Fetch the updated record
+      const selectResult = await externalApiAdapter.selectOne('proforma_invoices', proformaId);
+      if (selectResult.error) {
+        console.warn('⚠️ Could not fetch updated proforma:', selectResult.error);
+        return null;
+      }
+
+      return selectResult.data;
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['proforma_invoices'] });
