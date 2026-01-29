@@ -361,6 +361,19 @@ export function useCreateProduct() {
 
       // Fetch the created record to return full data
       const { data } = await db.selectOne('products', result.id);
+
+      // Coerce numeric fields to ensure type safety
+      if (data) {
+        return {
+          ...data,
+          selling_price: Number(data.selling_price || 0),
+          stock_quantity: Number(data.stock_quantity || 0),
+          minimum_stock_level: Number(data.minimum_stock_level || 0),
+          cost_price: Number(data.cost_price || 0),
+          reorder_level: Number(data.reorder_level || 0),
+          unit_price: Number(data.unit_price || 0)
+        };
+      }
       return data;
     },
     onSuccess: () => {
