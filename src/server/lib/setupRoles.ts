@@ -335,7 +335,7 @@ export async function completeRoleSetup(apiUrl?: string): Promise<{
     }
 
     // Step 2: Setup permissions
-    const permissionsResult = await setupRolePermissions(apiUrl);
+    const permissionsResult = await setupRolePermissions(url);
 
     return {
       success: rolesResult.success && permissionsResult.success,
