@@ -189,7 +189,7 @@ export default function Inventory() {
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.product_categories?.name && item.product_categories.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [inventory, searchTerm]);
 
   // Calculate total inventory value - memoized
