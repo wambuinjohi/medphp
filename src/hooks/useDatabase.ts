@@ -1001,34 +1001,8 @@ export function useCreatePayment() {
       notes?: string;
     }) => {
       try {
-        // Try to use the server-side RPC function for atomic payment + allocation
-        const db = getDatabase();
-        const { data, error } = await db.rpc('record_payment_with_allocation', {
-          p_company_id: paymentRecord.company_id,
-          p_customer_id: paymentRecord.customer_id,
-          p_invoice_id: paymentRecord.invoice_id,
-          p_payment_number: paymentRecord.payment_number,
-          p_payment_date: paymentRecord.payment_date,
-          p_amount: paymentRecord.amount,
-          p_payment_method: paymentRecord.payment_method,
-          p_reference_number: paymentRecord.reference_number || paymentRecord.payment_number,
-          p_notes: paymentRecord.notes || null
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        return {
-          success: true,
-          fallback_used: false,
-          allocation_failed: false,
-          data
-        };
-      } catch (rpcError: any) {
-        console.warn('RPC function record_payment_with_allocation not available, using fallback:', rpcError?.message);
-
-        // Fallback: Insert payment directly via database adapter
+        // Use the client-side fallback path as the primary payment creation method
+        // Insert payment directly via database adapter
         try {
           // Generate payment_number if not provided
           if (!paymentRecord.payment_number) {
@@ -1167,6 +1141,8 @@ export function useCreatePayment() {
         } catch (fallbackError: any) {
           throw fallbackError;
         }
+      } catch (error: any) {
+        throw error;
       }
     },
     onSuccess: (result) => {
@@ -1174,9 +1150,7 @@ export function useCreatePayment() {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['paymentAllocations'] });
 
-      if (!result.fallback_used) {
-        toast.success('Payment recorded successfully!');
-      }
+      toast.success('Payment recorded successfully!');
     },
     onError: (error: any) => {
       console.error('Error creating payment:', error);
