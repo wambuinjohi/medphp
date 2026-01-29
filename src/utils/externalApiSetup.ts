@@ -3,6 +3,8 @@
  * Handles database initialization and admin user creation for the external API
  */
 
+import { getClientApiUrl } from './getApiUrl';
+
 interface SetupOptions {
   apiUrl?: string;
   email?: string;
@@ -23,7 +25,7 @@ interface SetupResult {
  */
 export async function initializeExternalAPI(options: SetupOptions = {}): Promise<SetupResult> {
   const {
-    apiUrl = import.meta.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php',
+    apiUrl,
     email,
     password,
     onProgress,
@@ -32,8 +34,10 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
   const adminEmail = email || 'admin@mail.com';
   const adminPassword = password || 'Pass123';
 
-  // Always use the direct URL (no proxy) for consistency across all environments
-  const fetchUrl = apiUrl.includes('/api.php') ? apiUrl : apiUrl + '/api.php';
+  // Use provided URL or fall back to smart detection
+  const fetchUrl = apiUrl
+    ? (apiUrl.includes('/api.php') ? apiUrl : apiUrl + '/api.php')
+    : getClientApiUrl();
 
   try {
     // Step 1: Test API connectivity
