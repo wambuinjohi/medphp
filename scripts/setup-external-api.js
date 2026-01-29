@@ -31,10 +31,28 @@ const log = {
 
 // Parse command line arguments
 const args = process.argv.slice(2);
-let apiUrl = process.env.API_URL || 'https://helixgeneralhardware.com/api.php';
-let adminEmail = process.env.ADMIN_EMAIL || 'admin@biolegend.local';
-let adminPassword = process.env.ADMIN_PASSWORD || 'Biolegend2024!Admin';
+let apiUrl = process.env.VITE_EXTERNAL_API_URL;
+let adminEmail = process.env.ADMIN_EMAIL;
+let adminPassword = process.env.ADMIN_PASSWORD;
 let dryRun = false;
+
+// Validate required environment variables
+if (!apiUrl) {
+  console.error(`${colors.red}✗${colors.reset} VITE_EXTERNAL_API_URL environment variable is required`);
+  console.error('Usage: VITE_EXTERNAL_API_URL=https://your-api.com/api.php ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=secret npm run setup:external-api');
+  process.exit(1);
+}
+
+if (!adminEmail) {
+  console.error(`${colors.red}✗${colors.reset} ADMIN_EMAIL environment variable is required`);
+  process.exit(1);
+}
+
+if (!adminPassword) {
+  console.error(`${colors.red}✗${colors.reset} ADMIN_PASSWORD environment variable is required`);
+  console.error('Note: Passwords should be strong and unique. Example: ADMIN_PASSWORD="SecurePassword123!"');
+  process.exit(1);
+}
 
 for (let i = 0; i < args.length; i++) {
   switch (args[i]) {
