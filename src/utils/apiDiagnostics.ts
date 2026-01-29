@@ -3,6 +3,8 @@
  * Helps diagnose issues with the external API
  */
 
+import { getClientApiUrl } from './getApiUrl';
+
 interface DiagnosticResult {
   name: string;
   status: 'success' | 'warning' | 'error';
@@ -11,7 +13,7 @@ interface DiagnosticResult {
 }
 
 export async function runApiDiagnostics(
-  apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php'
+  apiUrl: string = getClientApiUrl()
 ): Promise<DiagnosticResult[]> {
   const results: DiagnosticResult[] = [];
 
