@@ -328,11 +328,19 @@ export function useProducts(companyId?: string) {
           reorder_level: Number(product.reorder_level || 0),
           // Keep original fields too for compatibility
           sku: product.sku,
-          unit_price: Number(product.unit_price || 0),
-          reorder_level: Number(product.reorder_level || 0)
+          unit_price: Number(product.unit_price || 0)
         };
       }
-      return product;
+      // Coerce numeric fields for Supabase as well, in case they're returned as strings
+      return {
+        ...product,
+        selling_price: Number(product.selling_price || 0),
+        stock_quantity: Number(product.stock_quantity || 0),
+        minimum_stock_level: Number(product.minimum_stock_level || 0),
+        cost_price: Number(product.cost_price || 0),
+        reorder_level: Number(product.reorder_level || 0),
+        unit_price: Number(product.unit_price || 0)
+      };
     });
   }, [rawData, provider]);
 
