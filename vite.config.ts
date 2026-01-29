@@ -127,75 +127,78 @@ export default defineConfig(({ mode }) => {
         } : {}),
 
         // Proxy API requests to external backend or local server
-        '/api': {
-          target: apiUrl,
-          changeOrigin: true,
-          rewrite: (path) => {
-            // Skip file uploads - keep as /api/uploads
-            if (path.startsWith('/api/uploads')) {
-              return path;
-            }
-            // For query string requests: /api?action=X → /api.php?action=X
-            if (path.includes('?')) {
-              return path.replace('/api?', '/api.php?');
-            }
-            // For path-based requests: /api/upload_file → /api.php/upload_file
-            if (path.startsWith('/api/')) {
-              return '/api.php' + path.substring(4);
-            }
-            // Just /api → /api.php
-            return '/api.php';
-          },
-          configure: (proxy, options) => {
-            proxy.on('proxyReq', (proxyReq, req, res) => {
-              console.log(`📡 Proxying: ${req.method} ${req.url}`);
-
-              // Log authorization header for debugging
-              if (req.headers.authorization) {
-                console.log(`🔐 Authorization header: ${req.headers.authorization.substring(0, 30)}...`);
-              } else {
-                console.log(`⚠️  No Authorization header present`);
+        // Only proxy if external API URL is configured
+        ...(apiUrl ? {
+          '/api': {
+            target: apiUrl,
+            changeOrigin: true,
+            rewrite: (path) => {
+              // Skip file uploads - keep as /api/uploads
+              if (path.startsWith('/api/uploads')) {
+                return path;
               }
-            });
-            proxy.on('proxyRes', (proxyRes, req, res) => {
-              console.log(`✅ Response: ${proxyRes.statusCode}`);
-            });
-            proxy.on('error', (err, req, res) => {
-              console.error(`❌ Proxy error: ${err.message}`);
-            });
+              // For query string requests: /api?action=X → /api.php?action=X
+              if (path.includes('?')) {
+                return path.replace('/api?', '/api.php?');
+              }
+              // For path-based requests: /api/upload_file → /api.php/upload_file
+              if (path.startsWith('/api/')) {
+                return '/api.php' + path.substring(4);
+              }
+              // Just /api → /api.php
+              return '/api.php';
+            },
+            configure: (proxy, options) => {
+              proxy.on('proxyReq', (proxyReq, req, res) => {
+                console.log(`📡 Proxying: ${req.method} ${req.url}`);
+
+                // Log authorization header for debugging
+                if (req.headers.authorization) {
+                  console.log(`🔐 Authorization header: ${req.headers.authorization.substring(0, 30)}...`);
+                } else {
+                  console.log(`⚠️  No Authorization header present`);
+                }
+              });
+              proxy.on('proxyRes', (proxyRes, req, res) => {
+                console.log(`✅ Response: ${proxyRes.statusCode}`);
+              });
+              proxy.on('error', (err, req, res) => {
+                console.error(`❌ Proxy error: ${err.message}`);
+              });
+            },
           },
-        },
 
-        '/api/db': {
-          target: apiUrl,
-          changeOrigin: true,
-          rewrite: (path) => {
-            // Convert /api/db/* paths to API calls
-            const pathParts = path.replace('/api/db', '').split('/').filter(Boolean);
-            if (pathParts.length === 0) return '/?action=health';
+          '/api/db': {
+            target: apiUrl,
+            changeOrigin: true,
+            rewrite: (path) => {
+              // Convert /api/db/* paths to API calls
+              const pathParts = path.replace('/api/db', '').split('/').filter(Boolean);
+              if (pathParts.length === 0) return '/?action=health';
 
-            // Handle different endpoint patterns
-            const [resource, action, id] = pathParts;
-            if (resource === 'health') return '/?action=health';
-            if (resource === 'auth-context') return `/?action=check_auth`;
-            if (resource === 'select' && action) return `/?action=read&table=${action}`;
-            if (resource === 'select-one' && action && id) return `/?action=read&table=${action}&where={"id":"${id}"}`;
-            if (resource === 'insert' && action) return `/?action=create&table=${action}`;
-            if (resource === 'insert-many' && action) return `/?action=create&table=${action}`;
-            if (resource === 'update' && action && id) return `/?action=update&table=${action}&where={"id":"${id}"}`;
-            if (resource === 'update-many' && action) return `/?action=update&table=${action}`;
-            if (resource === 'delete' && action && id) return `/?action=delete&table=${action}&where={"id":"${id}"}`;
-            if (resource === 'delete-many' && action) return `/?action=delete&table=${action}`;
-            if (resource === 'raw') return '/?action=raw';
-            if (resource === 'auth') {
-              if (action === 'can-read') return '/?action=check_auth';
-              if (action === 'can-write') return '/?action=check_auth';
-              if (action === 'can-delete') return '/?action=check_auth';
-            }
+              // Handle different endpoint patterns
+              const [resource, action, id] = pathParts;
+              if (resource === 'health') return '/?action=health';
+              if (resource === 'auth-context') return `/?action=check_auth`;
+              if (resource === 'select' && action) return `/?action=read&table=${action}`;
+              if (resource === 'select-one' && action && id) return `/?action=read&table=${action}&where={"id":"${id}"}`;
+              if (resource === 'insert' && action) return `/?action=create&table=${action}`;
+              if (resource === 'insert-many' && action) return `/?action=create&table=${action}`;
+              if (resource === 'update' && action && id) return `/?action=update&table=${action}&where={"id":"${id}"}`;
+              if (resource === 'update-many' && action) return `/?action=update&table=${action}`;
+              if (resource === 'delete' && action && id) return `/?action=delete&table=${action}&where={"id":"${id}"}`;
+              if (resource === 'delete-many' && action) return `/?action=delete&table=${action}`;
+              if (resource === 'raw') return '/?action=raw';
+              if (resource === 'auth') {
+                if (action === 'can-read') return '/?action=check_auth';
+                if (action === 'can-write') return '/?action=check_auth';
+                if (action === 'can-delete') return '/?action=check_auth';
+              }
 
-            return path;
-          },
-        },
+              return path;
+            },
+          }
+        } : {}),
       },
     },
     plugins: [
