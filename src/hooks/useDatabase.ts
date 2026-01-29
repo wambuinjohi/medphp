@@ -1068,11 +1068,49 @@ export function useCreatePayment() {
               console.warn('Failed to create payment allocation:', allocError?.message);
               allocation_failed = true;
             } else {
-              // Reconcile invoice balance after successful allocation creation
+              // Update invoice balance after successful allocation creation
               try {
-                await reconcileInvoiceBalance(paymentRecord.invoice_id, true);
+                // Get all allocations for this invoice to calculate paid amount
+                const { data: allocations, error: allocFetchError } = await db.selectBy('payment_allocations', {
+                  invoice_id: paymentRecord.invoice_id
+                });
+
+                if (!allocFetchError && allocations && allocations.length > 0) {
+                  // Get the invoice
+                  const { data: invoice, error: invoiceError } = await db.selectOne('invoices', paymentRecord.invoice_id);
+
+                  if (!invoiceError && invoice) {
+                    // Calculate new paid amount from all allocations
+                    const totalPaid = (allocations as any[]).reduce(
+                      (sum, alloc) => sum + (alloc.amount || alloc.amount_allocated || 0),
+                      0
+                    );
+                    const newBalanceDue = (invoice as any).total_amount - totalPaid;
+
+                    // Determine status
+                    let newStatus = (invoice as any).status || 'draft';
+                    const tolerance = 0.01;
+                    const adjustedBalance = Math.abs(newBalanceDue) < tolerance ? 0 : newBalanceDue;
+
+                    if (adjustedBalance <= 0 && totalPaid > tolerance) {
+                      newStatus = 'paid';
+                    } else if (totalPaid > tolerance && adjustedBalance > 0) {
+                      newStatus = 'partial';
+                    } else {
+                      newStatus = 'draft';
+                    }
+
+                    // Update invoice
+                    await db.update('invoices', paymentRecord.invoice_id, {
+                      paid_amount: Math.max(0, totalPaid),
+                      balance_due: Math.max(0, newBalanceDue),
+                      status: newStatus,
+                      updated_at: new Date().toISOString()
+                    });
+                  }
+                }
               } catch (reconcileError: any) {
-                console.warn('Failed to reconcile invoice balance:', reconcileError?.message);
+                console.warn('Failed to update invoice balance:', reconcileError?.message);
               }
             }
           } catch (allocError: any) {
