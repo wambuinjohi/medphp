@@ -8,18 +8,26 @@ export default defineConfig(({ mode }) => {
   // Use local auth server for development if VITE_USE_LOCAL_AUTH is set
   const useLocalAuth = process.env.VITE_USE_LOCAL_AUTH === 'true';
 
-  // API configuration - updated to use new Helix General Hardware endpoint
-  const apiUrl = useLocalAuth
-    ? 'http://localhost:3001'
-    : 'https://helixgeneralhardware.com';
-
-  const apiEndpoint = `${apiUrl}/api.php`;
+  // API configuration - prioritize environment variable, fall back to relative /api.php
+  let apiUrl: string;
 
   if (useLocalAuth) {
+    // Local auth server mode - use localhost:3001
+    apiUrl = 'http://localhost:3001';
     console.log('✅ Using LOCAL authentication server at http://localhost:3001');
+  } else if (process.env.VITE_EXTERNAL_API_URL) {
+    // Use explicitly configured external API URL
+    apiUrl = process.env.VITE_EXTERNAL_API_URL;
+    // Remove trailing /api.php if present (we'll add it back in proxy config)
+    apiUrl = apiUrl.replace(/\/api\.php$/, '');
+    console.log(`🌐 Using EXTERNAL API configured via VITE_EXTERNAL_API_URL: ${apiUrl}/api.php`);
   } else {
-    console.log(`🌐 Using REMOTE API at ${apiEndpoint}`);
+    // Default: use relative /api.php (works on any locally running server)
+    apiUrl = '';
+    console.log(`📍 Using relative API endpoint: /api.php (will connect to current hostname)`);
   }
+
+  const apiEndpoint = apiUrl ? `${apiUrl}/api.php` : '/api.php';
 
   return {
     server: {
