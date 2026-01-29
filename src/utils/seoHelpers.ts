@@ -326,3 +326,33 @@ export const addStructuredData = (schema: any) => {
   }
   script.textContent = JSON.stringify(schema);
 };
+
+/**
+ * Update favicon and apple-touch-icon dynamically
+ * Should be called when company config is loaded
+ */
+export const updateFavicon = (logoUrl?: string, companyConfig?: CompanyConfig | null) => {
+  const config = createSiteConfig(companyConfig || null);
+  const faviconUrl = logoUrl || config.logo;
+
+  if (!faviconUrl) return;
+
+  // Update favicon link
+  let faviconLink = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+  if (!faviconLink) {
+    faviconLink = document.createElement('link');
+    faviconLink.rel = 'icon';
+    faviconLink.type = 'image/webp';
+    document.head.appendChild(faviconLink);
+  }
+  faviconLink.href = faviconUrl;
+
+  // Update apple-touch-icon link
+  let appleTouchLink = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
+  if (!appleTouchLink) {
+    appleTouchLink = document.createElement('link');
+    appleTouchLink.rel = 'apple-touch-icon';
+    document.head.appendChild(appleTouchLink);
+  }
+  appleTouchLink.href = faviconUrl;
+};
