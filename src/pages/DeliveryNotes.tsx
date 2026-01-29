@@ -54,7 +54,7 @@ export default function DeliveryNotes() {
     (note.delivery_note_number || note.delivery_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     note.customers?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     note.tracking_number?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ).sort((a, b) => new Date(b.created_at || b.delivery_date).getTime() - new Date(a.created_at || a.delivery_date).getTime());
 
   const getStatusBadge = (status: string) => {
     switch (status) {
