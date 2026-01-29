@@ -51,8 +51,12 @@ export async function uploadFile(
     formData.append('table', options?.table || 'general');
     formData.append('record_id', options?.recordId || '');
 
+    // Get API URL (uses smart detection: /api.php for prod, full URL for dev)
+    const apiUrl = getClientApiUrl();
+    const uploadBaseUrl = getUploadBaseUrl();
+
     // Upload to API
-    const response = await fetch(`${API_BASE_URL}?action=upload_file`, {
+    const response = await fetch(`${apiUrl}?action=upload_file`, {
       method: 'POST',
       body: formData,
       headers: {
