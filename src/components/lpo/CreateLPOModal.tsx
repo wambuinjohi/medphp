@@ -87,8 +87,9 @@ export const CreateLPOModal = ({
     email: '',
     phone: '',
     address: '',
-    city: '',
-    country: ''
+    contact_person: '',
+    payment_terms: '',
+    status: 'active'
   });
   const [isCreatingSupplier, setIsCreatingSupplier] = useState(false);
   const [newlyCreatedSupplierId, setNewlyCreatedSupplierId] = useState<string | null>(null);
