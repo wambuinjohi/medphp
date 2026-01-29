@@ -445,12 +445,12 @@ export const CreateLPOModal = ({
                   <SelectValue placeholder="Select supplier" />
                 </SelectTrigger>
                 <SelectContent>
-                  {supplierData?.existing && supplierData.existing.length > 0 && (
+                  {suppliers && suppliers.length > 0 && (
                     <>
                       <div className="px-2 py-1 text-xs font-semibold text-green-600 bg-green-50 border-b">
                         ✓ Current Suppliers
                       </div>
-                      {supplierData.existing.filter(s => s?.id).map((supplier) => (
+                      {suppliers.filter(s => s?.id).map((supplier) => (
                         <SelectItem key={supplier.id} value={supplier.id}>
                           <div className="flex items-center gap-2">
                             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
@@ -461,36 +461,20 @@ export const CreateLPOModal = ({
                     </>
                   )}
 
-                  {supplierData?.potential && supplierData.potential.length > 0 && (
-                    <>
-                      <div className="px-2 py-1 text-xs font-semibold text-orange-600 bg-orange-50 border-b border-t">
-                        ⚠ Customers (Will Create Supplier Role)
-                      </div>
-                      {supplierData.potential.filter(c => c?.id).map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                            {customer.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-
                   {/* Create New Supplier Option */}
-                  <div className="px-2 py-1 text-xs font-semibold text-orange-600 bg-orange-50 border-b border-t">
+                  <div className="px-2 py-1 text-xs font-semibold text-blue-600 bg-blue-50 border-b border-t">
                     ➕ Add New Supplier
                   </div>
                   <SelectItem value="__create_new__">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                       Create New Supplier...
                     </div>
                   </SelectItem>
 
-                  {(!supplierData?.existing?.length && !supplierData?.potential?.length) && (
+                  {!suppliers?.length && (
                     <div className="px-2 py-2 text-xs text-muted-foreground text-center">
-                      No existing suppliers found. Use "Create New Supplier" above to add one.
+                      No suppliers found. Create one using the option above.
                     </div>
                   )}
                 </SelectContent>
