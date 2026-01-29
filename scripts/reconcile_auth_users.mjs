@@ -1,15 +1,21 @@
 /**
  * Reconcile Auth Users - External API Version
  *
- * This script reconciles authentication users via helixgeneralhardware.com/api.php
+ * This script reconciles authentication users via the external API
  *
  * Usage:
- * VITE_EXTERNAL_API_URL=https://med.layonsconstruction.com/api.php DRY_RUN=1 node scripts/reconcile_auth_users.mjs
+ * VITE_EXTERNAL_API_URL=https://your-api.com DRY_RUN=1 node scripts/reconcile_auth_users.mjs
+ * VITE_EXTERNAL_API_URL=/api.php DRY_RUN=1 node scripts/reconcile_auth_users.mjs
  */
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL;
 const AUTH_TOKEN = process.env.API_AUTH_TOKEN || null;
 const DRY_RUN = !!process.env.DRY_RUN;
+
+if (!EXTERNAL_API_URL) {
+  console.error('❌ VITE_EXTERNAL_API_URL environment variable is required');
+  process.exit(1);
+}
 
 async function listAllUsers() {
   try {

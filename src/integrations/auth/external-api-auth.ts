@@ -1,7 +1,9 @@
 /**
  * External API Authentication Handler
- * Manages JWT token-based authentication with helixgeneralhardware.com/api.php
+ * Manages JWT token-based authentication with smart URL resolution
  */
+
+import { getClientApiUrl } from '@/utils/getApiUrl';
 
 export interface AuthToken {
   token: string;
@@ -19,11 +21,12 @@ class ExternalAPIAuthHandler {
   private tokenKey = 'med_api_token';
   private userKey = 'med_api_user_id';
 
-  constructor(apiUrl: string = import.meta.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php') {
-    this.apiUrl = apiUrl;
+  constructor(apiUrl?: string) {
+    // Use provided URL or fall back to smart detection
+    this.apiUrl = apiUrl || getClientApiUrl();
 
     // Always use the direct URL (no proxy) for consistency across all environments
-    this.fetchUrl = apiUrl.includes('/api.php') ? apiUrl : apiUrl + '/api.php';
+    this.fetchUrl = this.apiUrl.includes('/api.php') ? this.apiUrl : this.apiUrl + '/api.php';
   }
 
   /**

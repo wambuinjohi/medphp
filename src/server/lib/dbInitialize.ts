@@ -3,7 +3,8 @@
  * Handles checking and creating missing database tables on the remote MySQL server
  */
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
+// Get API URL from environment or use relative /api.php
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || '/api.php';
 
 // List of all required tables
 const REQUIRED_TABLES = [
