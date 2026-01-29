@@ -226,9 +226,7 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
               description: `Credit note ${creditNoteNumber} created for overpayment.`
             });
           } else {
-            toast.success(`Payment of ${formatCurrency(paymentData.amount)} recorded successfully!`, {
-              description: "Payment allocation may require manual setup. Check the payments list."
-            });
+            toast.success(`Payment of ${formatCurrency(paymentData.amount)} recorded successfully!`);
           }
         }
       } else {
