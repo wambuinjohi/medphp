@@ -69,7 +69,13 @@ function parseArgs(): CliArgs {
 }
 
 async function main() {
-  const apiUrl = process.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
+  const apiUrl = process.env.VITE_EXTERNAL_API_URL;
+  if (!apiUrl) {
+    console.error('❌ VITE_EXTERNAL_API_URL environment variable is required');
+    console.error('Usage: VITE_EXTERNAL_API_URL=https://your-api.com npm run admin:create-user');
+    process.exit(1);
+  }
+
   const authToken = process.env.API_AUTH_TOKEN;
 
   const args = parseArgs();
