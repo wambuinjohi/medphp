@@ -3,6 +3,8 @@
  * Detects firewall, proxy, DNS, and connectivity issues
  */
 
+import { getClientApiUrl } from './getApiUrl';
+
 interface NetworkDiagnostic {
   test: string;
   status: 'success' | 'warning' | 'error' | 'info';
@@ -15,8 +17,9 @@ interface NetworkDiagnostic {
  * Test direct connectivity to API endpoint
  */
 export async function testDirectConnectivity(
-  apiUrl: string = 'https://helixgeneralhardware.com/api.php'
+  apiUrl?: string
 ): Promise<NetworkDiagnostic> {
+  const url = apiUrl || getClientApiUrl();
   const startTime = performance.now();
   
   try {
