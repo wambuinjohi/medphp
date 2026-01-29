@@ -84,10 +84,13 @@ export function CompanyConfigProvider({ children }: { children: ReactNode }) {
         };
         console.log('✅ Company config loaded from database:', loadedConfig.name);
         setConfig(loadedConfig);
+        // Update favicon to match company logo
+        updateFavicon(loadedConfig.logo_url, loadedConfig);
       } else {
         // No companies found, use defaults
         console.warn('ℹ️  No companies found in database, using defaults');
         setConfig(defaultConfig);
+        updateFavicon(defaultConfig.logo_url, defaultConfig);
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
