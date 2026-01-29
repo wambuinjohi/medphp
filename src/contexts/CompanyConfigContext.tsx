@@ -67,6 +67,7 @@ export function CompanyConfigProvider({ children }: { children: ReactNode }) {
         console.warn('⚠️  Error fetching company config from database:', result.error);
         // Use fallback defaults
         setConfig(defaultConfig);
+        updateFavicon(defaultConfig.logo_url, defaultConfig);
       } else if (result.data && result.data.length > 0) {
         const companyData = result.data[0];
         const loadedConfig: CompanyConfig = {
