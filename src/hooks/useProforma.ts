@@ -85,42 +85,20 @@ export const useProforma = (proformaId?: string) => {
     queryFn: async () => {
       if (!proformaId) return null;
 
-      const { data, error } = await supabase
-        .from('proforma_invoices')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          proforma_items (
-            *,
-            products (
-              name
-            )
-          )
-        `)
-        .eq('id', proformaId)
-        .single();
+      console.log('📋 Fetching proforma:', proformaId);
+      const result = await externalApiAdapter.selectOne('proforma_invoices', proformaId);
 
-      if (error) {
-        console.error('Error fetching proforma:', error);
-        throw error;
+      if (result.error) {
+        console.error('Error fetching proforma:', result.error);
+        throw result.error;
       }
 
-      // Map product names to items for compatibility
-      const proformaWithProductNames = {
-        ...data,
-        proforma_items: data.proforma_items?.map(item => ({
-          ...item,
-          product_name: item.products?.name || ''
-        }))
-      };
+      if (!result.data) {
+        throw new Error('Proforma not found');
+      }
 
-      return proformaWithProductNames as ProformaWithItems;
+      console.log('✅ Fetched proforma:', proformaId);
+      return result.data as ProformaWithItems;
     },
     enabled: !!proformaId,
   });
