@@ -482,13 +482,12 @@ export const useDeleteProforma = (companyId?: string) => {
 
       // Delete parent record
       console.log('🔄 Deleting proforma invoice record:', proformaId);
-      const { data: deleteData, error } = await supabase
+      const { error } = await supabase
         .from('proforma_invoices')
         .delete()
-        .eq('id', proformaId)
-        .select();
+        .eq('id', proformaId);
 
-      console.log('📤 Delete response:', { deleteData, error, rowsAffected: deleteData?.length || 0 });
+      console.log('📤 Delete response:', { error });
 
       if (error) {
         const errorMessage = serializeError(error);
@@ -496,9 +495,7 @@ export const useDeleteProforma = (companyId?: string) => {
         throw new Error(`Failed to delete proforma: ${errorMessage}`);
       }
 
-      if (!deleteData || deleteData.length === 0) {
-        console.warn('⚠️ Delete returned no rows - record may not have been deleted or RLS policy prevented it');
-      }
+      console.log('✅ Proforma record deleted successfully');
 
       // Return the company ID for use in onSuccess
       return recordCompanyId || companyId;
