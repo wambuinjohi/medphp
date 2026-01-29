@@ -628,8 +628,9 @@ export const CreateLPOModal = ({
                         email: '',
                         phone: '',
                         address: '',
-                        city: '',
-                        country: ''
+                        contact_person: '',
+                        payment_terms: '',
+                        status: 'active'
                       });
                     }}
                   >
@@ -671,12 +672,12 @@ export const CreateLPOModal = ({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="new_supplier_city">City</Label>
+                    <Label htmlFor="new_supplier_contact_person">Contact Person</Label>
                     <Input
-                      id="new_supplier_city"
-                      value={newSupplierData.city}
-                      onChange={(e) => setNewSupplierData(prev => ({ ...prev, city: e.target.value }))}
-                      placeholder="Nairobi"
+                      id="new_supplier_contact_person"
+                      value={newSupplierData.contact_person}
+                      onChange={(e) => setNewSupplierData(prev => ({ ...prev, contact_person: e.target.value }))}
+                      placeholder="Contact person name"
                       disabled={isCreatingSupplier}
                     />
                   </div>
@@ -690,6 +691,32 @@ export const CreateLPOModal = ({
                       disabled={isCreatingSupplier}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new_supplier_payment_terms">Payment Terms</Label>
+                    <Input
+                      id="new_supplier_payment_terms"
+                      value={newSupplierData.payment_terms}
+                      onChange={(e) => setNewSupplierData(prev => ({ ...prev, payment_terms: e.target.value }))}
+                      placeholder="e.g., Net 30, COD"
+                      disabled={isCreatingSupplier}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new_supplier_status">Status</Label>
+                    <Select
+                      value={newSupplierData.status}
+                      onValueChange={(value) => setNewSupplierData(prev => ({ ...prev, status: value }))}
+                      disabled={isCreatingSupplier}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
                   <Button
@@ -702,8 +729,9 @@ export const CreateLPOModal = ({
                         email: '',
                         phone: '',
                         address: '',
-                        city: '',
-                        country: ''
+                        contact_person: '',
+                        payment_terms: '',
+                        status: 'active'
                       });
                     }}
                     disabled={isCreatingSupplier}
