@@ -98,10 +98,10 @@ export async function uploadFile(
     }
 
     if (data.status === 'success') {
-      console.log('✅ Upload successful, URL:', data.url || `${UPLOAD_BASE_URL}/${data.path}`);
+      console.log('✅ Upload successful, URL:', data.url || `${uploadBaseUrl}/${data.path}`);
       return {
         success: true,
-        url: data.url || `${UPLOAD_BASE_URL}/${data.path}`,
+        url: data.url || `${uploadBaseUrl}/${data.path}`,
         path: data.path,
         message: 'File uploaded successfully'
       };
