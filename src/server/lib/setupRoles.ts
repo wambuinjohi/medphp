@@ -310,7 +310,7 @@ export async function setupRolePermissions(apiUrl?: string): Promise<RoleSetupRe
 /**
  * Complete role setup including both role creation and permission setup
  */
-export async function completeRoleSetup(apiUrl: string = EXTERNAL_API_URL): Promise<{
+export async function completeRoleSetup(apiUrl?: string): Promise<{
   success: boolean;
   message: string;
   rolesCreated: string[];
