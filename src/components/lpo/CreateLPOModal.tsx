@@ -128,7 +128,7 @@ export const CreateLPOModal = ({
   );
 
   // Validate supplier selection for customer/supplier conflicts
-  // Create new supplier (customer) function
+  // Create new supplier function
   const handleCreateNewSupplier = async () => {
     if (!currentCompany?.id) {
       toast.error('Company not found');
@@ -142,26 +142,22 @@ export const CreateLPOModal = ({
 
     setIsCreatingSupplier(true);
     try {
-      // Generate customer code
-      const customerCode = `SUP-${newSupplierData.name.slice(0, 3).toUpperCase()}-${Date.now().toString().slice(-6)}`;
-
-      const customerData = {
+      const supplierPayload = {
         company_id: currentCompany.id,
-        customer_code: customerCode,
         name: newSupplierData.name.trim(),
         email: newSupplierData.email.trim() || null,
         phone: newSupplierData.phone.trim() || null,
         address: newSupplierData.address.trim() || null,
-        city: newSupplierData.city.trim() || null,
-        country: newSupplierData.country.trim() || null,
-        is_active: true
+        contact_person: newSupplierData.contact_person.trim() || null,
+        payment_terms: newSupplierData.payment_terms.trim() || null,
+        status: newSupplierData.status
       };
 
-      const newCustomer = await createCustomer.mutateAsync(customerData);
+      const newSupplier = await createSupplier.mutateAsync(supplierPayload);
 
       // Set as selected supplier and mark as newly created
-      setFormData(prev => ({ ...prev, supplier_id: newCustomer.id }));
-      setNewlyCreatedSupplierId(newCustomer.id);
+      setFormData(prev => ({ ...prev, supplier_id: newSupplier.id }));
+      setNewlyCreatedSupplierId(newSupplier.id);
 
       // Reset form
       setNewSupplierData({
@@ -169,15 +165,16 @@ export const CreateLPOModal = ({
         email: '',
         phone: '',
         address: '',
-        city: '',
-        country: ''
+        contact_person: '',
+        payment_terms: '',
+        status: 'active'
       });
       setShowCreateSupplier(false);
 
-      toast.success(`Supplier "${newCustomer.name}" created and selected!`);
+      toast.success(`Supplier "${newSupplier.name}" created and selected!`);
 
       // Validate the new supplier selection (mark as newly created)
-      await validateSupplier(newCustomer.id, true);
+      await validateSupplier(newSupplier.id, true);
 
     } catch (error) {
       console.error('Error creating supplier:', error);
