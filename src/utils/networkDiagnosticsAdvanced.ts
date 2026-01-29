@@ -223,10 +223,11 @@ export async function testDNSResolution(
  * Test CORS configuration
  */
 export async function testCORSConfiguration(
-  apiUrl: string = 'https://helixgeneralhardware.com/api.php'
+  apiUrl?: string
 ): Promise<NetworkDiagnostic> {
+  const url = apiUrl || getClientApiUrl();
   try {
-    const response = await fetch(`${apiUrl}?action=health`, {
+    const response = await fetch(`${url}?action=health`, {
       method: 'GET',
       headers: {
         'Origin': window.location.origin,
