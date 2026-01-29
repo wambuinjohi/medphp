@@ -527,7 +527,7 @@ export function CreateQuotationModal({ open, onOpenChange, onSuccess }: CreateQu
                                 )}
                               </div>
                               <div className="text-right">
-                                <div className="font-semibold">{formatCurrency(product.selling_price)}</div>
+                                <div className="font-semibold">{formatCurrency(Number.isFinite(Number(product.selling_price)) ? Number(product.selling_price) : 0)}</div>
                                 <div className="text-xs text-muted-foreground">Stock: {product.stock_quantity}</div>
                               </div>
                             </div>
