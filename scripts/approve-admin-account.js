@@ -2,14 +2,20 @@
 /**
  * Approve Admin Account - External API Version
  *
- * This script approves/activates an admin account via helixgeneralhardware.com/api.php
- * 
+ * This script approves/activates an admin account via the external API
+ *
  * Usage:
- *   node scripts/approve-admin-account.js [user-id] [approval-code]
+ *   VITE_EXTERNAL_API_URL=https://your-api.com node scripts/approve-admin-account.js [user-id] [approval-code]
+ *   VITE_EXTERNAL_API_URL=/api.php node scripts/approve-admin-account.js [user-id] [approval-code]
  */
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL;
 const AUTH_TOKEN = process.env.API_AUTH_TOKEN || null;
+
+if (!EXTERNAL_API_URL) {
+  console.error('❌ VITE_EXTERNAL_API_URL environment variable is required');
+  process.exit(1);
+}
 
 async function approveAdminAccount() {
   try {
