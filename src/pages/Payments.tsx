@@ -195,7 +195,7 @@ export default function Payments() {
     (payment.customers?.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (payment.payment_number?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     payment.payment_allocations?.some(alloc => (alloc.invoice_number?.toLowerCase() || '').includes(searchTerm.toLowerCase()))
-  );
+  ).sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
 
   if (isLoading) {
     return (

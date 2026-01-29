@@ -121,10 +121,10 @@ export default function Quotations() {
     }).format(amount);
   };
 
-  const filteredQuotations = quotations?.filter(quotation =>
+  const filteredQuotations = (quotations?.filter(quotation =>
     quotation.customers?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     quotation.quotation_number.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  ) || []).sort((a, b) => new Date(b.created_at || b.quotation_date).getTime() - new Date(a.created_at || a.quotation_date).getTime());
 
   const handleCreateSuccess = () => {
     refetch();

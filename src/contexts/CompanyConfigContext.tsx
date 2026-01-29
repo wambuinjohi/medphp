@@ -1,6 +1,7 @@
 import React, { createContext, useContext, ReactNode, useEffect, useState, useCallback } from 'react';
 import { getDatabase } from '@/integrations/database';
 import { logError } from '@/utils/errorLogger';
+import { updateFavicon } from '@/utils/seoHelpers';
 
 /**
  * Company configuration interface for public-facing branding and SEO
@@ -66,6 +67,7 @@ export function CompanyConfigProvider({ children }: { children: ReactNode }) {
         console.warn('⚠️  Error fetching company config from database:', result.error);
         // Use fallback defaults
         setConfig(defaultConfig);
+        updateFavicon(defaultConfig.logo_url, defaultConfig);
       } else if (result.data && result.data.length > 0) {
         const companyData = result.data[0];
         const loadedConfig: CompanyConfig = {
@@ -83,10 +85,13 @@ export function CompanyConfigProvider({ children }: { children: ReactNode }) {
         };
         console.log('✅ Company config loaded from database:', loadedConfig.name);
         setConfig(loadedConfig);
+        // Update favicon to match company logo
+        updateFavicon(loadedConfig.logo_url, loadedConfig);
       } else {
         // No companies found, use defaults
         console.warn('ℹ️  No companies found in database, using defaults');
         setConfig(defaultConfig);
+        updateFavicon(defaultConfig.logo_url, defaultConfig);
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
@@ -96,6 +101,7 @@ export function CompanyConfigProvider({ children }: { children: ReactNode }) {
       });
       // Use fallback defaults on error
       setConfig(defaultConfig);
+      updateFavicon(defaultConfig.logo_url, defaultConfig);
       setError(error);
     } finally {
       setIsLoading(false);
