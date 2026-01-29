@@ -94,7 +94,7 @@ export default function CreditNotes() {
   const deleteCreditNote = useDeleteCreditNote();
 
   // Filter and search logic
-  const filteredCreditNotes = creditNotes?.filter(creditNote => {
+  const filteredCreditNotes = (creditNotes?.filter(creditNote => {
     // Search filter
     const matchesSearch =
       creditNote.credit_note_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -115,7 +115,7 @@ export default function CreditNotes() {
     const matchesAmountTo = !amountToFilter || (creditNote.total_amount || 0) <= parseFloat(amountToFilter);
 
     return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo && matchesAmountFrom && matchesAmountTo;
-  }) || [];
+  }) || []).sort((a, b) => new Date(b.credit_note_date).getTime() - new Date(a.credit_note_date).getTime());
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
