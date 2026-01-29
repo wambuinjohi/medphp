@@ -3,7 +3,8 @@
  * Handles creating and configuring default roles and permissions on the remote API
  */
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
+import { getServerApiUrl } from '../../utils/getApiUrl';
+
 const API_AUTH_TOKEN = process.env.API_AUTH_TOKEN || '';
 
 // Default roles to be created
