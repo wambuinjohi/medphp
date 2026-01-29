@@ -318,9 +318,10 @@ export async function completeRoleSetup(apiUrl?: string): Promise<{
   permissionsSetup: boolean;
   errors: string[];
 }> {
+  const url = apiUrl || getServerApiUrl();
   try {
     // Step 1: Create default roles
-    const rolesResult = await createDefaultRoles(apiUrl);
+    const rolesResult = await createDefaultRoles(url);
 
     if (!rolesResult.success && rolesResult.errors.length > 0) {
       return {
