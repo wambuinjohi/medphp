@@ -1479,10 +1479,30 @@ try {
             $auth = requireAuthForModification($action, $table);
         }
 
+        // Get valid columns from table schema
+        $schema_result = $conn->query(
+            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '" . escape($conn, $table) . "'"
+        );
+
+        $valid_columns = [];
+        if ($schema_result) {
+            while ($row = $schema_result->fetch_assoc()) {
+                $valid_columns[] = $row['COLUMN_NAME'];
+            }
+        }
+
         $columns = [];
         $values = [];
+        $skipped_columns = [];
 
         foreach ($data as $col => $val) {
+            // Skip columns that don't exist in the table schema
+            if (!in_array($col, $valid_columns)) {
+                $skipped_columns[] = $col;
+                continue;
+            }
+
             // Convert boolean values to 0/1 for proper MySQL handling
             if (is_bool($val)) {
                 $val = $val ? 1 : 0;
@@ -1491,6 +1511,11 @@ try {
             $columns[] = "`" . escape($conn, $col) . "`";
             // Handle NULL values properly - don't wrap in quotes
             $values[] = is_null($val) ? "NULL" : ("'" . escape($conn, $val) . "'");
+        }
+
+        // Log skipped columns for debugging
+        if (!empty($skipped_columns)) {
+            error_log("Skipped columns not in table schema: " . implode(", ", $skipped_columns));
         }
 
         $sql = "INSERT INTO `$table` (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $values) . ")";
@@ -1502,11 +1527,16 @@ try {
             throw new Exception("Insert failed: " . $conn->error);
         }
 
+        // Determine the inserted ID:
+        // 1. If 'id' was provided in the input data (UUID case), use that
+        // 2. Otherwise use $conn->insert_id (auto-increment case)
+        $insertedId = isset($data['id']) && !empty($data['id']) ? $data['id'] : $conn->insert_id;
+
         echo json_encode([
             'status' => 'success',
             'message' => 'Record created',
-            'id' => $conn->insert_id,
-            'data' => array_merge($data, ['id' => $conn->insert_id])
+            'id' => $insertedId,
+            'data' => array_merge($data, ['id' => $insertedId])
         ]);
         exit();
     }

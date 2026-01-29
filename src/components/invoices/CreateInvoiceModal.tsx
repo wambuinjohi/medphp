@@ -471,7 +471,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onSuccess, preSelectedC
                       ) : (
                         customers?.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
-                            {customer.name} ({customer.customer_code})
+                            {customer.name}{customer.customer_code && ` (${customer.customer_code})`}
                           </SelectItem>
                         ))
                       )}

@@ -1036,14 +1036,19 @@ export function useCreatePayment() {
           }
 
           const db = getDatabase();
-          const { data: paymentResult, error: insertError } = await db.insert('payments', paymentRecord);
+          const insertResult = await db.insert('payments', paymentRecord);
 
-          if (insertError) {
-            throw insertError;
+          if (insertResult.error) {
+            throw insertResult.error;
+          }
+
+          // Check if ID was returned
+          if (!insertResult.id) {
+            throw new Error('Payment record was created but no ID was returned. Please try again.');
           }
 
           // Fetch the created payment record
-          const { data: paymentData, error: fetchError } = await db.selectOne('payments', paymentResult.id);
+          const { data: paymentData, error: fetchError } = await db.selectOne('payments', insertResult.id);
 
           if (fetchError) {
             throw fetchError;
@@ -1054,10 +1059,10 @@ export function useCreatePayment() {
           try {
             // Check if payment_allocations table exists
             const { error: allocError } = await db.insert('payment_allocations', {
+              id: crypto.randomUUID(),
               payment_id: paymentData.id,
               invoice_id: paymentRecord.invoice_id,
-              allocated_amount: paymentRecord.amount,
-              allocation_date: paymentRecord.payment_date,
+              amount: paymentRecord.amount,
             });
 
             if (allocError) {
