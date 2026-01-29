@@ -1,7 +1,9 @@
 /**
  * Admin Reset Password - External API Version
- * Uses helixgeneralhardware.com/api.php for password reset operations
+ * Uses configured API endpoint for password reset operations
  */
+
+import { getServerApiUrl } from '../../utils/getApiUrl';
 
 interface ResetPasswordRequest {
   email: string;
