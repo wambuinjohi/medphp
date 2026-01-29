@@ -2,16 +2,22 @@
 
 /**
  * Complete Database Extraction - External API Version
- * This script now calls the external API (helixgeneralhardware.com/api.php)
- * for database operations instead of Supabase
+ * This script calls the external API for database operations
+ *
+ * Usage:
+ *   VITE_EXTERNAL_API_URL=https://your-api.com API_AUTH_TOKEN=token node extract-complete-database.js
+ *   Or for local/relative API:
+ *   VITE_EXTERNAL_API_URL=/api.php node extract-complete-database.js
  */
 
-const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
+const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL;
 const AUTH_TOKEN = process.env.API_AUTH_TOKEN || null;
 
 if (!EXTERNAL_API_URL) {
-  console.error('❌ Error: External API URL not found in environment variables');
-  console.error('Please set VITE_EXTERNAL_API_URL');
+  console.error('❌ Error: VITE_EXTERNAL_API_URL environment variable is required');
+  console.error('\nUsage:');
+  console.error('  VITE_EXTERNAL_API_URL=https://your-api.com node extract-complete-database.js');
+  console.error('  VITE_EXTERNAL_API_URL=/api.php node extract-complete-database.js');
   process.exit(1);
 }
 
