@@ -32,7 +32,7 @@ import {
   Calendar,
   AlertTriangle
 } from 'lucide-react';
-import { useCreateLPO, useGenerateLPONumber, useAllSuppliersAndCustomers, useProducts, useCompanies, useCreateCustomer } from '@/hooks/useDatabase';
+import { useCreateLPO, useGenerateLPONumber, useAllSuppliersAndCustomers, useProducts, useCompanies, useCreateSupplier } from '@/hooks/useDatabase';
 import { toast } from 'sonner';
 import { validateLPO } from '@/utils/lpoValidation';
 import { validateSupplierSelection, ValidationResult } from '@/utils/customerSupplierValidation';
