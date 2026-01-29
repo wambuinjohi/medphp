@@ -66,28 +66,31 @@ export default defineConfig(({ mode }) => {
 
         // ===== CRITICAL: Proxy all /proxy routes to bypass CORS =====
         // This acts as a bridge between frontend and backend
-        '/proxy': {
-          target: apiUrl,
-          changeOrigin: true,
-          pathRewrite: {
-            '^/proxy': '', // Remove /proxy prefix to make clean request to backend
-          },
-          secure: false,
-          ws: false,
-          configure: (proxy, options) => {
-            proxy.on('proxyReq', (proxyReq, req, res) => {
-              // Add debugging
-              console.log(`🔗 Proxying: ${req.method} ${req.url} → ${apiUrl}${req.url.replace('/proxy', '')}`);
-            });
-            proxy.on('proxyRes', (proxyRes, req, res) => {
-              // Log response
-              console.log(`✅ Proxy response: ${proxyRes.statusCode}`);
-            });
-            proxy.on('error', (err, req, res) => {
-              console.error(`❌ Proxy error: ${err.message}`);
-            });
+        // Only proxy if external API URL is configured
+        ...(apiUrl ? {
+          '/proxy': {
+            target: apiUrl,
+            changeOrigin: true,
+            pathRewrite: {
+              '^/proxy': '', // Remove /proxy prefix to make clean request to backend
+            },
+            secure: false,
+            ws: false,
+            configure: (proxy, options) => {
+              proxy.on('proxyReq', (proxyReq, req, res) => {
+                // Add debugging
+                console.log(`🔗 Proxying: ${req.method} ${req.url} → ${apiUrl}${req.url.replace('/proxy', '')}`);
+              });
+              proxy.on('proxyRes', (proxyRes, req, res) => {
+                // Log response
+                console.log(`✅ Proxy response: ${proxyRes.statusCode}`);
+              });
+              proxy.on('error', (err, req, res) => {
+                console.error(`❌ Proxy error: ${err.message}`);
+              });
+            }
           }
-        },
+        } : {}),
 
         // File upload requests - forward to main API (preserve path for upload detection)
         '/api/uploads': {
