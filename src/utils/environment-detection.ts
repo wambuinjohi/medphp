@@ -85,10 +85,15 @@ function detectLocalHosting(): boolean {
 
 /**
  * Get the API base URL based on environment detection
- * Hybrid approach: respects VITE_EXTERNAL_API_URL if set, otherwise auto-detects
+ *
+ * Priority order:
+ * 1. Explicit VITE_EXTERNAL_API_URL environment variable (if set at build time)
+ * 2. Production builds: use relative /api.php (works on any domain)
+ * 3. Development mode: auto-detect based on hostname
  */
 function getAPIBaseURLInternal(): string {
   console.log('[ENV_DETECT] 🔵 getAPIBaseURLInternal called');
+  console.log('[ENV_DETECT] Build mode - PROD:', import.meta.env.PROD, 'DEV:', import.meta.env.DEV);
   console.log('[ENV_DETECT] typeof window:', typeof window);
 
   // If running in SSR context, require explicit config
@@ -102,28 +107,29 @@ function getAPIBaseURLInternal(): string {
     return ensureApiPhpSuffix(envUrl);
   }
 
-  // Priority 1: Use explicit environment variable if set
   console.log('[ENV_DETECT] Browser context detected');
+
+  // Priority 1: Explicit environment variable (overrides all auto-detection)
   const explicitUrl = import.meta.env.VITE_EXTERNAL_API_URL;
-  console.log('[ENV_DETECT] VITE_EXTERNAL_API_URL:', explicitUrl);
   if (explicitUrl) {
-    console.log('[ENV_DETECT] 🌐 Using explicit VITE_EXTERNAL_API_URL:', explicitUrl);
+    console.log('[ENV_DETECT] ✅ Using explicit VITE_EXTERNAL_API_URL:', explicitUrl);
     return ensureApiPhpSuffix(explicitUrl);
   }
 
-  // Priority 2: Auto-detect based on hostname
-  console.log('[ENV_DETECT] No explicit URL, auto-detecting...');
+  // Priority 2: Production build - use relative /api.php (works on any domain)
+  if (import.meta.env.PROD) {
+    console.log('[ENV_DETECT] 🏭 Production build detected - using relative /api.php');
+    console.log('[ENV_DETECT] 📍 Current domain: ', window.location.hostname);
+    console.log('[ENV_DETECT] ℹ️  API will be called at:', window.location.origin + '/api.php');
+    return '/api.php';
+  }
+
+  // Priority 3: Development mode - auto-detect based on hostname
+  console.log('[ENV_DETECT] 🔧 Development mode detected - auto-detecting...');
   const isLocal = detectLocalHosting();
   const protocol = window.location.protocol;
   const hostname = window.location.hostname;
   const port = window.location.port ? `:${window.location.port}` : '';
-
-  // Priority 1b: Fallback to hardcoded production API URL for cloud deployments
-  const productionApiUrl = 'https://helixgeneralhardware.com/api.php';
-  if (hostname !== 'localhost' && !isPrivateIP(hostname) && !isLocalDomain(hostname)) {
-    console.log('[ENV_DETECT] 🌐 Cloud hosting detected - using hardcoded production API:', productionApiUrl);
-    return productionApiUrl;
-  }
 
   console.log('[ENV_DETECT] Hostname:', hostname);
   console.log('[ENV_DETECT] Protocol:', protocol);
@@ -137,10 +143,22 @@ function getAPIBaseURLInternal(): string {
     return localUrl;
   }
 
-  // Cloud mode without explicit config: error
-  const errorMsg = `Cloud hosting detected (${hostname}) but VITE_EXTERNAL_API_URL is not configured. ` +
-    `Please set VITE_EXTERNAL_API_URL environment variable with the API endpoint URL.`;
-  console.error('[ENV_DETECT] 🌐 Cloud mode detected without config:', errorMsg);
+  // Cloud hostname in development mode: require explicit env var
+  const errorMsg = `
+🚨 Development mode with cloud hostname (${hostname}) detected!
+
+To fix this, you have two options:
+
+Option A (Recommended): Set the API URL when building for production
+  VITE_EXTERNAL_API_URL=https://your-domain.com npm run build
+  Then the app will use relative /api.php when deployed.
+
+Option B: Set VITE_EXTERNAL_API_URL in .env file or when running dev server
+  VITE_EXTERNAL_API_URL=https://api.example.com npm run dev
+
+For local development: Use localhost or a private IP (192.168.x.x, 10.x.x.x, etc)
+  `;
+  console.error('[ENV_DETECT] ❌ Error:', errorMsg);
   throw new Error(errorMsg);
 }
 
