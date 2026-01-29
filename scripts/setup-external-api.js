@@ -70,20 +70,21 @@ for (let i = 0; i < args.length; i++) {
       break;
     case '--help':
       console.log(`
-Usage: node scripts/setup-external-api.js [options]
-       npm run setup:external-api
+Usage: VITE_EXTERNAL_API_URL=... ADMIN_EMAIL=... ADMIN_PASSWORD=... node scripts/setup-external-api.js [options]
+       VITE_EXTERNAL_API_URL=... ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run setup:external-api
 
-Options:
-  --api-url URL         API endpoint URL
-  --email EMAIL         Admin email
-  --password PASSWORD   Admin password
-  --dry-run            Show what would be done without actually doing it
-  --help               Show this help message
+Required Environment Variables:
+  VITE_EXTERNAL_API_URL   API endpoint URL (e.g., https://api.example.com/api.php or /api.php for relative)
+  ADMIN_EMAIL             Admin user email address
+  ADMIN_PASSWORD          Admin user password (use a strong password)
 
-Environment Variables:
-  API_URL              Override API URL
-  ADMIN_EMAIL          Override admin email
-  ADMIN_PASSWORD       Override admin password
+Optional Arguments:
+  --dry-run              Show what would be done without actually doing it
+  --help                 Show this help message
+
+Examples:
+  VITE_EXTERNAL_API_URL=https://api.example.com/api.php ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD="SecurePass123!" npm run setup:external-api
+  VITE_EXTERNAL_API_URL=/api.php ADMIN_EMAIL=admin@local.app ADMIN_PASSWORD="LocalPass456!" node scripts/setup-external-api.js --dry-run
       `);
       process.exit(0);
       break;
