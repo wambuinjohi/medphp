@@ -362,10 +362,10 @@ export async function runFullNetworkDiagnostics(
   results.push(await testDirectConnectivity(url));
 
   // Test CORS
-  results.push(await testCORSConfiguration(apiUrl));
+  results.push(await testCORSConfiguration(url));
 
   // Test proxy detection
-  results.push(await testProxyDetection(apiUrl));
+  results.push(await testProxyDetection(url));
 
   // Test dev proxy (if in development)
   if (import.meta.env.DEV) {
