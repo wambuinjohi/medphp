@@ -25,18 +25,19 @@ interface CreateUserResponse {
 
 /**
  * Creates a new user account via external API
- * This function calls helixgeneralhardware.com/api.php with the admin_create_user action
+ * This function calls the configured API endpoint with the admin_create_user action
  *
  * @param request - User creation request with email, password, role, company_id, etc.
- * @param apiUrl - External API URL (helixgeneralhardware.com/api.php)
+ * @param apiUrl - External API URL (optional, defaults to configured API endpoint)
  * @param authToken - Admin authentication token for the API
  * @returns Response with success status and user_id or error message
  */
 export async function adminCreateUser(
   request: CreateUserRequest,
-  apiUrl: string = 'https://helixgeneralhardware.com/api.php',
+  apiUrl?: string,
   authToken?: string
 ): Promise<CreateUserResponse> {
+  const url = apiUrl || getServerApiUrl();
   // Validate required fields
   if (!request.email || !request.password || !request.role || !request.company_id) {
     return {
