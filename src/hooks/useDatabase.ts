@@ -321,12 +321,15 @@ export function useProducts(companyId?: string) {
         return {
           ...product,
           product_code: product.sku || product.product_code,
-          selling_price: product.unit_price || product.selling_price,
-          minimum_stock_level: product.reorder_level || product.minimum_stock_level,
+          selling_price: Number(product.unit_price || product.selling_price || 0),
+          stock_quantity: Number(product.stock_quantity || 0),
+          minimum_stock_level: Number(product.reorder_level || product.minimum_stock_level || 0),
+          cost_price: Number(product.cost_price || 0),
+          reorder_level: Number(product.reorder_level || 0),
           // Keep original fields too for compatibility
           sku: product.sku,
-          unit_price: product.unit_price,
-          reorder_level: product.reorder_level
+          unit_price: Number(product.unit_price || 0),
+          reorder_level: Number(product.reorder_level || 0)
         };
       }
       return product;
