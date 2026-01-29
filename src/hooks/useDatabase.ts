@@ -1059,7 +1059,6 @@ export function useCreatePayment() {
           try {
             // Check if payment_allocations table exists
             const { error: allocError } = await db.insert('payment_allocations', {
-              id: crypto.randomUUID(),
               payment_id: paymentData.id,
               invoice_id: paymentRecord.invoice_id,
               amount: paymentRecord.amount,
