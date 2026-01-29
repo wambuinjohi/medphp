@@ -1,8 +1,10 @@
 /**
  * Direct File Upload Handler
- * Uploads files directly to helixgeneralhardware.com/uploads
+ * Uploads files via external API (intelligently chooses /api.php or full URL)
  * Replaces Supabase storage which is not available with external API
  */
+
+import { getClientApiUrl, getUploadBaseUrl } from './getApiUrl';
 
 export interface UploadOptions {
   table?: string;
@@ -17,10 +19,6 @@ export interface UploadResult {
   error?: string;
   message?: string;
 }
-
-// Use direct API URL (no proxy) for consistency across all environments
-const API_BASE_URL = import.meta.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
-const UPLOAD_BASE_URL = API_BASE_URL.replace(/\/api\.php$/, '') + '/uploads';
 
 /**
  * Upload a file directly to the server
