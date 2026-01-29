@@ -93,32 +93,38 @@ export default defineConfig(({ mode }) => {
         } : {}),
 
         // File upload requests - forward to main API (preserve path for upload detection)
-        '/api/uploads': {
-          target: apiUrl,
-          changeOrigin: true,
-          rewrite: (path) => path, // Keep the path as-is so the backend recognizes it as upload
-        },
+        // Only proxy if external API URL is configured
+        ...(apiUrl ? {
+          '/api/uploads': {
+            target: apiUrl,
+            changeOrigin: true,
+            rewrite: (path) => path, // Keep the path as-is so the backend recognizes it as upload
+          }
+        } : {}),
 
         // Logo/file upload endpoint
-        '/api/upload_file': {
-          target: apiUrl,
-          changeOrigin: true,
-          pathRewrite: {
-            '^/api/upload_file': '/api.php?action=upload_file', // Rewrite to backend endpoint
-          },
-          secure: false,
-          configure: (proxy, options) => {
-            proxy.on('proxyReq', (proxyReq, req, res) => {
-              console.log(`📤 [UPLOAD] ${req.method} ${req.url}`);
-            });
-            proxy.on('proxyRes', (proxyRes, req, res) => {
-              console.log(`✅ [UPLOAD] Response: ${proxyRes.statusCode}`);
-            });
-            proxy.on('error', (err, req, res) => {
-              console.error(`❌ [UPLOAD] Proxy error: ${err.message}`);
-            });
+        // Only proxy if external API URL is configured
+        ...(apiUrl ? {
+          '/api/upload_file': {
+            target: apiUrl,
+            changeOrigin: true,
+            pathRewrite: {
+              '^/api/upload_file': '/api.php?action=upload_file', // Rewrite to backend endpoint
+            },
+            secure: false,
+            configure: (proxy, options) => {
+              proxy.on('proxyReq', (proxyReq, req, res) => {
+                console.log(`📤 [UPLOAD] ${req.method} ${req.url}`);
+              });
+              proxy.on('proxyRes', (proxyRes, req, res) => {
+                console.log(`✅ [UPLOAD] Response: ${proxyRes.statusCode}`);
+              });
+              proxy.on('error', (err, req, res) => {
+                console.error(`❌ [UPLOAD] Proxy error: ${err.message}`);
+              });
+            }
           }
-        },
+        } : {}),
 
         // Proxy API requests to external backend or local server
         '/api': {
