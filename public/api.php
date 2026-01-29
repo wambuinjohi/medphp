@@ -1527,11 +1527,16 @@ try {
             throw new Exception("Insert failed: " . $conn->error);
         }
 
+        // Determine the inserted ID:
+        // 1. If 'id' was provided in the input data (UUID case), use that
+        // 2. Otherwise use $conn->insert_id (auto-increment case)
+        $insertedId = isset($data['id']) && !empty($data['id']) ? $data['id'] : $conn->insert_id;
+
         echo json_encode([
             'status' => 'success',
             'message' => 'Record created',
-            'id' => $conn->insert_id,
-            'data' => array_merge($data, ['id' => $conn->insert_id])
+            'id' => $insertedId,
+            'data' => array_merge($data, ['id' => $insertedId])
         ]);
         exit();
     }
