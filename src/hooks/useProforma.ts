@@ -295,33 +295,38 @@ export const useUpdateProforma = () => {
         };
       }
 
-      // Update the proforma invoice
-      const { data: proformaData, error: proformaError } = await supabase
-        .from('proforma_invoices')
-        .update(proforma)
-        .eq('id', proformaId)
-        .select()
-        .single();
+      // Update the proforma invoice via external API
+      console.log('📝 Updating proforma via external API:', proformaId);
+      const updateResult = await externalApiAdapter.update('proforma_invoices', proformaId, proforma);
 
-      if (proformaError) {
-        const errorMessage = serializeError(proformaError);
-        console.error('Error updating proforma:', errorMessage);
+      if (updateResult.error) {
+        const errorMessage = serializeError(updateResult.error);
+        console.error('❌ Error updating proforma:', errorMessage);
         throw new Error(`Failed to update proforma: ${errorMessage}`);
       }
+
+      console.log('✅ Proforma updated');
+
+      // Fetch the updated proforma data
+      const selectResult = await externalApiAdapter.selectOne('proforma_invoices', proformaId);
+      if (selectResult.error) {
+        console.warn('⚠️ Could not fetch updated proforma:', selectResult.error);
+      }
+      const proformaData = selectResult.data;
 
       // Update items if provided
       if (items) {
         // Delete existing items
-        const { error: deleteError } = await supabase
-          .from('proforma_items')
-          .delete()
-          .eq('proforma_id', proformaId);
+        console.log('🗑️ Deleting existing proforma items');
+        const deleteResult = await externalApiAdapter.deleteMany('proforma_items', { proforma_id: proformaId });
 
-        if (deleteError) {
-          const errorMessage = serializeError(deleteError);
-          console.error('Error deleting existing proforma items:', errorMessage);
+        if (deleteResult.error) {
+          const errorMessage = serializeError(deleteResult.error);
+          console.error('❌ Error deleting existing proforma items:', errorMessage);
           throw new Error(`Failed to delete existing proforma items: ${errorMessage}`);
         }
+
+        console.log('✅ Existing items deleted');
 
         // Insert new items
         if (items.length > 0) {
@@ -337,15 +342,16 @@ export const useUpdateProforma = () => {
             line_total: item.line_total,
           }));
 
-          const { error: itemsError } = await supabase
-            .from('proforma_items')
-            .insert(proformaItems);
+          console.log('📦 Creating new proforma items');
+          const itemsInsertResult = await externalApiAdapter.insertMany('proforma_items', proformaItems);
 
-          if (itemsError) {
-            const errorMessage = serializeError(itemsError);
-            console.error('Error creating updated proforma items:', errorMessage);
+          if (itemsInsertResult.error) {
+            const errorMessage = serializeError(itemsInsertResult.error);
+            console.error('❌ Error creating updated proforma items:', errorMessage);
             throw new Error(`Failed to create updated proforma items: ${errorMessage}`);
           }
+
+          console.log('✅ New items created');
         }
       }
 
