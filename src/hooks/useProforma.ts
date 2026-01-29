@@ -444,17 +444,15 @@ export const useDeleteProforma = (companyId?: string) => {
 
   return useMutation({
     mutationFn: async (proformaId: string) => {
-      // Snapshot for audit
-      let snapshot: any = null;
-      let companyId: string | null = null;
+      // Snapshot for audit - get the record before deletion
+      let recordCompanyId: string | null = null;
       try {
         const { data } = await supabase
           .from('proforma_invoices')
-          .select(`*, proforma_items(*)`)
+          .select(`id, company_id, proforma_items(*)`)
           .eq('id', proformaId)
           .single();
-        snapshot = data;
-        companyId = (data as any)?.company_id ?? null;
+        recordCompanyId = (data as any)?.company_id ?? null;
       } catch {}
 
       // Skip audit logging due to backend API schema mismatch (actor_email column missing)
@@ -478,11 +476,14 @@ export const useDeleteProforma = (companyId?: string) => {
         console.error('Error deleting proforma:', errorMessage);
         throw new Error(`Failed to delete proforma: ${errorMessage}`);
       }
+
+      // Return the company ID for use in onSuccess
+      return recordCompanyId || companyId;
     },
-    onSuccess: () => {
+    onSuccess: (returnedCompanyId) => {
       // Invalidate both the company-specific query and the general query
-      if (companyId) {
-        queryClient.invalidateQueries({ queryKey: ['proforma_invoices', companyId] });
+      if (returnedCompanyId) {
+        queryClient.invalidateQueries({ queryKey: ['proforma_invoices', returnedCompanyId] });
       }
       queryClient.invalidateQueries({ queryKey: ['proforma_invoices'], exact: false });
       toast.success('Proforma invoice deleted successfully!');
