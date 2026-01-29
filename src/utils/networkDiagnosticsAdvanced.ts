@@ -101,11 +101,12 @@ export async function testDirectConnectivity(
  * Test if connection is using a proxy
  */
 export async function testProxyDetection(
-  apiUrl: string = 'https://helixgeneralhardware.com/api.php'
+  apiUrl?: string
 ): Promise<NetworkDiagnostic> {
+  const url = apiUrl || getClientApiUrl();
   try {
     // Try to fetch and check response headers for proxy indicators
-    const response = await fetch(apiUrl, {
+    const response = await fetch(url, {
       method: 'OPTIONS',
       headers: {
         'Content-Type': 'application/json',
