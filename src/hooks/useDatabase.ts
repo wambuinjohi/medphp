@@ -1036,14 +1036,19 @@ export function useCreatePayment() {
           }
 
           const db = getDatabase();
-          const { data: paymentResult, error: insertError } = await db.insert('payments', paymentRecord);
+          const insertResult = await db.insert('payments', paymentRecord);
 
-          if (insertError) {
-            throw insertError;
+          if (insertResult.error) {
+            throw insertResult.error;
+          }
+
+          // Check if ID was returned
+          if (!insertResult.id) {
+            throw new Error('Payment record was created but no ID was returned. Please try again.');
           }
 
           // Fetch the created payment record
-          const { data: paymentData, error: fetchError } = await db.selectOne('payments', paymentResult.id);
+          const { data: paymentData, error: fetchError } = await db.selectOne('payments', insertResult.id);
 
           if (fetchError) {
             throw fetchError;
