@@ -465,19 +465,21 @@ export const useConvertProformaToInvoice = () => {
 
   return useMutation({
     mutationFn: async (proformaId: string) => {
-      const db = getDatabase();
-
-      // Get proforma data using database adapter
-      const proformaResult = await db.selectOne('proforma_invoices', proformaId);
+      // Get proforma data using external API adapter
+      console.log('📋 Fetching proforma for conversion:', proformaId);
+      const proformaResult = await externalApiAdapter.selectOne('proforma_invoices', proformaId);
       if (proformaResult.error) throw proformaResult.error;
       if (!proformaResult.data) throw new Error('Proforma not found');
 
       const proforma = proformaResult.data as any;
+      console.log('✅ Proforma fetched:', proforma);
 
       // Get proforma items
-      const itemsResult = await db.selectBy('proforma_items', { proforma_id: proformaId });
+      console.log('📦 Fetching proforma items');
+      const itemsResult = await externalApiAdapter.selectBy('proforma_items', { proforma_id: proformaId });
       if (itemsResult.error) throw itemsResult.error;
       const proformaItems = itemsResult.data || [];
+      console.log('✅ Proforma items fetched:', proformaItems.length);
 
       // Generate invoice number using centralized API
       const { generateDocumentNumberAPI } = await import('@/utils/documentNumbering');
@@ -506,13 +508,15 @@ export const useConvertProformaToInvoice = () => {
         created_by: createdBy
       };
 
-      // Create invoice using database adapter
-      const invoiceInsertResult = await db.insert('invoices', invoiceData);
+      // Create invoice using external API adapter
+      console.log('📝 Creating invoice from proforma');
+      const invoiceInsertResult = await externalApiAdapter.insert('invoices', invoiceData);
       if (invoiceInsertResult.error) {
         // Fallback: if FK violation on created_by, retry with created_by = null
         if (String(invoiceInsertResult.error.message || '').includes('created_by')) {
+          console.log('🔄 Retrying without created_by');
           const retryPayload = { ...invoiceData, created_by: null };
-          const retryResult = await db.insert('invoices', retryPayload);
+          const retryResult = await externalApiAdapter.insert('invoices', retryPayload);
           if (retryResult.error) throw retryResult.error;
           if (!retryResult.id) throw new Error('Failed to create invoice: no ID returned');
         } else {
@@ -522,8 +526,10 @@ export const useConvertProformaToInvoice = () => {
 
       if (!invoiceInsertResult.id) throw new Error('Failed to create invoice: no ID returned');
 
+      console.log('✅ Invoice created:', invoiceInsertResult.id);
+
       // Fetch the created invoice
-      const invoiceSelectResult = await db.selectOne('invoices', invoiceInsertResult.id);
+      const invoiceSelectResult = await externalApiAdapter.selectOne('invoices', invoiceInsertResult.id);
       if (invoiceSelectResult.error) throw invoiceSelectResult.error;
       if (!invoiceSelectResult.data) throw new Error('Failed to fetch created invoice');
 
@@ -544,8 +550,11 @@ export const useConvertProformaToInvoice = () => {
           sort_order: item.sort_order || index + 1
         }));
 
-        const itemsInsertResult = await db.insertMany('invoice_items', invoiceItems);
+        console.log('📦 Creating invoice items');
+        const itemsInsertResult = await externalApiAdapter.insertMany('invoice_items', invoiceItems);
         if (itemsInsertResult.error) throw itemsInsertResult.error;
+
+        console.log('✅ Invoice items created');
 
         // Create stock movements
         const stockMovements = invoiceItems
@@ -562,17 +571,23 @@ export const useConvertProformaToInvoice = () => {
           }));
 
         if (stockMovements.length > 0) {
-          const movementsInsertResult = await db.insertMany('stock_movements', stockMovements);
+          console.log('📦 Creating stock movements');
+          const movementsInsertResult = await externalApiAdapter.insertMany('stock_movements', stockMovements);
           if (movementsInsertResult.error) {
-            console.warn('Failed to create stock movements:', movementsInsertResult.error);
+            console.warn('⚠️ Failed to create stock movements:', movementsInsertResult.error);
+          } else {
+            console.log('✅ Stock movements created');
           }
         }
       }
 
       // Update proforma status to converted
-      const updateResult = await db.update('proforma_invoices', proformaId, { status: 'converted' });
+      console.log('📝 Updating proforma status to converted');
+      const updateResult = await externalApiAdapter.update('proforma_invoices', proformaId, { status: 'converted' });
       if (updateResult.error) {
-        console.warn('Failed to update proforma status:', updateResult.error);
+        console.warn('⚠️ Failed to update proforma status:', updateResult.error);
+      } else {
+        console.log('✅ Proforma status updated');
       }
 
       return invoice;
