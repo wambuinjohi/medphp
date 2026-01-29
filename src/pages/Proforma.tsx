@@ -70,7 +70,7 @@ export default function Proforma() {
   const filteredProformas = proformas.filter(proforma =>
     proforma.proforma_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     proforma.customers?.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ).sort((a, b) => new Date(b.created_at || b.proforma_date).getTime() - new Date(a.created_at || a.proforma_date).getTime());
 
   const getStatusBadge = (status: string) => {
     switch (status) {
