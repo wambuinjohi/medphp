@@ -58,7 +58,7 @@ export async function testDirectConnectivity(
     if (error.name === 'AbortError') {
       message = `Connection timeout after 10 seconds (${duration.toFixed(0)}ms)`;
       recommendations.push('❌ API server is slow or unresponsive');
-      recommendations.push('💡 Check if helixgeneralhardware.com is online');
+      recommendations.push('💡 Check if API server is online');
       recommendations.push('💡 Verify network connectivity to external internet');
       recommendations.push('💡 Check firewall rules blocking outbound HTTPS (port 443)');
     } else if (error.message.includes('Failed to fetch')) {
@@ -66,12 +66,12 @@ export async function testDirectConnectivity(
       recommendations.push('❌ Frontend cannot reach backend directly');
       recommendations.push('💡 This is expected - using Vite proxy as workaround');
       recommendations.push('💡 Verify CORS headers are configured on backend');
-      recommendations.push('💡 Check if corporate firewall blocks helixgeneralhardware.com');
+      recommendations.push('💡 Check if corporate firewall blocks API server');
     } else if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
-      message = 'DNS resolution failed for helixgeneralhardware.com';
+      message = 'DNS resolution failed for API server';
       recommendations.push('❌ Cannot resolve domain name');
       recommendations.push('💡 Check DNS server configuration');
-      recommendations.push('💡 Verify domain helixgeneralhardware.com is valid');
+      recommendations.push('💡 Verify API domain is valid');
       recommendations.push('💡 Try pinging domain from terminal');
     } else if (error.message.includes('ECONNREFUSED')) {
       message = 'Connection refused - server is not listening on that port';
