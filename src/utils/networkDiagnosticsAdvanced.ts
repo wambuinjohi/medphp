@@ -21,12 +21,12 @@ export async function testDirectConnectivity(
 ): Promise<NetworkDiagnostic> {
   const url = apiUrl || getClientApiUrl();
   const startTime = performance.now();
-  
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-    const response = await fetch(apiUrl, {
+    const response = await fetch(url, {
       method: 'HEAD',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
