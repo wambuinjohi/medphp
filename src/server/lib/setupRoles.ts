@@ -164,7 +164,8 @@ export async function checkRolesStatus(apiUrl?: string): Promise<RoleCheckResult
 /**
  * Create default roles in the system
  */
-export async function createDefaultRoles(apiUrl: string = EXTERNAL_API_URL): Promise<RoleSetupResult> {
+export async function createDefaultRoles(apiUrl?: string): Promise<RoleSetupResult> {
+  const url = apiUrl || getServerApiUrl();
   try {
     // First check which roles exist
     const checkResult = await checkRolesStatus(apiUrl);
