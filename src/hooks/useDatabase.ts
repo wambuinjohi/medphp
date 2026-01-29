@@ -1070,14 +1070,29 @@ export function useCreatePayment() {
             } else {
               // Update invoice balance after successful allocation creation
               try {
+                console.log('[Payment] Fetching allocations for invoice:', paymentRecord.invoice_id);
+
                 // Get all allocations for this invoice to calculate paid amount
                 const { data: allocations, error: allocFetchError } = await db.selectBy('payment_allocations', {
                   invoice_id: paymentRecord.invoice_id
                 });
 
+                console.log('[Payment] Allocations fetch result:', {
+                  allocations,
+                  error: allocFetchError?.message,
+                  count: allocations?.length
+                });
+
                 if (!allocFetchError && allocations && allocations.length > 0) {
+                  console.log('[Payment] Fetching invoice:', paymentRecord.invoice_id);
+
                   // Get the invoice
                   const { data: invoice, error: invoiceError } = await db.selectOne('invoices', paymentRecord.invoice_id);
+
+                  console.log('[Payment] Invoice fetch result:', {
+                    invoice,
+                    error: invoiceError?.message
+                  });
 
                   if (!invoiceError && invoice) {
                     // Calculate new paid amount from all allocations
@@ -1086,6 +1101,12 @@ export function useCreatePayment() {
                       0
                     );
                     const newBalanceDue = (invoice as any).total_amount - totalPaid;
+
+                    console.log('[Payment] Calculated values:', {
+                      totalPaid,
+                      newBalanceDue,
+                      oldStatus: (invoice as any).status
+                    });
 
                     // Determine status
                     let newStatus = (invoice as any).status || 'draft';
@@ -1100,17 +1121,36 @@ export function useCreatePayment() {
                       newStatus = 'draft';
                     }
 
+                    console.log('[Payment] Updating invoice with:', {
+                      paid_amount: Math.max(0, totalPaid),
+                      balance_due: Math.max(0, newBalanceDue),
+                      status: newStatus
+                    });
+
                     // Update invoice
-                    await db.update('invoices', paymentRecord.invoice_id, {
+                    const updateResult = await db.update('invoices', paymentRecord.invoice_id, {
                       paid_amount: Math.max(0, totalPaid),
                       balance_due: Math.max(0, newBalanceDue),
                       status: newStatus,
                       updated_at: new Date().toISOString()
                     });
+
+                    console.log('[Payment] Invoice update result:', {
+                      error: updateResult?.error?.message,
+                      affectedRows: updateResult?.affectedRows
+                    });
+
+                    if (updateResult?.error) {
+                      console.warn('Failed to update invoice:', updateResult.error?.message);
+                    }
+                  } else {
+                    console.warn('[Payment] Invoice not found or error fetching:', invoiceError?.message);
                   }
+                } else {
+                  console.warn('[Payment] No allocations found or error fetching:', allocFetchError?.message);
                 }
               } catch (reconcileError: any) {
-                console.warn('Failed to update invoice balance:', reconcileError?.message);
+                console.warn('[Payment] Exception during invoice update:', reconcileError?.message);
               }
             }
           } catch (allocError: any) {
