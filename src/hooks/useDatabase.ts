@@ -983,7 +983,7 @@ export function useDeletePaymentMethod() {
 
 /**
  * Hook to create a payment
- * Attempts to use server-side RPC if available, falls back to client-side insertion
+ * Uses client-side insertion as the primary payment creation method
  */
 export function useCreatePayment() {
   const queryClient = useQueryClient();
@@ -1001,34 +1001,8 @@ export function useCreatePayment() {
       notes?: string;
     }) => {
       try {
-        // Try to use the server-side RPC function for atomic payment + allocation
-        const db = getDatabase();
-        const { data, error } = await db.rpc('record_payment_with_allocation', {
-          p_company_id: paymentRecord.company_id,
-          p_customer_id: paymentRecord.customer_id,
-          p_invoice_id: paymentRecord.invoice_id,
-          p_payment_number: paymentRecord.payment_number,
-          p_payment_date: paymentRecord.payment_date,
-          p_amount: paymentRecord.amount,
-          p_payment_method: paymentRecord.payment_method,
-          p_reference_number: paymentRecord.reference_number || paymentRecord.payment_number,
-          p_notes: paymentRecord.notes || null
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        return {
-          success: true,
-          fallback_used: false,
-          allocation_failed: false,
-          data
-        };
-      } catch (rpcError: any) {
-        console.warn('RPC function record_payment_with_allocation not available, using fallback:', rpcError?.message);
-
-        // Fallback: Insert payment directly via database adapter
+        // Use the client-side fallback path as the primary payment creation method
+        // Insert payment directly via database adapter
         try {
           // Generate payment_number if not provided
           if (!paymentRecord.payment_number) {
@@ -1059,7 +1033,6 @@ export function useCreatePayment() {
           try {
             // Check if payment_allocations table exists
             const { error: allocError } = await db.insert('payment_allocations', {
-              id: crypto.randomUUID(),
               payment_id: paymentData.id,
               invoice_id: paymentRecord.invoice_id,
               amount: paymentRecord.amount,
@@ -1068,6 +1041,91 @@ export function useCreatePayment() {
             if (allocError) {
               console.warn('Failed to create payment allocation:', allocError?.message);
               allocation_failed = true;
+            } else {
+              // Update invoice balance after successful allocation creation
+              try {
+                console.log('[Payment] Fetching allocations for invoice:', paymentRecord.invoice_id);
+
+                // Get all allocations for this invoice to calculate paid amount
+                const { data: allocations, error: allocFetchError } = await db.selectBy('payment_allocations', {
+                  invoice_id: paymentRecord.invoice_id
+                });
+
+                console.log('[Payment] Allocations fetch result:', {
+                  allocations,
+                  error: allocFetchError?.message,
+                  count: allocations?.length
+                });
+
+                if (!allocFetchError && allocations && allocations.length > 0) {
+                  console.log('[Payment] Fetching invoice:', paymentRecord.invoice_id);
+
+                  // Get the invoice
+                  const { data: invoice, error: invoiceError } = await db.selectOne('invoices', paymentRecord.invoice_id);
+
+                  console.log('[Payment] Invoice fetch result:', {
+                    invoice,
+                    error: invoiceError?.message
+                  });
+
+                  if (!invoiceError && invoice) {
+                    // Calculate new paid amount from all allocations
+                    const totalPaid = (allocations as any[]).reduce(
+                      (sum, alloc) => sum + (alloc.amount || alloc.amount_allocated || 0),
+                      0
+                    );
+                    const newBalanceDue = (invoice as any).total_amount - totalPaid;
+
+                    console.log('[Payment] Calculated values:', {
+                      totalPaid,
+                      newBalanceDue,
+                      oldStatus: (invoice as any).status
+                    });
+
+                    // Determine status
+                    let newStatus = (invoice as any).status || 'draft';
+                    const tolerance = 0.01;
+                    const adjustedBalance = Math.abs(newBalanceDue) < tolerance ? 0 : newBalanceDue;
+
+                    if (adjustedBalance <= 0 && totalPaid > tolerance) {
+                      newStatus = 'paid';
+                    } else if (totalPaid > tolerance && adjustedBalance > 0) {
+                      newStatus = 'partial';
+                    } else {
+                      newStatus = 'draft';
+                    }
+
+                    console.log('[Payment] Updating invoice with:', {
+                      paid_amount: Math.max(0, totalPaid),
+                      balance_due: Math.max(0, newBalanceDue),
+                      status: newStatus
+                    });
+
+                    // Update invoice
+                    const updateResult = await db.update('invoices', paymentRecord.invoice_id, {
+                      paid_amount: Math.max(0, totalPaid),
+                      balance_due: Math.max(0, newBalanceDue),
+                      status: newStatus,
+                      updated_at: new Date().toISOString()
+                    });
+
+                    console.log('[Payment] Invoice update result:', {
+                      error: updateResult?.error?.message,
+                      affectedRows: updateResult?.affectedRows
+                    });
+
+                    if (updateResult?.error) {
+                      console.warn('Failed to update invoice:', updateResult.error?.message);
+                    }
+                  } else {
+                    console.warn('[Payment] Invoice not found or error fetching:', invoiceError?.message);
+                  }
+                } else {
+                  console.warn('[Payment] No allocations found or error fetching:', allocFetchError?.message);
+                }
+              } catch (reconcileError: any) {
+                console.warn('[Payment] Exception during invoice update:', reconcileError?.message);
+              }
             }
           } catch (allocError: any) {
             console.warn('Payment allocation failed (table might not exist):', allocError?.message);
@@ -1083,6 +1141,8 @@ export function useCreatePayment() {
         } catch (fallbackError: any) {
           throw fallbackError;
         }
+      } catch (error: any) {
+        throw error;
       }
     },
     onSuccess: (result) => {
@@ -1090,9 +1150,7 @@ export function useCreatePayment() {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['paymentAllocations'] });
 
-      if (!result.fallback_used) {
-        toast.success('Payment recorded successfully!');
-      }
+      toast.success('Payment recorded successfully!');
     },
     onError: (error: any) => {
       console.error('Error creating payment:', error);
