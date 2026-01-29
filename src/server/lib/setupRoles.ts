@@ -103,9 +103,10 @@ interface RoleCheckResult {
 /**
  * Check which default roles exist in the system
  */
-export async function checkRolesStatus(apiUrl: string = getServerApiUrl()): Promise<RoleCheckResult> {
+export async function checkRolesStatus(apiUrl?: string): Promise<RoleCheckResult> {
+  const url = apiUrl || getServerApiUrl();
   try {
-    const response = await fetch(`${apiUrl}?action=check_roles`, {
+    const response = await fetch(`${url}?action=check_roles`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
