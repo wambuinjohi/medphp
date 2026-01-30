@@ -1678,7 +1678,15 @@ try {
     }
     elseif ($action === "delete_invoice_with_cascade") {
         // Transaction-safe invoice deletion with cascade
-        // Deletes invoice and all related records: invoice_items, payments, payment_allocations
+        // Deletes invoice and all related records in proper order:
+        // 1. payment_audit_log entries
+        // 2. receipts and receipt_items (linked to payments)
+        // 3. payment_allocations
+        // 4. payments
+        // 5. credit_note_allocations
+        // 6. stock_movements
+        // 7. invoice_items
+        // 8. invoice itself
 
         $invoice_id = $json_body['invoice_id'] ?? $_POST['invoice_id'] ?? null;
 
@@ -1704,26 +1712,88 @@ try {
             $invoice = $invoice_result->fetch_assoc();
             $invoice_number = $invoice['invoice_number'];
 
-            // Step 2: Delete payment allocations related to this invoice
-            // These have CASCADE delete on invoice_id, but we delete explicitly for clarity
+            // Step 2: Find all payments related to this invoice (directly or through allocations)
+            // Get payment IDs that are directly linked to invoice or allocated to it
+            $payments_sql = "
+                SELECT DISTINCT p.id FROM payments p
+                WHERE p.invoice_id = '$invoice_id_e'
+                OR p.id IN (SELECT payment_id FROM payment_allocations WHERE invoice_id = '$invoice_id_e')
+            ";
+            $payments_result = $conn->query($payments_sql);
+            $payment_ids = [];
+            if ($payments_result) {
+                while ($row = $payments_result->fetch_assoc()) {
+                    $payment_ids[] = $row['id'];
+                }
+            }
+
+            // Step 3: Delete payment_audit_log entries for all related payments
+            // This must be done before deleting payments
+            if (!empty($payment_ids)) {
+                $payment_ids_quoted = array_map(function($id) use ($conn) {
+                    return "'" . escape($conn, $id) . "'";
+                }, $payment_ids);
+                $payment_ids_list = implode(',', $payment_ids_quoted);
+
+                $delete_audit_sql = "DELETE FROM payment_audit_log WHERE payment_id IN ($payment_ids_list) OR invoice_id = '$invoice_id_e'";
+                if (!$conn->query($delete_audit_sql)) {
+                    throw new Exception("Failed to delete payment audit log: " . $conn->error);
+                }
+            }
+
+            // Step 4: Find and delete receipts linked to these payments
+            if (!empty($payment_ids)) {
+                $payment_ids_quoted = array_map(function($id) use ($conn) {
+                    return "'" . escape($conn, $id) . "'";
+                }, $payment_ids);
+                $payment_ids_list = implode(',', $payment_ids_quoted);
+
+                // First delete receipt_items
+                $delete_receipt_items_sql = "DELETE FROM receipt_items WHERE receipt_id IN (SELECT id FROM receipts WHERE payment_id IN ($payment_ids_list))";
+                if (!$conn->query($delete_receipt_items_sql)) {
+                    throw new Exception("Failed to delete receipt items: " . $conn->error);
+                }
+
+                // Then delete receipts
+                $delete_receipts_sql = "DELETE FROM receipts WHERE payment_id IN ($payment_ids_list)";
+                if (!$conn->query($delete_receipts_sql)) {
+                    throw new Exception("Failed to delete receipts: " . $conn->error);
+                }
+            }
+
+            // Step 5: Delete payment allocations related to this invoice
+            // This must be done before deleting payments to maintain referential integrity
             $delete_allocations_sql = "DELETE FROM payment_allocations WHERE invoice_id = '$invoice_id_e'";
             if (!$conn->query($delete_allocations_sql)) {
                 throw new Exception("Failed to delete payment allocations: " . $conn->error);
             }
 
-            // Step 3: Delete payments related to this invoice
+            // Step 6: Delete all payments related to this invoice (directly linked)
             $delete_payments_sql = "DELETE FROM payments WHERE invoice_id = '$invoice_id_e'";
             if (!$conn->query($delete_payments_sql)) {
                 throw new Exception("Failed to delete payments: " . $conn->error);
             }
 
-            // Step 4: Delete invoice items
+            // Step 7: Delete credit note allocations related to this invoice
+            // These have CASCADE delete on invoice_id in schema, but we delete explicitly for clarity
+            $delete_credit_allocations_sql = "DELETE FROM credit_note_allocations WHERE invoice_id = '$invoice_id_e'";
+            if (!$conn->query($delete_credit_allocations_sql)) {
+                throw new Exception("Failed to delete credit note allocations: " . $conn->error);
+            }
+
+            // Step 8: Delete stock movements related to this invoice
+            $delete_stock_movements_sql = "DELETE FROM stock_movements WHERE reference_type = 'INVOICE' AND reference_id = '$invoice_id_e'";
+            if (!$conn->query($delete_stock_movements_sql)) {
+                throw new Exception("Failed to delete stock movements: " . $conn->error);
+            }
+
+            // Step 9: Delete invoice items
             $delete_items_sql = "DELETE FROM invoice_items WHERE invoice_id = '$invoice_id_e'";
             if (!$conn->query($delete_items_sql)) {
                 throw new Exception("Failed to delete invoice items: " . $conn->error);
             }
 
-            // Step 5: Delete the invoice record itself
+            // Step 10: Delete the invoice record itself
             $delete_invoice_sql = "DELETE FROM invoices WHERE id = '$invoice_id_e'";
             if (!$conn->query($delete_invoice_sql)) {
                 throw new Exception("Failed to delete invoice: " . $conn->error);
@@ -1740,7 +1810,11 @@ try {
                 'message' => "Invoice $invoice_number and all related records deleted successfully",
                 'data' => [
                     'invoice_id' => $invoice_id,
-                    'invoice_number' => $invoice_number
+                    'invoice_number' => $invoice_number,
+                    'related_records_deleted' => [
+                        'payments_count' => count($payment_ids),
+                        'timestamp' => date('Y-m-d H:i:s')
+                    ]
                 ]
             ]);
             exit();
@@ -2402,6 +2476,7 @@ try {
             $receiptNumber = $receipt['receipt_number'];
             $invoiceId = $receipt['invoice_id'];
             $paymentId = $receipt['payment_id'];
+            $receiptAmount = $receipt['total_amount'] ?? 0;
 
             // Step 2: Delete receipt items (snapshot)
             // These have CASCADE delete on receipt_id, but we delete explicitly for clarity
@@ -2410,18 +2485,27 @@ try {
                 throw new Exception("Failed to delete receipt items: " . $conn->error);
             }
 
-            // Step 3: Delete payment allocations
+            // Step 3: Delete payment_audit_log entries before deleting the payment
+            if ($paymentId) {
+                $paymentId_e = escape($conn, $paymentId);
+                $delete_audit_sql = "DELETE FROM payment_audit_log WHERE payment_id = '$paymentId_e'";
+                if (!$conn->query($delete_audit_sql)) {
+                    throw new Exception("Failed to delete payment audit log: " . $conn->error);
+                }
+            }
+
+            // Step 4: Delete payment allocations
             if ($paymentId) {
                 $paymentId_e = escape($conn, $paymentId);
                 // With CASCADE constraint on payment_allocations, this will auto-delete related records
-                // But we can also manually delete for clarity and control
+                // But we delete explicitly for clarity and control
                 $delete_allocations_sql = "DELETE FROM payment_allocations WHERE payment_id = '$paymentId_e'";
                 if (!$conn->query($delete_allocations_sql)) {
                     throw new Exception("Failed to delete payment allocations: " . $conn->error);
                 }
             }
 
-            // Step 4: Delete the payment record
+            // Step 5: Delete the payment record
             if ($paymentId) {
                 $paymentId_e = escape($conn, $paymentId);
                 $delete_payment_sql = "DELETE FROM payments WHERE id = '$paymentId_e'";
@@ -2430,35 +2514,56 @@ try {
                 }
             }
 
-            // Step 5: Revert invoice status if it was marked as paid/partial
+            // Step 6: Recalculate invoice balance and status if this receipt was linked to an invoice
             if ($invoiceId) {
                 $invoiceId_e = escape($conn, $invoiceId);
 
-                // First, fetch the current invoice to check its status
-                $invoice_check_sql = "SELECT status, total_amount FROM invoices WHERE id = '$invoiceId_e' LIMIT 1";
+                // Fetch current invoice state
+                $invoice_check_sql = "SELECT id, total_amount, status FROM invoices WHERE id = '$invoiceId_e' LIMIT 1";
                 $invoice_check_result = $conn->query($invoice_check_sql);
 
                 if ($invoice_check_result && $invoice_check_result->num_rows > 0) {
-                    $invoice_check = $invoice_check_result->fetch_assoc();
+                    $invoice = $invoice_check_result->fetch_assoc();
+                    $total_amount = $invoice['total_amount'] ?? 0;
 
-                    if ($invoice_check['status'] === 'paid' || $invoice_check['status'] === 'partial') {
-                        // Revert to draft since the receipt is being deleted
-                        $total_amount = $invoice_check['total_amount'] ?? 0;
-                        $update_invoice_sql = "UPDATE invoices SET
-                            status = 'draft',
-                            paid_amount = 0,
-                            balance_due = '$total_amount',
-                            updated_at = NOW()
-                            WHERE id = '$invoiceId_e'";
+                    // Calculate paid amount from remaining payment allocations
+                    $paid_sum_sql = "
+                        SELECT COALESCE(SUM(pa.amount), 0) as paid_amount
+                        FROM payment_allocations pa
+                        WHERE pa.invoice_id = '$invoiceId_e'
+                    ";
+                    $paid_sum_result = $conn->query($paid_sum_sql);
+                    $paid_amount = 0;
+                    if ($paid_sum_result) {
+                        $paid_row = $paid_sum_result->fetch_assoc();
+                        $paid_amount = floatval($paid_row['paid_amount'] ?? 0);
+                    }
 
-                        if (!$conn->query($update_invoice_sql)) {
-                            throw new Exception("Failed to update invoice status: " . $conn->error);
-                        }
+                    $balance_due = max(0, floatval($total_amount) - $paid_amount);
+
+                    // Determine new status based on payment state
+                    $new_status = 'draft';
+                    if ($paid_amount >= floatval($total_amount)) {
+                        $new_status = 'paid';
+                    } elseif ($paid_amount > 0) {
+                        $new_status = 'partial';
+                    }
+
+                    // Update invoice with recalculated values
+                    $update_invoice_sql = "UPDATE invoices SET
+                        status = '$new_status',
+                        paid_amount = $paid_amount,
+                        balance_due = $balance_due,
+                        updated_at = NOW()
+                        WHERE id = '$invoiceId_e'";
+
+                    if (!$conn->query($update_invoice_sql)) {
+                        throw new Exception("Failed to update invoice status: " . $conn->error);
                     }
                 }
             }
 
-            // Step 6: Delete the receipt record itself
+            // Step 7: Delete the receipt record itself
             // This will cascade to receipt_items (though we already deleted them)
             $delete_receipt_sql = "DELETE FROM receipts WHERE id = '$receiptId_e'";
             if (!$conn->query($delete_receipt_sql)) {
@@ -2478,7 +2583,8 @@ try {
                     'receipt_id' => $receiptId,
                     'receipt_number' => $receiptNumber,
                     'invoice_id' => $invoiceId,
-                    'payment_id' => $paymentId
+                    'payment_id' => $paymentId,
+                    'amount_reversed' => $receiptAmount
                 ]
             ]);
 
