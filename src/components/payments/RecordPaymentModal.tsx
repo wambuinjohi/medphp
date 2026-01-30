@@ -176,6 +176,15 @@ export function RecordPaymentModal({ open, onOpenChange, onSuccess, invoice }: R
 
       const result = await createPaymentMutation.mutateAsync(paymentRecord);
 
+      /**
+       * Fallback Handling Strategy:
+       * - Payment creation itself uses direct DB inserts (no RPC)
+       * - Document numbering uses generateDocumentNumberAPI() with automatic fallback to sequence-based generation
+       * - Allocation is attempted immediately after payment insert
+       * - If allocation fails, result.allocation_failed = true (user is notified via PaymentAllocationQuickFix)
+       * - Payment record persists even if allocation fails - this is intentional design
+       */
+
       // Check if this is an overpayment and create a credit note automatically
       let creditNoteNumber: string | null = null;
       const invoiceData = invoices.find(inv => inv.id === paymentData.invoice_id);
