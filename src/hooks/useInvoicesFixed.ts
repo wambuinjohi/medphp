@@ -216,32 +216,37 @@ export const useCustomerInvoicesFixed = (customerId?: string, companyId?: string
   });
 };
 
-// Delete an invoice (audited, cleans up items)
+// Delete an invoice with cascade (transaction-safe, deletes invoice_items, payments, payment_allocations)
 export const useDeleteInvoice = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (invoiceId: string) => {
       try {
-        // Delete child items first
-        try {
-          // Fetch invoice items first
-          const { data: items, error: itemsError } = await apiClient.select('invoice_items', {});
-          if (!itemsError && Array.isArray(items)) {
-            const invoiceItems = items.filter((item: any) => item.invoice_id === invoiceId);
-            for (const item of invoiceItems) {
-              await apiClient.delete('invoice_items', item.id);
-            }
-          }
-        } catch (e) {
-          console.warn('Invoice items delete skipped/failed:', (e as any)?.message || e);
+        // Use the transaction-safe delete_invoice_with_cascade endpoint
+        // This handles cascading deletion of:
+        // - invoice_items
+        // - payment_allocations
+        // - payments
+        // - invoice itself
+        // All in a single database transaction
+        const response = await fetch(`${process.env.VITE_BACKEND_URL || 'http://localhost:3000'}/api.php?action=delete_invoice_with_cascade`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            invoice_id: invoiceId,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result.status !== 'success') {
+          throw new Error(result.message || 'Failed to delete invoice');
         }
 
-        // Delete parent record
-        const result = await apiClient.delete('invoices', invoiceId);
-        if (result.error) {
-          throw new Error(`Failed to delete invoice: ${result.error.message}`);
-        }
+        return result;
       } catch (error) {
         console.error('Error deleting invoice:', error);
         throw error;
