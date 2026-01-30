@@ -1,3 +1,17 @@
+/**
+ * Runtime environment verification hook for payment allocation features.
+ *
+ * This hook verifies that the necessary prerequisites are in place for payment
+ * allocations to function correctly:
+ * - The payment_allocations table exists in the database
+ * - The current user is authenticated
+ * - The user's profile is linked to a company (required for RLS policies)
+ *
+ * Note: This is NOT a unit test file - it's a runtime verification utility
+ * used by the application to check setup status before attempting allocations.
+ * All queries are direct Supabase calls (no RPC).
+ */
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
