@@ -1676,6 +1676,82 @@ try {
         echo json_encode($response);
         exit();
     }
+    elseif ($action === "delete_invoice_with_cascade") {
+        // Transaction-safe invoice deletion with cascade
+        // Deletes invoice and all related records: invoice_items, payments, payment_allocations
+
+        $invoice_id = $json_body['invoice_id'] ?? $_POST['invoice_id'] ?? null;
+
+        if (!$invoice_id) {
+            throw new Exception("Missing invoice_id parameter");
+        }
+
+        // Escape the invoice ID for safe use in SQL
+        $invoice_id_e = escape($conn, $invoice_id);
+
+        // Start transaction for atomicity
+        if (!$conn->begin_transaction()) {
+            throw new Exception("Failed to start transaction");
+        }
+
+        try {
+            // Step 1: Fetch invoice details before deletion (for audit/response)
+            $invoice_sql = "SELECT * FROM invoices WHERE id = '$invoice_id_e' LIMIT 1";
+            $invoice_result = $conn->query($invoice_sql);
+            if (!$invoice_result || $invoice_result->num_rows === 0) {
+                throw new Exception("Invoice not found");
+            }
+            $invoice = $invoice_result->fetch_assoc();
+            $invoice_number = $invoice['invoice_number'];
+
+            // Step 2: Delete payment allocations related to this invoice
+            // These have CASCADE delete on invoice_id, but we delete explicitly for clarity
+            $delete_allocations_sql = "DELETE FROM payment_allocations WHERE invoice_id = '$invoice_id_e'";
+            if (!$conn->query($delete_allocations_sql)) {
+                throw new Exception("Failed to delete payment allocations: " . $conn->error);
+            }
+
+            // Step 3: Delete payments related to this invoice
+            $delete_payments_sql = "DELETE FROM payments WHERE invoice_id = '$invoice_id_e'";
+            if (!$conn->query($delete_payments_sql)) {
+                throw new Exception("Failed to delete payments: " . $conn->error);
+            }
+
+            // Step 4: Delete invoice items
+            $delete_items_sql = "DELETE FROM invoice_items WHERE invoice_id = '$invoice_id_e'";
+            if (!$conn->query($delete_items_sql)) {
+                throw new Exception("Failed to delete invoice items: " . $conn->error);
+            }
+
+            // Step 5: Delete the invoice record itself
+            $delete_invoice_sql = "DELETE FROM invoices WHERE id = '$invoice_id_e'";
+            if (!$conn->query($delete_invoice_sql)) {
+                throw new Exception("Failed to delete invoice: " . $conn->error);
+            }
+
+            // Commit transaction
+            if (!$conn->commit()) {
+                throw new Exception("Failed to commit transaction: " . $conn->error);
+            }
+
+            // Return success response
+            echo json_encode([
+                'status' => 'success',
+                'message' => "Invoice $invoice_number and all related records deleted successfully",
+                'data' => [
+                    'invoice_id' => $invoice_id,
+                    'invoice_number' => $invoice_number
+                ]
+            ]);
+            exit();
+
+        } catch (Exception $e) {
+            // Rollback on any error
+            $conn->rollback();
+            error_log("Invoice deletion transaction failed: " . $e->getMessage());
+            throw new Exception("Invoice deletion failed: " . $e->getMessage());
+        }
+    }
     elseif ($action === "delete") {
         if (!$table || !$where) {
             throw new Exception("Missing table or where clause");
