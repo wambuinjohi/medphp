@@ -2476,6 +2476,7 @@ try {
             $receiptNumber = $receipt['receipt_number'];
             $invoiceId = $receipt['invoice_id'];
             $paymentId = $receipt['payment_id'];
+            $receiptAmount = $receipt['total_amount'] ?? 0;
 
             // Step 2: Delete receipt items (snapshot)
             // These have CASCADE delete on receipt_id, but we delete explicitly for clarity
@@ -2484,18 +2485,27 @@ try {
                 throw new Exception("Failed to delete receipt items: " . $conn->error);
             }
 
-            // Step 3: Delete payment allocations
+            // Step 3: Delete payment_audit_log entries before deleting the payment
+            if ($paymentId) {
+                $paymentId_e = escape($conn, $paymentId);
+                $delete_audit_sql = "DELETE FROM payment_audit_log WHERE payment_id = '$paymentId_e'";
+                if (!$conn->query($delete_audit_sql)) {
+                    throw new Exception("Failed to delete payment audit log: " . $conn->error);
+                }
+            }
+
+            // Step 4: Delete payment allocations
             if ($paymentId) {
                 $paymentId_e = escape($conn, $paymentId);
                 // With CASCADE constraint on payment_allocations, this will auto-delete related records
-                // But we can also manually delete for clarity and control
+                // But we delete explicitly for clarity and control
                 $delete_allocations_sql = "DELETE FROM payment_allocations WHERE payment_id = '$paymentId_e'";
                 if (!$conn->query($delete_allocations_sql)) {
                     throw new Exception("Failed to delete payment allocations: " . $conn->error);
                 }
             }
 
-            // Step 4: Delete the payment record
+            // Step 5: Delete the payment record
             if ($paymentId) {
                 $paymentId_e = escape($conn, $paymentId);
                 $delete_payment_sql = "DELETE FROM payments WHERE id = '$paymentId_e'";
@@ -2504,35 +2514,56 @@ try {
                 }
             }
 
-            // Step 5: Revert invoice status if it was marked as paid/partial
+            // Step 6: Recalculate invoice balance and status if this receipt was linked to an invoice
             if ($invoiceId) {
                 $invoiceId_e = escape($conn, $invoiceId);
 
-                // First, fetch the current invoice to check its status
-                $invoice_check_sql = "SELECT status, total_amount FROM invoices WHERE id = '$invoiceId_e' LIMIT 1";
+                // Fetch current invoice state
+                $invoice_check_sql = "SELECT id, total_amount, status FROM invoices WHERE id = '$invoiceId_e' LIMIT 1";
                 $invoice_check_result = $conn->query($invoice_check_sql);
 
                 if ($invoice_check_result && $invoice_check_result->num_rows > 0) {
-                    $invoice_check = $invoice_check_result->fetch_assoc();
+                    $invoice = $invoice_check_result->fetch_assoc();
+                    $total_amount = $invoice['total_amount'] ?? 0;
 
-                    if ($invoice_check['status'] === 'paid' || $invoice_check['status'] === 'partial') {
-                        // Revert to draft since the receipt is being deleted
-                        $total_amount = $invoice_check['total_amount'] ?? 0;
-                        $update_invoice_sql = "UPDATE invoices SET
-                            status = 'draft',
-                            paid_amount = 0,
-                            balance_due = '$total_amount',
-                            updated_at = NOW()
-                            WHERE id = '$invoiceId_e'";
+                    // Calculate paid amount from remaining payment allocations
+                    $paid_sum_sql = "
+                        SELECT COALESCE(SUM(pa.amount), 0) as paid_amount
+                        FROM payment_allocations pa
+                        WHERE pa.invoice_id = '$invoiceId_e'
+                    ";
+                    $paid_sum_result = $conn->query($paid_sum_sql);
+                    $paid_amount = 0;
+                    if ($paid_sum_result) {
+                        $paid_row = $paid_sum_result->fetch_assoc();
+                        $paid_amount = floatval($paid_row['paid_amount'] ?? 0);
+                    }
 
-                        if (!$conn->query($update_invoice_sql)) {
-                            throw new Exception("Failed to update invoice status: " . $conn->error);
-                        }
+                    $balance_due = max(0, floatval($total_amount) - $paid_amount);
+
+                    // Determine new status based on payment state
+                    $new_status = 'draft';
+                    if ($paid_amount >= floatval($total_amount)) {
+                        $new_status = 'paid';
+                    } elseif ($paid_amount > 0) {
+                        $new_status = 'partial';
+                    }
+
+                    // Update invoice with recalculated values
+                    $update_invoice_sql = "UPDATE invoices SET
+                        status = '$new_status',
+                        paid_amount = $paid_amount,
+                        balance_due = $balance_due,
+                        updated_at = NOW()
+                        WHERE id = '$invoiceId_e'";
+
+                    if (!$conn->query($update_invoice_sql)) {
+                        throw new Exception("Failed to update invoice status: " . $conn->error);
                     }
                 }
             }
 
-            // Step 6: Delete the receipt record itself
+            // Step 7: Delete the receipt record itself
             // This will cascade to receipt_items (though we already deleted them)
             $delete_receipt_sql = "DELETE FROM receipts WHERE id = '$receiptId_e'";
             if (!$conn->query($delete_receipt_sql)) {
@@ -2552,7 +2583,8 @@ try {
                     'receipt_id' => $receiptId,
                     'receipt_number' => $receiptNumber,
                     'invoice_id' => $invoiceId,
-                    'payment_id' => $paymentId
+                    'payment_id' => $paymentId,
+                    'amount_reversed' => $receiptAmount
                 ]
             ]);
 
