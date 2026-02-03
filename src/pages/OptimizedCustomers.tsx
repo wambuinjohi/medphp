@@ -40,7 +40,7 @@ import {
   getCustomerInitials,
   OptimizedCustomer
 } from '@/hooks/useOptimizedCustomers';
-import { useCompanies } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { EditCustomerModal } from '@/components/customers/EditCustomerModal';
