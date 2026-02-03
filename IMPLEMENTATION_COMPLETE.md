@@ -89,25 +89,25 @@ The development environment is configured to use the remote API at production. T
 
 ### Option 1: Use Production Endpoints (Recommended for now)
 
-The frontend already points to: `https://helixgeneralhardware.com/api.php`
+The frontend already points to: `https://med.wayrus.co.ke/api.php`
 
 Test these endpoints:
 
 ```bash
 # 1. Check configuration
-curl https://helixgeneralhardware.com/api.php?action=config_debug
+curl https://med.wayrus.co.ke/api.php?action=config_debug
 
 # 2. Test login
-curl -X POST https://helixgeneralhardware.com/api.php?action=login \
+curl -X POST https://med.wayrus.co.ke/api.php?action=login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password"}'
 
 # 3. Refresh a token
-curl -X POST https://helixgeneralhardware.com/api.php?action=refresh_token \
+curl -X POST https://med.wayrus.co.ke/api.php?action=refresh_token \
   -H "Authorization: Bearer <your-token>"
 
 # 4. Debug a token
-curl https://helixgeneralhardware.com/api.php?action=token_debug \
+curl https://med.wayrus.co.ke/api.php?action=token_debug \
   -H "Authorization: Bearer <your-token>"
 ```
 
@@ -122,7 +122,7 @@ If you want to test the local API during development:
 
 ## Production Deployment Checklist
 
-Before deploying to production at `helixgeneralhardware.com`:
+Before deploying to production at `med.wayrus.co.ke`:
 
 ### Files to Deploy
 - ✅ `backend/api.php` - Updated with all new features
