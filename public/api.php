@@ -701,6 +701,52 @@ try {
                 'email' => $email
             ]);
         }
+    exit();
+    }
+
+    // Signup endpoint - create regular user with 'user' role
+    if ($action === "signup") {
+        $email = $_POST['email'] ?? $_GET['email'] ?? ($json_body['email'] ?? null);
+        $password = $_POST['password'] ?? $_GET['password'] ?? ($json_body['password'] ?? null);
+        $full_name = $_POST['full_name'] ?? ($_GET['full_name'] ?? ($json_body['full_name'] ?? null));
+
+        if (!$email || !$password) {
+            throw new Exception("Missing email or password");
+        }
+
+        $email = escape($conn, $email);
+        $hashedPassword = hashPassword($password);
+        $full_name = escape($conn, $full_name ?: '');
+
+        // Check if user already exists
+        $check = $conn->query("SELECT id FROM users WHERE email = '$email'");
+
+        if ($check->num_rows > 0) {
+            http_response_code(409);
+            throw new Exception("User with this email already exists");
+        }
+
+        // Create new user with 'user' role (not admin)
+        $sql = "INSERT INTO users (email, password, role) VALUES ('$email', '$hashedPassword', 'user')";
+        if (!$conn->query($sql)) {
+            throw new Exception("Failed to create user: " . $conn->error);
+        }
+
+        $user_id = $conn->insert_id;
+
+        // Also create profile entry for the user
+        $profile_sql = "INSERT INTO profiles (id, email, full_name, role, status) VALUES ($user_id, '$email', '$full_name', 'user', 'pending')";
+        if (!$conn->query($profile_sql)) {
+            // Log the error but don't fail - the user is created in the users table
+            error_log("Warning: Could not create profile for user $email: " . $conn->error);
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'User account created successfully. Please wait for admin approval.',
+            'id' => $user_id,
+            'email' => $email
+        ]);
         exit();
     }
 
