@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { SignInModal } from '@/components/auth/SignInModal';
 import { ForgotPasswordModal } from '@/components/auth/ForgotPasswordModal';
+import { CompanySwitcher } from '@/components/CompanySwitcher';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
