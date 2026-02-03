@@ -40,9 +40,9 @@ All of the following fixes have been successfully applied to your application:
 
 **Expected Output:**
 ```
-🌐 Using REMOTE API at https://helixgeneralhardware.com
+🌐 Using REMOTE API at https://med.wayrus.co.ke
 📡 [POST] health - Starting request...
-✅ External API health check passed: https://helixgeneralhardware.com/api.php
+✅ External API health check passed: https://med.wayrus.co.ke/api.php
 ```
 
 **If CORS Error:**
