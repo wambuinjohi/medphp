@@ -1,7 +1,7 @@
 import { apiClient } from '@/integrations/api';
 import { executeSQL } from '@/utils/execSQL';
 
-export type AuditedEntity = 'quotation' | 'proforma' | 'invoice' | 'credit_note' | 'user_invitation' | 'user_creation' | 'role' | 'permission';
+export type AuditedEntity = 'quotation' | 'proforma' | 'invoice' | 'credit_note' | 'user_invitation' | 'user_creation' | 'role' | 'permission' | 'permission_check' | 'permission_denied' | 'role_assignment';
 
 interface AuditLogEntry {
   action: 'DELETE' | 'CREATE' | 'APPROVE' | 'INVITE';
