@@ -21,9 +21,11 @@ export default function AdminInitExternal() {
   const [copied, setCopied] = useState(false);
   const [customEmail, setCustomEmail] = useState('admin@mail.com');
   const [customPassword, setCustomPassword] = useState('Pass123');
-  const [apiUrl, setApiUrl] = useState(
-    import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php'
-  );
+  const [apiUrl, setApiUrl] = useState(() => {
+    // Always use the new API endpoint, ensure it ends with /api.php
+    const url = 'https://med.wayrus.co.ke';
+    return url.endsWith('/api.php') ? url : url + '/api.php';
+  });
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [diagnosticsRunning, setDiagnosticsRunning] = useState(false);
   const [diagnosticsResults, setDiagnosticsResults] = useState<any[]>([]);
