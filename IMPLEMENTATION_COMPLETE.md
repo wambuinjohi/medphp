@@ -268,7 +268,7 @@ Look for lines with:
 
 ## Next Steps
 
-1. **Verify Production**: The API is live at https://helixgeneralhardware.com/api.php
+1. **Verify Production**: The API is live at https://med.wayrus.co.ke/api.php
    - It's already using the updated code with JWT and CORS support
    - Test with the endpoints listed in "How to Test Locally"
 
