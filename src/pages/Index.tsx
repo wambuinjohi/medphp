@@ -5,7 +5,8 @@ import { AuthPerformanceTest } from '@/components/auth/AuthPerformanceTest';
 import { Button } from '@/components/ui/button';
 import { FileText, BarChart3, AlertCircle } from 'lucide-react';
 import { downloadQuotationPDF } from '@/utils/pdfGenerator';
-import { useQuotations, useCompanies } from '@/hooks/useDatabase';
+import { useQuotations } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { useState, ReactNode, Component, ErrorInfo } from 'react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -61,8 +62,7 @@ class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProps, Dash
 }
 
 const Index = () => {
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
   const { data: quotations } = useQuotations(currentCompany?.id);
   const [showAuthPerformance, setShowAuthPerformance] = useState(false);
 

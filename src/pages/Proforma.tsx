@@ -29,7 +29,7 @@ import {
   ArrowRightCircle
 } from 'lucide-react';
 import { useProformas, useDeleteProforma, useConvertProformaToInvoice, type ProformaWithItems } from '@/hooks/useProforma';
-import { useCompanies } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 import { ConversionPreviewModal } from '@/components/shared/ConversionPreviewModal';
 import { supabase } from '@/integrations/supabase/client';
@@ -59,8 +59,7 @@ export default function Proforma() {
 
 
   // Get company data
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
 
   // Use proper proforma hooks
   const { data: proformas = [], isLoading, refetch } = useProformas(currentCompany?.id);

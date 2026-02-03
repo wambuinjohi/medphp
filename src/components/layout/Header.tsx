@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { SignInModal } from '@/components/auth/SignInModal';
 import { ForgotPasswordModal } from '@/components/auth/ForgotPasswordModal';
+import { CompanySwitcher } from '@/components/CompanySwitcher';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -101,6 +102,9 @@ export function Header({ onMenuToggle, isMobileMenuOpen }: HeaderProps) {
         <div className="flex items-center space-x-2 sm:space-x-4 ml-auto sm:ml-0">
           {isAuthenticated && (
             <>
+              {/* Company Switcher */}
+              <CompanySwitcher />
+
               {/* Notifications - Hidden on very small screens */}
               <Button variant="ghost" size="icon" className="relative hidden sm:flex h-9 w-9 sm:h-10 sm:w-10">
                 <Bell className="h-4 w-4 sm:h-5 sm:w-5" />

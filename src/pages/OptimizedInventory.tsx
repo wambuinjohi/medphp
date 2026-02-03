@@ -10,9 +10,9 @@ import {
   useProductCategories,
   useCurrencyFormatter,
   useStockStatus,
-  OptimizedProduct 
+  OptimizedProduct
 } from '@/hooks/useOptimizedProducts';
-import { useCompanies } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -148,8 +148,7 @@ export default function OptimizedInventory() {
   const [selectedItem, setSelectedItem] = useState<OptimizedProduct | null>(null);
 
   // Data fetching
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
   
   const {
     data: productsData,

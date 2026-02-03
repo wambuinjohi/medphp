@@ -116,7 +116,7 @@ export function NetworkDiagnosticsPanel() {
               <div>
                 <CardTitle className="text-lg">Network Diagnostics</CardTitle>
                 <CardDescription>
-                  Test connectivity to helixgeneralhardware.com API
+                  Test connectivity to med.wayrus.co.ke API
                 </CardDescription>
               </div>
             </div>

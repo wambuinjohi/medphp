@@ -39,7 +39,7 @@ import {
   AlertCircle,
   Trash2
 } from 'lucide-react';
-import { useCompanies } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { useCreditNotes } from '@/hooks/useCreditNotes';
 import { toast } from 'sonner';
 import { CreateCreditNoteModal } from '@/components/credit-notes/CreateCreditNoteModal';
@@ -87,8 +87,7 @@ export default function CreditNotes() {
   const [amountFromFilter, setAmountFromFilter] = useState('');
   const [amountToFilter, setAmountToFilter] = useState('');
 
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
   const { data: creditNotes, isLoading, error, refetch } = useCreditNotes(currentCompany?.id);
   const downloadPDF = useCreditNotePDFDownload();
   const deleteCreditNote = useDeleteCreditNote();

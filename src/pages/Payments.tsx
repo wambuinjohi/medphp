@@ -30,7 +30,8 @@ import {
   Trash2,
   Edit
 } from 'lucide-react';
-import { usePayments, useCompanies } from '@/hooks/useDatabase';
+import { usePayments } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { usePermissions } from '@/hooks/usePermissions';
 import { generatePaymentReceiptPDF } from '@/utils/pdfGenerator';
@@ -98,8 +99,7 @@ export default function Payments() {
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
 
   // Fetch live payments data and company details
-  const { data: companies = [] } = useCompanies();
-  const currentCompany = companies[0];
+  const { currentCompany } = useCurrentCompany();
   const { data: payments = [], isLoading, error, retry: retryPayments } = usePayments(currentCompany?.id);
   const { data: invoices = [] } = useInvoices(currentCompany?.id);
   const { can: canCreatePayment, can: canViewPayment, can: canEditPayment, can: canDeletePayment, loading: permissionsLoading } = usePermissions();

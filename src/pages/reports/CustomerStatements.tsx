@@ -27,7 +27,8 @@ import {
   Search,
   Lock
 } from 'lucide-react';
-import { useCustomers, usePayments, useCompanies } from '@/hooks/useDatabase';
+import { useCustomers, usePayments } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
@@ -58,11 +59,10 @@ export default function CustomerStatements() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewCustomer, setPreviewCustomer] = useState<CustomerStatement | null>(null);
 
-  const { data: customers } = useCustomers();
-  const { data: invoices } = useInvoices();
-  const { data: payments } = usePayments();
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
+  const { data: customers } = useCustomers(currentCompany?.id);
+  const { data: invoices } = useInvoices(currentCompany?.id);
+  const { data: payments } = usePayments(currentCompany?.id);
 
   const { can: canViewReports, can: canExportReports, loading: permissionsLoading } = usePermissions();
 

@@ -40,7 +40,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCompanies } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { useInvoicesFixed as useInvoices, useDeleteInvoice } from '@/hooks/useInvoicesFixed';
 import { toast } from 'sonner';
 import { parseErrorMessage } from '@/utils/errorHelpers';
@@ -133,8 +133,7 @@ export default function Invoices() {
   const [amountToFilter, setAmountToFilter] = useState('');
 
   const { isAdmin } = useAuth();
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
 
   // Use the fixed invoices hook
   const { data: invoices, isLoading, error, refetch } = useInvoices(currentCompany?.id);
