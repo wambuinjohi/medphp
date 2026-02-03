@@ -1,7 +1,7 @@
 import { apiClient } from '@/integrations/api';
 import { executeSQL } from '@/utils/execSQL';
 
-export type AuditedEntity = 'quotation' | 'proforma' | 'invoice' | 'credit_note' | 'user_invitation' | 'user_creation' | 'role' | 'permission';
+export type AuditedEntity = 'quotation' | 'proforma' | 'invoice' | 'credit_note' | 'user_invitation' | 'user_creation' | 'role' | 'permission' | 'permission_check' | 'permission_denied' | 'role_assignment';
 
 interface AuditLogEntry {
   action: 'DELETE' | 'CREATE' | 'APPROVE' | 'INVITE';
@@ -221,6 +221,162 @@ export async function logRoleChange(
       action_type: action,
       timestamp: new Date().toISOString(),
       ...details,
+    },
+  };
+
+  await insertAuditLog(entry);
+}
+
+/**
+ * Log permission check (allowed)
+ * Records when a user successfully checks permissions
+ */
+export async function logPermissionCheck(
+  userId: string | null,
+  permission: string,
+  resource: string,
+  companyId: string | null,
+  allowed: boolean
+): Promise<void> {
+  try {
+    await ensureAuditLogSchema();
+  } catch {
+    // ignore
+  }
+
+  const { user_id: actor_user_id, email: actor_email } = await getActorInfo();
+
+  const entry: AuditLogEntry = {
+    action: allowed ? 'APPROVE' : 'DELETE',
+    entity_type: 'permission_check',
+    record_id: null,
+    company_id: companyId,
+    actor_user_id: userId || actor_user_id,
+    actor_email: actor_email,
+    details: {
+      permission,
+      resource,
+      result: allowed ? 'allowed' : 'denied',
+      timestamp: new Date().toISOString(),
+    },
+  };
+
+  await insertAuditLog(entry);
+}
+
+/**
+ * Log permission denied
+ * Records when a user attempts an action they don't have permission for
+ */
+export async function logPermissionDenied(
+  userId: string | null,
+  action: string,
+  resource: string,
+  requiredPermission: string | string[],
+  companyId: string | null,
+  reason?: string
+): Promise<void> {
+  try {
+    await ensureAuditLogSchema();
+  } catch {
+    // ignore
+  }
+
+  const { user_id: actor_user_id, email: actor_email } = await getActorInfo();
+
+  const entry: AuditLogEntry = {
+    action: 'DELETE',
+    entity_type: 'permission_denied',
+    record_id: null,
+    company_id: companyId,
+    actor_user_id: userId || actor_user_id,
+    actor_email: actor_email,
+    details: {
+      attempted_action: action,
+      resource,
+      required_permission: requiredPermission,
+      reason: reason || 'insufficient_permissions',
+      timestamp: new Date().toISOString(),
+    },
+  };
+
+  await insertAuditLog(entry);
+}
+
+/**
+ * Log role assignment
+ * Records when a user is assigned a role
+ */
+export async function logRoleAssignment(
+  targetUserId: string,
+  targetEmail: string,
+  roleId: string,
+  roleName: string,
+  companyId: string,
+  previousRole?: string
+): Promise<void> {
+  try {
+    await ensureAuditLogSchema();
+  } catch {
+    // ignore
+  }
+
+  const { user_id: actor_user_id, email: actor_email } = await getActorInfo();
+
+  const entry: AuditLogEntry = {
+    action: 'APPROVE',
+    entity_type: 'role_assignment',
+    record_id: targetUserId,
+    company_id: companyId,
+    actor_user_id,
+    actor_email,
+    details: {
+      target_user_id: targetUserId,
+      target_email: targetEmail,
+      assigned_role_id: roleId,
+      assigned_role_name: roleName,
+      previous_role: previousRole,
+      timestamp: new Date().toISOString(),
+    },
+  };
+
+  await insertAuditLog(entry);
+}
+
+/**
+ * Log permission modification
+ * Records when a role's permissions are changed
+ */
+export async function logPermissionModification(
+  roleId: string,
+  roleName: string,
+  companyId: string,
+  addedPermissions?: string[],
+  removedPermissions?: string[],
+  modifiedPermissions?: string[]
+): Promise<void> {
+  try {
+    await ensureAuditLogSchema();
+  } catch {
+    // ignore
+  }
+
+  const { user_id: actor_user_id, email: actor_email } = await getActorInfo();
+
+  const entry: AuditLogEntry = {
+    action: 'APPROVE',
+    entity_type: 'permission',
+    record_id: roleId,
+    company_id: companyId,
+    actor_user_id,
+    actor_email,
+    details: {
+      role_id: roleId,
+      role_name: roleName,
+      added_permissions: addedPermissions,
+      removed_permissions: removedPermissions,
+      modified_permissions: modifiedPermissions,
+      timestamp: new Date().toISOString(),
     },
   };
 
