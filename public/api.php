@@ -65,7 +65,7 @@ $db_pass = 'Sirgeorge.12';
 $db_name = 'wayrusc1_med';
 
 // Uploads Configuration
-$UPLOADS_DIR = '/home/layonsc1/med.wayrus.co.ke/uploads';
+$UPLOADS_DIR = '/home/wayrusc1/med.wayrus.co.ke/uploads';
 
 // Validate required database configuration
 if (!$db_host || !$db_user || !$db_pass || !$db_name) {
