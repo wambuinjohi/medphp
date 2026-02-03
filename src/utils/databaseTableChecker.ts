@@ -1,4 +1,5 @@
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
+import { getAPIBaseURL } from '@/utils/environment-detection';
 
 export interface TableCheckResult {
   tableName: string;
@@ -14,8 +15,8 @@ export interface TableStatus {
 }
 
 /**
- * Check if specific tables exist in the Supabase database
- * Uses parallel requests instead of sequential to improve performance
+ * Check if specific tables exist in the external API database
+ * Uses parallel requests to the API endpoint
  */
 export async function checkDatabaseTables(): Promise<TableStatus> {
   const requiredTables = [
@@ -44,40 +45,43 @@ export async function checkDatabaseTables(): Promise<TableStatus> {
     'lpo_items',
   ];
 
-  // Check all tables in parallel using Promise.all instead of sequential awaits
+  const apiUrl = getAPIBaseURL();
+  const token = localStorage.getItem('med_api_token');
+
+  // Check all tables in parallel
   const checkTablePromises = requiredTables.map(async (tableName) => {
     try {
-      const { error } = await supabase
-        .from(tableName as any)
-        .select('1', { count: 'exact', head: true })
-        .limit(1);
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          action: 'read',
+          table: tableName,
+          limit: 1,
+        }),
+      });
 
-      if (error) {
-        // Check if it's a "relation does not exist" error
-        if (error.message?.includes('relation') || error.message?.includes('does not exist')) {
-          return {
-            tableName,
-            exists: false,
-            error: `Table "${tableName}" does not exist`
-          };
-        } else {
-          return {
-            tableName,
-            exists: true,
-            error: error.message
-          };
-        }
-      } else {
+      if (response.ok) {
         return {
           tableName,
-          exists: true
+          exists: true,
+        };
+      } else {
+        const error = await response.json().catch(() => ({}));
+        return {
+          tableName,
+          exists: false,
+          error: error.message || `Table "${tableName}" not accessible`,
         };
       }
     } catch (err) {
       return {
         tableName,
         exists: false,
-        error: String(err)
+        error: String(err),
       };
     }
   });
@@ -92,7 +96,7 @@ export async function checkDatabaseTables(): Promise<TableStatus> {
     tables: results,
     totalChecked: requiredTables.length,
     totalExists,
-    allTablesExist
+    allTablesExist,
   };
 }
 
