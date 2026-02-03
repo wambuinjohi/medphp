@@ -212,26 +212,23 @@ export const useRoleManagement = () => {
       }
 
       // Check if any users have this role
-      const { data: usersWithRole } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('role', currentRole?.name)
-        .limit(1);
+      const usersResult = await apiClient.adapter.selectBy('profiles', {
+        role: currentRole?.name,
+      });
 
-      if (usersWithRole && usersWithRole.length > 0) {
+      const usersWithRole = Array.isArray(usersResult.data) ? usersResult.data : [];
+      if (usersWithRole.length > 0) {
         return {
           success: false,
           error: 'Cannot delete role with assigned users. Please reassign users first.',
         };
       }
 
-      const { error: deleteError } = await supabase
-        .from('roles')
-        .delete()
-        .eq('id', roleId);
+      // Delete via the external API
+      const result = await apiClient.adapter.delete('roles', roleId);
 
-      if (deleteError) {
-        throw deleteError;
+      if (result.error) {
+        throw new Error(result.error);
       }
 
       // Log the role deletion
