@@ -60,9 +60,9 @@ $JWT_SECRET = 'Sirgeorge.123';
 
 // Database Configuration
 $db_host = 'localhost';
-$db_user = 'layonsc1_med';
+$db_user = 'wayrusc1_med';
 $db_pass = 'Sirgeorge.12';
-$db_name = 'layonsc1_med';
+$db_name = 'wayrusc1_med';
 
 // Uploads Configuration
 $UPLOADS_DIR = '/home/layonsc1/med.wayrus.co.ke/uploads';
