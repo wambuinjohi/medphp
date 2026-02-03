@@ -1,4 +1,5 @@
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
+import { getAPIBaseURL } from '@/utils/environment-detection';
 
 interface HealthCheckResult {
   isHealthy: boolean;
@@ -8,7 +9,7 @@ interface HealthCheckResult {
 }
 
 /**
- * Check Supabase health and configuration
+ * Check external API health and configuration
  */
 export const checkSupabaseHealth = async (): Promise<HealthCheckResult> => {
   const issues: string[] = [];
@@ -17,41 +18,44 @@ export const checkSupabaseHealth = async (): Promise<HealthCheckResult> => {
   let rateLimited = false;
 
   try {
-    // Test basic connection
-    const { data: testData, error: testError } = await supabase
-      .from('profiles')
-      .select('id')
-      .limit(1);
+    // Test basic connection to API
+    const apiUrl = getAPIBaseURL();
 
-    if (testError) {
-      issues.push(`Database connection failed: ${testError.message}`);
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'health_check' }),
+      });
+
+      if (!response.ok) {
+        issues.push(`API connection failed: HTTP ${response.status}`);
+        isHealthy = false;
+      } else {
+        const data = await response.json();
+        if (data.status !== 'success') {
+          issues.push(`API health check failed: ${data.message || 'Unknown error'}`);
+          isHealthy = false;
+        }
+      }
+    } catch (error) {
+      issues.push(`API connection error: ${error}`);
       isHealthy = false;
     }
 
-    // Test auth service with a non-destructive call
+    // Test auth service
     try {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        issues.push(`Auth service issue: ${sessionError.message}`);
-        isHealthy = false;
+      const { error: authError } = await apiClient.auth.checkAuth();
+
+      if (authError) {
+        // Not authenticated is okay for health check
+        canCreateUsers = true;
       } else {
         canCreateUsers = true;
       }
     } catch (authError) {
-      issues.push(`Auth service unavailable: ${authError}`);
+      issues.push(`Auth service error: ${authError}`);
       isHealthy = false;
-    }
-
-    // Check if we're rate limited by trying a light auth operation
-    try {
-      const { error: userError } = await supabase.auth.getUser();
-      if (userError && userError.message.includes('seconds')) {
-        rateLimited = true;
-        issues.push('Rate limited by Supabase auth service');
-      }
-    } catch (rateLimitError) {
-      // Ignore - might not be rate limiting
     }
 
   } catch (error) {
@@ -72,18 +76,18 @@ export const checkSupabaseHealth = async (): Promise<HealthCheckResult> => {
  */
 export const waitForRateLimit = async (maxWaitTime: number = 30000): Promise<boolean> => {
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < maxWaitTime) {
     const health = await checkSupabaseHealth();
-    
+
     if (!health.rateLimited) {
       return true;
     }
-    
+
     console.log('Still rate limited, waiting...');
     await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
   }
-  
+
   return false; // Timeout reached
 };
 
@@ -102,17 +106,17 @@ export const retryWithRateLimit = async <T>(
     } catch (error: any) {
       const isRateLimit = error?.message?.includes('seconds');
       const isLastAttempt = attempt === maxRetries;
-      
+
       if (isRateLimit && !isLastAttempt) {
         const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
         console.log(`Rate limited, waiting ${delay}ms before retry ${attempt + 1}/${maxRetries}`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }
-      
+
       throw error; // Re-throw if not rate limit or last attempt
     }
   }
-  
+
   throw new Error('Max retries exceeded');
 };
