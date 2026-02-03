@@ -48,7 +48,7 @@ All of the following fixes have been successfully applied to your application:
 **If CORS Error:**
 ```
 ❌ Network Error for health on API
-API Endpoint: https://helixgeneralhardware.com/api.php
+API Endpoint: https://med.wayrus.co.ke/api.php
 🔍 Troubleshooting:
 1. CORS Issue (Most Common):
    - Backend needs: Access-Control-Allow-Origin header
