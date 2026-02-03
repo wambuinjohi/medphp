@@ -5,7 +5,8 @@ import { EditInventoryItemModal } from '@/components/inventory/EditInventoryItem
 import { ViewInventoryItemModal } from '@/components/inventory/ViewInventoryItemModal';
 import { RestockItemModal } from '@/components/inventory/RestockItemModal';
 import { StockAdjustmentModal } from '@/components/inventory/StockAdjustmentModal';
-import { useProducts, useCompanies } from '@/hooks/useDatabase';
+import { useProducts } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -90,8 +91,7 @@ export default function Inventory() {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
   // Fetch products from database
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
   const { data: products, isLoading: loadingProducts, error: productsError, retry: retryProducts, loadingTimeout } = useProducts(currentCompany?.id);
   const { canView, canCreate, canEdit, loading: permissionsLoading, role } = usePermissions();
 

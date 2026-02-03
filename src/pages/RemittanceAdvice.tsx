@@ -23,7 +23,8 @@ import {
 } from 'lucide-react';
 import { downloadRemittancePDF } from '@/utils/pdfGenerator';
 import { toast } from 'sonner';
-import { useRemittanceAdvice, useCompanies } from '@/hooks/useDatabase';
+import { useRemittanceAdvice } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { CreateRemittanceModal } from '@/components/remittance/CreateRemittanceModalFixed';
 import { ViewRemittanceModal } from '@/components/remittance/ViewRemittanceModal';
 import { EditRemittanceModal } from '@/components/remittance/EditRemittanceModal';
@@ -41,10 +42,7 @@ const RemittanceAdvice = () => {
 
   // Fetch live remittance advice data and company details
   const { data: remittances = [], isLoading, error, retry: retryRemittances } = useRemittanceAdvice();
-  const { data: companies = [] } = useCompanies();
-
-  // Get the current company (assuming first company for now)
-  const currentCompany = companies[0];
+  const { currentCompany } = useCurrentCompany();
 
   const handleViewRemittance = (remittance: any) => {
     setSelectedRemittance(remittance);
