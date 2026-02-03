@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { RoleDefinition, Permission, DEFAULT_ROLE_PERMISSIONS } from '@/types/permissions';
 import { logRoleChange } from '@/utils/auditLogger';
+import { apiClient } from '@/integrations/api';
 
 interface CreateRoleData {
   name: string;
@@ -27,6 +27,7 @@ export const useRoleManagement = () => {
 
   /**
    * Fetch all roles for the current company
+   * Uses the external API to ensure roles are synced with authorization checks
    */
   const fetchRoles = useCallback(async () => {
     if (!isAdmin || !currentUser?.company_id) {
@@ -37,18 +38,28 @@ export const useRoleManagement = () => {
     setError(null);
 
     try {
-      const { data, error: fetchError } = await supabase
-        .from('roles')
-        .select('*')
-        .eq('company_id', currentUser.company_id)
-        .order('is_default', { ascending: false })
-        .order('name', { ascending: true });
+      // Fetch roles from the external API (MySQL backend)
+      // This ensures authorization checks use the same role data
+      const result = await apiClient.adapter.selectBy('roles', {
+        company_id: currentUser.company_id,
+      });
 
-      if (fetchError) {
-        throw fetchError;
+      if (result.error) {
+        throw new Error(result.error);
       }
 
-      setRoles(data || []);
+      // Filter and sort the roles
+      const roleList = (Array.isArray(result.data) ? result.data : []) as RoleDefinition[];
+      const sortedRoles = roleList.sort((a, b) => {
+        // Default roles first
+        if (a.is_default !== b.is_default) {
+          return (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0);
+        }
+        // Then alphabetically
+        return a.name.localeCompare(b.name);
+      });
+
+      setRoles(sortedRoles);
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'fetching roles');
       console.error('Error fetching roles:', err);
