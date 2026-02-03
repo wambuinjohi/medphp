@@ -2,7 +2,7 @@
 
 ## Problem
 
-The application is getting "Failed to fetch" errors when trying to communicate with the remote API at `https://helixgeneralhardware.com/api.php` from the frontend deployed on `fly.dev`.
+The application is getting "Failed to fetch" errors when trying to communicate with the remote API at `https://med.wayrus.co.ke/api.php` from the frontend deployed on `fly.dev`.
 
 **Root Cause**: Browser security policy (CORS - Cross-Origin Resource Sharing) blocks requests to the API unless the backend sends proper CORS headers.
 
@@ -10,7 +10,7 @@ The application is getting "Failed to fetch" errors when trying to communicate w
 
 ## Solution: Configure CORS on Backend
 
-The backend at `https://helixgeneralhardware.com/api.php` needs to respond with CORS headers to allow requests from the frontend.
+The backend at `https://med.wayrus.co.ke/api.php` needs to respond with CORS headers to allow requests from the frontend.
 
 ### Required CORS Headers
 
