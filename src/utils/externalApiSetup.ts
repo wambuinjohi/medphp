@@ -260,7 +260,7 @@ export async function createUserViaAPI(
  */
 export async function getDatabaseInfo(options: SetupOptions = {}): Promise<any> {
   const apiUrl =
-    options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
+    options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
 
   // Always use the direct URL (no proxy) for consistency across all environments
   const fetchUrl = apiUrl.includes('/api.php') ? apiUrl : apiUrl + '/api.php';
