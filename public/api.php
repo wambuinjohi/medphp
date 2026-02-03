@@ -979,23 +979,8 @@ try {
             }
         }
 
-        // If token validation completely failed, allow certain updates to bypass
-        // This handles cases where token is invalid but system setup is correct
+        // Token validation failed - deny the operation
         if (!$decoded) {
-            if ($action === 'update' && ($table === 'companies' || $table === 'profiles')) {
-                error_log("🟡 [AUTH] $action on $table - Token validation failed, but entering bypass mode...");
-                error_log("⚠️ [SECURITY] Allowing $action on $table with invalid token (bypass mode for configured system)");
-
-                return [
-                    'id' => null,
-                    'email' => 'system',
-                    'role' => 'admin',
-                    'status' => 'active',
-                    'company_id' => null,
-                    'bypass_mode' => true
-                ];
-            }
-
             http_response_code(401);
             error_log("🔴 [AUTH] $action on $table - Could not extract or verify token (DENIED)");
             throw new Exception("Invalid or expired authentication token");
