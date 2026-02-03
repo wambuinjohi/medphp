@@ -73,6 +73,36 @@ class ExternalAPIAuthHandler {
   }
 
   /**
+   * Signup - create new user account with 'user' role
+   */
+  async signup(email: string, password: string, fullName?: string): Promise<{ error?: Error }> {
+    try {
+      const response = await fetch(`${this.fetchUrl}?action=signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, full_name: fullName || email.split('@')[0] }),
+      });
+
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
+
+      if (!response.ok || result.status === 'error') {
+        return { error: new Error(result.message || 'Signup failed') };
+      }
+
+      // Signup successful - user is awaiting admin approval
+      // Do not automatically log them in
+      return {};
+    } catch (error) {
+      return { error: error as Error };
+    }
+  }
+
+  /**
    * Logout - clear stored credentials
    */
   async logout(): Promise<{ error?: Error }> {

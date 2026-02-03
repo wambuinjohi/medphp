@@ -434,10 +434,35 @@ export const supabaseCompat = {
     },
 
     signUp: async (params: any) => {
-      return {
-        error: new Error('Sign up not supported - use admin invitation'),
-        data: null,
-      };
+      try {
+        const result = await getAdapterInstance().signup(
+          params.email,
+          params.password,
+          params.fullName || params.full_name
+        );
+
+        if (result.error) {
+          return {
+            error: result.error,
+            data: null,
+          };
+        }
+
+        return {
+          error: null,
+          data: {
+            user: {
+              email: params.email,
+              id: undefined,
+            },
+          },
+        };
+      } catch (error) {
+        return {
+          error: error instanceof Error ? error : new Error('Sign up failed'),
+          data: null,
+        };
+      }
     },
 
     signOut: async () => {

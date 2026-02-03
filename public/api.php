@@ -701,6 +701,192 @@ try {
                 'email' => $email
             ]);
         }
+    exit();
+    }
+
+    // Signup endpoint - create regular user with 'user' role
+    if ($action === "signup") {
+        $email = $_POST['email'] ?? $_GET['email'] ?? ($json_body['email'] ?? null);
+        $password = $_POST['password'] ?? $_GET['password'] ?? ($json_body['password'] ?? null);
+        $full_name = $_POST['full_name'] ?? ($_GET['full_name'] ?? ($json_body['full_name'] ?? null));
+
+        if (!$email || !$password) {
+            throw new Exception("Missing email or password");
+        }
+
+        $email = escape($conn, $email);
+        $hashedPassword = hashPassword($password);
+        $full_name = escape($conn, $full_name ?: '');
+
+        // Check if user already exists
+        $check = $conn->query("SELECT id FROM users WHERE email = '$email'");
+
+        if ($check->num_rows > 0) {
+            http_response_code(409);
+            throw new Exception("User with this email already exists");
+        }
+
+        // Create new user with 'user' role (not admin)
+        $sql = "INSERT INTO users (email, password, role) VALUES ('$email', '$hashedPassword', 'user')";
+        if (!$conn->query($sql)) {
+            throw new Exception("Failed to create user: " . $conn->error);
+        }
+
+        $user_id = $conn->insert_id;
+
+        // Also create profile entry for the user
+        $profile_sql = "INSERT INTO profiles (id, email, full_name, role, status) VALUES ($user_id, '$email', '$full_name', 'user', 'pending')";
+        if (!$conn->query($profile_sql)) {
+            // Log the error but don't fail - the user is created in the users table
+            error_log("Warning: Could not create profile for user $email: " . $conn->error);
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'User account created successfully. Please wait for admin approval.',
+            'id' => $user_id,
+            'email' => $email
+        ]);
+        exit();
+    }
+
+    // Admin endpoint - promote user to admin or set specific role
+    if ($action === "admin_promote_user" || $action === "set_user_role") {
+        // Require authentication
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+        $token = null;
+
+        if ($auth_header && preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
+            $token = $matches[1];
+        }
+
+        if (!$token) {
+            http_response_code(401);
+            throw new Exception("Authentication required for this action");
+        }
+
+        $decoded = verifyJWT($token);
+        if (!$decoded) {
+            http_response_code(401);
+            throw new Exception("Invalid or expired token");
+        }
+
+        // Check if user is admin
+        if ($decoded['role'] !== 'admin' && $decoded['role'] !== 'super_admin') {
+            http_response_code(403);
+            throw new Exception("Only admins can perform this action");
+        }
+
+        $user_id = $json_body['user_id'] ?? $_POST['user_id'] ?? null;
+        $new_role = $json_body['role'] ?? $_POST['role'] ?? null;
+
+        if (!$user_id || !$new_role) {
+            throw new Exception("Missing user_id or role parameter");
+        }
+
+        // Validate role
+        $valid_roles = ['user', 'admin', 'super_admin'];
+        if (!in_array($new_role, $valid_roles)) {
+            throw new Exception("Invalid role. Must be one of: " . implode(", ", $valid_roles));
+        }
+
+        // Update user role in users table
+        $user_id_escaped = escape($conn, $user_id);
+        $new_role_escaped = escape($conn, $new_role);
+
+        $sql = "UPDATE users SET role = '$new_role_escaped' WHERE id = '$user_id_escaped'";
+        if (!$conn->query($sql)) {
+            throw new Exception("Failed to update user role: " . $conn->error);
+        }
+
+        // Also update profile table to keep in sync
+        $sql_profile = "UPDATE profiles SET role = '$new_role_escaped' WHERE id = '$user_id_escaped'";
+        $conn->query($sql_profile); // Don't fail if profile doesn't exist
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => "User role updated to '$new_role'",
+            'user_id' => $user_id,
+            'new_role' => $new_role
+        ]);
+        exit();
+    }
+
+    // Admin endpoint - create user with specific role (admin only)
+    if ($action === "admin_create_user") {
+        // Require authentication
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+        $token = null;
+
+        if ($auth_header && preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
+            $token = $matches[1];
+        }
+
+        if (!$token) {
+            http_response_code(401);
+            throw new Exception("Authentication required for this action");
+        }
+
+        $decoded = verifyJWT($token);
+        if (!$decoded) {
+            http_response_code(401);
+            throw new Exception("Invalid or expired token");
+        }
+
+        // Check if user is admin
+        if ($decoded['role'] !== 'admin' && $decoded['role'] !== 'super_admin') {
+            http_response_code(403);
+            throw new Exception("Only admins can create users");
+        }
+
+        $email = $json_body['email'] ?? $_POST['email'] ?? null;
+        $password = $json_body['password'] ?? $_POST['password'] ?? null;
+        $full_name = $json_body['full_name'] ?? ($_POST['full_name'] ?? null);
+        $role = $json_body['role'] ?? ($_POST['role'] ?? 'user');
+
+        if (!$email || !$password) {
+            throw new Exception("Missing email or password");
+        }
+
+        // Validate role
+        $valid_roles = ['user', 'admin', 'super_admin'];
+        if (!in_array($role, $valid_roles)) {
+            throw new Exception("Invalid role. Must be one of: " . implode(", ", $valid_roles));
+        }
+
+        $email = escape($conn, $email);
+        $hashedPassword = hashPassword($password);
+        $full_name = escape($conn, $full_name ?: '');
+        $role = escape($conn, $role);
+
+        // Check if user already exists
+        $check = $conn->query("SELECT id FROM users WHERE email = '$email'");
+        if ($check->num_rows > 0) {
+            http_response_code(409);
+            throw new Exception("User with this email already exists");
+        }
+
+        // Create user with specified role
+        $sql = "INSERT INTO users (email, password, role) VALUES ('$email', '$hashedPassword', '$role')";
+        if (!$conn->query($sql)) {
+            throw new Exception("Failed to create user: " . $conn->error);
+        }
+
+        $user_id = $conn->insert_id;
+
+        // Also create profile entry
+        $profile_sql = "INSERT INTO profiles (id, email, full_name, role, status) VALUES ($user_id, '$email', '$full_name', '$role', 'active')";
+        if (!$conn->query($profile_sql)) {
+            error_log("Warning: Could not create profile for user $email: " . $conn->error);
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => "User created with role '$role'",
+            'id' => $user_id,
+            'email' => $email,
+            'role' => $role
+        ]);
         exit();
     }
 
