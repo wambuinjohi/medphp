@@ -133,8 +133,7 @@ export default function Invoices() {
   const [amountToFilter, setAmountToFilter] = useState('');
 
   const { isAdmin } = useAuth();
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
 
   // Use the fixed invoices hook
   const { data: invoices, isLoading, error, refetch } = useInvoices(currentCompany?.id);
