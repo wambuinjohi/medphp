@@ -31,9 +31,9 @@ export function getClientApiUrl(): string {
   // Development mode: use full URL from getAPIBaseURL() from environment detection
   // This is already handled by src/utils/environment-detection.ts
   // This function is just for explicit usage when needed
-  const fullUrl = typeof window !== 'undefined' 
+  const fullUrl = typeof window !== 'undefined'
     ? `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}/api.php`
-    : 'https://helixgeneralhardware.com/api.php'; // Fallback for SSR
+    : 'https://med.wayrus.co.ke/api.php'; // Fallback for SSR
   
   return fullUrl;
 }
