@@ -84,7 +84,7 @@ CORS(app,
 ### 1. "Failed to fetch" in Browser Console
 
 **Check**:
-- Is the API endpoint accessible directly? Try visiting `https://helixgeneralhardware.com/api.php?action=health` in your browser
+- Is the API endpoint accessible directly? Try visiting `https://med.wayrus.co.ke/api.php?action=health` in your browser
 - Are CORS headers present in the response? Open DevTools → Network tab → Check response headers
 - Is the domain in `Access-Control-Allow-Origin` correct?
 
@@ -120,7 +120,7 @@ Configure Vite to proxy requests. The `vite.config.ts` already has some proxy se
 server: {
   proxy: {
     '/api': {
-      target: 'https://helixgeneralhardware.com',
+      target: 'https://med.wayrus.co.ke',
       changeOrigin: true,
       rewrite: (path) => path.replace(/^\/api/, ''),
     }
@@ -141,7 +141,7 @@ curl -i -X OPTIONS \
   -H "Origin: https://your-frontend.fly.dev" \
   -H "Access-Control-Request-Method: POST" \
   -H "Access-Control-Request-Headers: Content-Type" \
-  https://helixgeneralhardware.com/api.php?action=login
+  https://med.wayrus.co.ke/api.php?action=login
 ```
 
 Look for these headers in the response:
@@ -171,7 +171,7 @@ The application uses a **Vite development proxy** to bypass CORS issues during d
 ### How It Works
 
 1. Frontend makes request to `http://localhost:8080/api`
-2. Vite proxy intercepts and forwards to `https://helixgeneralhardware.com/api.php`
+2. Vite proxy intercepts and forwards to `https://med.wayrus.co.ke/api.php`
 3. Response is returned to frontend without CORS blocking
 4. Proxy is **only available in development** - doesn't work in production
 
@@ -211,7 +211,7 @@ Verify backend has CORS headers:
 curl -i -X OPTIONS \
   -H "Origin: https://your-frontend-domain.fly.dev" \
   -H "Access-Control-Request-Method: POST" \
-  https://helixgeneralhardware.com/api.php?action=login
+  https://med.wayrus.co.ke/api.php?action=login
 
 # Expected response headers:
 # access-control-allow-origin: https://your-frontend-domain.fly.dev
