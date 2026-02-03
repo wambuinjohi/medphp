@@ -33,7 +33,15 @@ export const usePermissions = () => {
     setError(null);
 
     try {
-      // First, get the user's role string
+      // If role definition is already loaded in the profile, use it
+      if (currentUser.roleDefinition) {
+        console.log('✅ Using role definition from profile:', currentUser.roleDefinition.name);
+        setRole(currentUser.roleDefinition);
+        setLoading(false);
+        return;
+      }
+
+      // Otherwise, fetch the full role definition from the roles table
       const userRole = currentUser.role;
 
       if (!userRole) {
