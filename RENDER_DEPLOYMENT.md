@@ -6,7 +6,7 @@ This document explains how to deploy the medical management frontend to Render.c
 
 1. **Render.com Account**: Create a free account at https://render.com
 2. **GitHub Repository**: Push your code to GitHub
-3. **API Already Running**: helixgeneralhardware.com/api.php must be deployed and working
+3. **API Already Running**: med.wayrus.co.ke/api.php must be deployed and working
 
 ## Setup Steps
 
@@ -47,7 +47,7 @@ Fill in these settings:
 1. In the service settings, scroll to **"Environment"**
 2. Add this environment variable:
    - **Key**: `VITE_EXTERNAL_API_URL`
-   - **Value**: `https://helixgeneralhardware.com/api.php`
+   - **Value**: `https://med.wayrus.co.ke/api.php`
 
 3. (Optional) Add Node.js version:
    - **Key**: `NODE_VERSION`
@@ -64,8 +64,8 @@ Fill in these settings:
 ## How It Works
 
 - **Frontend**: Deployed on Render.com (renders the React app in the browser)
-- **API**: Stays on helixgeneralhardware.com (handles all data operations)
-- **Communication**: Frontend makes API calls to helixgeneralhardware.com/api.php
+- **API**: Stays on med.wayrus.co.ke (handles all data operations)
+- **Communication**: Frontend makes API calls to med.wayrus.co.ke/api.php
 
 The `server.js` file serves the built React app and handles client-side routing (so `/login`, `/dashboard`, etc. all work correctly).
 
