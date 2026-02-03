@@ -1,30 +1,29 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Use local auth server for development if VITE_USE_LOCAL_AUTH is set
-  const useLocalAuth = process.env.VITE_USE_LOCAL_AUTH === 'true';
+  // Load environment variables from .env files
+  const env = loadEnv(mode, process.cwd(), '');
 
-  // API configuration - prioritize environment variable, fall back to relative /api.php
+  // Use local auth server for development if VITE_USE_LOCAL_AUTH is set
+  const useLocalAuth = (env.VITE_USE_LOCAL_AUTH || process.env.VITE_USE_LOCAL_AUTH) === 'true';
+
+  // API configuration - use environment variable or default to new remote API
   let apiUrl: string;
 
   if (useLocalAuth) {
     // Local auth server mode - use localhost:3001
     apiUrl = 'http://localhost:3001';
     console.log('✅ Using LOCAL authentication server at http://localhost:3001');
-  } else if (process.env.VITE_EXTERNAL_API_URL) {
-    // Use explicitly configured external API URL
-    apiUrl = process.env.VITE_EXTERNAL_API_URL;
+  } else {
+    // Use the new external API endpoint at med.wayrus.co.ke (primary remote server)
+    apiUrl = 'https://med.wayrus.co.ke';
     // Remove trailing /api.php if present (we'll add it back in proxy config)
     apiUrl = apiUrl.replace(/\/api\.php$/, '');
-    console.log(`🌐 Using EXTERNAL API configured via VITE_EXTERNAL_API_URL: ${apiUrl}/api.php`);
-  } else {
-    // Default: use relative /api.php (works on any locally running server)
-    apiUrl = '';
-    console.log(`📍 Using relative API endpoint: /api.php (will connect to current hostname)`);
+    console.log(`🌐 Using REMOTE API: ${apiUrl}/api.php`);
   }
 
   const apiEndpoint = apiUrl ? `${apiUrl}/api.php` : '/api.php';
