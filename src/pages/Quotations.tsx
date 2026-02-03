@@ -105,8 +105,7 @@ export default function Quotations() {
   
   // Get current user and company from context
   const { profile, loading: authLoading } = useAuth();
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
   const { data: quotations, isLoading, error, refetch } = useQuotationsFixed(currentCompany?.id);
   const deleteQuotation = useDeleteQuotation();
   const convertToProforma = useConvertQuotationToProforma();
