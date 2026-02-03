@@ -90,7 +90,7 @@ npm run dev:local
 
 ### For Production (Remote API)
 
-Ensure the backend at `https://helixgeneralhardware.com/api.php` is configured with:
+Ensure the backend at `https://med.wayrus.co.ke/api.php` is configured with:
 
 ```php
 header('Access-Control-Allow-Origin: YOUR_PRODUCTION_DOMAIN');
