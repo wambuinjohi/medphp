@@ -169,7 +169,7 @@ export default function AdminInitExternal() {
                   onChange={e => setApiUrl(e.target.value)}
                   disabled={initializing || adminExists}
                   className="mt-2"
-                  placeholder="https://helixgeneralhardware.com/api.php"
+                  placeholder="https://med.wayrus.co.ke/api.php"
                 />
               </div>
               {databaseInfo && (
