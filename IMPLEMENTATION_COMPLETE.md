@@ -218,17 +218,17 @@ Create a monitoring endpoint that periodically calls:
 
 ### Check Configuration
 ```
-GET https://helixgeneralhardware.com/api.php?action=config_debug
+GET https://med.wayrus.co.ke/api.php?action=config_debug
 ```
 
 Response will show:
-- ✅ or ✗ for JWT_SECRET
+- ✅ or ✅ for JWT_SECRET
 - ✅ or ✗ for database connection
 - ✅ or ✗ for CORS headers
 
 ### Check Token Issues
 ```
-GET https://helixgeneralhardware.com/api.php?action=token_debug
+GET https://med.wayrus.co.ke/api.php?action=token_debug
 Headers: Authorization: Bearer <your-token>
 ```
 
