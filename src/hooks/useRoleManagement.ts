@@ -83,22 +83,23 @@ export const useRoleManagement = () => {
 
     try {
       const companyIdToUse = data.company_id || currentUser.company_id;
-      const { data: newRole, error: createError } = await supabase
-        .from('roles')
-        .insert({
-          name: data.name,
-          description: data.description,
-          permissions: data.permissions,
-          company_id: companyIdToUse,
-          role_type: 'custom',
-          is_default: false,
-        })
-        .select()
-        .single();
+      const roleData = {
+        name: data.name,
+        description: data.description,
+        permissions: data.permissions,
+        company_id: companyIdToUse,
+        role_type: 'custom',
+        is_default: false,
+      };
 
-      if (createError) {
-        throw createError;
+      // Insert via the external API
+      const result = await apiClient.adapter.insert('roles', roleData);
+
+      if (result.error) {
+        throw new Error(result.error);
       }
+
+      const newRole = result.data as RoleDefinition;
 
       // Log the role creation
       try {
