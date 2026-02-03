@@ -209,8 +209,7 @@ export default function OptimizedCustomers() {
   const [selectedCustomer, setSelectedCustomer] = useState<OptimizedCustomer | null>(null);
 
   // Data fetching
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
   
   const { 
     data: customersData, 
