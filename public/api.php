@@ -933,7 +933,7 @@ try {
     }
 
     // Helper function to check authorization for modifications (create, update, delete)
-    // Allows authenticated admins to proceed even if JWT is invalid (prefer session/identity over strict JWT validation)
+    // Enforces strict JWT validation - no bypass mode
     function requireAuthForModification($action, $table) {
         global $conn;
 
@@ -950,26 +950,8 @@ try {
             $token = $_POST['token'] ?? null;
         }
 
-        // If no token provided, check if we can bypass for certain updates
+        // If no token provided, deny the operation
         if (!$token) {
-            // For company and profile updates, allow bypassing token if properly configured
-            // This enables updates when token is missing but the user profile is correctly set up
-            if ($action === 'update' && ($table === 'companies' || $table === 'profiles')) {
-                error_log("🟡 [AUTH] $action on $table - No token provided, entering bypass mode...");
-                error_log("⚠️ [SECURITY] Allowing $action on $table without token (bypass mode for configured system)");
-
-                // Return a minimal user object with bypass flag
-                return [
-                    'id' => null,
-                    'email' => 'system',
-                    'role' => 'admin',
-                    'status' => 'active',
-                    'company_id' => null,
-                    'bypass_mode' => true
-                ];
-            }
-
-            // For other operations, require a token
             http_response_code(401);
             error_log("🔴 [AUTH] $action on $table - No token provided (DENIED)");
             error_log("📋 [DEBUG] Authorization header present: " . ($auth_header ? "yes" : "no"));
