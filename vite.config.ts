@@ -19,14 +19,11 @@ export default defineConfig(({ mode }) => {
     apiUrl = 'http://localhost:3001';
     console.log('✅ Using LOCAL authentication server at http://localhost:3001');
   } else {
-    // Use configured external API endpoint, default to med.wayrus.co.ke
-    const configuredUrl = env.VITE_EXTERNAL_API_URL || process.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke';
-    apiUrl = configuredUrl;
+    // Use the new external API endpoint at med.wayrus.co.ke (primary remote server)
+    apiUrl = 'https://med.wayrus.co.ke';
     // Remove trailing /api.php if present (we'll add it back in proxy config)
     apiUrl = apiUrl.replace(/\/api\.php$/, '');
-    console.log(`🔍 DEBUG - env.VITE_EXTERNAL_API_URL: ${env.VITE_EXTERNAL_API_URL}`);
-    console.log(`🔍 DEBUG - process.env.VITE_EXTERNAL_API_URL: ${process.env.VITE_EXTERNAL_API_URL}`);
-    console.log(`🌐 Using EXTERNAL API: ${apiUrl}/api.php`);
+    console.log(`🌐 Using REMOTE API: ${apiUrl}/api.php`);
   }
 
   const apiEndpoint = apiUrl ? `${apiUrl}/api.php` : '/api.php';
