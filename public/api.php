@@ -1040,12 +1040,6 @@ try {
     function canManageCompany($user, $company_id) {
         global $conn;
 
-        // If in bypass mode (token was missing but company update is allowed), allow the operation
-        if (isset($user['bypass_mode']) && $user['bypass_mode']) {
-            error_log("✅ [AUTH] Bypass mode enabled - allowing company {$company_id} update");
-            return true;
-        }
-
         // Super admins can manage any company
         if ($user['role'] === 'super_admin') {
             error_log("✅ [AUTH] Super admin {$user['email']} can manage any company");
