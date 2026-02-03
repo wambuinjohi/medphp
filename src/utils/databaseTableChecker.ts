@@ -164,17 +164,14 @@ export async function createTestUser(email: string, password: string) {
  */
 export async function checkUsersExist(): Promise<boolean> {
   try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true })
-      .limit(1);
+    const { data, error } = await apiClient.select('profiles', { limit: 1 });
 
     if (error) {
       console.warn('⚠️ Could not check users:', error.message);
       return false;
     }
 
-    return true;
+    return data && Array.isArray(data) && data.length > 0;
   } catch (err) {
     console.warn('⚠️ Error checking users:', err);
     return false;
