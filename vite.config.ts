@@ -18,9 +18,9 @@ export default defineConfig(({ mode }) => {
     // Local auth server mode - use localhost:3001
     apiUrl = 'http://localhost:3001';
     console.log('✅ Using LOCAL authentication server at http://localhost:3001');
-  } else if (process.env.VITE_EXTERNAL_API_URL) {
+  } else if (env.VITE_EXTERNAL_API_URL || process.env.VITE_EXTERNAL_API_URL) {
     // Use explicitly configured external API URL
-    apiUrl = process.env.VITE_EXTERNAL_API_URL;
+    apiUrl = env.VITE_EXTERNAL_API_URL || process.env.VITE_EXTERNAL_API_URL;
     // Remove trailing /api.php if present (we'll add it back in proxy config)
     apiUrl = apiUrl.replace(/\/api\.php$/, '');
     console.log(`🌐 Using EXTERNAL API configured via VITE_EXTERNAL_API_URL: ${apiUrl}/api.php`);
