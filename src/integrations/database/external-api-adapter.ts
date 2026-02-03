@@ -563,6 +563,44 @@ export class ExternalAPIAdapter implements IDatabase {
     }
   }
 
+  async signup(email: string, password: string, fullName?: string): Promise<{ error: Error | null }> {
+    try {
+      const signupUrl = `${this.apiBase}?action=signup`;
+      console.log(`📝 Attempting signup: ${signupUrl}`);
+
+      const response = await fetch(signupUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, full_name: fullName || email.split('@')[0] }),
+      });
+
+      // Defensively parse JSON
+      const result = await response.json().catch(() => {
+        if (!response.ok) {
+          throw new Error(`Server error: HTTP ${response.status}. The API server may be experiencing issues.`);
+        }
+        throw new Error('Invalid response from server: Expected valid JSON');
+      });
+      console.log('📝 Signup response status:', response.status);
+
+      if (!response.ok || result.status === 'error') {
+        const errorMsg = result.message || result.error || `Signup failed with status ${response.status}`;
+        console.error('❌ Signup error:', errorMsg);
+        return {
+          error: new Error(errorMsg),
+        };
+      }
+
+      console.log('✅ Signup successful, user awaiting admin approval');
+      return { error: null };
+    } catch (error) {
+      console.error('❌ Signup exception:', error);
+      return {
+        error: error as Error,
+      };
+    }
+  }
+
   async logout(): Promise<{ error: Error | null }> {
     try {
       const response = await fetch(`${this.apiBase}?action=logout`, {
