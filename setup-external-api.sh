@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Default values
-API_URL="${API_URL:-https://helixgeneralhardware.com/api.php}"
+API_URL="${API_URL:-https://med.wayrus.co.ke/api.php}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@biolegend.local}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-Biolegend2024!Admin}"
 DRY_RUN=false
