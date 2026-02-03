@@ -41,6 +41,7 @@ export interface UserProfile {
   last_login?: string;
   created_at: string;
   updated_at: string;
+  roleDefinition?: RoleDefinition; // Full role definition with permissions
 }
 
 export interface AuthContextType {
