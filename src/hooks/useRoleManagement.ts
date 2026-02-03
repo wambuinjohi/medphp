@@ -144,13 +144,11 @@ export const useRoleManagement = () => {
         return { success: false, error: 'Cannot modify default roles' };
       }
 
-      const { error: updateError } = await supabase
-        .from('roles')
-        .update(data)
-        .eq('id', roleId);
+      // Update via the external API
+      const result = await apiClient.adapter.update('roles', roleId, data);
 
-      if (updateError) {
-        throw updateError;
+      if (result.error) {
+        throw new Error(result.error);
       }
 
       // Log the role update with detailed permission changes
