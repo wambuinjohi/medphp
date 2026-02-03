@@ -34,7 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useCompanies } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { useQuotationsFixed } from '@/hooks/useQuotationsFixed';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDeleteQuotation, useConvertQuotationToProforma, useConvertQuotationToInvoice } from '@/hooks/useQuotationItems';
