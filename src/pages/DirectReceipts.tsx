@@ -36,7 +36,7 @@ import {
   Trash2,
   AlertCircle
 } from 'lucide-react';
-import { useCompanies } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { downloadInvoicePDF } from '@/utils/pdfGenerator';
@@ -112,8 +112,7 @@ export default function DirectReceipts() {
   const [amountFromFilter, setAmountFromFilter] = useState('');
   const [amountToFilter, setAmountToFilter] = useState('');
 
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
 
   // Fetch direct receipts from receipts table
   const fetchDirectReceipts = async () => {

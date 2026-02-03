@@ -32,7 +32,8 @@ import { toast } from 'sonner';
 import { downloadDeliveryNotePDF } from '@/utils/pdfGenerator';
 import { CreateDeliveryNoteModal } from '@/components/delivery/CreateDeliveryNoteModal';
 import { ViewDeliveryNoteModal } from '@/components/delivery/ViewDeliveryNoteModal';
-import { useDeliveryNotes, useUpdateDeliveryNote, useCompanies } from '@/hooks/useDatabase';
+import { useDeliveryNotes, useUpdateDeliveryNote } from '@/hooks/useDatabase';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { mapDeliveryNoteForDisplay } from '@/utils/deliveryNoteMapper';
 
 
@@ -43,8 +44,7 @@ export default function DeliveryNotes() {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Database hooks
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
   const { data: deliveryNotes, isLoading, error, retry: retryDeliveryNotes } = useDeliveryNotes(currentCompany?.id);
   const updateDeliveryNote = useUpdateDeliveryNote();
 
