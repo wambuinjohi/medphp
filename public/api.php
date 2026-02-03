@@ -1731,6 +1731,88 @@ try {
             throw new Exception("Missing table");
         }
 
+        // Check authorization for reading protected tables
+        $protected_tables = ['users', 'profiles', 'user_permissions', 'roles', 'companies'];
+        if (in_array($table, $protected_tables)) {
+            // Require authentication for reading protected tables
+            $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+            $token = null;
+
+            if ($auth_header && preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
+                $token = $matches[1];
+            }
+
+            if (!$token) {
+                http_response_code(401);
+                error_log("🔴 [AUTH] READ $table - No token provided (DENIED)");
+                throw new Exception("Authentication required. Missing authorization token.");
+            }
+
+            // Verify token
+            $decoded = verifyJWT($token);
+            if (!$decoded) {
+                // Try lenient decode
+                $parts = explode('.', $token);
+                if (count($parts) === 3) {
+                    try {
+                        $decoded = json_decode(base64_decode($parts[1]), true);
+                    } catch (Exception $e) {
+                        $decoded = null;
+                    }
+                }
+            }
+
+            if (!$decoded) {
+                http_response_code(401);
+                error_log("🔴 [AUTH] READ $table - Invalid token (DENIED)");
+                throw new Exception("Invalid or expired authentication token");
+            }
+
+            // Get user info
+            $user_id = $decoded['id'] ?? $decoded['sub'] ?? null;
+            if (!$user_id) {
+                http_response_code(401);
+                error_log("🔴 [AUTH] READ $table - No user ID in token (DENIED)");
+                throw new Exception("Invalid token - no user ID");
+            }
+
+            $sql = "SELECT id, email, role, status, company_id FROM profiles WHERE id = ? LIMIT 1";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                http_response_code(500);
+                throw new Exception("Database error: " . $conn->error);
+            }
+
+            $stmt->bind_param("s", $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+            $stmt->close();
+
+            if (!$user) {
+                http_response_code(401);
+                error_log("🔴 [AUTH] READ $table - User not found (DENIED)");
+                throw new Exception("User not found");
+            }
+
+            // Check if user is active
+            if ($user['status'] !== 'active') {
+                http_response_code(403);
+                error_log("🔴 [AUTH] READ $table - User is not active (status: {$user['status']}) (DENIED)");
+                throw new Exception("User account is not active");
+            }
+
+            // Check if user is admin for reading protected tables
+            $is_admin = stripos($user['role'], 'admin') !== false || $user['role'] === 'super_admin';
+            if (!$is_admin) {
+                http_response_code(403);
+                error_log("🔴 [AUTH] READ $table - User is not admin (role: {$user['role']}) (DENIED)");
+                throw new Exception("Insufficient permissions. Admin role required to read this table.");
+            }
+
+            error_log("✅ [AUTH] READ $table - Authorization passed for user {$user['email']}");
+        }
+
         $sql = "SELECT * FROM `$table`";
 
         if (!empty($where)) {
