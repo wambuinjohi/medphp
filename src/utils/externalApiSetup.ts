@@ -172,7 +172,7 @@ export async function initializeExternalAPI(options: SetupOptions = {}): Promise
  */
 export async function checkAdminExists(options: SetupOptions = {}): Promise<boolean> {
   const apiUrl =
-    options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
+    options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
   const email = options.email || 'admin@mail.com';
   const password = options.password || 'Pass123';
 
