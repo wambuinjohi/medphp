@@ -177,39 +177,114 @@ export const usePermissions = () => {
   }, [fetchUserRole]);
 
   /**
+   * Entity type to permission mapping
+   */
+  const getEntityPermissions = useCallback(
+    (entityType: string, action: 'create' | 'view' | 'edit' | 'delete'): Permission[] => {
+      const baseType = entityType.toLowerCase();
+
+      const permissionMap: Record<string, Record<'create' | 'view' | 'edit' | 'delete', Permission>> = {
+        'quotation': {
+          'create': 'create_quotation',
+          'view': 'view_quotation',
+          'edit': 'edit_quotation',
+          'delete': 'delete_quotation',
+        },
+        'invoice': {
+          'create': 'create_invoice',
+          'view': 'view_invoice',
+          'edit': 'edit_invoice',
+          'delete': 'delete_invoice',
+        },
+        'credit_note': {
+          'create': 'create_credit_note',
+          'view': 'view_credit_note',
+          'edit': 'edit_credit_note',
+          'delete': 'delete_credit_note',
+        },
+        'proforma': {
+          'create': 'create_proforma',
+          'view': 'view_proforma',
+          'edit': 'edit_proforma',
+          'delete': 'delete_proforma',
+        },
+        'payment': {
+          'create': 'create_payment',
+          'view': 'view_payment',
+          'edit': 'edit_payment',
+          'delete': 'delete_payment',
+        },
+        'inventory': {
+          'create': 'create_inventory',
+          'view': 'view_inventory',
+          'edit': 'edit_inventory',
+          'delete': 'delete_inventory',
+        },
+        'customer': {
+          'create': 'create_customer',
+          'view': 'view_customer',
+          'edit': 'edit_customer',
+          'delete': 'delete_customer',
+        },
+        'delivery_note': {
+          'create': 'create_delivery_note',
+          'view': 'view_delivery_note',
+          'edit': 'edit_delivery_note',
+          'delete': 'delete_delivery_note',
+        },
+        'lpo': {
+          'create': 'create_lpo',
+          'view': 'view_lpo',
+          'edit': 'edit_lpo',
+          'delete': 'delete_lpo',
+        },
+        'remittance': {
+          'create': 'create_remittance',
+          'view': 'view_remittance',
+          'edit': 'edit_remittance',
+          'delete': 'delete_remittance',
+        },
+        'reports': {
+          'create': 'view_reports',
+          'view': 'view_reports',
+          'edit': 'export_reports',
+          'delete': 'view_reports',
+        },
+      };
+
+      return [permissionMap[baseType]?.[action]].filter(Boolean) as Permission[];
+    },
+    []
+  );
+
+  /**
    * Check if current user has a specific permission
-   * DISABLED: Role enforcement disabled - always returns true
    */
   const can = useCallback(
     (permission: Permission): boolean => {
-      // Role enforcement disabled - allow all permissions
-      return true;
+      return hasPermission(role, permission);
     },
-    []
+    [role]
   );
 
   /**
    * Check if current user has any of the specified permissions
-   * DISABLED: Role enforcement disabled - always returns true
    */
   const canAny = useCallback(
     (permissions: Permission[]): boolean => {
-      // Role enforcement disabled - allow all permissions
-      return true;
+      return hasAnyPermission(role, permissions);
     },
-    []
+    [role]
   );
 
   /**
    * Check if current user has all specified permissions
-   * DISABLED: Role enforcement disabled - always returns true
    */
   const canAll = useCallback(
     (permissions: Permission[]): boolean => {
-      // Role enforcement disabled - allow all permissions
-      return true;
+      return hasAllPermissions(role, permissions);
     },
-    []
+    [role]
   );
 
   /**
@@ -224,50 +299,46 @@ export const usePermissions = () => {
 
   /**
    * Check if user can delete a specific entity type
-   * DISABLED: Role enforcement disabled - always returns true
    */
   const canDelete = useCallback(
     (entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment'): boolean => {
-      // Role enforcement disabled - allow all delete operations
-      return true;
+      const requiredPermissions = getEntityPermissions(entityType, 'delete');
+      return hasAnyPermission(role, requiredPermissions);
     },
-    []
+    [role, getEntityPermissions]
   );
 
   /**
    * Check if user can create a specific entity type
-   * DISABLED: Role enforcement disabled - always returns true
    */
   const canCreate = useCallback(
     (entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment'): boolean => {
-      // Role enforcement disabled - allow all create operations
-      return true;
+      const requiredPermissions = getEntityPermissions(entityType, 'create');
+      return hasAnyPermission(role, requiredPermissions);
     },
-    []
+    [role, getEntityPermissions]
   );
 
   /**
    * Check if user can edit a specific entity type
-   * DISABLED: Role enforcement disabled - always returns true
    */
   const canEdit = useCallback(
     (entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment'): boolean => {
-      // Role enforcement disabled - allow all edit operations
-      return true;
+      const requiredPermissions = getEntityPermissions(entityType, 'edit');
+      return hasAnyPermission(role, requiredPermissions);
     },
-    []
+    [role, getEntityPermissions]
   );
 
   /**
    * Check if user can view a specific entity type
-   * DISABLED: Role enforcement disabled - always returns true
    */
   const canView = useCallback(
     (entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment' | 'reports'): boolean => {
-      // Role enforcement disabled - allow all view operations
-      return true;
+      const requiredPermissions = getEntityPermissions(entityType, 'view');
+      return hasAnyPermission(role, requiredPermissions);
     },
-    []
+    [role, getEntityPermissions]
   );
 
   return {
