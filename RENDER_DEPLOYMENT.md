@@ -79,7 +79,7 @@ This is expected during build - the variable is set at runtime by Render.com. If
 
 ### Frontend can't reach the API
 
-1. Check that `https://helixgeneralhardware.com/api.php?action=health` is accessible
+1. Check that `https://med.wayrus.co.ke/api.php?action=health` is accessible
 2. Verify CORS headers are being sent from the API
 3. Check browser console for error messages
 
@@ -127,7 +127,7 @@ Then visit `http://localhost:3000` in your browser.
 Your setup now has:
 
 ✅ **Development**: Local machine with `npm run dev`
-✅ **Staging**: helixgeneralhardware.com (current)
+✅ **Staging**: med.wayrus.co.ke (current)
 ✅ **Production**: Render.com (new)
 
 All can coexist and use the same API endpoint.
