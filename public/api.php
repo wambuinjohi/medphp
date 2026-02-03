@@ -1,8 +1,4 @@
 <?php
-// Output buffering ensures headers can be sent even if content is already output
-// This is critical for CORS headers to work in all error scenarios
-ob_start();
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // CORS headers MUST be set IMMEDIATELY, before any output or logging
 // This ensures CORS headers are sent in all responses, including error responses
@@ -26,6 +22,10 @@ header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With");
 header("Access-Control-Max-Age: 86400");
 header("Access-Control-Expose-Headers: Content-Type, X-Total-Count, X-Page, X-Page-Size");
+
+// Output buffering ensures headers can be sent even if content is already output
+// This is critical for CORS headers to work in all error scenarios
+ob_start();
 
 // ENDPOINT IDENTIFIER - Log which API file is executing (after headers are set)
 error_log("🟢 [ENDPOINT] Using public/api.php (main API)");
