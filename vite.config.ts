@@ -8,6 +8,9 @@ export default defineConfig(({ mode }) => {
   // Load environment variables from .env files
   const env = loadEnv(mode, process.cwd(), '');
 
+  console.log('🔍 DEBUG: env.VITE_EXTERNAL_API_URL =', env.VITE_EXTERNAL_API_URL);
+  console.log('🔍 DEBUG: process.env.VITE_EXTERNAL_API_URL =', process.env.VITE_EXTERNAL_API_URL);
+
   // Use local auth server for development if VITE_USE_LOCAL_AUTH is set
   const useLocalAuth = (env.VITE_USE_LOCAL_AUTH || process.env.VITE_USE_LOCAL_AUTH) === 'true';
 
