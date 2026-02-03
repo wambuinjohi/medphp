@@ -110,7 +110,11 @@ export function useCurrentCompany() {
   // Return safe default when used outside of provider (e.g., on login page)
   if (context === undefined) {
     return {
+      companies: [],
       currentCompany: null,
+      selectedCompanyId: null,
+      setSelectedCompanyId: () => {},
+      switchCompany: () => {},
       isLoading: false,
       error: null,
       isReady: true
