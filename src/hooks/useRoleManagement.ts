@@ -281,14 +281,13 @@ export const useRoleManagement = () => {
 
     try {
       // Check if default roles already exist
-      const { data: existingRoles } = await supabase
-        .from('roles')
-        .select('*')
-        .eq('company_id', currentUser.company_id)
-        .eq('is_default', true)
-        .limit(1);
+      const existingResult = await apiClient.adapter.selectBy('roles', {
+        company_id: currentUser.company_id,
+        is_default: true,
+      });
 
-      if (existingRoles && existingRoles.length > 0) {
+      const existingRoles = Array.isArray(existingResult.data) ? existingResult.data : [];
+      if (existingRoles.length > 0) {
         return { success: true }; // Already initialized
       }
 
@@ -328,12 +327,12 @@ export const useRoleManagement = () => {
         },
       ];
 
-      const { error: insertError } = await supabase
-        .from('roles')
-        .insert(defaultRoles);
-
-      if (insertError) {
-        throw insertError;
+      // Insert each default role via the external API
+      for (const roleData of defaultRoles) {
+        const result = await apiClient.adapter.insert('roles', roleData);
+        if (result.error) {
+          throw new Error(`Failed to create ${roleData.name} role: ${result.error}`);
+        }
       }
 
       await fetchRoles();
