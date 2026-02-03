@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 
 export interface WebCategoryForPublic {
   id: string;
@@ -26,14 +26,13 @@ export interface WebVariantForPublic {
  */
 export const getActiveCategories = async (): Promise<WebCategoryForPublic[]> => {
   try {
-    const { data, error } = await supabase
-      .from('web_categories_with_counts')
-      .select('id, name, slug, icon, description, display_order, variant_count')
+    const { data, error } = await apiClient.query('web_categories_with_counts')
       .eq('is_active', true)
-      .order('display_order', { ascending: true });
+      .order('display_order', { ascending: true })
+      .execute();
 
     if (error) throw error;
-    return data || [];
+    return (Array.isArray(data) ? data : []) || [];
   } catch (error) {
     console.error('Error fetching active categories:', error);
     return [];
@@ -51,29 +50,26 @@ export const getCategoryBySlugWithVariants = async (
 } | null> => {
   try {
     // Fetch category
-    const { data: categoryData, error: categoryError } = await supabase
-      .from('web_categories')
-      .select('id, name, slug, icon, description, display_order')
+    const { data: categoryData, error: categoryError } = await apiClient.query('web_categories')
       .eq('slug', slug)
       .eq('is_active', true)
       .single();
 
-    if (categoryError && categoryError.code !== 'PGRST116') {
+    if (categoryError) {
       throw categoryError;
     }
 
     // Fetch variants for this category
     let variants: WebVariantForPublic[] = [];
     if (categoryData) {
-      const { data: variantsData, error: variantsError } = await supabase
-        .from('web_variants')
-        .select('id, category_id, name, sku, slug, description, image_path, display_order')
+      const { data: variantsData, error: variantsError } = await apiClient.query('web_variants')
         .eq('category_id', categoryData.id)
         .eq('is_active', true)
-        .order('display_order', { ascending: true });
+        .order('display_order', { ascending: true })
+        .execute();
 
       if (variantsError) throw variantsError;
-      variants = variantsData || [];
+      variants = (Array.isArray(variantsData) ? variantsData : []) || [];
     }
 
     return {
@@ -93,9 +89,7 @@ export const getActiveVariants = async (
   categoryId?: string
 ): Promise<WebVariantForPublic[]> => {
   try {
-    let query = supabase
-      .from('web_variants')
-      .select('id, category_id, name, sku, slug, description, image_path, display_order')
+    let query = apiClient.query('web_variants')
       .eq('is_active', true)
       .order('display_order', { ascending: true });
 
@@ -103,10 +97,10 @@ export const getActiveVariants = async (
       query = query.eq('category_id', categoryId);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.execute();
 
     if (error) throw error;
-    return data || [];
+    return (Array.isArray(data) ? data : []) || [];
   } catch (error) {
     console.error('Error fetching active variants:', error);
     return [];
@@ -118,14 +112,12 @@ export const getActiveVariants = async (
  */
 export const getVariantBySlug = async (slug: string): Promise<WebVariantForPublic | null> => {
   try {
-    const { data, error } = await supabase
-      .from('web_variants')
-      .select('id, category_id, name, sku, slug, description, image_path, display_order')
+    const { data, error } = await apiClient.query('web_variants')
       .eq('slug', slug)
       .eq('is_active', true)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       throw error;
     }
 
@@ -141,14 +133,13 @@ export const getVariantBySlug = async (slug: string): Promise<WebVariantForPubli
  */
 export const getCategoryNames = async (): Promise<string[]> => {
   try {
-    const { data, error } = await supabase
-      .from('web_categories')
-      .select('name')
+    const { data, error } = await apiClient.query('web_categories')
       .eq('is_active', true)
-      .order('display_order', { ascending: true });
+      .order('display_order', { ascending: true })
+      .execute();
 
     if (error) throw error;
-    return data?.map((cat) => cat.name) || [];
+    return (Array.isArray(data) ? data.map((cat: any) => cat.name) : []) || [];
   } catch (error) {
     console.error('Error fetching category names:', error);
     return [];

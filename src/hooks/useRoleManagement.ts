@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { RoleDefinition, Permission, DEFAULT_ROLE_PERMISSIONS } from '@/types/permissions';
 import { logRoleChange } from '@/utils/auditLogger';
+import { apiClient } from '@/integrations/api';
 
 interface CreateRoleData {
   name: string;
@@ -27,6 +27,7 @@ export const useRoleManagement = () => {
 
   /**
    * Fetch all roles for the current company
+   * Uses the external API to ensure roles are synced with authorization checks
    */
   const fetchRoles = useCallback(async () => {
     if (!isAdmin || !currentUser?.company_id) {
@@ -37,18 +38,28 @@ export const useRoleManagement = () => {
     setError(null);
 
     try {
-      const { data, error: fetchError } = await supabase
-        .from('roles')
-        .select('*')
-        .eq('company_id', currentUser.company_id)
-        .order('is_default', { ascending: false })
-        .order('name', { ascending: true });
+      // Fetch roles from the external API (MySQL backend)
+      // This ensures authorization checks use the same role data
+      const result = await apiClient.adapter.selectBy('roles', {
+        company_id: currentUser.company_id,
+      });
 
-      if (fetchError) {
-        throw fetchError;
+      if (result.error) {
+        throw new Error(result.error);
       }
 
-      setRoles(data || []);
+      // Filter and sort the roles
+      const roleList = (Array.isArray(result.data) ? result.data : []) as RoleDefinition[];
+      const sortedRoles = roleList.sort((a, b) => {
+        // Default roles first
+        if (a.is_default !== b.is_default) {
+          return (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0);
+        }
+        // Then alphabetically
+        return a.name.localeCompare(b.name);
+      });
+
+      setRoles(sortedRoles);
     } catch (err) {
       const errorMessage = parseErrorMessageWithCodes(err, 'fetching roles');
       console.error('Error fetching roles:', err);
@@ -72,22 +83,23 @@ export const useRoleManagement = () => {
 
     try {
       const companyIdToUse = data.company_id || currentUser.company_id;
-      const { data: newRole, error: createError } = await supabase
-        .from('roles')
-        .insert({
-          name: data.name,
-          description: data.description,
-          permissions: data.permissions,
-          company_id: companyIdToUse,
-          role_type: 'custom',
-          is_default: false,
-        })
-        .select()
-        .single();
+      const roleData = {
+        name: data.name,
+        description: data.description,
+        permissions: data.permissions,
+        company_id: companyIdToUse,
+        role_type: 'custom',
+        is_default: false,
+      };
 
-      if (createError) {
-        throw createError;
+      // Insert via the external API
+      const result = await apiClient.adapter.insert('roles', roleData);
+
+      if (result.error) {
+        throw new Error(result.error);
       }
+
+      const newRole = result.data as RoleDefinition;
 
       // Log the role creation
       try {
@@ -132,13 +144,11 @@ export const useRoleManagement = () => {
         return { success: false, error: 'Cannot modify default roles' };
       }
 
-      const { error: updateError } = await supabase
-        .from('roles')
-        .update(data)
-        .eq('id', roleId);
+      // Update via the external API
+      const result = await apiClient.adapter.update('roles', roleId, data);
 
-      if (updateError) {
-        throw updateError;
+      if (result.error) {
+        throw new Error(result.error);
       }
 
       // Log the role update with detailed permission changes
@@ -202,26 +212,23 @@ export const useRoleManagement = () => {
       }
 
       // Check if any users have this role
-      const { data: usersWithRole } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('role', currentRole?.name)
-        .limit(1);
+      const usersResult = await apiClient.adapter.selectBy('profiles', {
+        role: currentRole?.name,
+      });
 
-      if (usersWithRole && usersWithRole.length > 0) {
+      const usersWithRole = Array.isArray(usersResult.data) ? usersResult.data : [];
+      if (usersWithRole.length > 0) {
         return {
           success: false,
           error: 'Cannot delete role with assigned users. Please reassign users first.',
         };
       }
 
-      const { error: deleteError } = await supabase
-        .from('roles')
-        .delete()
-        .eq('id', roleId);
+      // Delete via the external API
+      const result = await apiClient.adapter.delete('roles', roleId);
 
-      if (deleteError) {
-        throw deleteError;
+      if (result.error) {
+        throw new Error(result.error);
       }
 
       // Log the role deletion
@@ -274,14 +281,13 @@ export const useRoleManagement = () => {
 
     try {
       // Check if default roles already exist
-      const { data: existingRoles } = await supabase
-        .from('roles')
-        .select('*')
-        .eq('company_id', currentUser.company_id)
-        .eq('is_default', true)
-        .limit(1);
+      const existingResult = await apiClient.adapter.selectBy('roles', {
+        company_id: currentUser.company_id,
+        is_default: true,
+      });
 
-      if (existingRoles && existingRoles.length > 0) {
+      const existingRoles = Array.isArray(existingResult.data) ? existingResult.data : [];
+      if (existingRoles.length > 0) {
         return { success: true }; // Already initialized
       }
 
@@ -321,12 +327,12 @@ export const useRoleManagement = () => {
         },
       ];
 
-      const { error: insertError } = await supabase
-        .from('roles')
-        .insert(defaultRoles);
-
-      if (insertError) {
-        throw insertError;
+      // Insert each default role via the external API
+      for (const roleData of defaultRoles) {
+        const result = await apiClient.adapter.insert('roles', roleData);
+        if (result.error) {
+          throw new Error(`Failed to create ${roleData.name} role: ${result.error}`);
+        }
       }
 
       await fetchRoles();

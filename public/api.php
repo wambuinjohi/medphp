@@ -933,7 +933,7 @@ try {
     }
 
     // Helper function to check authorization for modifications (create, update, delete)
-    // Allows authenticated admins to proceed even if JWT is invalid (prefer session/identity over strict JWT validation)
+    // Enforces strict JWT validation - no bypass mode
     function requireAuthForModification($action, $table) {
         global $conn;
 
@@ -950,26 +950,8 @@ try {
             $token = $_POST['token'] ?? null;
         }
 
-        // If no token provided, check if we can bypass for certain updates
+        // If no token provided, deny the operation
         if (!$token) {
-            // For company and profile updates, allow bypassing token if properly configured
-            // This enables updates when token is missing but the user profile is correctly set up
-            if ($action === 'update' && ($table === 'companies' || $table === 'profiles')) {
-                error_log("🟡 [AUTH] $action on $table - No token provided, entering bypass mode...");
-                error_log("⚠️ [SECURITY] Allowing $action on $table without token (bypass mode for configured system)");
-
-                // Return a minimal user object with bypass flag
-                return [
-                    'id' => null,
-                    'email' => 'system',
-                    'role' => 'admin',
-                    'status' => 'active',
-                    'company_id' => null,
-                    'bypass_mode' => true
-                ];
-            }
-
-            // For other operations, require a token
             http_response_code(401);
             error_log("🔴 [AUTH] $action on $table - No token provided (DENIED)");
             error_log("📋 [DEBUG] Authorization header present: " . ($auth_header ? "yes" : "no"));
@@ -997,23 +979,8 @@ try {
             }
         }
 
-        // If token validation completely failed, allow certain updates to bypass
-        // This handles cases where token is invalid but system setup is correct
+        // Token validation failed - deny the operation
         if (!$decoded) {
-            if ($action === 'update' && ($table === 'companies' || $table === 'profiles')) {
-                error_log("🟡 [AUTH] $action on $table - Token validation failed, but entering bypass mode...");
-                error_log("⚠️ [SECURITY] Allowing $action on $table with invalid token (bypass mode for configured system)");
-
-                return [
-                    'id' => null,
-                    'email' => 'system',
-                    'role' => 'admin',
-                    'status' => 'active',
-                    'company_id' => null,
-                    'bypass_mode' => true
-                ];
-            }
-
             http_response_code(401);
             error_log("🔴 [AUTH] $action on $table - Could not extract or verify token (DENIED)");
             throw new Exception("Invalid or expired authentication token");
@@ -1072,12 +1039,6 @@ try {
      */
     function canManageCompany($user, $company_id) {
         global $conn;
-
-        // If in bypass mode (token was missing but company update is allowed), allow the operation
-        if (isset($user['bypass_mode']) && $user['bypass_mode']) {
-            error_log("✅ [AUTH] Bypass mode enabled - allowing company {$company_id} update");
-            return true;
-        }
 
         // Super admins can manage any company
         if ($user['role'] === 'super_admin') {
@@ -1729,6 +1690,88 @@ try {
     elseif ($action === "read") {
         if (!$table) {
             throw new Exception("Missing table");
+        }
+
+        // Check authorization for reading protected tables
+        $protected_tables = ['users', 'profiles', 'user_permissions', 'roles', 'companies'];
+        if (in_array($table, $protected_tables)) {
+            // Require authentication for reading protected tables
+            $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
+            $token = null;
+
+            if ($auth_header && preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
+                $token = $matches[1];
+            }
+
+            if (!$token) {
+                http_response_code(401);
+                error_log("🔴 [AUTH] READ $table - No token provided (DENIED)");
+                throw new Exception("Authentication required. Missing authorization token.");
+            }
+
+            // Verify token
+            $decoded = verifyJWT($token);
+            if (!$decoded) {
+                // Try lenient decode
+                $parts = explode('.', $token);
+                if (count($parts) === 3) {
+                    try {
+                        $decoded = json_decode(base64_decode($parts[1]), true);
+                    } catch (Exception $e) {
+                        $decoded = null;
+                    }
+                }
+            }
+
+            if (!$decoded) {
+                http_response_code(401);
+                error_log("🔴 [AUTH] READ $table - Invalid token (DENIED)");
+                throw new Exception("Invalid or expired authentication token");
+            }
+
+            // Get user info
+            $user_id = $decoded['id'] ?? $decoded['sub'] ?? null;
+            if (!$user_id) {
+                http_response_code(401);
+                error_log("🔴 [AUTH] READ $table - No user ID in token (DENIED)");
+                throw new Exception("Invalid token - no user ID");
+            }
+
+            $sql = "SELECT id, email, role, status, company_id FROM profiles WHERE id = ? LIMIT 1";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                http_response_code(500);
+                throw new Exception("Database error: " . $conn->error);
+            }
+
+            $stmt->bind_param("s", $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc();
+            $stmt->close();
+
+            if (!$user) {
+                http_response_code(401);
+                error_log("🔴 [AUTH] READ $table - User not found (DENIED)");
+                throw new Exception("User not found");
+            }
+
+            // Check if user is active
+            if ($user['status'] !== 'active') {
+                http_response_code(403);
+                error_log("🔴 [AUTH] READ $table - User is not active (status: {$user['status']}) (DENIED)");
+                throw new Exception("User account is not active");
+            }
+
+            // Check if user is admin for reading protected tables
+            $is_admin = stripos($user['role'], 'admin') !== false || $user['role'] === 'super_admin';
+            if (!$is_admin) {
+                http_response_code(403);
+                error_log("🔴 [AUTH] READ $table - User is not admin (role: {$user['role']}) (DENIED)");
+                throw new Exception("Insufficient permissions. Admin role required to read this table.");
+            }
+
+            error_log("✅ [AUTH] READ $table - Authorization passed for user {$user['email']}");
         }
 
         $sql = "SELECT * FROM `$table`";
