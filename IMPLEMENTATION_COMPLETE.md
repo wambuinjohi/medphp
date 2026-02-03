@@ -145,15 +145,15 @@ $cors_allowed = true; // Change to: in_array($origin, $allowed_origins);
 Then configure allowed origins for your domain:
 ```php
 $allowed_origins = [
-    'https://helixgeneralhardware.com',
+    'https://med.wayrus.co.ke',
     'http://localhost:3000',  // Keep for development
 ];
 ```
 
 **2. Add Monitoring**
 Create a monitoring endpoint that periodically calls:
-- `https://helixgeneralhardware.com/api.php?action=config_debug`
-- `https://helixgeneralhardware.com/api.php?action=health`
+- `https://med.wayrus.co.ke/api.php?action=config_debug`
+- `https://med.wayrus.co.ke/api.php?action=health`
 
 **3. Security Review**
 - Ensure JWT_SECRET is at least 32 characters (current: OK)
