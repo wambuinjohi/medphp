@@ -209,7 +209,7 @@ export async function createUserViaAPI(
   options: SetupOptions = {}
 ): Promise<SetupResult> {
   const apiUrl =
-    options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://helixgeneralhardware.com/api.php';
+    options.apiUrl || import.meta.env.VITE_EXTERNAL_API_URL || 'https://med.wayrus.co.ke/api.php';
   const { onProgress } = options;
 
   // Always use the direct URL (no proxy) for consistency across all environments
