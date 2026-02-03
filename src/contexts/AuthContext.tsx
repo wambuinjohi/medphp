@@ -3,6 +3,7 @@ import { apiClient } from '@/integrations/api';
 import { toast } from 'sonner';
 import { initializeAuth, clearAuthTokens } from '@/utils/authHelpers';
 import { logError, getUserFriendlyErrorMessage, isErrorType } from '@/utils/errorLogger';
+import { RoleDefinition, DEFAULT_ROLE_PERMISSIONS } from '@/types/permissions';
 
 // Type definitions for authentication
 export interface User {
