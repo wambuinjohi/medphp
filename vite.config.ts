@@ -24,6 +24,8 @@ export default defineConfig(({ mode }) => {
     apiUrl = configuredUrl;
     // Remove trailing /api.php if present (we'll add it back in proxy config)
     apiUrl = apiUrl.replace(/\/api\.php$/, '');
+    console.log(`🔍 DEBUG - env.VITE_EXTERNAL_API_URL: ${env.VITE_EXTERNAL_API_URL}`);
+    console.log(`🔍 DEBUG - process.env.VITE_EXTERNAL_API_URL: ${process.env.VITE_EXTERNAL_API_URL}`);
     console.log(`🌐 Using EXTERNAL API: ${apiUrl}/api.php`);
   }
 
