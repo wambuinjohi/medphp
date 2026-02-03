@@ -10,6 +10,7 @@ const EXTERNAL_API_URL = process.env.VITE_EXTERNAL_API_URL || '/api.php';
 const REQUIRED_TABLES = [
   'companies',
   'profiles',
+  'user_company',
   'customers',
   'suppliers',
   'product_categories',
