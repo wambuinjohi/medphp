@@ -129,7 +129,7 @@ VITE_EXTERNAL_API_URL=https://your-api-domain.com/api.php
 2. Implement CORS headers in `api.php` or your API layer
 3. Test with curl command:
    ```bash
-   curl -i -X OPTIONS https://helixgeneralhardware.com/api.php?action=health
+   curl -i -X OPTIONS https://med.wayrus.co.ke/api.php?action=health
    ```
 4. Verify response includes CORS headers
 5. Notify frontend team when ready
