@@ -62,8 +62,7 @@ class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProps, Dash
 }
 
 const Index = () => {
-  const { data: companies } = useCompanies();
-  const currentCompany = companies?.[0];
+  const { currentCompany } = useCurrentCompany();
   const { data: quotations } = useQuotations(currentCompany?.id);
   const [showAuthPerformance, setShowAuthPerformance] = useState(false);
 
