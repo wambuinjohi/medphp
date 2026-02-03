@@ -118,6 +118,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
       }
 
+      // Fetch the user's role definition with permissions
+      if (profileData.role && profileData.company_id) {
+        try {
+          console.log('📋 Fetching role definition for:', profileData.role);
+          const { data: roleData } = await apiClient.selectBy('roles', {
+            name: profileData.role,
+            company_id: profileData.company_id,
+          });
+
+          if (roleData && Array.isArray(roleData) && roleData.length > 0) {
+            const role = roleData[0] as RoleDefinition;
+            console.log('✅ Role definition fetched:', role.name);
+            profileData.roleDefinition = role;
+          } else {
+            // Fallback to default role permissions if custom role not found
+            console.log('⚠️ Custom role not found, using default permissions for:', profileData.role);
+            const roleType = profileData.role.toLowerCase() as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+            if (roleType && DEFAULT_ROLE_PERMISSIONS[roleType]) {
+              profileData.roleDefinition = {
+                id: `default-${profileData.role}`,
+                name: profileData.role,
+                role_type: roleType as any,
+                description: `Default ${profileData.role} role`,
+                permissions: DEFAULT_ROLE_PERMISSIONS[roleType],
+                company_id: profileData.company_id,
+                is_default: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+            }
+          }
+        } catch (roleError) {
+          console.warn('⚠️ Error fetching role definition:', roleError);
+          // Continue without role definition - permissions hook will use default fallback
+        }
+      }
+
       console.log('✅ Profile fetched successfully:', profileData);
       return profileData;
     } catch (error) {
