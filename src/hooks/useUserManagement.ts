@@ -110,22 +110,20 @@ export const useUserManagement = () => {
     }
 
     try {
-      const query = supabase
-        .from('user_invitations')
-        .select('*')
-        .order('invited_at', { ascending: false });
+      const db = getDatabase();
+      const filter: Record<string, any> = {};
 
       if (currentUser?.company_id) {
-        query.eq('company_id', currentUser.company_id);
+        filter.company_id = currentUser.company_id;
       }
 
-      const { data, error } = await query;
+      const result = await db.selectBy('user_invitations', filter);
 
-      if (error) {
-        throw error;
+      if (result.error) {
+        throw result.error;
       }
 
-      setInvitations(data || []);
+      setInvitations(result.data || []);
     } catch (err) {
       console.error('Error fetching invitations:', err);
 
