@@ -325,6 +325,29 @@ ensureTables($conn);
 // The file should be in the same directory as this API file
 require_once __DIR__ . '/tableDefinitions.php';
 
+// Include eTIMS Service for KRA integration
+require_once __DIR__ . '/services/EtimsService.php';
+
+// Load eTIMS environment configuration
+$ETIMS_CONFIG = [
+    'ETIMS_ENV' => getenv('ETIMS_ENV') ?: 'sandbox',
+    'ETIMS_SANDBOX_URL' => getenv('ETIMS_SANDBOX_URL'),
+    'ETIMS_SANDBOX_TIN' => getenv('ETIMS_SANDBOX_TIN'),
+    'ETIMS_SANDBOX_BHF_ID' => getenv('ETIMS_SANDBOX_BHF_ID') ?: '001',
+    'ETIMS_SANDBOX_VSCU_ID' => getenv('ETIMS_SANDBOX_VSCU_ID') ?: '001',
+    'ETIMS_SANDBOX_API_KEY' => getenv('ETIMS_SANDBOX_API_KEY'),
+    'ETIMS_PRODUCTION_URL' => getenv('ETIMS_PRODUCTION_URL'),
+    'ETIMS_PRODUCTION_TIN' => getenv('ETIMS_PRODUCTION_TIN'),
+    'ETIMS_PRODUCTION_BHF_ID' => getenv('ETIMS_PRODUCTION_BHF_ID') ?: '001',
+    'ETIMS_PRODUCTION_VSCU_ID' => getenv('ETIMS_PRODUCTION_VSCU_ID') ?: '001',
+    'ETIMS_PRODUCTION_API_KEY' => getenv('ETIMS_PRODUCTION_API_KEY'),
+    'ETIMS_MAX_RETRIES' => getenv('ETIMS_MAX_RETRIES') ?: '5',
+    'ETIMS_RETRY_DELAY_MINUTES' => getenv('ETIMS_RETRY_DELAY_MINUTES') ?: '15',
+    'ETIMS_REQUEST_TIMEOUT_SECONDS' => getenv('ETIMS_REQUEST_TIMEOUT_SECONDS') ?: '30',
+    'ETIMS_AUTO_RETRY' => getenv('ETIMS_AUTO_RETRY') ?: 'true',
+    'ETIMS_ENABLED' => getenv('ETIMS_ENABLED') ?: 'true'
+];
+
 // Handle check_tables action - check which tables exist
 if ($action === "check_tables") {
     try {
