@@ -775,8 +775,8 @@ export const useConvertQuotationToProforma = () => {
       // Create proforma from quotation
       let createdBy: string | null = null;
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        createdBy = userData?.user?.id || null;
+        const currentUser = getCurrentUser();
+        createdBy = currentUser?.id || null;
       } catch {
         createdBy = null;
       }
