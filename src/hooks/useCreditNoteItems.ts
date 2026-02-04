@@ -90,7 +90,7 @@ export function useCreateCreditNoteWithItems() {
         // 3. Create stock movements if affects_inventory is true
         if (creditNote.affects_inventory && items.length > 0) {
           console.log('Creating stock movements for credit note...');
-          
+
           const stockMovements = items
             .filter(item => item.product_id) // Only for items with products
             .map(item => ({
@@ -104,23 +104,16 @@ export function useCreateCreditNoteWithItems() {
             }));
 
           if (stockMovements.length > 0) {
-            const { error: stockError } = await supabase
-              .from('stock_movements')
-              .insert(stockMovements);
+            const stockResult = await db.insertMany('stock_movements', stockMovements);
 
-            if (stockError) {
+            if (stockResult.error) {
               console.error('Error creating stock movements:', {
-                error: stockError,
-                message: stockError.message,
-                details: stockError.details,
-                hint: stockError.hint,
-                code: stockError.code
+                error: stockResult.error,
+                message: stockResult.error?.message
               });
 
               // Check if it's a missing table error
-              if (stockError.message?.includes('relation "stock_movements" does not exist') ||
-                  stockError.message?.includes('table "stock_movements" does not exist') ||
-                  stockError.code === '42P01') {
+              if (String(stockResult.error?.message || '').includes('does not exist')) {
                 toast.error('Stock movements table is missing. Please set up the stock_movements table in your database.');
               } else {
                 toast.warning('Stock movements could not be created, but credit note was saved successfully.');
@@ -130,18 +123,17 @@ export function useCreateCreditNoteWithItems() {
               console.warn('Stock movements failed but credit note was created successfully');
             } else {
               console.log('Stock movements created successfully');
-              
+
               // Update product stock quantities
-              const db = getDatabase();
               for (const movement of stockMovements) {
                 try {
-                  const { error: stockError } = await db.rpc('update_product_stock', {
+                  const rpcResult = await db.rpc('update_product_stock', {
                     product_uuid: movement.product_id,
                     movement_type: movement.movement_type,
                     quantity: Math.abs(movement.quantity)
                   });
-                  if (stockError) {
-                    throw stockError;
+                  if (rpcResult.error) {
+                    throw rpcResult.error;
                   }
                 } catch (stockUpdateError: any) {
                   console.error('Error updating product stock:', {
