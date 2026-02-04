@@ -453,11 +453,22 @@ export class ExternalAPIAdapter implements IDatabase {
           console.error(`❌ ${logPrefix} - UNAUTHORIZED (401)`);
           console.error('⚠️ Token appears invalid or expired. Attempting emergency token refresh...');
 
+          const hasToken = !!this.getAuthToken();
+          const userId = localStorage.getItem('med_api_user_id');
+
+          console.error('📊 401 Debug Info:', {
+            hasToken,
+            hasUserId: !!userId,
+            action,
+            table,
+            method,
+          });
+
           // Try to refresh token as a backup mechanism
           try {
             await this.attemptTokenRefresh();
 
-            // If refresh succeeded, retry the request once
+            // Check if we still have a token after refresh attempt
             const newToken = this.getAuthToken();
             if (newToken) {
               console.log('🔄 Retrying request with refreshed token...');
@@ -476,18 +487,31 @@ export class ExternalAPIAdapter implements IDatabase {
                 console.log(`✅ ${logPrefix} - Success after token refresh`);
                 return { data: retryResult.data || retryResult, error: null, status: retryResponse.status };
               } else {
-                // Still failed after refresh - token is definitely invalid
-                console.error(`❌ ${logPrefix} - Still failed after token refresh, clearing token`);
-                this.clearAuthToken();
+                // Still failed after refresh - log additional details
+                console.error(`❌ ${logPrefix} - Still failed after token refresh`);
+                console.error(`Retry response status: ${retryResponse.status} ${retryResponse.statusText}`);
+                console.error(`Response:`, retryResult);
               }
+            } else {
+              console.warn('⚠️ No token available after refresh attempt');
             }
           } catch (refreshError) {
             console.warn('⚠️ Emergency token refresh failed:', refreshError);
           }
 
-          // Clear token if refresh failed or wasn't possible
+          // Clear token since it's definitely invalid at this point
           this.clearAuthToken();
-          console.error('Your authentication token is invalid. Please log in again.');
+
+          // Provide detailed error message
+          const errorMsg = hasToken
+            ? 'Your authentication token is invalid or expired. Please log in again.'
+            : 'No authentication token found. Please log in.';
+
+          console.error(`❌ ${errorMsg}`);
+          console.error('This typically means:');
+          console.error('1. Your session has expired');
+          console.error('2. The API server rejected your token');
+          console.error('3. You may have been logged out by an administrator');
         } else {
           console.warn(`${logPrefix} - HTTP Error ${response.status}: ${errorMsg}`);
         }
