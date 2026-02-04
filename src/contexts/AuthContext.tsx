@@ -134,8 +134,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           if (roleData && Array.isArray(roleData) && roleData.length > 0) {
             const role = roleData[0] as RoleDefinition;
-            console.log('✅ Role definition fetched:', role.name);
-            profileData.roleDefinition = role;
+            // Normalize permissions to ensure they're always an array
+            const normalizedRole = {
+              ...role,
+              permissions: normalizePermissions(role.permissions)
+            };
+            console.log('✅ Role definition fetched:', normalizedRole.name, 'with', normalizedRole.permissions?.length || 0, 'permissions');
+            profileData.roleDefinition = normalizedRole;
           } else {
             // Fallback to default role permissions if custom role not found
             console.log('⚠️ Custom role not found, using default permissions for:', profileData.role);
