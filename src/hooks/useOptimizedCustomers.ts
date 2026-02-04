@@ -185,22 +185,20 @@ export const useCustomerCities = (companyId?: string) => {
   return useQuery({
     queryKey: ['customer-cities', companyId],
     queryFn: async () => {
-      let query = supabase
-        .from('customers')
-        .select('city')
-        .neq('city', null)
-        .order('city');
+      const db = getDatabase();
+      const filter: Record<string, any> = {};
 
       if (companyId) {
-        query = query.eq('company_id', companyId);
+        filter.company_id = companyId;
       }
 
-      const { data, error } = await query;
+      const result = await db.selectBy('customers', filter);
 
-      if (error) throw error;
-      
-      // Get unique cities
-      const cities = Array.from(new Set((data || []).map(c => c.city).filter(Boolean))) as string[];
+      if (result.error) throw result.error;
+
+      // Get unique cities, filter out nulls and sort
+      const cities = Array.from(new Set((result.data || []).map((c: any) => c.city).filter(Boolean))) as string[];
+      cities.sort();
       return cities;
     },
     staleTime: 300000, // Cache cities for 5 minutes
