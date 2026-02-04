@@ -126,6 +126,7 @@ export const usePermissionGuards = () => {
   /**
    * Check if user can edit an entity type
    * Enforces edit_* permissions based on entity type
+   * Shows error toast if permission denied
    */
   const checkCanEdit = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment',
@@ -149,6 +150,23 @@ export const usePermissionGuards = () => {
       return false;
     }
     return true;
+  };
+
+  /**
+   * Check if user can edit an entity type (UI-only, no toast)
+   * Used for conditionally rendering edit buttons in the UI
+   * Does not show any error messages
+   */
+  const canEditUI = (
+    entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment'
+  ): boolean => {
+    // Admin users can edit anything
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check if user has edit permission for this entity type
+    return canEdit(entityType);
   };
 
   /**
