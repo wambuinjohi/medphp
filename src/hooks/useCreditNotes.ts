@@ -213,19 +213,10 @@ export function useDeleteCreditNote() {
       }
 
       // 1. Fetch the complete credit note with all related data
-      const { data: creditNote, error: fetchError } = await supabase
-        .from('credit_notes')
-        .select(
-          `
-          *,
-          credit_note_items(*),
-          credit_note_allocations(*)
-        `
-        )
-        .eq('id', id)
-        .single();
+      const creditNoteResult = await db.selectOne('credit_notes', id);
+      if (creditNoteResult.error) throw creditNoteResult.error;
+      const creditNote = creditNoteResult.data;
 
-      if (fetchError) throw fetchError;
       if (!creditNote) throw new Error('Credit note not found');
 
       // 2. If credit note affects inventory, reverse stock movements
