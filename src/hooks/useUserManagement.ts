@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { getDatabase } from '@/integrations/database';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth, UserProfile, UserRole, UserStatus } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { parseErrorMessage, parseErrorMessageWithCodes } from '@/utils/errorHelpers';
@@ -111,22 +110,20 @@ export const useUserManagement = () => {
     }
 
     try {
-      const query = supabase
-        .from('user_invitations')
-        .select('*')
-        .order('invited_at', { ascending: false });
+      const db = getDatabase();
+      const filter: Record<string, any> = {};
 
       if (currentUser?.company_id) {
-        query.eq('company_id', currentUser.company_id);
+        filter.company_id = currentUser.company_id;
       }
 
-      const { data, error } = await query;
+      const result = await db.selectBy('user_invitations', filter);
 
-      if (error) {
-        throw error;
+      if (result.error) {
+        throw result.error;
       }
 
-      setInvitations(data || []);
+      setInvitations(result.data || []);
     } catch (err) {
       console.error('Error fetching invitations:', err);
 
@@ -165,14 +162,11 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      // Check if user already exists in profiles
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', userData.email)
-        .maybeSingle();
+      const db = getDatabase();
 
-      if (existingUser) {
+      // Check if user already exists in profiles
+      const existingUserResult = await db.selectBy('profiles', { email: userData.email });
+      if (existingUserResult.data && existingUserResult.data.length > 0) {
         return { success: false, error: 'User with this email already exists' };
       }
 
@@ -181,12 +175,10 @@ export const useUserManagement = () => {
       // If no company is provided, try to get the first company
       let finalCompanyId = companyToSet;
       if (!finalCompanyId) {
-        const { data: companies } = await supabase
-          .from('companies')
-          .select('id')
-          .limit(1)
-          .single();
-        finalCompanyId = companies?.id;
+        const companiesResult = await db.selectBy('companies', {});
+        if (companiesResult.data && companiesResult.data.length > 0) {
+          finalCompanyId = companiesResult.data[0].id;
+        }
       }
 
       if (!finalCompanyId) {
@@ -194,13 +186,8 @@ export const useUserManagement = () => {
       }
 
       // Validate that the company actually exists
-      const { data: companyExists } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('id', finalCompanyId)
-        .maybeSingle();
-
-      if (!companyExists) {
+      const companyCheckResult = await db.selectOne('companies', finalCompanyId);
+      if (companyCheckResult.error || !companyCheckResult.data) {
         return { success: false, error: 'The selected company no longer exists. Please refresh and try again.' };
       }
 
@@ -264,56 +251,59 @@ export const useUserManagement = () => {
       }
 
       // If no password provided, create an invitation instead
-      const { data: existingInvitation } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('email', userData.email)
-        .eq('company_id', finalCompanyId)
-        .in('status', ['pending', 'accepted'])
-        .maybeSingle();
+      const existingInvitationsResult = await db.selectBy('user_invitations', {
+        email: userData.email,
+        company_id: finalCompanyId
+      });
 
-      let invitation = existingInvitation;
+      let invitation: any = null;
+      if (existingInvitationsResult.data && existingInvitationsResult.data.length > 0) {
+        const pendingInv = existingInvitationsResult.data.find((inv: any) => inv.status === 'pending' || inv.status === 'accepted');
+        if (pendingInv) {
+          invitation = pendingInv;
+        }
+      }
 
       // If no existing pending/accepted invitation, create a new one
-      if (!existingInvitation) {
-        const { data: newInvitation, error: inviteError } = await supabase
-          .from('user_invitations')
-          .insert({
-            email: userData.email,
-            role: userData.role,
-            company_id: finalCompanyId,
-            invited_by: currentUser?.id,
-            is_approved: true,
-            approved_by: currentUser?.id,
-            approved_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
+      if (!invitation) {
+        const inviteData = {
+          email: userData.email,
+          role: userData.role,
+          company_id: finalCompanyId,
+          invited_by: currentUser?.id,
+          is_approved: true,
+          approved_by: currentUser?.id,
+          approved_at: new Date().toISOString(),
+        };
 
-        if (inviteError) {
-          console.error('Invitation creation error:', inviteError);
-          return { success: false, error: `Failed to create invitation: ${inviteError.message}` };
+        const inviteResult = await db.insert('user_invitations', inviteData);
+
+        if (inviteResult.error) {
+          console.error('Invitation creation error:', inviteResult.error);
+          return { success: false, error: `Failed to create invitation: ${inviteResult.error.message || 'Unknown error'}` };
         }
 
-        if (!newInvitation?.id) {
+        if (!inviteResult.id) {
           return { success: false, error: 'Failed to create invitation' };
         }
 
-        invitation = newInvitation;
+        const selectResult = await db.selectOne('user_invitations', inviteResult.id);
+        if (selectResult.error) {
+          return { success: false, error: 'Failed to fetch created invitation' };
+        }
+
+        invitation = selectResult.data;
       } else {
         // Update existing invitation to ensure it's approved and current role is set
-        const { error: updateError } = await supabase
-          .from('user_invitations')
-          .update({
-            role: userData.role,
-            is_approved: true,
-            approved_by: currentUser?.id,
-            approved_at: new Date().toISOString(),
-          })
-          .eq('id', existingInvitation.id);
+        const updateResult = await db.update('user_invitations', invitation.id, {
+          role: userData.role,
+          is_approved: true,
+          approved_by: currentUser?.id,
+          approved_at: new Date().toISOString(),
+        });
 
-        if (updateError) {
-          console.warn('Failed to update existing invitation:', updateError);
+        if (updateResult.error) {
+          console.warn('Failed to update existing invitation:', updateResult.error);
           // Continue anyway - invitation still exists and is usable
         }
       }
@@ -385,14 +375,13 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      // Delete from profiles table - this will cascade to auth.users if foreign key is set
-      const { error: deleteError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
+      const db = getDatabase();
 
-      if (deleteError) {
-        throw deleteError;
+      // Delete from profiles table - this will cascade to auth.users if foreign key is set
+      const deleteResult = await db.delete('profiles', userId);
+
+      if (deleteResult.error) {
+        throw deleteResult.error;
       }
 
       toast.success('User deleted successfully');
@@ -417,69 +406,62 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      // Validate that the company still exists
-      const { data: companyExists } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('id', currentUser.company_id)
-        .maybeSingle();
+      const db = getDatabase();
 
-      if (!companyExists) {
+      // Validate that the company still exists
+      const companyResult = await db.selectOne('companies', currentUser.company_id);
+      if (companyResult.error || !companyResult.data) {
         return { success: false, error: 'Your company no longer exists in the system. Please contact support.' };
       }
 
       // Validate that the current user (inviter) still exists
-      const { data: inviterExists } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', currentUser.id)
-        .maybeSingle();
-
-      if (!inviterExists) {
+      const inviterResult = await db.selectOne('profiles', currentUser.id);
+      if (inviterResult.error || !inviterResult.data) {
         return { success: false, error: 'Your user profile no longer exists. Please sign in again.' };
       }
 
       // Check if user already exists or has pending invitation
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (existingUser) {
+      const existingUserResult = await db.selectBy('profiles', { email });
+      if (existingUserResult.data && existingUserResult.data.length > 0) {
         return { success: false, error: 'User with this email already exists' };
       }
 
-      const { data: existingInvitation } = await supabase
-        .from('user_invitations')
-        .select('id')
-        .eq('email', email)
-        .eq('company_id', currentUser.company_id)
-        .eq('status', 'pending')
-        .maybeSingle();
+      const existingInvitationResult = await db.selectBy('user_invitations', {
+        email,
+        company_id: currentUser.company_id,
+        status: 'pending'
+      });
 
-      if (existingInvitation) {
+      if (existingInvitationResult.data && existingInvitationResult.data.length > 0) {
         return { success: false, error: 'Invitation already sent to this email' };
       }
 
       // Create invitation
-      const { data: invitation, error } = await supabase
-        .from('user_invitations')
-        .insert({
-          email,
-          role,
-          company_id: currentUser.company_id,
-          invited_by: currentUser.id,
-          is_approved: true,
-          approved_by: currentUser.id,
-          approved_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      const inviteData = {
+        email,
+        role,
+        company_id: currentUser.company_id,
+        invited_by: currentUser.id,
+        is_approved: true,
+        approved_by: currentUser.id,
+        approved_at: new Date().toISOString(),
+      };
 
-      if (error) {
-        throw error;
+      const inviteResult = await db.insert('user_invitations', inviteData);
+      if (inviteResult.error) {
+        throw inviteResult.error;
       }
+
+      if (!inviteResult.id) {
+        return { success: false, error: 'Failed to create invitation' };
+      }
+
+      const selectResult = await db.selectOne('user_invitations', inviteResult.id);
+      if (selectResult.error) {
+        return { success: false, error: 'Failed to fetch created invitation' };
+      }
+
+      const invitation = selectResult.data;
 
       // Log user invitation in audit trail
       try {
@@ -513,13 +495,11 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase
-        .from('user_invitations')
-        .update({ status: 'revoked' })
-        .eq('id', invitationId);
+      const db = getDatabase();
+      const result = await db.update('user_invitations', invitationId, { status: 'revoked' });
 
-      if (error) {
-        throw error;
+      if (result.error) {
+        throw result.error;
       }
 
       toast.success('Invitation revoked successfully');
@@ -544,13 +524,11 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase
-        .from('user_invitations')
-        .delete()
-        .eq('id', invitationId);
+      const db = getDatabase();
+      const result = await db.delete('user_invitations', invitationId);
 
-      if (error) {
-        throw error;
+      if (result.error) {
+        throw result.error;
       }
 
       toast.success('Invitation deleted successfully');
@@ -569,16 +547,18 @@ export const useUserManagement = () => {
   // Accept invitation (for invited users)
   const acceptInvitation = async (token: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: invitation, error: fetchError } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('invitation_token', token)
-        .eq('status', 'pending')
-        .single();
+      const db = getDatabase();
 
-      if (fetchError || !invitation) {
+      const invitationResult = await db.selectBy('user_invitations', {
+        invitation_token: token,
+        status: 'pending'
+      });
+
+      if (invitationResult.error || !invitationResult.data || invitationResult.data.length === 0) {
         return { success: false, error: 'Invalid or expired invitation' };
       }
+
+      const invitation = invitationResult.data[0];
 
       // Check if invitation has been approved by admin
       if (!invitation.is_approved) {
@@ -587,25 +567,18 @@ export const useUserManagement = () => {
 
       // Check if invitation has expired
       if (new Date(invitation.expires_at) < new Date()) {
-        await supabase
-          .from('user_invitations')
-          .update({ status: 'expired' })
-          .eq('id', invitation.id);
-
+        await db.update('user_invitations', invitation.id, { status: 'expired' });
         return { success: false, error: 'Invitation has expired' };
       }
 
       // Mark invitation as accepted
-      const { error: updateError } = await supabase
-        .from('user_invitations')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', invitation.id);
+      const updateResult = await db.update('user_invitations', invitation.id, {
+        status: 'accepted',
+        accepted_at: new Date().toISOString()
+      });
 
-      if (updateError) {
-        throw updateError;
+      if (updateResult.error) {
+        throw updateResult.error;
       }
 
       return { success: true };
@@ -624,31 +597,24 @@ export const useUserManagement = () => {
 
     setLoading(true);
     try {
+      const db = getDatabase();
       let totalUpdated = 0;
 
-      // Update users with null role
-      const { data: data1, error: error1 } = await supabase
-        .from('profiles')
-        .update({ role: 'admin' })
-        .is('role', null);
-
-      if (error1) {
-        throw error1;
+      // Get all users with null or non-admin roles
+      const usersResult = await db.selectBy('profiles', {});
+      if (usersResult.error) {
+        throw usersResult.error;
       }
 
-      // Update users with non-admin role
-      const { data: data2, error: error2 } = await supabase
-        .from('profiles')
-        .update({ role: 'admin' })
-        .neq('role', 'admin');
+      const usersToUpdate = usersResult.data?.filter((u: any) => !u.role || u.role !== 'admin') || [];
 
-      if (error2) {
-        throw error2;
+      // Update each user to admin role
+      for (const user of usersToUpdate) {
+        const updateResult = await db.update('profiles', user.id, { role: 'admin' });
+        if (!updateResult.error) {
+          totalUpdated++;
+        }
       }
-
-      const count1 = Array.isArray(data1) ? data1.length : 0;
-      const count2 = Array.isArray(data2) ? data2.length : 0;
-      totalUpdated = count1 + count2;
 
       toast.success(`Promoted ${totalUpdated} users to admin`);
       await fetchUsers();
@@ -685,85 +651,66 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      // Get invitation details first
-      const { data: invitationData, error: inviteError } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('id', invitationId)
-        .single();
+      const db = getDatabase();
 
-      if (inviteError || !invitationData) {
+      // Get invitation details first
+      const invitationResult = await db.selectOne('user_invitations', invitationId);
+      if (invitationResult.error || !invitationResult.data) {
         return { success: false, error: 'Invitation not found' };
       }
 
+      const invitationData = invitationResult.data;
       if (invitationData.status !== 'pending') {
         return { success: false, error: `Invitation is already ${invitationData.status}` };
       }
 
       // Validate that the company still exists
-      const { data: companyExists } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('id', invitationData.company_id)
-        .maybeSingle();
-
-      if (!companyExists) {
+      const companyResult = await db.selectOne('companies', invitationData.company_id);
+      if (companyResult.error || !companyResult.data) {
         return { success: false, error: 'The associated company no longer exists' };
       }
 
       // Check if a profile already exists for this email
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id, status')
-        .eq('email', invitationData.email)
-        .maybeSingle();
-
-      if (!existingProfile) {
+      const profilesResult = await db.selectBy('profiles', { email: invitationData.email });
+      if (profilesResult.error || !profilesResult.data || profilesResult.data.length === 0) {
         return {
           success: false,
           error: 'User profile not found. Please ask the user to sign up first, or use the "Add User" button to create a complete user account directly.'
         };
       }
 
-      const userId = existingProfile.id;
+      const userId = profilesResult.data[0].id;
 
       // Update existing profile
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          status: 'active',
-          role: invitationData.role,
-          company_id: invitationData.company_id,
-          invited_by: invitationData.invited_by,
-          invited_at: invitationData.invited_at,
-          full_name: userData.full_name || undefined,
-          phone: userData.phone || undefined,
-          department: userData.department || undefined,
-          position: userData.position || undefined,
-          password: userData.password, // Will be hashed by DB trigger
-        })
-        .eq('id', userId);
+      const updateData = {
+        status: 'active',
+        role: invitationData.role,
+        company_id: invitationData.company_id,
+        invited_by: invitationData.invited_by,
+        invited_at: invitationData.invited_at,
+        full_name: userData.full_name || undefined,
+        phone: userData.phone || undefined,
+        department: userData.department || undefined,
+        position: userData.position || undefined,
+        password: userData.password, // Will be hashed by DB trigger
+      };
 
-      if (updateError) {
-        const errorMsg = parseErrorMessageWithCodes(updateError, 'profile update');
-        const errorDetails = updateError && typeof updateError === 'object'
-          ? JSON.stringify(updateError)
-          : String(updateError);
-        console.error('Profile update error:', errorDetails);
+      const updateResult = await db.update('profiles', userId, updateData);
+
+      if (updateResult.error) {
+        const errorMsg = parseErrorMessageWithCodes(updateResult.error, 'profile update');
+        console.error('Profile update error:', updateResult.error);
         return { success: false, error: errorMsg };
       }
 
       // Mark invitation as accepted
-      const { error: acceptError } = await supabase
-        .from('user_invitations')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', invitationId);
+      const acceptResult = await db.update('user_invitations', invitationId, {
+        status: 'accepted',
+        accepted_at: new Date().toISOString()
+      });
 
-      if (acceptError) {
-        console.error('Error marking invitation as accepted:', acceptError);
+      if (acceptResult.error) {
+        console.error('Error marking invitation as accepted:', acceptResult.error);
         // Don't fail the operation if marking as accepted fails - user is already created
       }
 
@@ -798,45 +745,35 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
+      const db = getDatabase();
+
       // Get invitation details first for audit logging
-      const { data: invitationData } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('id', invitationId)
-        .single();
+      const invitationResult = await db.selectOne('user_invitations', invitationId);
+      const invitationData = invitationResult.data;
 
-      const { error } = await supabase
-        .from('user_invitations')
-        .update({
-          is_approved: true,
-          approved_by: currentUser?.id,
-          approved_at: new Date().toISOString()
-        })
-        .eq('id', invitationId);
+      const updateResult = await db.update('user_invitations', invitationId, {
+        is_approved: true,
+        approved_by: currentUser?.id,
+        approved_at: new Date().toISOString()
+      });
 
-      if (error) {
-        throw error;
+      if (updateResult.error) {
+        throw updateResult.error;
       }
 
       // If a profile already exists for this email (user already signed up), activate it and assign role/company
       try {
         if (invitationData?.email) {
-          const { data: profileExists } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('email', invitationData.email)
-            .maybeSingle();
+          const profileResult = await db.selectBy('profiles', { email: invitationData.email });
 
-          if (profileExists?.id) {
+          if (profileResult.data && profileResult.data.length > 0) {
+            const profileExists = profileResult.data[0];
+
             // Validate that the company still exists before updating
             if (invitationData.company_id) {
-              const { data: companyExists } = await supabase
-                .from('companies')
-                .select('id')
-                .eq('id', invitationData.company_id)
-                .maybeSingle();
+              const companyResult = await db.selectOne('companies', invitationData.company_id);
 
-              if (!companyExists) {
+              if (companyResult.error || !companyResult.data) {
                 console.warn('Cannot activate profile: company no longer exists', {
                   profileId: profileExists.id,
                   companyId: invitationData.company_id
@@ -845,18 +782,15 @@ export const useUserManagement = () => {
               }
             }
 
-            const { error: updateErr } = await supabase
-              .from('profiles')
-              .update({
-                status: 'active',
-                role: invitationData.role,
-                company_id: invitationData.company_id
-              })
-              .eq('id', profileExists.id);
+            const updateProfileResult = await db.update('profiles', profileExists.id, {
+              status: 'active',
+              role: invitationData.role,
+              company_id: invitationData.company_id
+            });
 
-            if (updateErr) {
+            if (updateProfileResult.error) {
               console.warn('Could not auto-activate existing profile on approval:', {
-                error: updateErr,
+                error: updateProfileResult.error,
                 profileId: profileExists.id,
                 invitationId: invitationId
               });

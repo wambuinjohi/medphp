@@ -32,6 +32,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useDeleteProforma } from '@/hooks/useProforma';
+import { usePermissionGuards } from '@/hooks/usePermissionGuards';
 
 interface ProformaItem {
   id: string;
@@ -87,6 +88,8 @@ export const ViewProformaModal = ({
 }: ViewProformaModalProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const deleteProforma = useDeleteProforma(companyId);
+  const { canDeleteUI } = usePermissionGuards();
+  const canDelete = canDeleteUI('proforma');
 
   if (!proforma) return null;
 
@@ -323,14 +326,16 @@ export const ViewProformaModal = ({
                 Convert to Invoice
               </Button>
             )}
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(true)}
-              className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
+            {canDelete && (
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            )}
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Close
             </Button>

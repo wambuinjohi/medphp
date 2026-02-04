@@ -23,15 +23,16 @@ export function useCreateCreditNoteWithItems() {
     mutationFn: async ({ creditNote, items }: CreateCreditNoteWithItemsData) => {
       console.log('Creating credit note with items:', { creditNote, items });
 
+      const db = getDatabase();
+
       // Start transaction-like operations
       try {
         // Ensure created_by defaults to the authenticated user
         let cleanCreditNote = { ...creditNote } as any;
         try {
-          const { data: userData } = await supabase.auth.getUser();
-          const authUserId = userData?.user?.id || null;
-          if (authUserId) {
-            cleanCreditNote.created_by = authUserId;
+          const currentUser = getCurrentUser();
+          if (currentUser?.id) {
+            cleanCreditNote.created_by = currentUser.id;
           } else if (typeof cleanCreditNote.created_by === 'undefined' || cleanCreditNote.created_by === null) {
             cleanCreditNote.created_by = null;
           }
@@ -42,29 +43,27 @@ export function useCreateCreditNoteWithItems() {
         }
 
         // 1. Create the credit note
-        let createdCreditNote; let creditNoteError: any;
-        {
-          const { data, error } = await supabase
-            .from('credit_notes')
-            .insert(cleanCreditNote)
-            .select()
-            .single();
-          createdCreditNote = data; creditNoteError = error as any;
-        }
-        if (creditNoteError && creditNoteError.code === '23503' && String(creditNoteError.message || '').includes('created_by')) {
-          const retryPayload = { ...cleanCreditNote, created_by: null };
-          const retryRes = await supabase
-            .from('credit_notes')
-            .insert(retryPayload)
-            .select()
-            .single();
-          createdCreditNote = retryRes.data; creditNoteError = retryRes.error as any;
+        let createdCreditNote: any;
+        let insertResult = await db.insert('credit_notes', cleanCreditNote);
+
+        if (insertResult.error) {
+          if (String(insertResult.error.message || '').includes('created_by')) {
+            const retryPayload = { ...cleanCreditNote, created_by: null };
+            insertResult = await db.insert('credit_notes', retryPayload);
+            if (insertResult.error) {
+              console.error('Error creating credit note:', insertResult.error);
+              throw insertResult.error;
+            }
+          } else {
+            console.error('Error creating credit note:', insertResult.error);
+            throw insertResult.error;
+          }
         }
 
-        if (creditNoteError) {
-          console.error('Error creating credit note:', creditNoteError);
-          throw creditNoteError;
-        }
+        if (!insertResult.id) throw new Error('Failed to create credit note: no ID returned');
+        const selectResult = await db.selectOne('credit_notes', insertResult.id);
+        if (selectResult.error) throw selectResult.error;
+        createdCreditNote = selectResult.data;
 
         console.log('Credit note created:', createdCreditNote);
 
@@ -76,18 +75,13 @@ export function useCreateCreditNoteWithItems() {
             sort_order: index
           }));
 
-          const { error: itemsError } = await supabase
-            .from('credit_note_items')
-            .insert(itemsToInsert);
+          const itemsResult = await db.insertMany('credit_note_items', itemsToInsert);
 
-          if (itemsError) {
-            console.error('Error creating credit note items:', itemsError);
+          if (itemsResult.error) {
+            console.error('Error creating credit note items:', itemsResult.error);
             // Cleanup: delete the credit note if items failed
-            await supabase
-              .from('credit_notes')
-              .delete()
-              .eq('id', createdCreditNote.id);
-            throw itemsError;
+            await db.delete('credit_notes', createdCreditNote.id);
+            throw itemsResult.error;
           }
 
           console.log('Credit note items created successfully');
@@ -96,7 +90,7 @@ export function useCreateCreditNoteWithItems() {
         // 3. Create stock movements if affects_inventory is true
         if (creditNote.affects_inventory && items.length > 0) {
           console.log('Creating stock movements for credit note...');
-          
+
           const stockMovements = items
             .filter(item => item.product_id) // Only for items with products
             .map(item => ({
@@ -110,23 +104,16 @@ export function useCreateCreditNoteWithItems() {
             }));
 
           if (stockMovements.length > 0) {
-            const { error: stockError } = await supabase
-              .from('stock_movements')
-              .insert(stockMovements);
+            const stockResult = await db.insertMany('stock_movements', stockMovements);
 
-            if (stockError) {
+            if (stockResult.error) {
               console.error('Error creating stock movements:', {
-                error: stockError,
-                message: stockError.message,
-                details: stockError.details,
-                hint: stockError.hint,
-                code: stockError.code
+                error: stockResult.error,
+                message: stockResult.error?.message
               });
 
               // Check if it's a missing table error
-              if (stockError.message?.includes('relation "stock_movements" does not exist') ||
-                  stockError.message?.includes('table "stock_movements" does not exist') ||
-                  stockError.code === '42P01') {
+              if (String(stockResult.error?.message || '').includes('does not exist')) {
                 toast.error('Stock movements table is missing. Please set up the stock_movements table in your database.');
               } else {
                 toast.warning('Stock movements could not be created, but credit note was saved successfully.');
@@ -136,18 +123,17 @@ export function useCreateCreditNoteWithItems() {
               console.warn('Stock movements failed but credit note was created successfully');
             } else {
               console.log('Stock movements created successfully');
-              
+
               // Update product stock quantities
-              const db = getDatabase();
               for (const movement of stockMovements) {
                 try {
-                  const { error: stockError } = await db.rpc('update_product_stock', {
+                  const rpcResult = await db.rpc('update_product_stock', {
                     product_uuid: movement.product_id,
                     movement_type: movement.movement_type,
                     quantity: Math.abs(movement.quantity)
                   });
-                  if (stockError) {
-                    throw stockError;
+                  if (rpcResult.error) {
+                    throw rpcResult.error;
                   }
                 } catch (stockUpdateError: any) {
                   console.error('Error updating product stock:', {
@@ -198,31 +184,28 @@ export function useUpdateCreditNoteWithItems() {
     mutationFn: async ({ creditNoteId, creditNote, items }: UpdateCreditNoteWithItemsData) => {
       console.log('Updating credit note with items:', { creditNoteId, creditNote, items });
 
+      const db = getDatabase();
+
       try {
         // 1. Get existing credit note to check if it affects inventory
-        const { data: existingCreditNote, error: fetchError } = await supabase
-          .from('credit_notes')
-          .select('affects_inventory, credit_note_number')
-          .eq('id', creditNoteId)
-          .single();
-
-        if (fetchError) throw fetchError;
+        const existingResult = await db.selectOne('credit_notes', creditNoteId);
+        if (existingResult.error) throw existingResult.error;
+        const existingCreditNote = existingResult.data;
 
         // 2. If the credit note affects inventory, reverse existing stock movements
         if (existingCreditNote.affects_inventory) {
           console.log('Reversing existing stock movements...');
-          
-          const { data: existingMovements, error: movementsError } = await supabase
-            .from('stock_movements')
-            .select('*')
-            .eq('reference_type', 'CREDIT_NOTE')
-            .eq('reference_id', creditNoteId);
 
-          if (movementsError) {
-            console.error('Error fetching existing movements:', movementsError);
-          } else if (existingMovements && existingMovements.length > 0) {
+          const movementsResult = await db.selectBy('stock_movements', {
+            reference_type: 'CREDIT_NOTE',
+            reference_id: creditNoteId
+          });
+
+          if (movementsResult.error) {
+            console.error('Error fetching existing movements:', movementsResult.error);
+          } else if (movementsResult.data && movementsResult.data.length > 0) {
             // Reverse the movements by creating opposite movements
-            const reverseMovements = existingMovements.map(movement => ({
+            const reverseMovements = movementsResult.data.map((movement: any) => ({
               company_id: movement.company_id,
               product_id: movement.product_id,
               movement_type: movement.movement_type === 'IN' ? 'OUT' : 'IN',
@@ -232,24 +215,21 @@ export function useUpdateCreditNoteWithItems() {
               notes: `Reversal of ${movement.notes}`
             }));
 
-            const { error: reverseError } = await supabase
-              .from('stock_movements')
-              .insert(reverseMovements);
+            const reverseResult = await db.insertMany('stock_movements', reverseMovements);
 
-            if (reverseError) {
-              console.error('Error creating reverse movements:', reverseError);
+            if (reverseResult.error) {
+              console.error('Error creating reverse movements:', reverseResult.error);
             } else {
               // Update product stock for reversals
-              const db = getDatabase();
               for (const movement of reverseMovements) {
                 try {
-                  const { error: stockError } = await db.rpc('update_product_stock', {
+                  const rpcResult = await db.rpc('update_product_stock', {
                     product_uuid: movement.product_id,
                     movement_type: movement.movement_type,
                     quantity: Math.abs(movement.quantity)
                   });
-                  if (stockError) {
-                    throw stockError;
+                  if (rpcResult.error) {
+                    throw rpcResult.error;
                   }
                 } catch (stockUpdateError) {
                   console.error('Error updating product stock (reversal):', stockUpdateError);
@@ -260,22 +240,16 @@ export function useUpdateCreditNoteWithItems() {
         }
 
         // 3. Update the credit note
-        const { data: updatedCreditNote, error: updateError } = await supabase
-          .from('credit_notes')
-          .update(creditNote)
-          .eq('id', creditNoteId)
-          .select()
-          .single();
+        const updateResult = await db.update('credit_notes', creditNoteId, creditNote);
+        if (updateResult.error) throw updateResult.error;
 
-        if (updateError) throw updateError;
+        const updatedSelectResult = await db.selectOne('credit_notes', creditNoteId);
+        if (updatedSelectResult.error) throw updatedSelectResult.error;
+        const updatedCreditNote = updatedSelectResult.data;
 
         // 4. Delete existing credit note items
-        const { error: deleteItemsError } = await supabase
-          .from('credit_note_items')
-          .delete()
-          .eq('credit_note_id', creditNoteId);
-
-        if (deleteItemsError) throw deleteItemsError;
+        const deleteItemsResult = await db.deleteMany('credit_note_items', { credit_note_id: creditNoteId });
+        if (deleteItemsResult.error) throw deleteItemsResult.error;
 
         // 5. Insert new credit note items
         if (items.length > 0) {
@@ -285,18 +259,15 @@ export function useUpdateCreditNoteWithItems() {
             sort_order: index
           }));
 
-          const { error: itemsError } = await supabase
-            .from('credit_note_items')
-            .insert(itemsToInsert);
-
-          if (itemsError) throw itemsError;
+          const itemsResult = await db.insertMany('credit_note_items', itemsToInsert);
+          if (itemsResult.error) throw itemsResult.error;
         }
 
         // 6. Create new stock movements if affects_inventory is true
         const newAffectsInventory = creditNote.affects_inventory ?? existingCreditNote.affects_inventory;
         if (newAffectsInventory && items.length > 0) {
           console.log('Creating new stock movements...');
-          
+
           const stockMovements = items
             .filter(item => item.product_id)
             .map(item => ({
@@ -310,24 +281,21 @@ export function useUpdateCreditNoteWithItems() {
             }));
 
           if (stockMovements.length > 0) {
-            const { error: stockError } = await supabase
-              .from('stock_movements')
-              .insert(stockMovements);
+            const stockResult = await db.insertMany('stock_movements', stockMovements);
 
-            if (stockError) {
-              console.error('Error creating new stock movements:', stockError);
+            if (stockResult.error) {
+              console.error('Error creating new stock movements:', stockResult.error);
             } else {
               // Update product stock quantities
-              const db = getDatabase();
               for (const movement of stockMovements) {
                 try {
-                  const { error: stockError } = await db.rpc('update_product_stock', {
+                  const rpcResult = await db.rpc('update_product_stock', {
                     product_uuid: movement.product_id,
                     movement_type: movement.movement_type,
                     quantity: Math.abs(movement.quantity)
                   });
-                  if (stockError) {
-                    throw stockError;
+                  if (rpcResult.error) {
+                    throw rpcResult.error;
                   }
                 } catch (stockUpdateError) {
                   console.error('Error updating product stock (new):', stockUpdateError);
@@ -384,24 +352,14 @@ export function useConvertInvoiceToCreditNote() {
     }) => {
       console.log('Converting invoice to credit note:', { invoiceId, reason, affectsInventory, itemsToCredit });
 
-      // 1. Fetch the invoice with items
-      const { data: invoice, error: invoiceError } = await supabase
-        .from('invoices')
-        .select(`
-          *,
-          customers (*),
-          invoice_items (
-            *,
-            products (*)
-          )
-        `)
-        .eq('id', invoiceId)
-        .single();
+      const db = getDatabase();
 
-      if (invoiceError) throw invoiceError;
+      // 1. Fetch the invoice with items
+      const invoiceResult = await db.selectOne('invoices', invoiceId);
+      if (invoiceResult.error) throw invoiceResult.error;
+      const invoice = invoiceResult.data;
 
       // 2. Generate credit note number
-      const db = getDatabase();
       const { data: creditNoteNumber, error: numberError } = await db.rpc<string>('generate_credit_note_number', { company_uuid: invoice.company_id });
 
       if (numberError) throw numberError;
@@ -426,12 +384,12 @@ export function useConvertInvoiceToCreditNote() {
       const totalAmount = itemsToProcess.reduce((sum, item) => sum + item.line_total, 0);
 
       // 5. Create the credit note
-      // Determine creator (prefer invoice.created_by, fall back to current auth user)
+      // Determine creator (prefer invoice.created_by, fall back to current user)
       let createdBy: string | null = invoice.created_by || null;
       if (!createdBy) {
         try {
-          const { data: userData } = await supabase.auth.getUser();
-          createdBy = userData?.user?.id || null;
+          const currentUser = getCurrentUser();
+          createdBy = currentUser?.id || null;
         } catch {
           createdBy = null;
         }

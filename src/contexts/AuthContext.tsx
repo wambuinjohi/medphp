@@ -87,6 +87,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const initializingRef = useRef(false);
   const forceCompletedRef = useRef(false);
 
+  // Grace period tracking - prevent token validation immediately after login
+  const justLoggedInRef = useRef<number | null>(null);
+  const GRACE_PERIOD_AFTER_LOGIN = 30000; // 30 seconds grace period
+
   // Toast spam prevention
   const lastNetworkErrorToast = useRef<number>(0);
   const lastPermissionErrorToast = useRef<number>(0);
@@ -299,6 +303,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const validateTokenPeriodically = async () => {
       if (!mountedRef.current) return;
 
+      // Check if we're still within grace period after login
+      if (justLoggedInRef.current !== null) {
+        const timeSinceLogin = Date.now() - justLoggedInRef.current;
+        if (timeSinceLogin < GRACE_PERIOD_AFTER_LOGIN) {
+          console.log(`⏳ Within grace period after login (${Math.round(timeSinceLogin / 1000)}s < ${GRACE_PERIOD_AFTER_LOGIN / 1000}s), skipping token validation`);
+          return;
+        } else {
+          // Grace period has expired - clear the flag
+          justLoggedInRef.current = null;
+          console.log('✅ Grace period after login has ended, resuming normal token validation');
+        }
+      }
+
       const token = localStorage.getItem('med_api_token');
       if (!token) {
         // Token was cleared - logout
@@ -317,16 +334,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { user: validatedUser, error } = await apiClient.auth.checkAuth();
 
         if (error || !validatedUser) {
-          // Token is no longer valid
-          console.warn('⚠️ Token validation failed during periodic check:', error?.message);
-          clearAuthTokens();
+          // Only clear token on actual auth errors, not network errors
+          if (error && error.message && (
+            error.message.includes('401') ||
+            error.message.includes('Unauthorized') ||
+            error.message.includes('Not authenticated')
+          )) {
+            // Token is no longer valid - actual auth failure
+            console.warn('⚠️ Token validation failed during periodic check:', error?.message);
+            clearAuthTokens();
 
-          if (mountedRef.current && user) {
-            setUser(null);
-            setProfile(null);
-            setSession(null);
-            toast.error('Your authentication session is no longer valid. Please log in again.');
-            console.log('🔐 User logged out due to invalid token');
+            if (mountedRef.current && user) {
+              setUser(null);
+              setProfile(null);
+              setSession(null);
+              toast.error('Your authentication session is no longer valid. Please log in again.');
+              console.log('🔐 User logged out due to invalid token');
+            }
+          } else if (error) {
+            // Network or other error - don't logout
+            console.warn('⚠️ Periodic token validation error (network issue):', error?.message);
           }
         }
       } catch (error) {
@@ -338,7 +365,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Run validation every 5 minutes
     const validationInterval = setInterval(validateTokenPeriodically, 5 * 60 * 1000);
 
-    // Also do initial check after short delay
+    // Also do initial check after short delay, but it will respect the grace period
     const initialCheckTimeout = setTimeout(validateTokenPeriodically, 2000);
 
     return () => {
@@ -390,6 +417,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSession(newSession);
       setUser(newSession.user);
       setProfile(userProfile);
+
+      // Set grace period to prevent immediate token validation
+      justLoggedInRef.current = Date.now();
+      console.log('⏰ Grace period started after login - token validation will be skipped for 30 seconds');
 
       setTimeout(() => toast.success('Signed in successfully'), 0);
       setLoading(false);

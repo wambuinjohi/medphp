@@ -51,7 +51,7 @@ import { RecordPaymentModal } from '@/components/payments/RecordPaymentModal';
 import { CreateDeliveryNoteModal } from '@/components/delivery/CreateDeliveryNoteModal';
 import { downloadInvoicePDF } from '@/utils/pdfGenerator';
 import { reconcileAllInvoiceBalances } from '@/utils/balanceReconciliation';
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 
 interface Invoice {
   id: string;
@@ -217,38 +217,11 @@ export default function Invoices() {
   const handleEditInvoice = async (invoice: Invoice) => {
     try {
       // Fetch full invoice with items and product details
-      const { data, error } = await supabase
-        .from('invoices')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          invoice_items (
-            id,
-            product_id,
-            products (
-              name
-            ),
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total
-          )
-        `)
-        .eq('id', invoice.id)
-        .single();
+      const db = getDatabase();
+      const result = await db.selectOne('invoices', invoice.id);
 
-      if (error) throw error;
-      setSelectedInvoice(data as Invoice);
+      if (result.error) throw result.error;
+      setSelectedInvoice(result.data as Invoice);
       setShowEditModal(true);
     } catch (error) {
       console.error('Error fetching invoice data:', error);
@@ -261,27 +234,10 @@ export default function Invoices() {
       // Ensure invoice has items; if not, fetch them on demand
       let enrichedInvoice: any = invoice;
       if (!invoice.invoice_items || invoice.invoice_items.length === 0) {
-        const { data: items, error } = await supabase
-          .from('invoice_items')
-          .select(`
-            id,
-            invoice_id,
-            product_id,
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            discount_before_vat,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total,
-            sort_order,
-            products(id, name, product_code, unit_of_measure)
-          `)
-          .eq('invoice_id', invoice.id);
-        if (!error && items) {
-          enrichedInvoice = { ...invoice, invoice_items: items };
+        const db = getDatabase();
+        const result = await db.selectBy('invoice_items', { invoice_id: invoice.id });
+        if (!result.error && result.data) {
+          enrichedInvoice = { ...invoice, invoice_items: result.data };
         }
       }
 

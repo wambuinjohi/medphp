@@ -34,6 +34,7 @@ export const usePermissionGuards = () => {
   /**
    * Check if user can delete an entity type
    * Enforces delete_* permissions based on entity type
+   * Shows error toast if permission denied
    */
   const checkCanDelete = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment',
@@ -60,8 +61,26 @@ export const usePermissionGuards = () => {
   };
 
   /**
+   * Check if user can delete an entity type (UI-only, no toast)
+   * Used for conditionally rendering delete buttons in the UI
+   * Does not show any error messages
+   */
+  const canDeleteUI = (
+    entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment'
+  ): boolean => {
+    // Admin users can delete anything
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check if user has delete permission for this entity type
+    return canDelete(entityType);
+  };
+
+  /**
    * Check if user can create an entity type
    * Enforces create_* permissions based on entity type
+   * Shows error toast if permission denied
    */
   const checkCanCreate = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment',
@@ -88,8 +107,26 @@ export const usePermissionGuards = () => {
   };
 
   /**
+   * Check if user can create an entity type (UI-only, no toast)
+   * Used for conditionally rendering create buttons in the UI
+   * Does not show any error messages
+   */
+  const canCreateUI = (
+    entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment'
+  ): boolean => {
+    // Admin users can create anything
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check if user has create permission for this entity type
+    return canCreate(entityType);
+  };
+
+  /**
    * Check if user can edit an entity type
    * Enforces edit_* permissions based on entity type
+   * Shows error toast if permission denied
    */
   const checkCanEdit = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment',
@@ -116,8 +153,26 @@ export const usePermissionGuards = () => {
   };
 
   /**
+   * Check if user can edit an entity type (UI-only, no toast)
+   * Used for conditionally rendering edit buttons in the UI
+   * Does not show any error messages
+   */
+  const canEditUI = (
+    entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment'
+  ): boolean => {
+    // Admin users can edit anything
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check if user has edit permission for this entity type
+    return canEdit(entityType);
+  };
+
+  /**
    * Check if user can view an entity type
    * Enforces view_* permissions based on entity type
+   * Shows error toast if permission denied
    */
   const checkCanView = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment' | 'reports',
@@ -143,6 +198,23 @@ export const usePermissionGuards = () => {
     return true;
   };
 
+  /**
+   * Check if user can view an entity type (UI-only, no toast)
+   * Used for conditionally rendering view elements in the UI
+   * Does not show any error messages
+   */
+  const canViewUI = (
+    entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment' | 'reports'
+  ): boolean => {
+    // Admin users can view anything
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check if user has view permission for this entity type
+    return canView(entityType);
+  };
+
   return {
     isAdmin,
     checkPermission,
@@ -150,6 +222,10 @@ export const usePermissionGuards = () => {
     checkCanCreate,
     checkCanEdit,
     checkCanView,
+    canDeleteUI,
+    canCreateUI,
+    canEditUI,
+    canViewUI,
   };
 };
 

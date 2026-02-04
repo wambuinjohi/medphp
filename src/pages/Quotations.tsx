@@ -47,7 +47,7 @@ import { ConvertQuotationToProformaModal } from '@/components/quotations/Convert
 import { ConvertQuotationToInvoiceModal } from '@/components/quotations/ConvertQuotationToInvoiceModal';
 import { ConversionPreviewModal } from '@/components/shared/ConversionPreviewModal';
 import { downloadQuotationPDF } from '@/utils/pdfGenerator';
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 
 interface Quotation {
   id: string;
@@ -139,38 +139,11 @@ export default function Quotations() {
     try {
       setIsLoadingConversionData(true);
       // Fetch full quotation with items and product details
-      const { data, error } = await supabase
-        .from('quotations')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          quotation_items (
-            id,
-            product_id,
-            products (
-              name
-            ),
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total
-          )
-        `)
-        .eq('id', quotation.id)
-        .single();
+      const db = getDatabase();
+      const result = await db.selectOne('quotations', quotation.id);
 
-      if (error) throw error;
-      setSelectedQuotation(data as Quotation);
+      if (result.error) throw result.error;
+      setSelectedQuotation(result.data as Quotation);
       setShowEditModal(true);
     } catch (error) {
       console.error('Error fetching quotation data:', error);
@@ -272,33 +245,11 @@ Email: ${companyEmail}`;
     try {
       setIsLoadingConversionData(true);
       // Fetch full quotation with items
-      const { data, error } = await supabase
-        .from('quotations')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          quotation_items (
-            id,
-            description,
-            quantity,
-            unit_price,
-            line_total,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive
-          )
-        `)
-        .eq('id', quotation.id)
-        .single();
+      const db = getDatabase();
+      const result = await db.selectOne('quotations', quotation.id);
 
-      if (error) throw error;
-      setSelectedQuotation(data as Quotation);
+      if (result.error) throw result.error;
+      setSelectedQuotation(result.data as Quotation);
       setConversionType('proforma');
       setShowConversionPreviewModal(true);
     } catch (error) {
@@ -313,33 +264,11 @@ Email: ${companyEmail}`;
     try {
       setIsLoadingConversionData(true);
       // Fetch full quotation with items
-      const { data, error } = await supabase
-        .from('quotations')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          quotation_items (
-            id,
-            description,
-            quantity,
-            unit_price,
-            line_total,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive
-          )
-        `)
-        .eq('id', quotation.id)
-        .single();
+      const db = getDatabase();
+      const result = await db.selectOne('quotations', quotation.id);
 
-      if (error) throw error;
-      setSelectedQuotation(data as Quotation);
+      if (result.error) throw result.error;
+      setSelectedQuotation(result.data as Quotation);
       setConversionType('invoice');
       setShowConversionPreviewModal(true);
     } catch (error) {

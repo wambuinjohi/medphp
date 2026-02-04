@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect, useMemo } from 'react';
 import { getCurrentUser } from '@/utils/getCurrentUser';
+import apiClient from '@/integrations/api';
 
 export interface ProductSearchResult {
   id: string;
@@ -37,30 +38,17 @@ export const useOptimizedProductSearch = (companyId?: string, enabled: boolean =
 
       try {
         // First get products without embedded relationships
-        let productsQuery = supabase
-          .from('products')
-          .select(`
-            id,
-            name,
-            product_code,
-            unit_of_measure,
-            selling_price,
-            stock_quantity,
-            category_id
-          `)
-          .eq('company_id', companyId)
-          .eq('is_active', true);
+        let filterObj: any = {
+          company_id: companyId,
+          is_active: true
+        };
 
         // Add search filter if search term exists
         if (debouncedSearchTerm.trim()) {
-          const searchPattern = `%${debouncedSearchTerm.trim()}%`;
-          productsQuery = productsQuery.or(`name.ilike.${searchPattern},product_code.ilike.${searchPattern}`);
+          filterObj.search = debouncedSearchTerm.trim();
         }
 
-        // Limit results for performance
-        productsQuery = productsQuery.limit(50).order('name');
-
-        const { data: products, error: productsError } = await productsQuery;
+        const { data: products, error: productsError } = await apiClient.select('products', filterObj);
 
         if (productsError) {
           console.error('Error searching products:', productsError);
@@ -68,10 +56,9 @@ export const useOptimizedProductSearch = (companyId?: string, enabled: boolean =
         }
 
         // Get categories separately to avoid relationship issues
-        const { data: categories, error: categoriesError } = await supabase
-          .from('product_categories')
-          .select('id, name')
-          .eq('company_id', companyId);
+        const { data: categories, error: categoriesError } = await apiClient.select('product_categories', {
+          company_id: companyId
+        });
 
         if (categoriesError) {
           console.error('Error fetching categories:', categoriesError);
@@ -80,12 +67,12 @@ export const useOptimizedProductSearch = (companyId?: string, enabled: boolean =
 
         // Create category lookup map
         const categoryMap = new Map();
-        (categories || []).forEach(cat => {
+        (categories || []).forEach((cat: any) => {
           categoryMap.set(cat.id, cat.name);
         });
 
         // Transform data to include category name and normalize price fields
-        const transformedData: ProductSearchResult[] = (products || []).map(product => ({
+        const transformedData: ProductSearchResult[] = (products || []).map((product: any) => ({
           id: product.id,
           name: product.name,
           product_code: product.product_code,
@@ -130,32 +117,17 @@ export const usePopularProducts = (companyId?: string, limit: number = 20) => {
 
         // Check authentication first
         const user = getCurrentUser();
-        if (!user.id) {
+        if (!user || !user.id) {
           // Not authenticated
           console.error('User not authenticated');
-          throw new Error(`Authentication failed: ${parsed}`);
-        }
-        if (!user) {
           throw new Error('User not authenticated');
         }
 
         // Get products without embedded relationships first
-        const { data: products, error: productsError } = await supabase
-          .from('products')
-          .select(`
-            id,
-            name,
-            product_code,
-            unit_of_measure,
-            selling_price,
-            stock_quantity,
-            category_id
-          `)
-          .eq('company_id', companyId)
-          .eq('is_active', true)
-          .order('stock_quantity', { ascending: false })
-          .order('name')
-          .limit(limit);
+        const { data: products, error: productsError } = await apiClient.select('products', {
+          company_id: companyId,
+          is_active: true
+        });
 
         if (productsError) {
           console.error('Error fetching products:', productsError);
@@ -165,10 +137,9 @@ export const usePopularProducts = (companyId?: string, limit: number = 20) => {
         console.log('Products fetched successfully:', products?.length || 0);
 
         // Get categories separately
-        const { data: categories, error: categoriesError } = await supabase
-          .from('product_categories')
-          .select('id, name')
-          .eq('company_id', companyId);
+        const { data: categories, error: categoriesError } = await apiClient.select('product_categories', {
+          company_id: companyId
+        });
 
         if (categoriesError) {
           console.error('Error fetching categories (non-fatal):', categoriesError);
@@ -179,12 +150,17 @@ export const usePopularProducts = (companyId?: string, limit: number = 20) => {
 
         // Create category lookup map
         const categoryMap = new Map();
-        (categories || []).forEach(cat => {
+        (categories || []).forEach((cat: any) => {
           categoryMap.set(cat.id, cat.name);
         });
 
+        // Sort products by stock quantity descending and limit results
+        const sortedProducts = (products || [])
+          .sort((a: any, b: any) => Number(b.stock_quantity || 0) - Number(a.stock_quantity || 0))
+          .slice(0, limit);
+
         // Transform data
-        const transformedData: ProductSearchResult[] = (products || []).map(product => ({
+        const transformedData: ProductSearchResult[] = sortedProducts.map((product: any) => ({
           id: product.id,
           name: product.name,
           product_code: product.product_code,
@@ -221,49 +197,38 @@ export const useProductById = (productId?: string) => {
 
       try {
         // Get product without embedded relationship
-        const { data: product, error: productError } = await supabase
-          .from('products')
-          .select(`
-            id,
-            name,
-            product_code,
-            unit_of_measure,
-            unit_price,
-            stock_quantity,
-            category_id,
-            company_id
-          `)
-          .eq('id', productId)
-          .single();
+        const { data: product, error: productError } = await apiClient.selectOne('products', productId);
 
         if (productError) {
           console.error('Error fetching product:', productError);
           throw new Error(`Failed to fetch product: ${productError.message}`);
         }
 
+        if (!product) {
+          throw new Error('Product not found');
+        }
+
         // Get category separately if needed
         let categoryName = 'Uncategorized';
-        if (product.category_id) {
-          const { data: category } = await supabase
-            .from('product_categories')
-            .select('name')
-            .eq('id', product.category_id)
-            .single();
+        if ((product as any).category_id) {
+          const { data: categories } = await apiClient.select('product_categories', {
+            id: (product as any).category_id
+          });
           
-          if (category) {
-            categoryName = category.name;
+          if (categories && Array.isArray(categories) && categories.length > 0) {
+            categoryName = categories[0].name;
           }
         }
 
         return {
           id: product.id,
-          name: product.name,
-          product_code: product.product_code,
-          unit_of_measure: product.unit_of_measure || 'pieces',
-          unit_price: Number(product.selling_price || product.unit_price || 0),
+          name: (product as any).name,
+          product_code: (product as any).product_code,
+          unit_of_measure: (product as any).unit_of_measure || 'pieces',
+          unit_price: Number((product as any).selling_price || (product as any).unit_price || 0),
           // Ensure both price fields are available for compatibility
-          selling_price: Number(product.selling_price || product.unit_price || 0),
-          stock_quantity: Number(product.stock_quantity || 0),
+          selling_price: Number((product as any).selling_price || (product as any).unit_price || 0),
+          stock_quantity: Number((product as any).stock_quantity || 0),
           category_name: categoryName
         } as ProductSearchResult;
       } catch (error) {
@@ -321,11 +286,9 @@ export const useProductCategories = (companyId?: string) => {
       if (!companyId) return [];
 
       try {
-        const { data, error } = await supabase
-          .from('product_categories')
-          .select('id, name')
-          .eq('company_id', companyId)
-          .order('name');
+        const { data, error } = await apiClient.select('product_categories', {
+          company_id: companyId
+        });
 
         if (error) {
           console.error('Error fetching categories:', error);
@@ -375,11 +338,10 @@ export const useInventoryStats = (companyId?: string) => {
       if (!companyId) return null;
 
       try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('stock_quantity, minimum_stock_level, selling_price')
-          .eq('company_id', companyId)
-          .eq('is_active', true);
+        const { data, error } = await apiClient.select('products', {
+          company_id: companyId,
+          is_active: true
+        });
 
         if (error) {
           console.error('Error fetching inventory stats:', error);
@@ -387,13 +349,13 @@ export const useInventoryStats = (companyId?: string) => {
         }
 
         const stats = {
-          totalItems: data.length,
+          totalItems: data?.length || 0,
           lowStockItems: 0,
           outOfStockItems: 0,
           totalValue: 0
         };
 
-        data.forEach(product => {
+        (data || []).forEach((product: any) => {
           const stock = Number(product.stock_quantity || 0);
           const minStock = Number(product.minimum_stock_level || 0);
           const price = Number(product.selling_price || product.unit_price || 0);

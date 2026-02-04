@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDeleteInvoice } from '@/hooks/useInvoicesFixed';
+import { usePermissionGuards } from '@/hooks/usePermissionGuards';
 
 interface ViewInvoiceModalProps {
   open: boolean;
@@ -63,6 +64,8 @@ export function ViewInvoiceModal({
   const { isAdmin } = useAuth();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const deleteInvoice = useDeleteInvoice();
+  const { canDeleteUI } = usePermissionGuards();
+  const canDelete = canDeleteUI('invoice');
 
   const handleDeleteConfirm = async () => {
     try {
@@ -339,14 +342,16 @@ export function ViewInvoiceModal({
         </Card>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => setShowDeleteDialog(true)}
-            className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
+          {canDelete && (
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(true)}
+              className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          )}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>

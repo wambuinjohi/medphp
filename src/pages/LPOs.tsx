@@ -34,6 +34,7 @@ import {
 import { toast } from 'sonner';
 import { useLPOs, useUpdateLPO, useDeleteLPO } from '@/hooks/useDatabase';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { usePermissionGuards } from '@/hooks/usePermissionGuards';
 import { downloadLPOPDF } from '@/utils/pdfGenerator';
 import { parseErrorMessageWithCodes } from '@/utils/errorHelpers';
 import { CreateLPOModal } from '@/components/lpo/CreateLPOModal';
@@ -61,6 +62,8 @@ export default function LPOs() {
   const { data: lpos, isLoading, error, retry: retryLPOs } = useLPOs(currentCompany?.id);
   const updateLPO = useUpdateLPO();
   const deleteLPO = useDeleteLPO();
+  const { canDeleteUI } = usePermissionGuards();
+  const canDeleteLPO = canDeleteUI('lpo');
 
   // Note: Auto-migration removed - using manual migration guide instead
 
@@ -531,14 +534,16 @@ export default function LPOs() {
                             <Package className="h-4 w-4" />
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteLPO(lpo)}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {canDeleteLPO && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteLPO(lpo)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

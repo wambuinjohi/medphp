@@ -19,6 +19,9 @@ import { logTokenDiagnostics } from '../../utils/tokenDiagnostics';
 export class ExternalAPIAdapter implements IDatabase {
   private apiBase: string;
   private externalApiUrl: string;
+  private failedValidationAttempts: number = 0;
+  private lastValidationAttemptTime: number = 0;
+  private lastLoginTime: number | null = null;
 
   constructor(apiUrl?: string) {
     try {
@@ -139,6 +142,7 @@ export class ExternalAPIAdapter implements IDatabase {
   /**
    * Automatically refresh token if it's expired or about to expire
    * Refreshes proactively 5 minutes before expiration
+   * Implements exponential backoff to avoid hammering server on repeated failures
    */
   private async refreshTokenIfNeeded(): Promise<void> {
     const token = this.getAuthToken();
@@ -148,6 +152,19 @@ export class ExternalAPIAdapter implements IDatabase {
       // Check if token is expired
       if (this.isTokenExpired()) {
         console.log('🔄 Token expired, attempting automatic refresh...');
+
+        // Implement exponential backoff: 1s → 2s → 4s between attempts
+        const timeSinceLastAttempt = Date.now() - this.lastValidationAttemptTime;
+        const baseDelay = 1000;
+        const requiredDelay = baseDelay * Math.pow(2, Math.max(0, this.failedValidationAttempts - 1));
+
+        if (timeSinceLastAttempt < requiredDelay) {
+          console.log(`⏳ Delaying token refresh: waiting ${Math.round((requiredDelay - timeSinceLastAttempt) / 1000)}s (exponential backoff)`);
+          return;
+        }
+
+        this.lastValidationAttemptTime = Date.now();
+
         // Token is expired - try to refresh using refresh endpoint
         await this.attemptTokenRefresh();
       }
@@ -159,6 +176,7 @@ export class ExternalAPIAdapter implements IDatabase {
 
   /**
    * Attempt to refresh the token using the refresh endpoint
+   * Implements retry logic with exponential backoff
    */
   private async attemptTokenRefresh(): Promise<void> {
     try {
@@ -168,6 +186,7 @@ export class ExternalAPIAdapter implements IDatabase {
       const refreshUrl = `${this.apiBase}?action=refresh_token`;
 
       console.log('🔄 Attempting token refresh with user_id:', userId?.substring(0, 8) + '...');
+      console.log(`   Failed attempts so far: ${this.failedValidationAttempts}/3`);
 
       const response = await fetch(refreshUrl, {
         method: 'POST',
@@ -178,8 +197,9 @@ export class ExternalAPIAdapter implements IDatabase {
       const result = await response.json().catch(() => null);
 
       if (response.ok && result?.token) {
-        // Store the new token
+        // Store the new token and reset counter on success
         this.setAuthToken(result.token);
+        this.failedValidationAttempts = 0;
         console.log('✅ Token refreshed successfully');
         return;
       }
@@ -199,19 +219,40 @@ export class ExternalAPIAdapter implements IDatabase {
 
       if (checkResponse.ok && checkResult?.id) {
         // Token is actually valid - maybe the refresh endpoint just doesn't exist
+        this.failedValidationAttempts = 0;
         console.log('✅ Token is valid (check_auth succeeded), continuing without refresh');
         return;
       }
 
-      // Token is definitely invalid - clear it
-      console.error('❌ Token is invalid - clearing authentication');
-      this.clearAuthToken();
-      localStorage.removeItem('med_api_user_id');
-      localStorage.removeItem('med_api_user_email');
+      // Token validation failed - increment counter
+      this.failedValidationAttempts++;
+      console.warn(`⚠️ Token validation failed (attempt ${this.failedValidationAttempts}/3)`);
+
+      // Only clear token after 3 failed attempts, not on first failure
+      if (this.failedValidationAttempts >= 3) {
+        console.error('❌ Token is invalid after 3 attempts - clearing authentication');
+        this.clearAuthToken();
+        localStorage.removeItem('med_api_user_id');
+        localStorage.removeItem('med_api_user_email');
+        this.failedValidationAttempts = 0;
+      } else {
+        console.log(`⏳ Deferring token clearing until next validation attempt (need ${3 - this.failedValidationAttempts} more failures)`);
+      }
 
     } catch (error) {
-      console.warn('⚠️ Token refresh error:', error);
-      // Don't clear auth on network errors - let the user retry
+      console.warn('⚠️ Token refresh error (network issue):', error);
+      // Increment counter for network errors too
+      this.failedValidationAttempts++;
+      console.warn(`⚠️ Network validation attempt failed (${this.failedValidationAttempts}/3)`);
+
+      if (this.failedValidationAttempts >= 3) {
+        // Only clear on persistent failures
+        console.warn('❌ Too many failed validation attempts - clearing token');
+        this.clearAuthToken();
+        localStorage.removeItem('med_api_user_id');
+        localStorage.removeItem('med_api_user_email');
+        this.failedValidationAttempts = 0;
+      }
     }
   }
 
@@ -672,6 +713,11 @@ export class ExternalAPIAdapter implements IDatabase {
             localStorage.setItem('med_api_user_email', email);
             console.log('✅ User info stored:', { id: result.user.id, email });
           }
+
+          // Track login time for grace period
+          this.lastLoginTime = Date.now();
+          this.failedValidationAttempts = 0;
+          console.log('⏰ Login time tracked - starting grace period');
         }
 
         return {
@@ -779,6 +825,19 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async checkAuth(): Promise<{ user: any; error: Error | null }> {
     try {
+      // Check if we're within grace period after login (5 seconds minimum)
+      const GRACE_PERIOD = 5000; // 5 seconds
+      if (this.lastLoginTime !== null) {
+        const timeSinceLogin = Date.now() - this.lastLoginTime;
+        if (timeSinceLogin < GRACE_PERIOD) {
+          console.log(`⏳ Within grace period after login (${Math.round(timeSinceLogin / 1000)}s < ${GRACE_PERIOD / 1000}s), skipping validation`);
+          return {
+            user: { id: localStorage.getItem('med_api_user_id'), email: localStorage.getItem('med_api_user_email') },
+            error: null
+          };
+        }
+      }
+
       // Automatically refresh token if needed before checking auth
       await this.refreshTokenIfNeeded();
 
@@ -820,13 +879,20 @@ export class ExternalAPIAdapter implements IDatabase {
         });
 
         if (!response.ok) {
-          this.clearAuthToken();
+          // Only clear token on actual 401/403 auth errors, not on network issues
+          const is401Or403 = response.status === 401 || response.status === 403;
+          if (is401Or403) {
+            console.warn(`⚠️ Received ${response.status} from checkAuth - token is invalid`);
+            this.clearAuthToken();
+          }
           return {
             user: null,
-            error: new Error(result.message || 'Not authenticated'),
+            error: new Error(`${is401Or403 ? 'Not authenticated' : 'Authentication check failed'} (HTTP ${response.status})`),
           };
         }
 
+        // Success - reset failure counter
+        this.failedValidationAttempts = 0;
         return { user: result, error: null };
       } catch (fetchError: any) {
         requestCompleted = true;
@@ -834,11 +900,14 @@ export class ExternalAPIAdapter implements IDatabase {
 
         if (fetchError.name === 'AbortError') {
           if (isTimedOut) {
+            // Timeout is a network error, not an auth error - don't clear token
+            console.warn('⚠️ Authentication check timeout (network issue)');
             return {
               user: null,
               error: new Error(`Authentication check timeout. The server may be unresponsive.`),
             };
           } else {
+            console.warn('⚠️ Authentication check cancelled');
             return {
               user: null,
               error: new Error(`Authentication check was cancelled.`),
@@ -847,6 +916,8 @@ export class ExternalAPIAdapter implements IDatabase {
         }
 
         if (fetchError instanceof TypeError && fetchError.message === 'Failed to fetch') {
+          // Network error - don't clear token
+          console.warn('⚠️ Network error during authentication check');
           return {
             user: null,
             error: new Error(`Unable to reach authentication endpoint: ${this.apiBase}. Check your connection.`),

@@ -35,6 +35,7 @@ import {
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useCompanies } from '@/hooks/useDatabase';
 import { useDeleteQuotation } from '@/hooks/useQuotationItems';
+import { usePermissionGuards } from '@/hooks/usePermissionGuards';
 
 interface ViewQuotationModalProps {
   open: boolean;
@@ -65,6 +66,8 @@ export function ViewQuotationModal({
   const [headerLogoLoadError, setHeaderLogoLoadError] = useState(false);
   const [footerLogoLoadError, setFooterLogoLoadError] = useState(false);
   const deleteQuotation = useDeleteQuotation();
+  const { canDeleteUI } = usePermissionGuards();
+  const canDelete = canDeleteUI('quotation');
 
   // Get company data for logo
   const { data: companies } = useCompanies();
@@ -185,14 +188,16 @@ export function ViewQuotationModal({
                     Invoice
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {canDelete && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
           </DialogTitle>

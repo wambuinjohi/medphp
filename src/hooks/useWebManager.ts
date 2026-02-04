@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 
 export interface WebCategory {
   id: string;
@@ -71,23 +71,30 @@ export const useWebManager = () => {
         setLoading(true);
         setError(null);
 
-        let query = supabase
-          .from('web_categories_with_counts')
-          .select('*')
-          .order('display_order', { ascending: true });
+        const db = getDatabase();
+        const result = await db.selectBy('web_categories', {});
 
+        if (result.error) throw result.error;
+
+        let categories = (result.data || []) as WebCategory[];
+
+        // Apply search filter (client-side)
         if (search) {
-          query = query.ilike('name', `%${search}%`);
+          const searchLower = search.toLowerCase();
+          categories = categories.filter((c: any) =>
+            c.name && c.name.toLowerCase().includes(searchLower)
+          );
         }
 
+        // Sort by display_order
+        categories = categories.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+
+        // Apply limit
         if (limit) {
-          query = query.limit(limit);
+          categories = categories.slice(0, limit);
         }
 
-        const { data, error: err } = await query;
-
-        if (err) throw err;
-        return data as WebCategory[];
+        return categories;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to fetch categories';
         setError(message);
@@ -105,15 +112,17 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const { data: newCategory, error: err } = await supabase
-        .from('web_categories')
-        .insert(data)
-        .select()
-        .single();
+      const db = getDatabase();
+      const result = await db.insert('web_categories', data);
 
-      if (err) throw err;
+      if (result.error) throw result.error;
+      if (!result.id) throw new Error('Failed to create category: no ID returned');
+
+      const selectResult = await db.selectOne('web_categories', result.id);
+      if (selectResult.error) throw selectResult.error;
+
       toast.success('Category created successfully');
-      return newCategory as WebCategory;
+      return selectResult.data as WebCategory;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create category';
       setError(message);
@@ -129,16 +138,16 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const { data: updated, error: err } = await supabase
-        .from('web_categories')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
+      const db = getDatabase();
+      const result = await db.update('web_categories', id, data);
 
-      if (err) throw err;
+      if (result.error) throw result.error;
+
+      const selectResult = await db.selectOne('web_categories', id);
+      if (selectResult.error) throw selectResult.error;
+
       toast.success('Category updated successfully');
-      return updated as WebCategory;
+      return selectResult.data as WebCategory;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update category';
       setError(message);
@@ -154,12 +163,10 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const { error: err } = await supabase
-        .from('web_categories')
-        .delete()
-        .eq('id', id);
+      const db = getDatabase();
+      const result = await db.delete('web_categories', id);
 
-      if (err) throw err;
+      if (result.error) throw result.error;
       toast.success('Category deleted successfully');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete category';
@@ -175,14 +182,10 @@ export const useWebManager = () => {
     try {
       setError(null);
 
-      const { error: err } = await supabase
-        .from('web_categories')
-        .update({
-          is_active: isActive,
-        })
-        .eq('id', id);
+      const db = getDatabase();
+      const result = await db.update('web_categories', id, { is_active: isActive });
 
-      if (err) throw err;
+      if (result.error) throw result.error;
       toast.success(`Category ${isActive ? 'activated' : 'deactivated'} successfully`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to toggle category status';
@@ -198,23 +201,32 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      let query = supabase
-        .from('web_variants')
-        .select('*')
-        .order('display_order', { ascending: true });
+      const db = getDatabase();
+      const filter: Record<string, any> = {};
 
       if (categoryId) {
-        query = query.eq('category_id', categoryId);
+        filter.category_id = categoryId;
       }
 
+      const result = await db.selectBy('web_variants', filter);
+
+      if (result.error) throw result.error;
+
+      let variants = (result.data || []) as WebVariant[];
+
+      // Apply search filter (client-side)
       if (search) {
-        query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);
+        const searchLower = search.toLowerCase();
+        variants = variants.filter((v: any) =>
+          (v.name && v.name.toLowerCase().includes(searchLower)) ||
+          (v.sku && v.sku.toLowerCase().includes(searchLower))
+        );
       }
 
-      const { data, error: err } = await query;
+      // Sort by display_order
+      variants = variants.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
 
-      if (err) throw err;
-      return data as WebVariant[];
+      return variants;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch variants';
       setError(message);
@@ -232,27 +244,29 @@ export const useWebManager = () => {
 
       console.log('Creating variant with data:', data);
 
-      const { data: newVariant, error: err } = await supabase
-        .from('web_variants')
-        .insert(data)
-        .select()
-        .single();
+      const db = getDatabase();
+      const result = await db.insert('web_variants', data);
 
-      if (err) {
-        console.error('Supabase error creating variant:', err);
-        throw err;
+      if (result.error) {
+        console.error('Database error creating variant:', result.error);
+        throw result.error;
       }
 
-      console.log('Variant created successfully:', newVariant);
+      if (!result.id) throw new Error('Failed to create variant: no ID returned');
+
+      const selectResult = await db.selectOne('web_variants', result.id);
+      if (selectResult.error) throw selectResult.error;
+
+      console.log('Variant created successfully:', selectResult.data);
       toast.success('Variant created successfully');
-      return newVariant as WebVariant;
+      return selectResult.data as WebVariant;
     } catch (err) {
       let message = 'Failed to create variant';
 
-      // Handle Supabase errors with specific error codes
+      // Handle database errors with specific error messages
       if (err && typeof err === 'object') {
         if ('code' in err) {
-          const code = err.code;
+          const code = (err as any).code;
           if (code === '23505') {
             // Unique constraint violation
             message = 'A variant with this SKU already exists. Please use a unique SKU.';
@@ -262,13 +276,13 @@ export const useWebManager = () => {
           } else if (code === '42P01') {
             // Table does not exist
             message = 'Database table not found. Please contact support.';
-          } else if ('message' in err && typeof err.message === 'string') {
-            message = err.message;
+          } else if ('message' in err && typeof (err as any).message === 'string') {
+            message = (err as any).message;
           } else {
             message = `Database Error (${code}): Check your input and try again.`;
           }
-        } else if ('message' in err && typeof err.message === 'string') {
-          message = err.message;
+        } else if ('message' in err && typeof (err as any).message === 'string') {
+          message = (err as any).message;
         } else {
           try {
             message = JSON.stringify(err);
@@ -300,16 +314,16 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const { data: updated, error: err } = await supabase
-        .from('web_variants')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
+      const db = getDatabase();
+      const result = await db.update('web_variants', id, data);
 
-      if (err) throw err;
+      if (result.error) throw result.error;
+
+      const selectResult = await db.selectOne('web_variants', id);
+      if (selectResult.error) throw selectResult.error;
+
       toast.success('Variant updated successfully');
-      return updated as WebVariant;
+      return selectResult.data as WebVariant;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update variant';
       setError(message);
@@ -325,12 +339,10 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const { error: err } = await supabase
-        .from('web_variants')
-        .delete()
-        .eq('id', id);
+      const db = getDatabase();
+      const result = await db.delete('web_variants', id);
 
-      if (err) throw err;
+      if (result.error) throw result.error;
       toast.success('Variant deleted successfully');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete variant';
@@ -346,14 +358,10 @@ export const useWebManager = () => {
     try {
       setError(null);
 
-      const { error: err } = await supabase
-        .from('web_variants')
-        .update({
-          is_active: isActive,
-        })
-        .eq('id', id);
+      const db = getDatabase();
+      const result = await db.update('web_variants', id, { is_active: isActive });
 
-      if (err) throw err;
+      if (result.error) throw result.error;
       toast.success(`Variant ${isActive ? 'activated' : 'deactivated'} successfully`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to toggle variant status';
@@ -368,14 +376,16 @@ export const useWebManager = () => {
     try {
       setError(null);
 
-      const { data, error: err } = await supabase
-        .from('variant_images')
-        .select('*')
-        .eq('variant_id', variantId)
-        .order('display_order', { ascending: true });
+      const db = getDatabase();
+      const result = await db.selectBy('variant_images', { variant_id: variantId });
 
-      if (err) throw err;
-      return (data || []).map((img) => ({
+      if (result.error) throw result.error;
+
+      let images = (result.data || []);
+      // Sort by display_order
+      images = images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+
+      return images.map((img: any) => ({
         id: img.id,
         url: img.image_url,
         altText: img.alt_text || '',
@@ -399,15 +409,13 @@ export const useWebManager = () => {
         }
 
         // Delete existing images for this variant
-        const { error: deleteErr } = await supabase
-          .from('variant_images')
-          .delete()
-          .eq('variant_id', variantId);
+        const db = getDatabase();
+        const deleteResult = await db.deleteMany('variant_images', { variant_id: variantId });
 
-        if (deleteErr) {
+        if (deleteResult.error) {
           // Check if it's a "table not found" error
-          const deleteErrorStr = String(deleteErr);
-          if (deleteErrorStr.includes('variant_images') && deleteErrorStr.includes('schema cache')) {
+          const deleteErrorStr = String(deleteResult.error);
+          if (deleteErrorStr.includes('variant_images') && deleteErrorStr.includes('does not exist')) {
             console.warn('variant_images table not found - images will not be saved. Run the migration first.');
             toast.warning(
               'Images table not set up yet. Please run the database migration and try again.'
@@ -415,8 +423,8 @@ export const useWebManager = () => {
             // Don't throw - allow variant to be created without images
             return false;
           }
-          console.error('Error deleting existing variant images:', deleteErr);
-          throw deleteErr;
+          console.error('Error deleting existing variant images:', deleteResult.error);
+          throw deleteResult.error;
         }
 
         // Insert new images if any
@@ -433,15 +441,12 @@ export const useWebManager = () => {
           });
 
           console.log('Inserting variant images:', imagesToInsert);
-          const { data: insertedData, error: insertErr } = await supabase
-            .from('variant_images')
-            .insert(imagesToInsert)
-            .select();
+          const insertResult = await db.insertMany('variant_images', imagesToInsert);
 
-          if (insertErr) {
+          if (insertResult.error) {
             // Check if it's a "table not found" error
-            const insertErrorStr = String(insertErr);
-            if (insertErrorStr.includes('variant_images') && insertErrorStr.includes('schema cache')) {
+            const insertErrorStr = String(insertResult.error);
+            if (insertErrorStr.includes('variant_images') && insertErrorStr.includes('does not exist')) {
               console.warn('variant_images table not found - images will not be saved. Run the migration first.');
               toast.warning(
                 'Images table not set up yet. Variant created but images could not be saved.'
@@ -449,12 +454,12 @@ export const useWebManager = () => {
               // Don't throw - variant was created successfully
               return false;
             }
-            console.error('Error inserting variant images:', insertErr);
+            console.error('Error inserting variant images:', insertResult.error);
             console.error('Attempted to insert:', imagesToInsert);
-            throw insertErr;
+            throw insertResult.error;
           }
 
-          console.log('Successfully inserted variant images:', insertedData);
+          console.log('Successfully inserted variant images:', insertResult);
         }
 
         toast.success('Variant images saved successfully');
@@ -509,12 +514,10 @@ export const useWebManager = () => {
     try {
       setError(null);
 
-      const { error: err } = await supabase
-        .from('variant_images')
-        .delete()
-        .eq('id', imageId);
+      const db = getDatabase();
+      const result = await db.delete('variant_images', imageId);
 
-      if (err) throw err;
+      if (result.error) throw result.error;
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete image';

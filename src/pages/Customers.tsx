@@ -42,7 +42,8 @@ import {
 } from 'lucide-react';
 import { useCustomers, useCreateCustomer, useCustomerInvoices, useCustomerPayments, useDeleteCustomer } from '@/hooks/useDatabase';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { usePermissionGuards } from '@/hooks/usePermissionGuards';
+import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 import { EditCustomerModal } from '@/components/customers/EditCustomerModal';
 import { ViewCustomerModal } from '@/components/customers/ViewCustomerModal';
@@ -95,6 +96,8 @@ export default function Customers() {
 
   const { data: customers, isLoading: isCustomersLoading, error, retry: retryCustomers } = useCustomers(activeCompanyId);
   const deleteCustomer = useDeleteCustomer();
+  const { canDeleteUI } = usePermissionGuards();
+  const canDeleteCustomer = canDeleteUI('customer');
 
   const isLoading = isCompanyLoading || isCustomersLoading;
 
@@ -160,26 +163,17 @@ export default function Customers() {
   const handleViewStatement = async (customer: Customer) => {
     try {
       // Fetch real invoices and payments for this customer
-      const [invoicesResponse, paymentsResponse] = await Promise.all([
-        supabase
-          .from('invoices')
-          .select('invoice_date, invoice_number, total_amount, due_date, status')
-          .eq('customer_id', customer.id)
-          .eq('company_id', activeCompanyId)
-          .order('invoice_date', { ascending: true }),
-        supabase
-          .from('payments')
-          .select('payment_date, payment_number, amount, payment_method')
-          .eq('customer_id', customer.id)
-          .eq('company_id', activeCompanyId)
-          .order('payment_date', { ascending: true })
+      const db = getDatabase();
+      const [invoicesResult, paymentsResult] = await Promise.all([
+        db.selectBy('invoices', { customer_id: customer.id, company_id: activeCompanyId }),
+        db.selectBy('payments', { customer_id: customer.id, company_id: activeCompanyId })
       ]);
 
-      if (invoicesResponse.error) throw invoicesResponse.error;
-      if (paymentsResponse.error) throw paymentsResponse.error;
+      if (invoicesResult.error) throw invoicesResult.error;
+      if (paymentsResult.error) throw paymentsResult.error;
 
-      const invoices = invoicesResponse.data || [];
-      const payments = paymentsResponse.data?.map(payment => ({
+      const invoices = invoicesResult.data || [];
+      const payments = paymentsResult.data?.map((payment: any) => ({
         ...payment,
         method: payment.payment_method || 'Cash'
       })) || [];
@@ -548,15 +542,17 @@ export default function Customers() {
                             <DollarSign className="h-4 w-4 mr-1" />
                             <span className="hidden sm:inline">Statement</span>
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteCustomer(customer)}
-                            title="Delete customer"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {canDeleteCustomer && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteCustomer(customer)}
+                              title="Delete customer"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </TableCell>

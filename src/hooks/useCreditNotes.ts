@@ -3,6 +3,9 @@ import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/utils/getCurrentUser';
 
+// Initialize database adapter for use throughout the hook
+const db = getDatabase();
+
 export interface CreditNote {
   id: string;
   company_id: string;
@@ -76,34 +79,10 @@ export function useCreditNotes(companyId: string | undefined) {
     queryFn: async () => {
       if (!companyId) throw new Error('Company ID is required');
 
-      const { data, error } = await supabase
-        .from('credit_notes')
-        .select(`
-          *,
-          customers!customer_id (
-            name,
-            email,
-            phone,
-            customer_code
-          ),
-          credit_note_items (
-            *,
-            products!product_id (
-              name,
-              product_code,
-              unit_of_measure
-            )
-          ),
-          invoices!invoice_id (
-            invoice_number,
-            total_amount
-          )
-        `)
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false });
+      const result = await db.selectBy('credit_notes', { company_id: companyId });
 
-      if (error) throw error;
-      return data as CreditNote[];
+      if (result.error) throw result.error;
+      return (result.data || []) as CreditNote[];
     },
     enabled: !!companyId,
   });
@@ -116,31 +95,10 @@ export function useCustomerCreditNotes(customerId: string | undefined, companyId
     queryFn: async () => {
       if (!customerId || !companyId) throw new Error('Customer ID and Company ID are required');
 
-      const { data, error } = await supabase
-        .from('credit_notes')
-        .select(`
-          *,
-          customers!customer_id (
-            name,
-            email,
-            phone,
-            customer_code
-          ),
-          credit_note_items (
-            *,
-            products!product_id (
-              name,
-              product_code,
-              unit_of_measure
-            )
-          )
-        `)
-        .eq('customer_id', customerId)
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false });
+      const result = await db.selectBy('credit_notes', { customer_id: customerId, company_id: companyId });
 
-      if (error) throw error;
-      return data as CreditNote[];
+      if (result.error) throw result.error;
+      return (result.data || []) as CreditNote[];
     },
     enabled: !!customerId && !!companyId,
   });
@@ -153,34 +111,10 @@ export function useCreditNote(creditNoteId: string | undefined) {
     queryFn: async () => {
       if (!creditNoteId) throw new Error('Credit Note ID is required');
 
-      const { data, error } = await supabase
-        .from('credit_notes')
-        .select(`
-          *,
-          customers!customer_id (
-            name,
-            email,
-            phone,
-            customer_code
-          ),
-          credit_note_items (
-            *,
-            products!product_id (
-              name,
-              product_code,
-              unit_of_measure
-            )
-          ),
-          invoices!invoice_id (
-            invoice_number,
-            total_amount
-          )
-        `)
-        .eq('id', creditNoteId)
-        .single();
+      const result = await db.selectOne('credit_notes', creditNoteId);
 
-      if (error) throw error;
-      return data as CreditNote;
+      if (result.error) throw result.error;
+      return result.data as CreditNote;
     },
     enabled: !!creditNoteId,
   });
@@ -192,14 +126,14 @@ export function useCreateCreditNote() {
 
   return useMutation({
     mutationFn: async (creditNote: Omit<CreditNote, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
-        .from('credit_notes')
-        .insert(creditNote)
-        .select()
-        .single();
+      const result = await db.insert('credit_notes', creditNote);
 
-      if (error) throw error;
-      return data as CreditNote;
+      if (result.error) throw result.error;
+      if (!result.id) throw new Error('Failed to create credit note: no ID returned');
+
+      const selectResult = await db.selectOne('credit_notes', result.id);
+      if (selectResult.error) throw selectResult.error;
+      return selectResult.data as CreditNote;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
@@ -219,15 +153,13 @@ export function useUpdateCreditNote() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<CreditNote> }) => {
-      const { data, error } = await supabase
-        .from('credit_notes')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+      const result = await db.update('credit_notes', id, updates);
 
-      if (error) throw error;
-      return data as CreditNote;
+      if (result.error) throw result.error;
+
+      const selectResult = await db.selectOne('credit_notes', id);
+      if (selectResult.error) throw selectResult.error;
+      return selectResult.data as CreditNote;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
@@ -281,36 +213,27 @@ export function useDeleteCreditNote() {
       }
 
       // 1. Fetch the complete credit note with all related data
-      const { data: creditNote, error: fetchError } = await supabase
-        .from('credit_notes')
-        .select(
-          `
-          *,
-          credit_note_items(*),
-          credit_note_allocations(*)
-        `
-        )
-        .eq('id', id)
-        .single();
+      const creditNoteResult = await db.selectOne('credit_notes', id);
+      if (creditNoteResult.error) throw creditNoteResult.error;
+      const creditNote = creditNoteResult.data;
 
-      if (fetchError) throw fetchError;
       if (!creditNote) throw new Error('Credit note not found');
 
       // 2. If credit note affects inventory, reverse stock movements
       let stockMovementsReversedCount = 0;
       if (creditNote.affects_inventory) {
-        const { data: stockMovements, error: stockError } = await supabase
-          .from('stock_movements')
-          .select('*')
-          .eq('reference_type', 'CREDIT_NOTE')
-          .eq('reference_id', id);
+        const stockMovementsResult = await db.selectBy('stock_movements', {
+          reference_type: 'CREDIT_NOTE',
+          reference_id: id
+        });
 
-        if (stockError && !stockError.message.includes('does not exist')) {
-          throw stockError;
+        if (stockMovementsResult.error) {
+          // Stock movements table may not exist, that's okay
+          console.warn('Stock movements query failed:', stockMovementsResult.error);
         }
 
-        if (stockMovements && stockMovements.length > 0) {
-          const reversals = stockMovements.map((movement) => ({
+        if (stockMovementsResult.data && stockMovementsResult.data.length > 0) {
+          const reversals = stockMovementsResult.data.map((movement: any) => ({
             company_id: movement.company_id,
             product_id: movement.product_id,
             movement_type: movement.movement_type === 'IN' ? 'OUT' : 'IN',
@@ -321,46 +244,35 @@ export function useDeleteCreditNote() {
             notes: `Reversal of CREDIT_NOTE ${creditNote.credit_note_number}: ${movement.notes || ''}`,
           }));
 
-          const { error: reversalError } = await supabase
-            .from('stock_movements')
-            .insert(reversals);
-
-          if (reversalError && !reversalError.message.includes('does not exist')) {
-            throw reversalError;
+          const reversalResult = await db.insertMany('stock_movements', reversals);
+          if (reversalResult.error) {
+            console.warn('Stock movements reversal failed:', reversalResult.error);
           }
 
-          stockMovementsReversedCount = stockMovements.length;
+          stockMovementsReversedCount = stockMovementsResult.data.length;
         }
       }
 
       // 3. If there are allocations, update related invoices
-      if (creditNote.credit_note_allocations && creditNote.credit_note_allocations.length > 0) {
-        for (const allocation of creditNote.credit_note_allocations) {
-          const { data: invoice, error: invoiceError } = await supabase
-            .from('invoices')
-            .select('balance_due, paid_amount, total_amount')
-            .eq('id', allocation.invoice_id)
-            .single();
+      const allocationsResult = await db.selectBy('credit_note_allocations', { credit_note_id: id });
+      if (!allocationsResult.error && allocationsResult.data && allocationsResult.data.length > 0) {
+        for (const allocation of allocationsResult.data) {
+          const invoiceResult = await db.selectOne('invoices', allocation.invoice_id);
 
-          if (!invoiceError && invoice) {
+          if (!invoiceResult.error && invoiceResult.data) {
+            const invoice = invoiceResult.data;
             // Recalculate balance_due by adding back the allocated amount
             const newBalanceDue = (invoice.balance_due || 0) + allocation.allocated_amount;
 
-            await supabase
-              .from('invoices')
-              .update({ balance_due: newBalanceDue })
-              .eq('id', allocation.invoice_id);
+            await db.update('invoices', allocation.invoice_id, { balance_due: newBalanceDue });
           }
         }
       }
 
       // 4. Delete the credit note (cascade deletes items and allocations)
-      const { error: deleteError } = await supabase
-        .from('credit_notes')
-        .delete()
-        .eq('id', id);
+      const deleteResult = await db.delete('credit_notes', id);
 
-      if (deleteError) throw deleteError;
+      if (deleteResult.error) throw deleteResult.error;
 
       // 5. Log the deletion with full snapshot
       try {
@@ -430,21 +342,10 @@ export function useCreditNoteAllocations(creditNoteId: string | undefined) {
     queryFn: async () => {
       if (!creditNoteId) throw new Error('Credit Note ID is required');
 
-      const { data, error } = await supabase
-        .from('credit_note_allocations')
-        .select(`
-          *,
-          invoices!invoice_id (
-            invoice_number,
-            total_amount,
-            balance_due
-          )
-        `)
-        .eq('credit_note_id', creditNoteId)
-        .order('allocation_date', { ascending: false });
+      const result = await db.selectBy('credit_note_allocations', { credit_note_id: creditNoteId });
 
-      if (error) throw error;
-      return data as (CreditNoteAllocation & {
+      if (result.error) throw result.error;
+      return (result.data || []) as (CreditNoteAllocation & {
         invoices: {
           invoice_number: string;
           total_amount: number;

@@ -34,6 +34,7 @@ import { usePayments } from '@/hooks/useDatabase';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { usePermissions } from '@/hooks/usePermissions';
+import { usePermissionGuards } from '@/hooks/usePermissionGuards';
 import { generatePaymentReceiptPDF } from '@/utils/pdfGenerator';
 
 interface Payment {
@@ -103,6 +104,8 @@ export default function Payments() {
   const { data: payments = [], isLoading, error, retry: retryPayments } = usePayments(currentCompany?.id);
   const { data: invoices = [] } = useInvoices(currentCompany?.id);
   const { can: canCreatePayment, can: canViewPayment, can: canEditPayment, can: canDeletePayment, loading: permissionsLoading } = usePermissions();
+  const { canDeleteUI } = usePermissionGuards();
+  const canDeletePaymentUI = canDeleteUI('payment');
 
   useEffect(() => {
     if (!permissionsLoading && !canViewPayment('view_payment')) {
@@ -463,16 +466,17 @@ export default function Payments() {
                         >
                           <Download className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeletePayment(payment)}
-                          title="Delete payment"
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          disabled={!canDeletePayment('delete_payment')}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {canDeletePaymentUI && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeletePayment(payment)}
+                            title="Delete payment"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
