@@ -36,19 +36,50 @@ export function createAuthorizedAdapter(
     select: async (table: string, filter?: any) => {
       // Check read permission for this table
       checkPermission(authContext, table, 'read', 'select');
-      return baseAdapter.select(table, filter);
+
+      // Non-admin users only see their company's data
+      const filteredQuery = authContext.role?.toLowerCase() === 'admin'
+        ? filter
+        : {
+            ...filter,
+            company_id: authContext.companyId,
+          };
+
+      return baseAdapter.select(table, filteredQuery);
     },
 
     selectOne: async (table: string, id: string) => {
       // Check read permission
       checkPermission(authContext, table, 'read', 'selectOne');
-      return baseAdapter.selectOne(table, id);
+
+      // Get the record and verify company ownership for non-admins
+      const result = await baseAdapter.selectOne(table, id);
+
+      if (!result.error && result.data && authContext.role?.toLowerCase() !== 'admin') {
+        // Verify user's company matches record's company
+        const recordCompanyId = (result.data as any)?.company_id;
+        if (recordCompanyId !== authContext.companyId) {
+          // User doesn't own this record - deny access
+          return { data: null, error: new Error(`Access denied: record does not belong to your company`) };
+        }
+      }
+
+      return result;
     },
 
     selectBy: async (table: string, filter: Record<string, any>) => {
       // Check read permission
       checkPermission(authContext, table, 'read', 'selectBy');
-      return baseAdapter.selectBy(table, filter);
+
+      // Non-admin users only see their company's data
+      const filteredQuery = authContext.role?.toLowerCase() === 'admin'
+        ? filter
+        : {
+            ...filter,
+            company_id: authContext.companyId,
+          };
+
+      return baseAdapter.selectBy(table, filteredQuery);
     },
 
     // ============ Insert Methods ============
