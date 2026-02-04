@@ -219,7 +219,7 @@ export const usePermissions = () => {
             name: userRole,
             role_type: roleType,
             description: `Fallback ${userRole} role`,
-            permissions: DEFAULT_ROLE_PERMISSIONS[roleType],
+            permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS[roleType]),
             company_id: currentUser.company_id || '',
             is_default: true,
             created_at: new Date().toISOString(),
@@ -233,8 +233,29 @@ export const usePermissions = () => {
           });
           setRole(fallbackRole);
         } else {
-          console.error('❌ [usePermissions] Could not map role to any known role type, role:', userRole);
-          setRole(null);
+          console.warn('⚠️ [usePermissions] Could not map role to any known role type. Using last-resort "accountant" fallback for role:', userRole);
+          // As a last resort, use accountant if it's accountant, otherwise use user
+          const lastResortType: keyof typeof DEFAULT_ROLE_PERMISSIONS =
+            userRole?.toLowerCase() === 'accountant' ? 'accountant' : 'user';
+
+          const lastResortRole: RoleDefinition = {
+            id: `fallback-${userRole}`,
+            name: userRole,
+            role_type: lastResortType,
+            description: `Last-resort ${lastResortType} role for ${userRole}`,
+            permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS[lastResortType]),
+            company_id: currentUser.company_id || '',
+            is_default: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          console.log('🔄 [usePermissions] Using last-resort role:', {
+            name: lastResortRole.name,
+            role_type: lastResortRole.role_type,
+            permissionCount: lastResortRole.permissions?.length || 0,
+            permissions: lastResortRole.permissions
+          });
+          setRole(lastResortRole);
         }
       }
     } catch (err) {
