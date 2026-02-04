@@ -50,6 +50,7 @@ import { APIDiagnosticsPage } from "./pages/APIDiagnosticsPage";
 import PaymentMethods from "./pages/settings/PaymentMethods";
 import Login from "./pages/Login";
 import ImageManagement from "./pages/admin/ImageManagement";
+import ETIMSPage from "./pages/admin/eTIMS";
 import NetworkDiagnosticsPage from "./pages/NetworkDiagnostics";
 import TokenDiagnosticsPage from "./pages/TokenDiagnosticsPage";
 import PermissionsDiagnostics from "./pages/PermissionsDiagnostics";
