@@ -189,39 +189,3 @@ export function useCurrentCompanyId() {
   const { currentCompany } = useCurrentCompany();
   return currentCompany?.id || null;
 }
-
-// Audit logging function for unauthorized company access attempts
-async function logUnauthorizedCompanyAccess(
-  userId: string,
-  userEmail: string,
-  userCompanyId: string,
-  attemptedCompanyId: string
-): Promise<void> {
-  try {
-    // For now, we'll just log to console
-    // In production, this would call an API endpoint to log to audit_logs table
-    console.log('[AUDIT] Unauthorized company access attempt', {
-      timestamp: new Date().toISOString(),
-      userId,
-      userEmail,
-      userCompanyId,
-      attemptedCompanyId,
-      action: 'UNAUTHORIZED_COMPANY_ACCESS'
-    });
-
-    // TODO: Uncomment when audit logging API is ready
-    // const { apiClient } = await import('@/integrations/api');
-    // await apiClient.insert('audit_logs', {
-    //   user_id: userId,
-    //   action: 'UNAUTHORIZED_COMPANY_ACCESS',
-    //   resource: 'company',
-    //   resource_id: attemptedCompanyId,
-    //   details: {
-    //     userCompanyId,
-    //     attemptedCompanyId
-    //   }
-    // });
-  } catch (error) {
-    console.error('Error logging unauthorized access:', error);
-  }
-}
