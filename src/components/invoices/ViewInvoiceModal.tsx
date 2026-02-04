@@ -64,6 +64,8 @@ export function ViewInvoiceModal({
   const { isAdmin } = useAuth();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const deleteInvoice = useDeleteInvoice();
+  const { canDeleteUI } = usePermissionGuards();
+  const canDelete = canDeleteUI('invoice');
 
   const handleDeleteConfirm = async () => {
     try {
