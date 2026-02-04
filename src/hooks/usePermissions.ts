@@ -365,7 +365,16 @@ export const usePermissions = () => {
    */
   const can = useCallback(
     (permission: Permission): boolean => {
-      return hasPermission(role, permission);
+      const result = hasPermission(role, permission);
+      if (!result && role?.name) {
+        console.warn(`🔐 [can] Permission check failed for "${permission}"`, {
+          roleName: role.name,
+          roleType: role.role_type,
+          permissionCount: role.permissions?.length || 0,
+          hasThisPermission: role.permissions?.includes(permission)
+        });
+      }
+      return result;
     },
     [role]
   );
