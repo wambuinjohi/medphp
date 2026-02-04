@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 import { useMemo } from 'react';
 
 export interface OptimizedCustomer {
