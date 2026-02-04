@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 /**
  * Hook to guard operations with permission checks
- * DISABLED: All permission checks pass - role enforcement is disabled
+ * Enforces RBAC by checking user permissions before allowing operations
  */
 export const usePermissionGuards = () => {
   const { isAdmin } = useAuth();
@@ -13,58 +13,133 @@ export const usePermissionGuards = () => {
 
   /**
    * Check if user has permission and show error toast if not
-   * DISABLED: Always returns true - role enforcement disabled
+   * Enforces permission validation with user-friendly error messages
    */
   const checkPermission = (permission: Permission, actionName: string): boolean => {
-    // Role enforcement disabled - always allow
+    // Check if user has the required permission
+    if (!can(permission)) {
+      // Show error message to user
+      toast.error(
+        `Permission Denied: You do not have permission to ${actionName}. Required permission: ${permission}`,
+        {
+          duration: 4000,
+          description: 'Contact your administrator if you believe this is an error.',
+        }
+      );
+      return false;
+    }
     return true;
   };
 
   /**
    * Check if user can delete an entity type
-   * DISABLED: Always returns true - role enforcement disabled
+   * Enforces delete_* permissions based on entity type
    */
   const checkCanDelete = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment',
     entityName?: string
   ): boolean => {
-    // Role enforcement disabled - always allow
+    // Admin users can delete anything (with logging in auditAdapter)
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check if user has delete permission for this entity type
+    if (!canDelete(entityType)) {
+      const displayName = entityName ? ` "${entityName}"` : ` this ${entityType}`;
+      toast.error(
+        `Permission Denied: You do not have permission to delete${displayName}`,
+        {
+          duration: 4000,
+          description: 'Contact your administrator if you believe this is an error.',
+        }
+      );
+      return false;
+    }
     return true;
   };
 
   /**
    * Check if user can create an entity type
-   * DISABLED: Always returns true - role enforcement disabled
+   * Enforces create_* permissions based on entity type
    */
   const checkCanCreate = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment',
     entityName?: string
   ): boolean => {
-    // Role enforcement disabled - always allow
+    // Admin users can create anything (with logging in auditAdapter)
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check if user has create permission for this entity type
+    if (!canCreate(entityType)) {
+      const displayName = entityName ? ` "${entityName}"` : ` a new ${entityType}`;
+      toast.error(
+        `Permission Denied: You do not have permission to create${displayName}`,
+        {
+          duration: 4000,
+          description: 'Contact your administrator if you believe this is an error.',
+        }
+      );
+      return false;
+    }
     return true;
   };
 
   /**
    * Check if user can edit an entity type
-   * DISABLED: Always returns true - role enforcement disabled
+   * Enforces edit_* permissions based on entity type
    */
   const checkCanEdit = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment',
     entityName?: string
   ): boolean => {
-    // Role enforcement disabled - always allow
+    // Admin users can edit anything (with logging in auditAdapter)
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check if user has edit permission for this entity type
+    if (!canEdit(entityType)) {
+      const displayName = entityName ? ` "${entityName}"` : ` this ${entityType}`;
+      toast.error(
+        `Permission Denied: You do not have permission to edit${displayName}`,
+        {
+          duration: 4000,
+          description: 'Contact your administrator if you believe this is an error.',
+        }
+      );
+      return false;
+    }
     return true;
   };
 
   /**
    * Check if user can view an entity type
-   * DISABLED: Always returns true - role enforcement disabled
+   * Enforces view_* permissions based on entity type
    */
   const checkCanView = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment' | 'reports',
     entityName?: string
   ): boolean => {
-    // Role enforcement disabled - always allow
+    // Admin users can view anything (with logging in auditAdapter)
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check if user has view permission for this entity type
+    if (!canView(entityType)) {
+      const displayName = entityName ? ` "${entityName}"` : ` ${entityType}s`;
+      toast.error(
+        `Permission Denied: You do not have permission to view${displayName}`,
+        {
+          duration: 4000,
+          description: 'Contact your administrator if you believe this is an error.',
+        }
+      );
+      return false;
+    }
     return true;
   };
 
