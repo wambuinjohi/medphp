@@ -28,10 +28,9 @@ export function useCreateCreditNoteWithItems() {
         // Ensure created_by defaults to the authenticated user
         let cleanCreditNote = { ...creditNote } as any;
         try {
-          const { data: userData } = await supabase.auth.getUser();
-          const authUserId = userData?.user?.id || null;
-          if (authUserId) {
-            cleanCreditNote.created_by = authUserId;
+          const currentUser = getCurrentUser();
+          if (currentUser?.id) {
+            cleanCreditNote.created_by = currentUser.id;
           } else if (typeof cleanCreditNote.created_by === 'undefined' || cleanCreditNote.created_by === null) {
             cleanCreditNote.created_by = null;
           }
