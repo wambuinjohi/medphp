@@ -548,16 +548,18 @@ export const useUserManagement = () => {
   // Accept invitation (for invited users)
   const acceptInvitation = async (token: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: invitation, error: fetchError } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('invitation_token', token)
-        .eq('status', 'pending')
-        .single();
+      const db = getDatabase();
 
-      if (fetchError || !invitation) {
+      const invitationResult = await db.selectBy('user_invitations', {
+        invitation_token: token,
+        status: 'pending'
+      });
+
+      if (invitationResult.error || !invitationResult.data || invitationResult.data.length === 0) {
         return { success: false, error: 'Invalid or expired invitation' };
       }
+
+      const invitation = invitationResult.data[0];
 
       // Check if invitation has been approved by admin
       if (!invitation.is_approved) {
@@ -566,25 +568,18 @@ export const useUserManagement = () => {
 
       // Check if invitation has expired
       if (new Date(invitation.expires_at) < new Date()) {
-        await supabase
-          .from('user_invitations')
-          .update({ status: 'expired' })
-          .eq('id', invitation.id);
-
+        await db.update('user_invitations', invitation.id, { status: 'expired' });
         return { success: false, error: 'Invitation has expired' };
       }
 
       // Mark invitation as accepted
-      const { error: updateError } = await supabase
-        .from('user_invitations')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', invitation.id);
+      const updateResult = await db.update('user_invitations', invitation.id, {
+        status: 'accepted',
+        accepted_at: new Date().toISOString()
+      });
 
-      if (updateError) {
-        throw updateError;
+      if (updateResult.error) {
+        throw updateResult.error;
       }
 
       return { success: true };
