@@ -275,16 +275,35 @@ export class ExternalAPIAdapter implements IDatabase {
       const currentToken = this.getAuthToken();
 
       if (currentToken) {
-        headers['Authorization'] = `Bearer ${currentToken}`;
+        // Validate token format before sending
+        const tokenParts = currentToken.split('.');
+        if (tokenParts.length === 3) {
+          headers['Authorization'] = `Bearer ${currentToken}`;
+        } else {
+          console.warn(`⚠️ Token in localStorage has invalid format (${tokenParts.length} parts, expected 3)`);
+          console.warn('Token will not be sent - may cause 401 error');
+          this.clearAuthToken();
+        }
       }
 
       // Log token status for debugging updates
       if (action === 'update') {
         console.log(`🔐 [Update ${table}] Token check:`, {
           hasLocalStorageToken: !!currentToken,
-          willSendAuthHeader: !!currentToken,
+          willSendAuthHeader: !!currentToken && currentToken.split('.').length === 3,
           authHeaderValue: currentToken ? `Bearer ${currentToken.substring(0, 20)}...` : 'NONE',
+          tokenFormat: currentToken ? `${currentToken.split('.').length} parts` : 'N/A',
           readingFreshFromLocalStorage: true,
+        });
+      }
+
+      // Log token status for read operations too
+      if (action === 'read' && currentToken) {
+        console.log(`🔐 [Read ${table}] Authorization header:`, {
+          hasToken: !!currentToken,
+          tokenLength: currentToken.length,
+          tokenParts: currentToken.split('.').length,
+          preview: currentToken.substring(0, 20) + '...',
         });
       }
 
