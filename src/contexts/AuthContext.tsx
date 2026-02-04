@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { initializeAuth, clearAuthTokens } from '@/utils/authHelpers';
 import { logError, getUserFriendlyErrorMessage, isErrorType } from '@/utils/errorLogger';
 import { RoleDefinition, DEFAULT_ROLE_PERMISSIONS } from '@/types/permissions';
+import { normalizePermissions } from '@/utils/permissionChecker';
 
 // Type definitions for authentication
 export interface User {
