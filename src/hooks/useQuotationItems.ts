@@ -265,8 +265,8 @@ export const useConvertQuotationToInvoice = () => {
       // Determine creator
       let createdBy: string | null = null;
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        createdBy = userData?.user?.id || null;
+        const currentUser = getCurrentUser();
+        createdBy = currentUser?.id || null;
       } catch {
         createdBy = null;
       }
