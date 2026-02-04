@@ -96,6 +96,8 @@ export default function Customers() {
 
   const { data: customers, isLoading: isCustomersLoading, error, retry: retryCustomers } = useCustomers(activeCompanyId);
   const deleteCustomer = useDeleteCustomer();
+  const { canDeleteUI } = usePermissionGuards();
+  const canDeleteCustomer = canDeleteUI('customer');
 
   const isLoading = isCompanyLoading || isCustomersLoading;
 
