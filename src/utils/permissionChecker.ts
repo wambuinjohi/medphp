@@ -7,10 +7,27 @@ export function hasPermission(
   role: RoleDefinition | null | undefined,
   permission: Permission
 ): boolean {
-  if (!role || !role.permissions) {
+  if (!role) {
+    console.warn(`🔐 [hasPermission] Role is null/undefined, permission check FAILED for: ${permission}`);
     return false;
   }
-  return role.permissions.includes(permission);
+
+  if (!role.permissions) {
+    console.warn(`🔐 [hasPermission] Role ${role.name} has no permissions array, permission check FAILED for: ${permission}`);
+    return false;
+  }
+
+  const hasIt = role.permissions.includes(permission);
+  if (!hasIt) {
+    console.warn(`🔐 [hasPermission] User missing permission: ${permission}`, {
+      roleName: role.name,
+      roleType: role.role_type,
+      userPermissions: role.permissions,
+      requiredPermission: permission,
+    });
+  }
+
+  return hasIt;
 }
 
 /**
