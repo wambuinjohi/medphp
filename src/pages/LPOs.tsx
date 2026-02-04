@@ -62,6 +62,8 @@ export default function LPOs() {
   const { data: lpos, isLoading, error, retry: retryLPOs } = useLPOs(currentCompany?.id);
   const updateLPO = useUpdateLPO();
   const deleteLPO = useDeleteLPO();
+  const { canDeleteUI } = usePermissionGuards();
+  const canDeleteLPO = canDeleteUI('lpo');
 
   // Note: Auto-migration removed - using manual migration guide instead
 
