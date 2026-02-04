@@ -270,12 +270,9 @@ export function useDeleteCreditNote() {
       }
 
       // 4. Delete the credit note (cascade deletes items and allocations)
-      const { error: deleteError } = await supabase
-        .from('credit_notes')
-        .delete()
-        .eq('id', id);
+      const deleteResult = await db.delete('credit_notes', id);
 
-      if (deleteError) throw deleteError;
+      if (deleteResult.error) throw deleteResult.error;
 
       // 5. Log the deletion with full snapshot
       try {
