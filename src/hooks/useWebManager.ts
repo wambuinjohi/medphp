@@ -182,14 +182,10 @@ export const useWebManager = () => {
     try {
       setError(null);
 
-      const { error: err } = await supabase
-        .from('web_categories')
-        .update({
-          is_active: isActive,
-        })
-        .eq('id', id);
+      const db = getDatabase();
+      const result = await db.update('web_categories', id, { is_active: isActive });
 
-      if (err) throw err;
+      if (result.error) throw result.error;
       toast.success(`Category ${isActive ? 'activated' : 'deactivated'} successfully`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to toggle category status';
