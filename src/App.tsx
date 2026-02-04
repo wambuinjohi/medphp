@@ -452,7 +452,7 @@ const App = () => {
                 <Route
                   path="/app/settings/company"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute requireAuth={true} requiredRole="admin">
                       <CompanySettings />
                     </ProtectedRoute>
                   }
@@ -460,7 +460,7 @@ const App = () => {
                 <Route
                   path="/app/settings/users"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute requireAuth={true} requiredRole="admin">
                       <UserManagement />
                     </ProtectedRoute>
                   }
@@ -468,7 +468,7 @@ const App = () => {
                 <Route
                   path="/app/settings/payment-methods"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute requireAuth={true} requiredRole="admin">
                       <PaymentMethods />
                     </ProtectedRoute>
                   }
