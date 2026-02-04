@@ -50,6 +50,7 @@ import PaymentMethods from "./pages/settings/PaymentMethods";
 import Login from "./pages/Login";
 import ImageManagement from "./pages/admin/ImageManagement";
 import NetworkDiagnosticsPage from "./pages/NetworkDiagnostics";
+import TokenDiagnosticsPage from "./pages/TokenDiagnosticsPage";
 
 const App = () => {
 
