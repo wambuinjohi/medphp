@@ -151,7 +151,10 @@ const App = () => {
                 <Route
                   path="/app/invoices"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/invoices'].requiredPermissions}
+                    >
                       <Invoices />
                     </ProtectedRoute>
                   }
@@ -159,7 +162,10 @@ const App = () => {
                 <Route
                   path="/app/invoices/new"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/invoices/new'].requiredPermissions}
+                    >
                       <Invoices />
                     </ProtectedRoute>
                   }
