@@ -74,6 +74,7 @@ const App = () => {
         <Route path="/debug/database" element={<DatabaseDebug />} />
         <Route path="/debug/api" element={<APIDiagnosticsPage />} />
         <Route path="/debug/network" element={<NetworkDiagnosticsPage />} />
+        <Route path="/debug/token" element={<TokenDiagnosticsPage />} />
 
         {/* Login route - Accessible without authentication */}
         <Route path="/login" element={<Login />} />
