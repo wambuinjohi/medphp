@@ -236,27 +236,43 @@ export function shouldShowSidebarItem(
   // Get the correct permission key for this item
   const permissionKey = getPermissionKey(itemTitle, false);
   const itemConfig = sidebarPermissionMap[permissionKey];
-  
+
+  console.log(`🔍 [sidebarPermissions] Checking visibility for "${itemTitle}" (key: "${permissionKey}")`, {
+    requiresAdmin: itemConfig?.requiresAdminRole,
+    requiredPermissions: itemConfig?.requiredPermissions,
+    userIsAdmin: isAdmin
+  });
+
   if (!itemConfig) {
     // Item not in map - log for debugging but show to admin
+    console.warn(`⚠️ [sidebarPermissions] Unmapped sidebar item: "${itemTitle}" (key: "${permissionKey}")`);
     if (isAdmin) {
-      console.debug(`Unmapped sidebar item: "${itemTitle}" (key: "${permissionKey}")`);
+      console.debug(`🔓 [sidebarPermissions] Showing unmapped item to admin`);
     }
     return isAdmin;
   }
 
   // Check if requires admin role
   if (itemConfig.requiresAdminRole && !isAdmin) {
+    console.log(`🔒 [sidebarPermissions] Item requires admin, user is not admin, hiding`);
     return false;
   }
 
   // If no required permissions specified, show to everyone (who passed admin check)
   if (!itemConfig.requiredPermissions || itemConfig.requiredPermissions.length === 0) {
+    console.log(`✅ [sidebarPermissions] Item has no required permissions, showing`);
     return true;
   }
 
   // User must have ANY of the required permissions
-  return itemConfig.requiredPermissions.some(permission => canPermission(permission));
+  const hasAnyPermission = itemConfig.requiredPermissions.some(permission => {
+    const hasIt = canPermission(permission);
+    console.log(`  - Checking permission "${permission}": ${hasIt}`);
+    return hasIt;
+  });
+
+  console.log(`✅ [sidebarPermissions] Item "${itemTitle}" result: ${hasAnyPermission}`);
+  return hasAnyPermission;
 }
 
 /**
@@ -276,14 +292,27 @@ export function shouldShowParentMenu(
   isAdmin: boolean
 ): boolean {
   const parentConfig = sidebarPermissionMap[parentTitle];
-  
+
+  console.log(`📂 [sidebarPermissions] Checking parent menu "${parentTitle}"`, {
+    childCount: childItems.length,
+    childrenCanShowParent: parentConfig?.childrenCanShowParent,
+    userIsAdmin: isAdmin
+  });
+
   // If childrenCanShowParent is false, use standard logic
   if (parentConfig && parentConfig.childrenCanShowParent === false) {
+    console.log(`📂 [sidebarPermissions] Parent "${parentTitle}" uses standard visibility check`);
     return shouldShowSidebarItem(parentTitle, canPermission, isAdmin);
   }
 
   // Otherwise, show if ANY child is visible
-  return childItems.some(childTitle => 
-    shouldShowSidebarItem(childTitle, canPermission, isAdmin)
-  );
+  const visibleChildren = childItems.filter(childTitle => {
+    const visible = shouldShowSidebarItem(childTitle, canPermission, isAdmin);
+    console.log(`  - Child "${childTitle}": ${visible}`);
+    return visible;
+  });
+
+  const showParent = visibleChildren.length > 0;
+  console.log(`📂 [sidebarPermissions] Parent "${parentTitle}" result: ${showParent} (${visibleChildren.length} visible children)`);
+  return showParent;
 }

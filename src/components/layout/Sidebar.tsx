@@ -151,6 +151,14 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const { can, loading: permissionsLoading } = usePermissions();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
+  // Debug logging on component mount and when props change
+  console.log('🎨 [Sidebar] Rendering with:', {
+    userRole: profile?.role,
+    isAdmin: isAdmin,
+    permissionsLoading: permissionsLoading,
+    company: currentCompany?.name
+  });
+
   const toggleExpanded = (title: string) => {
     setExpandedItems(prev =>
       prev.includes(title)
@@ -166,16 +174,19 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const isItemVisible = (item: SidebarItem): boolean => {
     // Don't show items while permissions are still loading
     if (permissionsLoading) {
+      console.log(`📋 [Sidebar] Item "${item.title}" hidden because permissions still loading`);
       return false;
     }
 
     // For child items, check if they are in a collapsed parent
     // We need to ensure we use the correct permission key
     const permissionKey = getPermissionKey(item.title, false);
-    
+
     // Use permission-based visibility check from constants
     // Pass the original item title but let shouldShowSidebarItem handle the key mapping
-    return shouldShowSidebarItem(item.title, can, userIsAdmin);
+    const visible = shouldShowSidebarItem(item.title, can, userIsAdmin);
+    console.log(`👁️ [Sidebar] Item visibility check - Title: "${item.title}", Key: "${permissionKey}", Visible: ${visible}, IsAdmin: ${userIsAdmin}`);
+    return visible;
   };
 
   const isItemActive = (href?: string) => {
@@ -208,8 +219,14 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         userIsAdmin
       );
 
+      console.log(`📂 [Sidebar] Parent menu check - Title: "${item.title}", ParentShouldShow: ${parentShouldShow}, VisibleChildren: ${visibleChildren.length}/${childTitles.length}`, {
+        childTitles,
+        visibleChildren: visibleChildren.map(c => c.title)
+      });
+
       // Don't render parent if it has no visible children
       if (!parentShouldShow || visibleChildren.length === 0) {
+        console.log(`❌ [Sidebar] Parent "${item.title}" not shown (no visible children)`);
         return null;
       }
 
@@ -260,6 +277,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
     // For items without children, check visibility
     if (!isItemVisible(item)) {
+      console.log(`❌ [Sidebar] Item "${item.title}" not visible to user`);
       return null;
     }
 

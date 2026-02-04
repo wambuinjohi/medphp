@@ -23,7 +23,10 @@ export const usePermissions = () => {
    * Fetch the user's role definition
    */
   const fetchUserRole = useCallback(async () => {
+    console.log('🔍 [usePermissions] fetchUserRole called, currentUser:', currentUser?.id);
+
     if (!currentUser) {
+      console.log('ℹ️ [usePermissions] No current user, clearing role');
       setRole(null);
       setLoading(false);
       return;
@@ -35,7 +38,12 @@ export const usePermissions = () => {
     try {
       // If role definition is already loaded in the profile, use it
       if (currentUser.roleDefinition) {
-        console.log('✅ Using role definition from profile:', currentUser.roleDefinition.name);
+        console.log('✅ [usePermissions] Using role definition from profile:', {
+          name: currentUser.roleDefinition.name,
+          role_type: currentUser.roleDefinition.role_type,
+          permissionCount: currentUser.roleDefinition.permissions?.length || 0,
+          permissions: currentUser.roleDefinition.permissions
+        });
         setRole(currentUser.roleDefinition);
         setLoading(false);
         return;
@@ -43,14 +51,21 @@ export const usePermissions = () => {
 
       // Otherwise, fetch the full role definition from the roles table
       const userRole = currentUser.role;
+      console.log('📝 [usePermissions] User role from profile:', userRole);
 
       if (!userRole) {
+        console.warn('⚠️ [usePermissions] No role assigned to user, clearing role');
         setRole(null);
         setLoading(false);
         return;
       }
 
       // Fetch the full role definition from the roles table
+      console.log('🔄 [usePermissions] Fetching role from database:', {
+        name: userRole,
+        company_id: currentUser.company_id
+      });
+
       const db = getDatabase();
       const result = await db.selectBy('roles', {
         name: userRole,
@@ -62,7 +77,7 @@ export const usePermissions = () => {
 
       if (fetchError) {
         const errorMessage = fetchError instanceof Error ? fetchError.message : JSON.stringify(fetchError);
-        console.error('Error fetching user role:', errorMessage);
+        console.error('❌ [usePermissions] Error fetching user role from database:', errorMessage);
         setError(errorMessage);
 
         // Fallback: Use default permissions based on role type if available
@@ -93,15 +108,29 @@ export const usePermissions = () => {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
+          console.log('🔄 [usePermissions] Using fallback role due to fetch error:', {
+            name: userRole,
+            role_type: roleType,
+            permissionCount: fallbackRole.permissions?.length || 0,
+            permissions: fallbackRole.permissions
+          });
           setRole(fallbackRole);
         } else {
+          console.error('❌ [usePermissions] Could not map role to fallback permissions, role:', userRole);
           setRole(null);
         }
       } else if (data) {
+        console.log('✅ [usePermissions] Role fetched successfully from database:', {
+          id: data.id,
+          name: data.name,
+          role_type: data.role_type,
+          permissionCount: data.permissions?.length || 0,
+          permissions: data.permissions
+        });
         setRole(data);
       } else {
         // Role not found in roles table, use default permissions as fallback
-        console.warn(`Role ${userRole} not found in roles table, using default fallback`);
+        console.warn(`⚠️ [usePermissions] Role ${userRole} not found in roles table, using default fallback`);
 
         // Try exact match first, then case-insensitive match
         let roleType: keyof typeof DEFAULT_ROLE_PERMISSIONS | null = null;
@@ -130,17 +159,26 @@ export const usePermissions = () => {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
+          console.log('🔄 [usePermissions] Using default fallback role (not found in DB):', {
+            name: userRole,
+            role_type: roleType,
+            permissionCount: fallbackRole.permissions?.length || 0,
+            permissions: fallbackRole.permissions
+          });
           setRole(fallbackRole);
         } else {
+          console.error('❌ [usePermissions] Could not map role to any known role type, role:', userRole);
           setRole(null);
         }
       }
     } catch (err) {
-      console.error('Error fetching user role:', err);
+      console.error('❌ [usePermissions] Exception fetching user role:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
 
       // Fallback: Use default permissions if user role type is recognized
       const userRole = currentUser?.role;
+      console.log('🔄 [usePermissions] Exception path - attempting fallback for role:', userRole);
+
       if (userRole) {
         // Try exact match first, then case-insensitive match
         let roleType: keyof typeof DEFAULT_ROLE_PERMISSIONS | null = null;
@@ -169,14 +207,23 @@ export const usePermissions = () => {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           };
+          console.log('🔄 [usePermissions] Using fallback role due to exception:', {
+            name: userRole,
+            role_type: roleType,
+            permissionCount: fallbackRole.permissions?.length || 0,
+            permissions: fallbackRole.permissions
+          });
           setRole(fallbackRole);
         } else {
+          console.error('❌ [usePermissions] Could not find fallback for role:', userRole);
           setRole(null);
         }
       } else {
+        console.warn('⚠️ [usePermissions] No user role in exception path');
         setRole(null);
       }
     } finally {
+      console.log('✅ [usePermissions] fetchUserRole completed, loading:', loading);
       setLoading(false);
     }
   }, [currentUser]);

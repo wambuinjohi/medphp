@@ -7,6 +7,7 @@ import { EnhancedLogin } from '@/components/auth/EnhancedLogin';
 import { AdminInventoryPermissionFix } from '@/components/AdminInventoryPermissionFix';
 import { ensureAuditLogSchema } from '@/utils/auditLogger';
 import { useCompanyBranding } from '@/hooks/useCompanyBranding';
+import { PermissionDebugPanel } from '@/components/debug/PermissionDebugPanel';
 
 interface LayoutProps {
   children: ReactNode;
@@ -60,6 +61,10 @@ export function Layout({ children }: LayoutProps) {
     );
   }
 
+  // Check if debug panel should be shown (via URL parameter or env var)
+  const params = new URLSearchParams(window.location.search);
+  const showDebugPanel = params.has('debug') || localStorage.getItem('debug_permissions') === 'true';
+
   // Show full authenticated layout with sidebar only for authenticated users
   return (
     <>
@@ -75,6 +80,7 @@ export function Layout({ children }: LayoutProps) {
           </main>
         </div>
       </div>
+      {showDebugPanel && <PermissionDebugPanel />}
     </>
   );
 }
