@@ -272,6 +272,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []); // Empty dependency array - run only once on mount
 
+  // Watch for localStorage changes to detect token clearing (e.g., from API adapter on 401)
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'med_api_token' && event.newValue === null) {
+        // Token was cleared from localStorage
+        if (mountedRef.current && user) {
+          console.warn('⚠️ Token was cleared from storage');
+          toast.error('Your authentication token is invalid. Please log in again.');
+          setUser(null);
+          setProfile(null);
+          setSession(null);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [user]);
+
   // Periodic token validation - check every 5 minutes if token is still valid
   // This catches tokens that become invalid while the app is running (e.g., admin revokes)
   useEffect(() => {
