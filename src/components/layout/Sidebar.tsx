@@ -148,7 +148,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const location = useLocation();
   const { profile, isAdmin } = useAuth();
   const { currentCompany } = useCurrentCompany();
-  const { can, loading: permissionsLoading } = usePermissions();
+  const { can, loading: permissionsLoading, role } = usePermissions();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   // Debug logging on component mount and when props change
@@ -156,6 +156,10 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     userRole: profile?.role,
     isAdmin: isAdmin,
     permissionsLoading: permissionsLoading,
+    roleLoaded: !!role,
+    roleId: role?.id,
+    roleName: role?.name,
+    permissionCount: role?.permissions?.length || 0,
     company: currentCompany?.name
   });
 
