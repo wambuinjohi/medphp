@@ -266,6 +266,15 @@ const App = () => {
                   }
                 />
 
+                <Route
+                  path="/app/admin/etims"
+                  element={
+                    <ProtectedRoute requireAuth={true} requiredRole="admin">
+                      <ETIMSPage />
+                    </ProtectedRoute>
+                  }
+                />
+
                 {/* Procurement & Inventory */}
                 <Route
                   path="/app/lpos"
