@@ -105,7 +105,10 @@ const App = () => {
                 <Route
                   path="/app/quotations"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/quotations'].requiredPermissions}
+                    >
                       <Quotations />
                     </ProtectedRoute>
                   }
@@ -113,7 +116,10 @@ const App = () => {
                 <Route
                   path="/app/quotations/new"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/quotations/new'].requiredPermissions}
+                    >
                       <Quotations />
                     </ProtectedRoute>
                   }
