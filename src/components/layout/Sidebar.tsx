@@ -145,8 +145,9 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const location = useLocation();
-  const { profile } = useAuth();
+  const { profile, isAdmin } = useAuth();
   const { currentCompany } = useCurrentCompany();
+  const { can, loading: permissionsLoading } = usePermissions();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (title: string) => {
@@ -157,13 +158,18 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     );
   };
 
+  // Check if user has admin role
+  const userIsAdmin = isAdmin || (profile?.role &&
+    (profile.role.toLowerCase().includes('admin') || profile.role === 'super_admin'));
+
   const isItemVisible = (item: SidebarItem): boolean => {
-    // If no allowed roles specified, item is visible to everyone
-    if (!item.allowedRoles || item.allowedRoles.length === 0) {
-      return true;
+    // Don't show items while permissions are still loading
+    if (permissionsLoading) {
+      return false;
     }
-    // Check if user's role is in allowed roles
-    return item.allowedRoles.includes(profile?.role || '');
+
+    // Use permission-based visibility check from constants
+    return shouldShowSidebarItem(item.title, can, userIsAdmin);
   };
 
   const isItemActive = (href?: string) => {
@@ -177,18 +183,24 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   };
 
   const renderSidebarItem = (item: SidebarItem) => {
-    // Don't render if not visible to current user
-    if (!isItemVisible(item)) {
-      return null;
-    }
-
     const hasChildren = item.children && item.children.length > 0;
+    const childTitles = item.children?.map(child => child.title) || [];
     const isExpanded = expandedItems.includes(item.title);
     const isActive = isItemActive(item.href);
     const isChildActive = isParentActive(item.children);
 
     // Filter children based on visibility
     const visibleChildren = item.children?.filter(isItemVisible) || [];
+
+    // For parent items with children, show parent if ANY child is visible
+    if (hasChildren && visibleChildren.length === 0) {
+      return null;
+    }
+
+    // For items without children, check visibility
+    if (!hasChildren && !isItemVisible(item)) {
+      return null;
+    }
 
     if (hasChildren) {
       return (
