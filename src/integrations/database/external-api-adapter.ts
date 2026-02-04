@@ -513,6 +513,19 @@ export class ExternalAPIAdapter implements IDatabase {
           console.error('1. Your session has expired');
           console.error('2. The API server rejected your token');
           console.error('3. You may have been logged out by an administrator');
+
+          // Handle auth failure with user-friendly recovery
+          // This will show a toast and optionally redirect to login
+          try {
+            handleAuthFailure({
+              action,
+              table,
+              status: response.status,
+              originalError: new Error(errorMsg),
+            });
+          } catch (err) {
+            console.warn('Error handling auth failure:', err);
+          }
         } else {
           console.warn(`${logPrefix} - HTTP Error ${response.status}: ${errorMsg}`);
         }
