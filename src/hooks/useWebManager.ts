@@ -112,15 +112,17 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const { data: newCategory, error: err } = await supabase
-        .from('web_categories')
-        .insert(data)
-        .select()
-        .single();
+      const db = getDatabase();
+      const result = await db.insert('web_categories', data);
 
-      if (err) throw err;
+      if (result.error) throw result.error;
+      if (!result.id) throw new Error('Failed to create category: no ID returned');
+
+      const selectResult = await db.selectOne('web_categories', result.id);
+      if (selectResult.error) throw selectResult.error;
+
       toast.success('Category created successfully');
-      return newCategory as WebCategory;
+      return selectResult.data as WebCategory;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create category';
       setError(message);
