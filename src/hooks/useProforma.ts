@@ -488,8 +488,8 @@ export const useConvertProformaToInvoice = () => {
       // Get current user
       let createdBy: string | null = null;
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        createdBy = userData?.user?.id || null;
+        const userData = getCurrentUser();
+        createdBy = userData?.id || null;
       } catch {
         createdBy = null;
       }
