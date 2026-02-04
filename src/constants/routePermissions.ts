@@ -174,7 +174,7 @@ export const routePermissionMap: RoutePermissionMap = {
     description: 'Image management'
   },
   '/app/admin/audit-logs': {
-    requiresAdminRole: true,
+    requiredPermissions: ['view_audit_logs'],
     description: 'Audit logs'
   },
   '/app/admin/database': {
