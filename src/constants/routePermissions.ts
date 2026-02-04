@@ -173,6 +173,10 @@ export const routePermissionMap: RoutePermissionMap = {
     requiresAdminRole: true,
     description: 'Image management'
   },
+  '/app/admin/etims': {
+    requiresAdminRole: true,
+    description: 'eTIMS integration management'
+  },
   '/app/admin/audit-logs': {
     requiredPermissions: ['view_audit_logs'],
     description: 'Audit logs'
