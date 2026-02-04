@@ -385,12 +385,12 @@ export function useConvertInvoiceToCreditNote() {
       const totalAmount = itemsToProcess.reduce((sum, item) => sum + item.line_total, 0);
 
       // 5. Create the credit note
-      // Determine creator (prefer invoice.created_by, fall back to current auth user)
+      // Determine creator (prefer invoice.created_by, fall back to current user)
       let createdBy: string | null = invoice.created_by || null;
       if (!createdBy) {
         try {
-          const { data: userData } = await supabase.auth.getUser();
-          createdBy = userData?.user?.id || null;
+          const currentUser = getCurrentUser();
+          createdBy = currentUser?.id || null;
         } catch {
           createdBy = null;
         }
