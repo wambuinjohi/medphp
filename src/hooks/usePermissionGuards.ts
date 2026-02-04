@@ -80,6 +80,7 @@ export const usePermissionGuards = () => {
   /**
    * Check if user can create an entity type
    * Enforces create_* permissions based on entity type
+   * Shows error toast if permission denied
    */
   const checkCanCreate = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment',
@@ -103,6 +104,23 @@ export const usePermissionGuards = () => {
       return false;
     }
     return true;
+  };
+
+  /**
+   * Check if user can create an entity type (UI-only, no toast)
+   * Used for conditionally rendering create buttons in the UI
+   * Does not show any error messages
+   */
+  const canCreateUI = (
+    entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment'
+  ): boolean => {
+    // Admin users can create anything
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check if user has create permission for this entity type
+    return canCreate(entityType);
   };
 
   /**
