@@ -267,7 +267,7 @@ export function useUpdateCreditNoteWithItems() {
         const newAffectsInventory = creditNote.affects_inventory ?? existingCreditNote.affects_inventory;
         if (newAffectsInventory && items.length > 0) {
           console.log('Creating new stock movements...');
-          
+
           const stockMovements = items
             .filter(item => item.product_id)
             .map(item => ({
@@ -281,24 +281,21 @@ export function useUpdateCreditNoteWithItems() {
             }));
 
           if (stockMovements.length > 0) {
-            const { error: stockError } = await supabase
-              .from('stock_movements')
-              .insert(stockMovements);
+            const stockResult = await db.insertMany('stock_movements', stockMovements);
 
-            if (stockError) {
-              console.error('Error creating new stock movements:', stockError);
+            if (stockResult.error) {
+              console.error('Error creating new stock movements:', stockResult.error);
             } else {
               // Update product stock quantities
-              const db = getDatabase();
               for (const movement of stockMovements) {
                 try {
-                  const { error: stockError } = await db.rpc('update_product_stock', {
+                  const rpcResult = await db.rpc('update_product_stock', {
                     product_uuid: movement.product_id,
                     movement_type: movement.movement_type,
                     quantity: Math.abs(movement.quantity)
                   });
-                  if (stockError) {
-                    throw stockError;
+                  if (rpcResult.error) {
+                    throw rpcResult.error;
                   }
                 } catch (stockUpdateError) {
                   console.error('Error updating product stock (new):', stockUpdateError);
