@@ -52,6 +52,7 @@ import Login from "./pages/Login";
 import ImageManagement from "./pages/admin/ImageManagement";
 import NetworkDiagnosticsPage from "./pages/NetworkDiagnostics";
 import TokenDiagnosticsPage from "./pages/TokenDiagnosticsPage";
+import PermissionsDiagnostics from "./pages/PermissionsDiagnostics";
 
 const App = () => {
 
