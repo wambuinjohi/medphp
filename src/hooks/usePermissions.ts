@@ -158,14 +158,19 @@ export const usePermissions = () => {
           setRole(null);
         }
       } else if (data) {
+        // Normalize permissions to ensure it's always an array
+        const normalizedRole = {
+          ...data,
+          permissions: normalizePermissions(data.permissions)
+        };
         console.log('✅ [usePermissions] Role fetched successfully from database:', {
-          id: data.id,
-          name: data.name,
-          role_type: data.role_type,
-          permissionCount: data.permissions?.length || 0,
-          permissions: data.permissions
+          id: normalizedRole.id,
+          name: normalizedRole.name,
+          role_type: normalizedRole.role_type,
+          permissionCount: normalizedRole.permissions?.length || 0,
+          permissions: normalizedRole.permissions
         });
-        setRole(data);
+        setRole(normalizedRole);
       } else {
         // Role not found in roles table, use default permissions as fallback
         console.warn(`⚠️ [usePermissions] Role ${userRole} not found in roles table, using default fallback`);
