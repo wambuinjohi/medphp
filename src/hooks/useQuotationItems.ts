@@ -383,10 +383,9 @@ export const useCreateInvoiceWithItems = () => {
       // Ensure created_by references the authenticated user to satisfy FK constraints
       let cleanInvoice = { ...invoice } as any;
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        const authUserId = userData?.user?.id || null;
-        if (authUserId) {
-          cleanInvoice.created_by = authUserId;
+        const currentUser = getCurrentUser();
+        if (currentUser?.id) {
+          cleanInvoice.created_by = currentUser.id;
         } else if (typeof cleanInvoice.created_by === 'undefined') {
           cleanInvoice.created_by = null;
         }
