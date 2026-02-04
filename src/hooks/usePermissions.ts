@@ -302,12 +302,44 @@ export const usePermissions = () => {
           });
           setRole(fallbackRole);
         } else {
-          console.error('❌ [usePermissions] Could not find fallback for role:', userRole);
-          setRole(null);
+          console.warn('⚠️ [usePermissions] Could not find fallback for role. Using last-resort:', userRole);
+          // As a last resort, use accountant if it's accountant, otherwise use user
+          const lastResortType: keyof typeof DEFAULT_ROLE_PERMISSIONS =
+            userRole?.toLowerCase() === 'accountant' ? 'accountant' : 'user';
+
+          const lastResortRole: RoleDefinition = {
+            id: `fallback-${userRole}`,
+            name: userRole,
+            role_type: lastResortType,
+            description: `Last-resort ${lastResortType} role for ${userRole}`,
+            permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS[lastResortType]),
+            company_id: currentUser?.company_id || '',
+            is_default: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          console.log('🔄 [usePermissions] Using last-resort role (exception path):', {
+            name: lastResortRole.name,
+            role_type: lastResortRole.role_type,
+            permissionCount: lastResortRole.permissions?.length || 0,
+            permissions: lastResortRole.permissions
+          });
+          setRole(lastResortRole);
         }
       } else {
-        console.warn('⚠️ [usePermissions] No user role in exception path');
-        setRole(null);
+        console.warn('⚠️ [usePermissions] No user role in exception path, using fallback user role');
+        const fallbackRole: RoleDefinition = {
+          id: `fallback-user`,
+          name: 'user',
+          role_type: 'user',
+          description: `Fallback user role`,
+          permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS['user']),
+          company_id: currentUser?.company_id || '',
+          is_default: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        setRole(fallbackRole);
       }
     } finally {
       console.log('✅ [usePermissions] fetchUserRole completed, setting loading to false');
