@@ -37,10 +37,35 @@ export function hasAnyPermission(
   role: RoleDefinition | null | undefined,
   permissions: Permission[]
 ): boolean {
-  if (!role || !role.permissions) {
+  if (!role) {
+    console.warn(`🔐 [hasAnyPermission] Role is null/undefined, checking permissions: ${permissions.join(', ')}`);
     return false;
   }
-  return permissions.some(permission => role.permissions.includes(permission));
+
+  if (!role.permissions) {
+    console.warn(`🔐 [hasAnyPermission] Role ${role.name} has no permissions array`);
+    return false;
+  }
+
+  const hasAny = permissions.some(permission => role.permissions.includes(permission));
+
+  if (!hasAny) {
+    console.warn(`🔐 [hasAnyPermission] User has NONE of the required permissions`, {
+      roleName: role.name,
+      roleType: role.role_type,
+      userPermissions: role.permissions,
+      requiredPermissions: permissions,
+      missingAll: permissions,
+    });
+  } else {
+    console.log(`✅ [hasAnyPermission] User has at least one required permission`, {
+      roleName: role.name,
+      foundPermissions: permissions.filter(p => role.permissions.includes(p)),
+      requiredPermissions: permissions,
+    });
+  }
+
+  return hasAny;
 }
 
 /**
