@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDeleteInvoice } from '@/hooks/useInvoicesFixed';
+import { usePermissionGuards } from '@/hooks/usePermissionGuards';
 
 interface ViewInvoiceModalProps {
   open: boolean;
