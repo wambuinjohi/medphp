@@ -699,6 +699,11 @@ export class ExternalAPIAdapter implements IDatabase {
             localStorage.setItem('med_api_user_email', email);
             console.log('✅ User info stored:', { id: result.user.id, email });
           }
+
+          // Track login time for grace period
+          this.lastLoginTime = Date.now();
+          this.failedValidationAttempts = 0;
+          console.log('⏰ Login time tracked - starting grace period');
         }
 
         return {
