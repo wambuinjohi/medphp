@@ -3,6 +3,9 @@ import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/utils/getCurrentUser';
 
+// Initialize database adapter for use throughout the hook
+const db = getDatabase();
+
 export interface CreditNote {
   id: string;
   company_id: string;
