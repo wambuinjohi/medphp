@@ -151,7 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 name: profileData.role,
                 role_type: roleType as any,
                 description: `Default ${profileData.role} role`,
-                permissions: DEFAULT_ROLE_PERMISSIONS[roleType],
+                permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS[roleType]),
                 company_id: profileData.company_id,
                 is_default: true,
                 created_at: new Date().toISOString(),
