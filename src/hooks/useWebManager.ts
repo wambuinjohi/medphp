@@ -201,23 +201,32 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      let query = supabase
-        .from('web_variants')
-        .select('*')
-        .order('display_order', { ascending: true });
+      const db = getDatabase();
+      const filter: Record<string, any> = {};
 
       if (categoryId) {
-        query = query.eq('category_id', categoryId);
+        filter.category_id = categoryId;
       }
 
+      const result = await db.selectBy('web_variants', filter);
+
+      if (result.error) throw result.error;
+
+      let variants = (result.data || []) as WebVariant[];
+
+      // Apply search filter (client-side)
       if (search) {
-        query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`);
+        const searchLower = search.toLowerCase();
+        variants = variants.filter((v: any) =>
+          (v.name && v.name.toLowerCase().includes(searchLower)) ||
+          (v.sku && v.sku.toLowerCase().includes(searchLower))
+        );
       }
 
-      const { data, error: err } = await query;
+      // Sort by display_order
+      variants = variants.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
 
-      if (err) throw err;
-      return data as WebVariant[];
+      return variants;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch variants';
       setError(message);
