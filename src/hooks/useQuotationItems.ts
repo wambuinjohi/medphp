@@ -1028,11 +1028,11 @@ export const useCreateDirectReceipt = () => {
     }) => {
       const db = getDatabase();
 
-      // Get created_by from auth
+      // Get created_by from current user
       let createdBy: any = null;
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        createdBy = userData?.user?.id || null;
+        const currentUser = getCurrentUser();
+        createdBy = currentUser?.id || null;
       } catch {
         createdBy = null;
       }
