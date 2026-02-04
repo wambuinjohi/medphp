@@ -153,11 +153,20 @@ export const usePermissions = () => {
         }
       } else if (data) {
         // Normalize permissions to ensure it's always an array
+        console.log('📝 [usePermissions] Raw role data from DB:', {
+          id: data.id,
+          name: data.name,
+          role_type: data.role_type,
+          permissions_type: typeof data.permissions,
+          permissions_raw: data.permissions
+        });
+
         const normalizedRole = {
           ...data,
           permissions: normalizePermissions(data.permissions)
         };
-        console.log('✅ [usePermissions] Role fetched successfully from database:', {
+
+        console.log('✅ [usePermissions] Role fetched and normalized:', {
           id: normalizedRole.id,
           name: normalizedRole.name,
           role_type: normalizedRole.role_type,
