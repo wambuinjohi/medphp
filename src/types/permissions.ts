@@ -243,6 +243,16 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'edit_remittance': 'Edit remittance advice',
   'delete_remittance': 'Delete remittance advice',
 
+  // Supplier
+  'view_supplier': 'View suppliers',
+  'create_supplier': 'Create new suppliers',
+  'edit_supplier': 'Edit suppliers',
+  'delete_supplier': 'Delete suppliers',
+
+  // Transport
+  'manage_transport': 'Full transport management',
+  'view_transport': 'View transport records',
+
   // User Management
   'create_user': 'Create new users',
   'edit_user': 'Edit user profiles',
