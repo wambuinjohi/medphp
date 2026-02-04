@@ -1773,22 +1773,32 @@ try {
 
             // Special handling for companies table - allow non-admin users to read their own company
             if (!$is_admin && $table === 'companies') {
-                // For non-admin users, check if they're filtering by their own company_id
+                // For non-admin users, extract the company_id they're trying to access
                 $company_id_filter = null;
 
                 if (is_array($where) && isset($where['id'])) {
                     $company_id_filter = $where['id'];
                 } elseif (is_array($where) && isset($where['company_id'])) {
                     $company_id_filter = $where['company_id'];
+                } elseif (!empty($where)) {
+                    // If where is not empty but we couldn't extract company_id, it's a string filter
+                    // For now, we'll be permissive and allow it (backend query will handle RLS)
+                    error_log("⚠️ [AUTH] READ $table - Non-admin user {$user['email']} using string-based filter: {$where}");
                 }
 
-                // Allow if no filter (will show only their company due to query structure)
-                // or if filter matches their company_id
-                if ($company_id_filter && $company_id_filter !== $user['company_id']) {
-                    // Trying to access a different company's data
-                    http_response_code(403);
-                    error_log("🔴 [AUTH] READ $table - Non-admin user {$user['email']} (role: {$user['role']}) tried to access company {$company_id_filter} but is assigned to {$user['company_id']} (DENIED)");
-                    throw new Exception("Insufficient permissions. You can only access your assigned company.");
+                // Check if the filtered company matches their assigned company
+                if ($company_id_filter !== null) {
+                    // A specific company was requested - verify it matches the user's company
+                    if ($company_id_filter !== $user['company_id']) {
+                        // Trying to access a different company's data
+                        http_response_code(403);
+                        error_log("🔴 [AUTH] READ $table - Non-admin user {$user['email']} (role: {$user['role']}) tried to access company {$company_id_filter} but is assigned to {$user['company_id']} (DENIED)");
+                        throw new Exception("Insufficient permissions. You can only access your assigned company.");
+                    }
+                } else {
+                    // No specific company filter - this is OK for non-admin as the frontend should filter
+                    // The backend will only return their company due to the RLS logic
+                    error_log("⚠️ [AUTH] READ $table - Non-admin user {$user['email']} reading companies without explicit ID filter");
                 }
 
                 // Allow non-admin to read their company
