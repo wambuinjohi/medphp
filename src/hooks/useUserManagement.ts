@@ -683,42 +683,35 @@ export const useUserManagement = () => {
       const userId = profilesResult.data[0].id;
 
       // Update existing profile
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          status: 'active',
-          role: invitationData.role,
-          company_id: invitationData.company_id,
-          invited_by: invitationData.invited_by,
-          invited_at: invitationData.invited_at,
-          full_name: userData.full_name || undefined,
-          phone: userData.phone || undefined,
-          department: userData.department || undefined,
-          position: userData.position || undefined,
-          password: userData.password, // Will be hashed by DB trigger
-        })
-        .eq('id', userId);
+      const updateData = {
+        status: 'active',
+        role: invitationData.role,
+        company_id: invitationData.company_id,
+        invited_by: invitationData.invited_by,
+        invited_at: invitationData.invited_at,
+        full_name: userData.full_name || undefined,
+        phone: userData.phone || undefined,
+        department: userData.department || undefined,
+        position: userData.position || undefined,
+        password: userData.password, // Will be hashed by DB trigger
+      };
 
-      if (updateError) {
-        const errorMsg = parseErrorMessageWithCodes(updateError, 'profile update');
-        const errorDetails = updateError && typeof updateError === 'object'
-          ? JSON.stringify(updateError)
-          : String(updateError);
-        console.error('Profile update error:', errorDetails);
+      const updateResult = await db.update('profiles', userId, updateData);
+
+      if (updateResult.error) {
+        const errorMsg = parseErrorMessageWithCodes(updateResult.error, 'profile update');
+        console.error('Profile update error:', updateResult.error);
         return { success: false, error: errorMsg };
       }
 
       // Mark invitation as accepted
-      const { error: acceptError } = await supabase
-        .from('user_invitations')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', invitationId);
+      const acceptResult = await db.update('user_invitations', invitationId, {
+        status: 'accepted',
+        accepted_at: new Date().toISOString()
+      });
 
-      if (acceptError) {
-        console.error('Error marking invitation as accepted:', acceptError);
+      if (acceptResult.error) {
+        console.error('Error marking invitation as accepted:', acceptResult.error);
         // Don't fail the operation if marking as accepted fails - user is already created
       }
 
