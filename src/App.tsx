@@ -264,7 +264,10 @@ const App = () => {
                 <Route
                   path="/app/lpos"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/lpos'].requiredPermissions}
+                    >
                       <LPOs />
                     </ProtectedRoute>
                   }
@@ -272,7 +275,10 @@ const App = () => {
                 <Route
                   path="/app/lpos/new"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/lpos'].requiredPermissions}
+                    >
                       <LPOs />
                     </ProtectedRoute>
                   }
@@ -280,7 +286,10 @@ const App = () => {
                 <Route
                   path="/app/suppliers"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/suppliers'].requiredPermissions}
+                    >
                       <Suppliers />
                     </ProtectedRoute>
                   }
@@ -288,7 +297,10 @@ const App = () => {
                 <Route
                   path="/app/inventory"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/inventory'].requiredPermissions}
+                    >
                       <Inventory />
                     </ProtectedRoute>
                   }
@@ -296,7 +308,10 @@ const App = () => {
                 <Route
                   path="/app/inventory/new"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/inventory'].requiredPermissions}
+                    >
                       <Inventory />
                     </ProtectedRoute>
                   }
@@ -304,7 +319,10 @@ const App = () => {
                 <Route
                   path="/app/stock-movements"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/stock-movements'].requiredPermissions}
+                    >
                       <StockMovements />
                     </ProtectedRoute>
                   }
