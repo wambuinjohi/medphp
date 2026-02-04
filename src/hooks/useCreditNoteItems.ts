@@ -75,18 +75,13 @@ export function useCreateCreditNoteWithItems() {
             sort_order: index
           }));
 
-          const { error: itemsError } = await supabase
-            .from('credit_note_items')
-            .insert(itemsToInsert);
+          const itemsResult = await db.insertMany('credit_note_items', itemsToInsert);
 
-          if (itemsError) {
-            console.error('Error creating credit note items:', itemsError);
+          if (itemsResult.error) {
+            console.error('Error creating credit note items:', itemsResult.error);
             // Cleanup: delete the credit note if items failed
-            await supabase
-              .from('credit_notes')
-              .delete()
-              .eq('id', createdCreditNote.id);
-            throw itemsError;
+            await db.delete('credit_notes', createdCreditNote.id);
+            throw itemsResult.error;
           }
 
           console.log('Credit note items created successfully');
