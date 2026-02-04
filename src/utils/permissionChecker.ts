@@ -1,6 +1,47 @@
 import { Permission, RoleDefinition } from '@/types/permissions';
 
 /**
+ * Normalize permissions to ensure they're always an array
+ * Handles cases where permissions come back as JSON strings from the API
+ *
+ * @param permissions - Permissions that might be an array, JSON string, or null
+ * @returns Normalized permissions array
+ */
+export function normalizePermissions(permissions: any): Permission[] {
+  if (!permissions) {
+    console.warn('🔐 [normalizePermissions] Permissions is null/undefined');
+    return [];
+  }
+
+  // If already an array, return it
+  if (Array.isArray(permissions)) {
+    console.log('✅ [normalizePermissions] Permissions already an array:', permissions.length, 'items');
+    return permissions as Permission[];
+  }
+
+  // If it's a JSON string, parse it
+  if (typeof permissions === 'string') {
+    try {
+      console.log('🔄 [normalizePermissions] Parsing permissions JSON string...');
+      const parsed = JSON.parse(permissions);
+      if (Array.isArray(parsed)) {
+        console.log('✅ [normalizePermissions] Successfully parsed JSON array:', parsed.length, 'items');
+        return parsed as Permission[];
+      } else {
+        console.warn('⚠️ [normalizePermissions] Parsed JSON is not an array:', parsed);
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ [normalizePermissions] Failed to parse permissions JSON:', error, 'Raw value:', permissions);
+      return [];
+    }
+  }
+
+  console.warn('⚠️ [normalizePermissions] Unknown permissions type:', typeof permissions, permissions);
+  return [];
+}
+
+/**
  * Check if a role has a specific permission
  */
 export function hasPermission(
