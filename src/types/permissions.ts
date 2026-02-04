@@ -76,6 +76,16 @@ export type Permission =
   | 'edit_remittance'
   | 'delete_remittance'
 
+  // Supplier Permissions
+  | 'view_supplier'
+  | 'create_supplier'
+  | 'edit_supplier'
+  | 'delete_supplier'
+
+  // Transport Permissions
+  | 'manage_transport'
+  | 'view_transport'
+
   // User Management Permissions
   | 'create_user'
   | 'edit_user'
@@ -138,7 +148,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Exclude<RoleType, 'custom'>, Permi
     'create_payment', 'view_payment', 'edit_payment',
     'view_inventory', 'view_reports', 'export_reports', 'view_customer_reports', 'view_sales_reports',
     'view_customer', 'view_delivery_note',
-    'view_lpo', 'view_remittance', 'create_remittance', 'view_audit_logs',
+    'view_lpo', 'view_supplier', 'view_remittance', 'create_remittance', 'view_audit_logs',
   ],
   stock_manager: [
     // Stock managers handle inventory and delivery notes
@@ -148,7 +158,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Exclude<RoleType, 'custom'>, Permi
     'create_inventory', 'view_inventory', 'edit_inventory', 'manage_inventory',
     'view_reports', 'view_inventory_reports',
     'view_customer', 'create_delivery_note', 'view_delivery_note', 'edit_delivery_note',
-    'view_lpo', 'view_payment',
+    'view_lpo', 'view_supplier', 'view_payment',
   ],
   user: [
     // Basic users have limited viewing permissions
@@ -156,7 +166,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Exclude<RoleType, 'custom'>, Permi
     'view_invoice', 'view_credit_note', 'view_proforma',
     'view_inventory', 'view_reports', 'view_customer_reports', 'view_sales_reports',
     'view_customer', 'view_delivery_note',
-    'view_lpo', 'view_payment',
+    'view_lpo', 'view_supplier', 'view_payment',
   ],
 };
 
