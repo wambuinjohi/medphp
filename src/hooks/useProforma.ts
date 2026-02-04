@@ -150,9 +150,9 @@ export const useCreateProforma = () => {
       // Ensure created_by defaults to authenticated user
       let cleanProforma = { ...proformaWithTotals } as any;
       try {
-        // Try to get user from Supabase auth
-        const { data: userData } = await supabase.auth.getUser();
-        const authUserId = userData?.user?.id || null;
+        // Get user from current session
+        const userData = getCurrentUser();
+        const authUserId = userData?.id || null;
         if (authUserId) {
           cleanProforma.created_by = authUserId;
         } else {
