@@ -126,14 +126,14 @@ export function useCreateCreditNote() {
 
   return useMutation({
     mutationFn: async (creditNote: Omit<CreditNote, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
-        .from('credit_notes')
-        .insert(creditNote)
-        .select()
-        .single();
+      const result = await db.insert('credit_notes', creditNote);
 
-      if (error) throw error;
-      return data as CreditNote;
+      if (result.error) throw result.error;
+      if (!result.id) throw new Error('Failed to create credit note: no ID returned');
+
+      const selectResult = await db.selectOne('credit_notes', result.id);
+      if (selectResult.error) throw selectResult.error;
+      return selectResult.data as CreditNote;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
