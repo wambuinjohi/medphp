@@ -535,16 +535,30 @@ export class ExternalAPIAdapter implements IDatabase {
           // Clear token since it's definitely invalid at this point
           this.clearAuthToken();
 
-          // Provide detailed error message
-          const errorMsg = hasToken
-            ? 'Your authentication token is invalid or expired. Please log in again.'
-            : 'No authentication token found. Please log in.';
+          // Provide detailed error message with debugging steps
+          let errorMsg = 'Authentication failed';
+          const debugSteps: string[] = [];
+
+          if (!hasToken) {
+            errorMsg = 'No authentication token found. Please log in.';
+            debugSteps.push('1. Token was never stored or was cleared');
+            debugSteps.push('2. Check if login succeeded before accessing this resource');
+          } else {
+            errorMsg = 'Your authentication token was rejected by the server. Please log in again.';
+            debugSteps.push('1. Your session may have expired');
+            debugSteps.push('2. The API server rejected your token (possible causes: revoked, expired, invalid)');
+            debugSteps.push('3. You may have been logged out by an administrator');
+            debugSteps.push('4. There may be a mismatch between client and server clocks');
+          }
 
           console.error(`❌ ${errorMsg}`);
-          console.error('This typically means:');
-          console.error('1. Your session has expired');
-          console.error('2. The API server rejected your token');
-          console.error('3. You may have been logged out by an administrator');
+          console.error('🔍 Debugging steps to try:');
+          debugSteps.forEach(step => console.error('   ' + step));
+          console.error('💡 Next steps:');
+          console.error('   1. Log out and log back in');
+          console.error('   2. Clear browser cache and localStorage (localStorage.clear())');
+          console.error('   3. Try a different browser or incognito mode');
+          console.error('   4. Check if the API server is running and accessible');
 
           // Handle auth failure with user-friendly recovery
           // This will show a toast and optionally redirect to login
