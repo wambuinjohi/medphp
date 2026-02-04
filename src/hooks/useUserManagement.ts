@@ -162,14 +162,11 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      // Check if user already exists in profiles
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', userData.email)
-        .maybeSingle();
+      const db = getDatabase();
 
-      if (existingUser) {
+      // Check if user already exists in profiles
+      const existingUserResult = await db.selectBy('profiles', { email: userData.email });
+      if (existingUserResult.data && existingUserResult.data.length > 0) {
         return { success: false, error: 'User with this email already exists' };
       }
 
@@ -178,12 +175,10 @@ export const useUserManagement = () => {
       // If no company is provided, try to get the first company
       let finalCompanyId = companyToSet;
       if (!finalCompanyId) {
-        const { data: companies } = await supabase
-          .from('companies')
-          .select('id')
-          .limit(1)
-          .single();
-        finalCompanyId = companies?.id;
+        const companiesResult = await db.selectBy('companies', {});
+        if (companiesResult.data && companiesResult.data.length > 0) {
+          finalCompanyId = companiesResult.data[0].id;
+        }
       }
 
       if (!finalCompanyId) {
@@ -191,13 +186,8 @@ export const useUserManagement = () => {
       }
 
       // Validate that the company actually exists
-      const { data: companyExists } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('id', finalCompanyId)
-        .maybeSingle();
-
-      if (!companyExists) {
+      const companyCheckResult = await db.selectOne('companies', finalCompanyId);
+      if (companyCheckResult.error || !companyCheckResult.data) {
         return { success: false, error: 'The selected company no longer exists. Please refresh and try again.' };
       }
 
