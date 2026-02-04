@@ -1829,11 +1829,14 @@ try {
                     if (preg_match('/_in$/', $col)) {
                         // IN operator - expects array values
                         $base_col = preg_replace('/_in$/', '', $col);
-                        if (is_array($val)) {
+                        if (is_array($val) && count($val) > 0) {
                             $escaped_values = array_map(function($v) use ($conn) {
                                 return "'" . escape($conn, $v) . "'";
                             }, $val);
                             $condition = "`" . escape($conn, $base_col) . "` IN (" . implode(",", $escaped_values) . ")";
+                        } else if (is_string($val) || is_numeric($val)) {
+                            // Handle single value passed with _in suffix - treat as equality
+                            $condition = "`" . escape($conn, $base_col) . "`='" . escape($conn, $val) . "'";
                         }
                     } elseif (preg_match('/_like$/', $col)) {
                         // LIKE operator
