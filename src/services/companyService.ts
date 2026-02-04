@@ -42,10 +42,12 @@ function isValidLogoUrl(url?: string): boolean {
  */
 export async function fetchPublicCompanyData(): Promise<CompanyData | null> {
   try {
-    const result = await apiClient.select('companies', {});
+    // Pass isPublic: true to prevent auth failure toast on login page
+    // This is a public endpoint that should gracefully handle 401 responses
+    const result = await apiClient.select('companies', {}, true);
 
     if (!result.data || result.error) {
-      console.warn('Failed to fetch company data:', result.error?.message);
+      console.info('ℹ️ No public company data available (this is normal before login):', result.error?.message);
       return null;
     }
 
@@ -54,7 +56,7 @@ export async function fetchPublicCompanyData(): Promise<CompanyData | null> {
     const company = companies[0];
 
     if (!company) {
-      console.warn('No companies found');
+      console.info('No companies found in public data');
       return null;
     }
 
@@ -69,7 +71,7 @@ export async function fetchPublicCompanyData(): Promise<CompanyData | null> {
       ...company
     } as CompanyData;
   } catch (error) {
-    console.error('Error fetching company data:', error);
+    console.info('Info: Company data fetch during public page load:', error);
     return null;
   }
 }
