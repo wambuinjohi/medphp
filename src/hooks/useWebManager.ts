@@ -339,12 +339,10 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const { error: err } = await supabase
-        .from('web_variants')
-        .delete()
-        .eq('id', id);
+      const db = getDatabase();
+      const result = await db.delete('web_variants', id);
 
-      if (err) throw err;
+      if (result.error) throw result.error;
       toast.success('Variant deleted successfully');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete variant';
