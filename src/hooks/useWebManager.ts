@@ -514,12 +514,10 @@ export const useWebManager = () => {
     try {
       setError(null);
 
-      const { error: err } = await supabase
-        .from('variant_images')
-        .delete()
-        .eq('id', imageId);
+      const db = getDatabase();
+      const result = await db.delete('variant_images', imageId);
 
-      if (err) throw err;
+      if (result.error) throw result.error;
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete image';
