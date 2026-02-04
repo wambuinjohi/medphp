@@ -32,6 +32,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useDeleteProforma } from '@/hooks/useProforma';
+import { usePermissionGuards } from '@/hooks/usePermissionGuards';
 
 interface ProformaItem {
   id: string;
