@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { formatDistanceToNow } from 'date-fns';
 import { Download, ChevronDown } from 'lucide-react';
 import { ensureAuditLogSchema } from '@/utils/auditLogger';
