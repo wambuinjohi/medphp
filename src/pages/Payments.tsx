@@ -104,6 +104,8 @@ export default function Payments() {
   const { data: payments = [], isLoading, error, retry: retryPayments } = usePayments(currentCompany?.id);
   const { data: invoices = [] } = useInvoices(currentCompany?.id);
   const { can: canCreatePayment, can: canViewPayment, can: canEditPayment, can: canDeletePayment, loading: permissionsLoading } = usePermissions();
+  const { canDeleteUI } = usePermissionGuards();
+  const canDeletePaymentUI = canDeleteUI('payment');
 
   useEffect(() => {
     if (!permissionsLoading && !canViewPayment('view_payment')) {
