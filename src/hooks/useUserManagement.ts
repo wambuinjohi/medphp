@@ -652,47 +652,35 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      // Get invitation details first
-      const { data: invitationData, error: inviteError } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('id', invitationId)
-        .single();
+      const db = getDatabase();
 
-      if (inviteError || !invitationData) {
+      // Get invitation details first
+      const invitationResult = await db.selectOne('user_invitations', invitationId);
+      if (invitationResult.error || !invitationResult.data) {
         return { success: false, error: 'Invitation not found' };
       }
 
+      const invitationData = invitationResult.data;
       if (invitationData.status !== 'pending') {
         return { success: false, error: `Invitation is already ${invitationData.status}` };
       }
 
       // Validate that the company still exists
-      const { data: companyExists } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('id', invitationData.company_id)
-        .maybeSingle();
-
-      if (!companyExists) {
+      const companyResult = await db.selectOne('companies', invitationData.company_id);
+      if (companyResult.error || !companyResult.data) {
         return { success: false, error: 'The associated company no longer exists' };
       }
 
       // Check if a profile already exists for this email
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id, status')
-        .eq('email', invitationData.email)
-        .maybeSingle();
-
-      if (!existingProfile) {
+      const profilesResult = await db.selectBy('profiles', { email: invitationData.email });
+      if (profilesResult.error || !profilesResult.data || profilesResult.data.length === 0) {
         return {
           success: false,
           error: 'User profile not found. Please ask the user to sign up first, or use the "Add User" button to create a complete user account directly.'
         };
       }
 
-      const userId = existingProfile.id;
+      const userId = profilesResult.data[0].id;
 
       // Update existing profile
       const { error: updateError } = await supabase
