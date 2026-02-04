@@ -19,6 +19,9 @@ import { logTokenDiagnostics } from '../../utils/tokenDiagnostics';
 export class ExternalAPIAdapter implements IDatabase {
   private apiBase: string;
   private externalApiUrl: string;
+  private failedValidationAttempts: number = 0;
+  private lastValidationAttemptTime: number = 0;
+  private lastLoginTime: number | null = null;
 
   constructor(apiUrl?: string) {
     try {
