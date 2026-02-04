@@ -314,16 +314,16 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const { data: updated, error: err } = await supabase
-        .from('web_variants')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
+      const db = getDatabase();
+      const result = await db.update('web_variants', id, data);
 
-      if (err) throw err;
+      if (result.error) throw result.error;
+
+      const selectResult = await db.selectOne('web_variants', id);
+      if (selectResult.error) throw selectResult.error;
+
       toast.success('Variant updated successfully');
-      return updated as WebVariant;
+      return selectResult.data as WebVariant;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update variant';
       setError(message);
