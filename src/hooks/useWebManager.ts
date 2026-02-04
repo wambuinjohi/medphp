@@ -409,15 +409,13 @@ export const useWebManager = () => {
         }
 
         // Delete existing images for this variant
-        const { error: deleteErr } = await supabase
-          .from('variant_images')
-          .delete()
-          .eq('variant_id', variantId);
+        const db = getDatabase();
+        const deleteResult = await db.deleteMany('variant_images', { variant_id: variantId });
 
-        if (deleteErr) {
+        if (deleteResult.error) {
           // Check if it's a "table not found" error
-          const deleteErrorStr = String(deleteErr);
-          if (deleteErrorStr.includes('variant_images') && deleteErrorStr.includes('schema cache')) {
+          const deleteErrorStr = String(deleteResult.error);
+          if (deleteErrorStr.includes('variant_images') && deleteErrorStr.includes('does not exist')) {
             console.warn('variant_images table not found - images will not be saved. Run the migration first.');
             toast.warning(
               'Images table not set up yet. Please run the database migration and try again.'
@@ -425,8 +423,8 @@ export const useWebManager = () => {
             // Don't throw - allow variant to be created without images
             return false;
           }
-          console.error('Error deleting existing variant images:', deleteErr);
-          throw deleteErr;
+          console.error('Error deleting existing variant images:', deleteResult.error);
+          throw deleteResult.error;
         }
 
         // Insert new images if any
@@ -443,15 +441,12 @@ export const useWebManager = () => {
           });
 
           console.log('Inserting variant images:', imagesToInsert);
-          const { data: insertedData, error: insertErr } = await supabase
-            .from('variant_images')
-            .insert(imagesToInsert)
-            .select();
+          const insertResult = await db.insertMany('variant_images', imagesToInsert);
 
-          if (insertErr) {
+          if (insertResult.error) {
             // Check if it's a "table not found" error
-            const insertErrorStr = String(insertErr);
-            if (insertErrorStr.includes('variant_images') && insertErrorStr.includes('schema cache')) {
+            const insertErrorStr = String(insertResult.error);
+            if (insertErrorStr.includes('variant_images') && insertErrorStr.includes('does not exist')) {
               console.warn('variant_images table not found - images will not be saved. Run the migration first.');
               toast.warning(
                 'Images table not set up yet. Variant created but images could not be saved.'
@@ -459,12 +454,12 @@ export const useWebManager = () => {
               // Don't throw - variant was created successfully
               return false;
             }
-            console.error('Error inserting variant images:', insertErr);
+            console.error('Error inserting variant images:', insertResult.error);
             console.error('Attempted to insert:', imagesToInsert);
-            throw insertErr;
+            throw insertResult.error;
           }
 
-          console.log('Successfully inserted variant images:', insertedData);
+          console.log('Successfully inserted variant images:', insertResult);
         }
 
         toast.success('Variant images saved successfully');
