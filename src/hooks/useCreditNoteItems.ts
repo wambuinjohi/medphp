@@ -360,7 +360,6 @@ export function useConvertInvoiceToCreditNote() {
       const invoice = invoiceResult.data;
 
       // 2. Generate credit note number
-      const db = getDatabase();
       const { data: creditNoteNumber, error: numberError } = await db.rpc<string>('generate_credit_note_number', { company_uuid: invoice.company_id });
 
       if (numberError) throw numberError;
