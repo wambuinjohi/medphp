@@ -153,15 +153,13 @@ export function useUpdateCreditNote() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<CreditNote> }) => {
-      const { data, error } = await supabase
-        .from('credit_notes')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+      const result = await db.update('credit_notes', id, updates);
 
-      if (error) throw error;
-      return data as CreditNote;
+      if (result.error) throw result.error;
+
+      const selectResult = await db.selectOne('credit_notes', id);
+      if (selectResult.error) throw selectResult.error;
+      return selectResult.data as CreditNote;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['creditNotes'] });
