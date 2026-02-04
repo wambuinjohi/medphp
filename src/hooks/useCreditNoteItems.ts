@@ -184,15 +184,13 @@ export function useUpdateCreditNoteWithItems() {
     mutationFn: async ({ creditNoteId, creditNote, items }: UpdateCreditNoteWithItemsData) => {
       console.log('Updating credit note with items:', { creditNoteId, creditNote, items });
 
+      const db = getDatabase();
+
       try {
         // 1. Get existing credit note to check if it affects inventory
-        const { data: existingCreditNote, error: fetchError } = await supabase
-          .from('credit_notes')
-          .select('affects_inventory, credit_note_number')
-          .eq('id', creditNoteId)
-          .single();
-
-        if (fetchError) throw fetchError;
+        const existingResult = await db.selectOne('credit_notes', creditNoteId);
+        if (existingResult.error) throw existingResult.error;
+        const existingCreditNote = existingResult.data;
 
         // 2. If the credit note affects inventory, reverse existing stock movements
         if (existingCreditNote.affects_inventory) {
