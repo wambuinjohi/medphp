@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { initializeAuth, clearAuthTokens } from '@/utils/authHelpers';
 import { logError, getUserFriendlyErrorMessage, isErrorType } from '@/utils/errorLogger';
 import { RoleDefinition, DEFAULT_ROLE_PERMISSIONS } from '@/types/permissions';
+import { normalizePermissions } from '@/utils/permissionChecker';
 
 // Type definitions for authentication
 export interface User {
@@ -133,8 +134,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           if (roleData && Array.isArray(roleData) && roleData.length > 0) {
             const role = roleData[0] as RoleDefinition;
-            console.log('✅ Role definition fetched:', role.name);
-            profileData.roleDefinition = role;
+            // Normalize permissions to ensure they're always an array
+            const normalizedRole = {
+              ...role,
+              permissions: normalizePermissions(role.permissions)
+            };
+            console.log('✅ Role definition fetched:', normalizedRole.name, 'with', normalizedRole.permissions?.length || 0, 'permissions');
+            profileData.roleDefinition = normalizedRole;
           } else {
             // Fallback to default role permissions if custom role not found
             console.log('⚠️ Custom role not found, using default permissions for:', profileData.role);
@@ -145,7 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 name: profileData.role,
                 role_type: roleType as any,
                 description: `Default ${profileData.role} role`,
-                permissions: DEFAULT_ROLE_PERMISSIONS[roleType],
+                permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS[roleType]),
                 company_id: profileData.company_id,
                 is_default: true,
                 created_at: new Date().toISOString(),

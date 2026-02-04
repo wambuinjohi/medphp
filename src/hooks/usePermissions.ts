@@ -7,6 +7,7 @@ import {
   hasAnyPermission,
   hasAllPermissions,
   getMissingPermissions,
+  normalizePermissions,
 } from '@/utils/permissionChecker';
 
 /**
@@ -23,7 +24,17 @@ export const usePermissions = () => {
    * Fetch the user's role definition
    */
   const fetchUserRole = useCallback(async () => {
-    console.log('🔍 [usePermissions] fetchUserRole called, currentUser:', currentUser?.id);
+    console.log('🔍 [usePermissions] fetchUserRole called');
+    console.log('📋 [usePermissions] currentUser data:', {
+      id: currentUser?.id,
+      email: currentUser?.email,
+      role: currentUser?.role,
+      company_id: currentUser?.company_id,
+      status: currentUser?.status,
+      has_roleDefinition: !!currentUser?.roleDefinition,
+      roleDefinition_name: currentUser?.roleDefinition?.name,
+      roleDefinition_permissions_count: currentUser?.roleDefinition?.permissions?.length || 0
+    });
 
     if (!currentUser) {
       console.log('ℹ️ [usePermissions] No current user, clearing role');
@@ -44,7 +55,11 @@ export const usePermissions = () => {
           permissionCount: currentUser.roleDefinition.permissions?.length || 0,
           permissions: currentUser.roleDefinition.permissions
         });
-        setRole(currentUser.roleDefinition);
+        const normalizedRole = {
+          ...currentUser.roleDefinition,
+          permissions: normalizePermissions(currentUser.roleDefinition.permissions)
+        };
+        setRole(normalizedRole);
         setLoading(false);
         return;
       }
@@ -54,26 +69,63 @@ export const usePermissions = () => {
       console.log('📝 [usePermissions] User role from profile:', userRole);
 
       if (!userRole) {
-        console.warn('⚠️ [usePermissions] No role assigned to user, clearing role');
-        setRole(null);
+        console.warn('⚠️ [usePermissions] No role assigned to user, using default fallback');
+        // Automatically use default fallback for the user role type
+        const roleType = 'user' as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+        const defaultRole: RoleDefinition = {
+          id: `default-user`,
+          name: 'user',
+          role_type: roleType,
+          description: `Default user role`,
+          permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS[roleType]),
+          company_id: currentUser.company_id || '',
+          is_default: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        console.log('🔄 [usePermissions] Using default user role:', defaultRole.permissions?.length || 0, 'permissions');
+        setRole(defaultRole);
         setLoading(false);
         return;
       }
 
       // Fetch the full role definition from the roles table
+      // Ensure company_id is included and properly formatted
+      const companyId = currentUser.company_id || '';
       console.log('🔄 [usePermissions] Fetching role from database:', {
         name: userRole,
-        company_id: currentUser.company_id
+        company_id: companyId,
+        company_id_type: typeof companyId
       });
 
       const db = getDatabase();
-      const result = await db.selectBy('roles', {
+      const filterObj = {
         name: userRole,
-        company_id: currentUser.company_id
-      });
+        ...(companyId && { company_id: companyId })  // Only include if present
+      };
+      console.log('📝 [usePermissions] Filter object:', filterObj);
+
+      const result = await db.selectBy('roles', filterObj);
 
       const fetchError = result.error;
       const data = result.data?.[0] || null;
+
+      console.log('📊 [usePermissions] Database fetch result:', {
+        hasError: !!fetchError,
+        errorMessage: fetchError instanceof Error ? fetchError.message : fetchError,
+        result_data_type: typeof result.data,
+        dataLength: Array.isArray(result.data) ? result.data.length : 'not an array',
+        data_found: !!data,
+        rawData: result.data
+      });
+
+      // Debug: log the actual result object
+      if (!data && !fetchError) {
+        console.warn('⚠️ [usePermissions] No error but also no data returned from selectBy');
+        console.log('   Result object keys:', Object.keys(result));
+        console.log('   result.data:', result.data);
+        console.log('   result.error:', result.error);
+      }
 
       if (fetchError) {
         const errorMessage = fetchError instanceof Error ? fetchError.message : JSON.stringify(fetchError);
@@ -102,7 +154,7 @@ export const usePermissions = () => {
             name: userRole,
             role_type: roleType,
             description: `Fallback ${userRole} role`,
-            permissions: DEFAULT_ROLE_PERMISSIONS[roleType],
+            permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS[roleType]),
             company_id: currentUser.company_id || '',
             is_default: true,
             created_at: new Date().toISOString(),
@@ -120,17 +172,31 @@ export const usePermissions = () => {
           setRole(null);
         }
       } else if (data) {
-        console.log('✅ [usePermissions] Role fetched successfully from database:', {
+        // Normalize permissions to ensure it's always an array
+        console.log('📝 [usePermissions] Raw role data from DB:', {
           id: data.id,
           name: data.name,
           role_type: data.role_type,
-          permissionCount: data.permissions?.length || 0,
-          permissions: data.permissions
+          permissions_type: typeof data.permissions,
+          permissions_raw: data.permissions
         });
-        setRole(data);
-      } else {
-        // Role not found in roles table, use default permissions as fallback
-        console.warn(`⚠️ [usePermissions] Role ${userRole} not found in roles table, using default fallback`);
+
+        const normalizedRole = {
+          ...data,
+          permissions: normalizePermissions(data.permissions)
+        };
+
+        console.log('✅ [usePermissions] Role fetched and normalized:', {
+          id: normalizedRole.id,
+          name: normalizedRole.name,
+          role_type: normalizedRole.role_type,
+          permissionCount: normalizedRole.permissions?.length || 0,
+          permissions: normalizedRole.permissions
+        });
+        setRole(normalizedRole);
+      } else if (!data && !fetchError) {
+        // Role not found in roles table (no error, just no data)
+        console.warn(`⚠️ [usePermissions] Role "${userRole}" not found in roles table, using default fallback`);
 
         // Try exact match first, then case-insensitive match
         let roleType: keyof typeof DEFAULT_ROLE_PERMISSIONS | null = null;
@@ -153,7 +219,7 @@ export const usePermissions = () => {
             name: userRole,
             role_type: roleType,
             description: `Fallback ${userRole} role`,
-            permissions: DEFAULT_ROLE_PERMISSIONS[roleType],
+            permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS[roleType]),
             company_id: currentUser.company_id || '',
             is_default: true,
             created_at: new Date().toISOString(),
@@ -167,8 +233,29 @@ export const usePermissions = () => {
           });
           setRole(fallbackRole);
         } else {
-          console.error('❌ [usePermissions] Could not map role to any known role type, role:', userRole);
-          setRole(null);
+          console.warn('⚠️ [usePermissions] Could not map role to any known role type. Using last-resort "accountant" fallback for role:', userRole);
+          // As a last resort, use accountant if it's accountant, otherwise use user
+          const lastResortType: keyof typeof DEFAULT_ROLE_PERMISSIONS =
+            userRole?.toLowerCase() === 'accountant' ? 'accountant' : 'user';
+
+          const lastResortRole: RoleDefinition = {
+            id: `fallback-${userRole}`,
+            name: userRole,
+            role_type: lastResortType,
+            description: `Last-resort ${lastResortType} role for ${userRole}`,
+            permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS[lastResortType]),
+            company_id: currentUser.company_id || '',
+            is_default: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          console.log('🔄 [usePermissions] Using last-resort role:', {
+            name: lastResortRole.name,
+            role_type: lastResortRole.role_type,
+            permissionCount: lastResortRole.permissions?.length || 0,
+            permissions: lastResortRole.permissions
+          });
+          setRole(lastResortRole);
         }
       }
     } catch (err) {
@@ -201,7 +288,7 @@ export const usePermissions = () => {
             name: userRole,
             role_type: roleType,
             description: `Fallback ${userRole} role`,
-            permissions: DEFAULT_ROLE_PERMISSIONS[roleType],
+            permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS[roleType]),
             company_id: currentUser?.company_id || '',
             is_default: true,
             created_at: new Date().toISOString(),
@@ -215,15 +302,48 @@ export const usePermissions = () => {
           });
           setRole(fallbackRole);
         } else {
-          console.error('❌ [usePermissions] Could not find fallback for role:', userRole);
-          setRole(null);
+          console.warn('⚠️ [usePermissions] Could not find fallback for role. Using last-resort:', userRole);
+          // As a last resort, use accountant if it's accountant, otherwise use user
+          const lastResortType: keyof typeof DEFAULT_ROLE_PERMISSIONS =
+            userRole?.toLowerCase() === 'accountant' ? 'accountant' : 'user';
+
+          const lastResortRole: RoleDefinition = {
+            id: `fallback-${userRole}`,
+            name: userRole,
+            role_type: lastResortType,
+            description: `Last-resort ${lastResortType} role for ${userRole}`,
+            permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS[lastResortType]),
+            company_id: currentUser?.company_id || '',
+            is_default: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          console.log('🔄 [usePermissions] Using last-resort role (exception path):', {
+            name: lastResortRole.name,
+            role_type: lastResortRole.role_type,
+            permissionCount: lastResortRole.permissions?.length || 0,
+            permissions: lastResortRole.permissions
+          });
+          setRole(lastResortRole);
         }
       } else {
-        console.warn('⚠️ [usePermissions] No user role in exception path');
-        setRole(null);
+        console.warn('⚠️ [usePermissions] No user role in exception path, using fallback user role');
+        const fallbackRole: RoleDefinition = {
+          id: `fallback-user`,
+          name: 'user',
+          role_type: 'user',
+          description: `Fallback user role`,
+          permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS['user']),
+          company_id: currentUser?.company_id || '',
+          is_default: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        setRole(fallbackRole);
       }
     } finally {
-      console.log('✅ [usePermissions] fetchUserRole completed, loading:', loading);
+      console.log('✅ [usePermissions] fetchUserRole completed, setting loading to false');
+      // Log will be done in useEffect after state is updated
       setLoading(false);
     }
   }, [currentUser]);
@@ -232,6 +352,23 @@ export const usePermissions = () => {
   useEffect(() => {
     fetchUserRole();
   }, [fetchUserRole]);
+
+  // Log whenever role or loading state changes
+  useEffect(() => {
+    if (loading) {
+      console.log('⏳ [usePermissions] Still loading role...');
+    } else {
+      console.log('✅ [usePermissions] Role loading complete. Final state:', {
+        role_id: role?.id,
+        role_name: role?.name,
+        role_type: role?.role_type,
+        permissions_count: role?.permissions?.length || 0,
+        has_permissions: !!role?.permissions && role.permissions.length > 0,
+        is_null: role === null,
+        is_undefined: role === undefined
+      });
+    }
+  }, [loading, role]);
 
   /**
    * Entity type to permission mapping
@@ -319,7 +456,16 @@ export const usePermissions = () => {
    */
   const can = useCallback(
     (permission: Permission): boolean => {
-      return hasPermission(role, permission);
+      const result = hasPermission(role, permission);
+      if (!result && role?.name) {
+        console.warn(`🔐 [can] Permission check failed for "${permission}"`, {
+          roleName: role.name,
+          roleType: role.role_type,
+          permissionCount: role.permissions?.length || 0,
+          hasThisPermission: role.permissions?.includes(permission)
+        });
+      }
+      return result;
     },
     [role]
   );
