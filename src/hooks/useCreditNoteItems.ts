@@ -240,22 +240,16 @@ export function useUpdateCreditNoteWithItems() {
         }
 
         // 3. Update the credit note
-        const { data: updatedCreditNote, error: updateError } = await supabase
-          .from('credit_notes')
-          .update(creditNote)
-          .eq('id', creditNoteId)
-          .select()
-          .single();
+        const updateResult = await db.update('credit_notes', creditNoteId, creditNote);
+        if (updateResult.error) throw updateResult.error;
 
-        if (updateError) throw updateError;
+        const updatedSelectResult = await db.selectOne('credit_notes', creditNoteId);
+        if (updatedSelectResult.error) throw updatedSelectResult.error;
+        const updatedCreditNote = updatedSelectResult.data;
 
         // 4. Delete existing credit note items
-        const { error: deleteItemsError } = await supabase
-          .from('credit_note_items')
-          .delete()
-          .eq('credit_note_id', creditNoteId);
-
-        if (deleteItemsError) throw deleteItemsError;
+        const deleteItemsResult = await db.deleteMany('credit_note_items', { credit_note_id: creditNoteId });
+        if (deleteItemsResult.error) throw deleteItemsResult.error;
 
         // 5. Insert new credit note items
         if (items.length > 0) {
@@ -265,11 +259,8 @@ export function useUpdateCreditNoteWithItems() {
             sort_order: index
           }));
 
-          const { error: itemsError } = await supabase
-            .from('credit_note_items')
-            .insert(itemsToInsert);
-
-          if (itemsError) throw itemsError;
+          const itemsResult = await db.insertMany('credit_note_items', itemsToInsert);
+          if (itemsResult.error) throw itemsResult.error;
         }
 
         // 6. Create new stock movements if affects_inventory is true
