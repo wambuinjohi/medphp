@@ -66,6 +66,8 @@ export function ViewQuotationModal({
   const [headerLogoLoadError, setHeaderLogoLoadError] = useState(false);
   const [footerLogoLoadError, setFooterLogoLoadError] = useState(false);
   const deleteQuotation = useDeleteQuotation();
+  const { canDeleteUI } = usePermissionGuards();
+  const canDelete = canDeleteUI('quotation');
 
   // Get company data for logo
   const { data: companies } = useCompanies();
