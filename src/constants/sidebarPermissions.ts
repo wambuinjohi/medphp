@@ -48,12 +48,12 @@ export const sidebarPermissionMap: SidebarPermissionMap = {
     description: 'View and manage credit notes'
   },
 
-  // Payments Section
+  // Payments Section (FIXED: renamed parent to avoid duplicate)
   'Payments': {
     childrenCanShowParent: true,
-    description: 'Payment management section'
+    description: 'Payment management section - shown if user has any payment-related permission'
   },
-  'Payments': {
+  'Payments Item': {
     requiredPermissions: ['view_payment', 'create_payment', 'edit_payment'],
     description: 'View and manage payments'
   },
@@ -62,12 +62,12 @@ export const sidebarPermissionMap: SidebarPermissionMap = {
     description: 'View and manage remittance advice'
   },
 
-  // Inventory Section
+  // Inventory Section (FIXED: renamed parent to avoid duplicate)
   'Inventory': {
     childrenCanShowParent: true,
-    description: 'Inventory management section'
+    description: 'Inventory management section - shown if user has any inventory-related permission'
   },
-  'Inventory': {
+  'Inventory Item': {
     requiredPermissions: ['view_inventory', 'create_inventory', 'edit_inventory'],
     description: 'View and manage inventory'
   },
@@ -198,6 +198,29 @@ export const sidebarPermissionMap: SidebarPermissionMap = {
 };
 
 /**
+ * Helper function to map sidebar item titles to permission keys
+ * Handles special cases where child items have different names than their permission keys
+ * 
+ * @param title - The sidebar item title
+ * @param isParentMenu - Whether this is a parent menu item
+ * @returns The permission key to look up in the map
+ */
+export function getPermissionKey(title: string, isParentMenu: boolean = false): string {
+  // Child items that have different permission keys than their titles
+  const childKeyMapping: Record<string, string> = {
+    'Payments': 'Payments Item',
+    'Inventory': 'Inventory Item'
+  };
+
+  // If it's a child item with a mapped key, use that
+  if (!isParentMenu && childKeyMapping[title]) {
+    return childKeyMapping[title];
+  }
+
+  return title;
+}
+
+/**
  * Check if a sidebar item should be visible to the current user
  * 
  * @param itemTitle - The title of the sidebar item
@@ -210,11 +233,16 @@ export function shouldShowSidebarItem(
   canPermission: (permission: string) => boolean,
   isAdmin: boolean
 ): boolean {
-  const itemConfig = sidebarPermissionMap[itemTitle];
+  // Get the correct permission key for this item
+  const permissionKey = getPermissionKey(itemTitle, false);
+  const itemConfig = sidebarPermissionMap[permissionKey];
   
   if (!itemConfig) {
-    // Item not in map, show to everyone
-    return true;
+    // Item not in map - log for debugging but show to admin
+    if (isAdmin) {
+      console.debug(`Unmapped sidebar item: "${itemTitle}" (key: "${permissionKey}")`);
+    }
+    return isAdmin;
   }
 
   // Check if requires admin role
