@@ -251,56 +251,59 @@ export const useUserManagement = () => {
       }
 
       // If no password provided, create an invitation instead
-      const { data: existingInvitation } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('email', userData.email)
-        .eq('company_id', finalCompanyId)
-        .in('status', ['pending', 'accepted'])
-        .maybeSingle();
+      const existingInvitationsResult = await db.selectBy('user_invitations', {
+        email: userData.email,
+        company_id: finalCompanyId
+      });
 
-      let invitation = existingInvitation;
+      let invitation: any = null;
+      if (existingInvitationsResult.data && existingInvitationsResult.data.length > 0) {
+        const pendingInv = existingInvitationsResult.data.find((inv: any) => inv.status === 'pending' || inv.status === 'accepted');
+        if (pendingInv) {
+          invitation = pendingInv;
+        }
+      }
 
       // If no existing pending/accepted invitation, create a new one
-      if (!existingInvitation) {
-        const { data: newInvitation, error: inviteError } = await supabase
-          .from('user_invitations')
-          .insert({
-            email: userData.email,
-            role: userData.role,
-            company_id: finalCompanyId,
-            invited_by: currentUser?.id,
-            is_approved: true,
-            approved_by: currentUser?.id,
-            approved_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
+      if (!invitation) {
+        const inviteData = {
+          email: userData.email,
+          role: userData.role,
+          company_id: finalCompanyId,
+          invited_by: currentUser?.id,
+          is_approved: true,
+          approved_by: currentUser?.id,
+          approved_at: new Date().toISOString(),
+        };
 
-        if (inviteError) {
-          console.error('Invitation creation error:', inviteError);
-          return { success: false, error: `Failed to create invitation: ${inviteError.message}` };
+        const inviteResult = await db.insert('user_invitations', inviteData);
+
+        if (inviteResult.error) {
+          console.error('Invitation creation error:', inviteResult.error);
+          return { success: false, error: `Failed to create invitation: ${inviteResult.error.message || 'Unknown error'}` };
         }
 
-        if (!newInvitation?.id) {
+        if (!inviteResult.id) {
           return { success: false, error: 'Failed to create invitation' };
         }
 
-        invitation = newInvitation;
+        const selectResult = await db.selectOne('user_invitations', inviteResult.id);
+        if (selectResult.error) {
+          return { success: false, error: 'Failed to fetch created invitation' };
+        }
+
+        invitation = selectResult.data;
       } else {
         // Update existing invitation to ensure it's approved and current role is set
-        const { error: updateError } = await supabase
-          .from('user_invitations')
-          .update({
-            role: userData.role,
-            is_approved: true,
-            approved_by: currentUser?.id,
-            approved_at: new Date().toISOString(),
-          })
-          .eq('id', existingInvitation.id);
+        const updateResult = await db.update('user_invitations', invitation.id, {
+          role: userData.role,
+          is_approved: true,
+          approved_by: currentUser?.id,
+          approved_at: new Date().toISOString(),
+        });
 
-        if (updateError) {
-          console.warn('Failed to update existing invitation:', updateError);
+        if (updateResult.error) {
+          console.warn('Failed to update existing invitation:', updateResult.error);
           // Continue anyway - invitation still exists and is usable
         }
       }
