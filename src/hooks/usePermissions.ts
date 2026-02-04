@@ -353,6 +353,23 @@ export const usePermissions = () => {
     fetchUserRole();
   }, [fetchUserRole]);
 
+  // Log whenever role or loading state changes
+  useEffect(() => {
+    if (loading) {
+      console.log('⏳ [usePermissions] Still loading role...');
+    } else {
+      console.log('✅ [usePermissions] Role loading complete. Final state:', {
+        role_id: role?.id,
+        role_name: role?.name,
+        role_type: role?.role_type,
+        permissions_count: role?.permissions?.length || 0,
+        has_permissions: !!role?.permissions && role.permissions.length > 0,
+        is_null: role === null,
+        is_undefined: role === undefined
+      });
+    }
+  }, [loading, role]);
+
   /**
    * Entity type to permission mapping
    */
