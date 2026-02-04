@@ -82,16 +82,21 @@ export function CreateUserModal({
 
     setRolesLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('roles')
-        .select('*')
-        .eq('company_id', currentUser.company_id)
-        .order('is_default', { ascending: false })
-        .order('name', { ascending: true });
+      const result = await apiClient.adapter.selectBy('roles', {
+        company_id: currentUser.company_id,
+      });
 
-      if (error) throw error;
+      if (result.error) throw result.error;
 
-      setRoles(data || []);
+      // Sort roles: default first, then alphabetically
+      const sortedRoles = (Array.isArray(result.data) ? result.data : []).sort((a: any, b: any) => {
+        if (a.is_default !== b.is_default) {
+          return (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0);
+        }
+        return a.name.localeCompare(b.name);
+      });
+
+      setRoles(sortedRoles);
     } catch (err) {
       console.error('Error fetching roles:', err);
       toast.error('Failed to load roles');
