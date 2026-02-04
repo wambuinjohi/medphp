@@ -2,6 +2,7 @@ import React, { createContext, useContext, ReactNode, useEffect, useState } from
 import { useCompanies } from '@/hooks/useDatabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { logUnauthorizedCompanyAccess } from '@/utils/companyAccessLogger';
 
 interface CompanyContextType {
   companies: any[];
