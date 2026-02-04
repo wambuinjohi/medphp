@@ -71,23 +71,30 @@ export const useWebManager = () => {
         setLoading(true);
         setError(null);
 
-        let query = supabase
-          .from('web_categories_with_counts')
-          .select('*')
-          .order('display_order', { ascending: true });
+        const db = getDatabase();
+        const result = await db.selectBy('web_categories', {});
 
+        if (result.error) throw result.error;
+
+        let categories = (result.data || []) as WebCategory[];
+
+        // Apply search filter (client-side)
         if (search) {
-          query = query.ilike('name', `%${search}%`);
+          const searchLower = search.toLowerCase();
+          categories = categories.filter((c: any) =>
+            c.name && c.name.toLowerCase().includes(searchLower)
+          );
         }
 
+        // Sort by display_order
+        categories = categories.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+
+        // Apply limit
         if (limit) {
-          query = query.limit(limit);
+          categories = categories.slice(0, limit);
         }
 
-        const { data, error: err } = await query;
-
-        if (err) throw err;
-        return data as WebCategory[];
+        return categories;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to fetch categories';
         setError(message);
