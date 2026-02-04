@@ -269,7 +269,7 @@ export const usePermissions = () => {
         setRole(null);
       }
     } finally {
-      console.log('✅ [usePermissions] fetchUserRole completed, loading:', loading);
+      console.log('✅ [usePermissions] fetchUserRole completed, setting loading to false');
       setLoading(false);
     }
   }, [currentUser]);
