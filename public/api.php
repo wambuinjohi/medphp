@@ -1765,13 +1765,37 @@ try {
 
             // Check if user is admin for reading protected tables
             $is_admin = stripos($user['role'], 'admin') !== false || $user['role'] === 'super_admin';
-            if (!$is_admin) {
+
+            // Special handling for companies table - allow non-admin users to read their own company
+            if (!$is_admin && $table === 'companies') {
+                // For non-admin users, check if they're filtering by their own company_id
+                $company_id_filter = null;
+
+                if (is_array($where) && isset($where['id'])) {
+                    $company_id_filter = $where['id'];
+                } elseif (is_array($where) && isset($where['company_id'])) {
+                    $company_id_filter = $where['company_id'];
+                }
+
+                // Allow if no filter (will show only their company due to query structure)
+                // or if filter matches their company_id
+                if ($company_id_filter && $company_id_filter !== $user['company_id']) {
+                    // Trying to access a different company's data
+                    http_response_code(403);
+                    error_log("🔴 [AUTH] READ $table - Non-admin user {$user['email']} (role: {$user['role']}) tried to access company {$company_id_filter} but is assigned to {$user['company_id']} (DENIED)");
+                    throw new Exception("Insufficient permissions. You can only access your assigned company.");
+                }
+
+                // Allow non-admin to read their company
+                error_log("✅ [AUTH] READ $table - Authorization passed for non-admin user {$user['email']} (company_id: {$user['company_id']})");
+            } elseif (!$is_admin) {
+                // For other protected tables, non-admin users are denied
                 http_response_code(403);
                 error_log("🔴 [AUTH] READ $table - User is not admin (role: {$user['role']}) (DENIED)");
                 throw new Exception("Insufficient permissions. Admin role required to read this table.");
-            }
-
-            error_log("✅ [AUTH] READ $table - Authorization passed for user {$user['email']}");
+            } else {
+                // Admin user - full access
+                error_log("✅ [AUTH] READ $table - Authorization passed for admin user {$user['email']}");
         }
 
         $sql = "SELECT * FROM `$table`";
