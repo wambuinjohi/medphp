@@ -457,13 +457,17 @@ export class ExternalAPIAdapter implements IDatabase {
           const hasToken = !!this.getAuthToken();
           const userId = localStorage.getItem('med_api_user_id');
 
-          console.error('📊 401 Debug Info:', {
-            hasToken,
-            hasUserId: !!userId,
-            action,
-            table,
-            method,
-          });
+          console.error('📊 401 Debug Info:');
+          console.error('   - Has Token:', hasToken);
+          console.error('   - Has User ID:', !!userId);
+          console.error('   - Action:', action);
+          console.error('   - Table:', table);
+          console.error('   - Method:', method);
+          if (hasToken) {
+            const token = this.getAuthToken();
+            console.error('   - Token Format:', token?.substring(0, 20) + '...');
+            console.error('   - Token Length:', token?.length);
+          }
 
           // Try to refresh token as a backup mechanism
           try {
