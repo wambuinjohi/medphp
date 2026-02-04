@@ -496,13 +496,11 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase
-        .from('user_invitations')
-        .update({ status: 'revoked' })
-        .eq('id', invitationId);
+      const db = getDatabase();
+      const result = await db.update('user_invitations', invitationId, { status: 'revoked' });
 
-      if (error) {
-        throw error;
+      if (result.error) {
+        throw result.error;
       }
 
       toast.success('Invitation revoked successfully');
