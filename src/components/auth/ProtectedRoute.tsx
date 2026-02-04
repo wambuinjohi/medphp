@@ -67,12 +67,30 @@ export function ProtectedRoute({
 
   // Check permission-based access control
   if (requiredPermissions && requiredPermissions.length > 0) {
+    console.log('🔐 [ProtectedRoute] Checking permissions:', {
+      requiredPermissions,
+      requireAllPermissions,
+      userRole: profile?.role,
+      permissionsLoading,
+    });
+
     const hasPermission = requireAllPermissions
       ? canAll(requiredPermissions)
       : canAny(requiredPermissions);
 
+    console.log('🔐 [ProtectedRoute] Permission check result:', {
+      requiredPermissions,
+      hasPermission,
+      userRole: profile?.role,
+    });
+
     if (!hasPermission) {
       // Show error toast
+      console.error('❌ [ProtectedRoute] Access denied:', {
+        requiredPermissions,
+        userRole: profile?.role,
+        message: `You do not have permission to access this page. Required: ${requiredPermissions.join(', ')}`
+      });
       toast.error(`You do not have permission to access this page. Required: ${requiredPermissions.join(', ')}`);
 
       return fallback || (
