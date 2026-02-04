@@ -172,6 +172,7 @@ export const usePermissionGuards = () => {
   /**
    * Check if user can view an entity type
    * Enforces view_* permissions based on entity type
+   * Shows error toast if permission denied
    */
   const checkCanView = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment' | 'reports',
@@ -197,6 +198,23 @@ export const usePermissionGuards = () => {
     return true;
   };
 
+  /**
+   * Check if user can view an entity type (UI-only, no toast)
+   * Used for conditionally rendering view elements in the UI
+   * Does not show any error messages
+   */
+  const canViewUI = (
+    entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment' | 'reports'
+  ): boolean => {
+    // Admin users can view anything
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check if user has view permission for this entity type
+    return canView(entityType);
+  };
+
   return {
     isAdmin,
     checkPermission,
@@ -204,6 +222,10 @@ export const usePermissionGuards = () => {
     checkCanCreate,
     checkCanEdit,
     checkCanView,
+    canDeleteUI,
+    canCreateUI,
+    canEditUI,
+    canViewUI,
   };
 };
 
