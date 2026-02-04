@@ -1801,7 +1801,7 @@ try {
             } else {
                 // Admin user - full access
                 error_log("✅ [AUTH] READ $table - Authorization passed for admin user {$user['email']}");
-        }
+            }
 
         $sql = "SELECT * FROM `$table`";
 
