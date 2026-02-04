@@ -183,6 +183,10 @@ export const sidebarPermissionMap: SidebarPermissionMap = {
     childrenCanShowParent: true,
     description: 'Admin tools - admin only'
   },
+  'eTIMS Management': {
+    requiresAdminRole: true,
+    description: 'KRA eTIMS invoice integration management'
+  },
   'Image Management': {
     requiresAdminRole: true,
     description: 'Manage system images'
