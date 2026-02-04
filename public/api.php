@@ -1820,7 +1820,49 @@ try {
             if (is_array($where)) {
                 $conditions = [];
                 foreach ($where as $col => $val) {
-                    $conditions[] = "`" . escape($conn, $col) . "`='" . escape($conn, $val) . "'";
+                    // Check if column has a filter operator suffix (_in, _gt, _lt, _gte, _lte, _like)
+                    $base_col = $col;
+                    $operator = '=';
+                    $condition = null;
+
+                    // Handle different filter operators
+                    if (preg_match('/_in$/', $col)) {
+                        // IN operator - expects array values
+                        $base_col = preg_replace('/_in$/', '', $col);
+                        if (is_array($val)) {
+                            $escaped_values = array_map(function($v) use ($conn) {
+                                return "'" . escape($conn, $v) . "'";
+                            }, $val);
+                            $condition = "`" . escape($conn, $base_col) . "` IN (" . implode(",", $escaped_values) . ")";
+                        }
+                    } elseif (preg_match('/_like$/', $col)) {
+                        // LIKE operator
+                        $base_col = preg_replace('/_like$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "` LIKE '%" . escape($conn, $val) . "%'";
+                    } elseif (preg_match('/_gt$/', $col)) {
+                        // Greater than operator
+                        $base_col = preg_replace('/_gt$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "` > '" . escape($conn, $val) . "'";
+                    } elseif (preg_match('/_gte$/', $col)) {
+                        // Greater than or equal operator
+                        $base_col = preg_replace('/_gte$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "` >= '" . escape($conn, $val) . "'";
+                    } elseif (preg_match('/_lt$/', $col)) {
+                        // Less than operator
+                        $base_col = preg_replace('/_lt$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "` < '" . escape($conn, $val) . "'";
+                    } elseif (preg_match('/_lte$/', $col)) {
+                        // Less than or equal operator
+                        $base_col = preg_replace('/_lte$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "` <= '" . escape($conn, $val) . "'";
+                    } else {
+                        // Standard equality operator (no suffix)
+                        $condition = "`" . escape($conn, $base_col) . "`='" . escape($conn, $val) . "'";
+                    }
+
+                    if ($condition) {
+                        $conditions[] = $condition;
+                    }
                 }
                 $sql .= " WHERE " . implode(" AND ", $conditions);
             } else {
