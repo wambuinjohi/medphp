@@ -1,11 +1,13 @@
 /**
  * etimsService.ts - Frontend eTIMS Service
- * 
+ *
  * Communicates with PHP backend API for eTIMS operations
  * Frontend NEVER talks directly to KRA API - only through backend
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+// Use import.meta.env for Vite, with fallback to current origin
+const API_BASE_URL = import.meta.env.VITE_API_URL ||
+                     (typeof window !== 'undefined' ? window.location.origin : '');
 
 export interface EtimsSubmitRequest {
   invoiceId: number;
