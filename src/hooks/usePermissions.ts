@@ -99,6 +99,14 @@ export const usePermissions = () => {
       const fetchError = result.error;
       const data = result.data?.[0] || null;
 
+      console.log('📊 [usePermissions] Database fetch result:', {
+        hasError: !!fetchError,
+        errorMessage: fetchError instanceof Error ? fetchError.message : fetchError,
+        dataLength: Array.isArray(result.data) ? result.data.length : 'not an array',
+        data: data,
+        rawData: result.data
+      });
+
       if (fetchError) {
         const errorMessage = fetchError instanceof Error ? fetchError.message : JSON.stringify(fetchError);
         console.error('❌ [usePermissions] Error fetching user role from database:', errorMessage);
