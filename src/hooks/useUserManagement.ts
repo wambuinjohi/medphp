@@ -375,14 +375,13 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      // Delete from profiles table - this will cascade to auth.users if foreign key is set
-      const { error: deleteError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
+      const db = getDatabase();
 
-      if (deleteError) {
-        throw deleteError;
+      // Delete from profiles table - this will cascade to auth.users if foreign key is set
+      const deleteResult = await db.delete('profiles', userId);
+
+      if (deleteResult.error) {
+        throw deleteResult.error;
       }
 
       toast.success('User deleted successfully');
