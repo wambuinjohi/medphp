@@ -27,8 +27,7 @@ header("Access-Control-Expose-Headers: Content-Type, X-Total-Count, X-Page, X-Pa
 // This is critical for CORS headers to work in all error scenarios
 ob_start();
 
-// ENDPOINT IDENTIFIER - Log which API file is executing (after headers are set)
-error_log("🟢 [ENDPOINT] Using public/api.php (main API)");
+// ENDPOINT IDENTIFIER - Removed redundant endpoint logging (cleanup)
 
 // Set error handler to catch any errors and ensure CORS headers are sent
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
