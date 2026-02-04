@@ -188,7 +188,7 @@ export const sidebarPermissionMap: SidebarPermissionMap = {
     description: 'Manage system images'
   },
   'Audit Logs': {
-    requiresAdminRole: true,
+    requiredPermissions: ['view_audit_logs'],
     description: 'View audit logs'
   },
   'Database': {

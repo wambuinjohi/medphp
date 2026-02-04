@@ -236,7 +236,10 @@ const App = () => {
                 <Route
                   path="/app/admin/audit-logs"
                   element={
-                    <ProtectedRoute requireAuth={true} requiredRole="admin">
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/admin/audit-logs'].requiredPermissions}
+                    >
                       <AuditLogs />
                     </ProtectedRoute>
                   }

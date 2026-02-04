@@ -140,15 +140,28 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Exclude<RoleType, 'custom'>, Permi
     'view_audit_logs', 'manage_roles', 'manage_permissions', 'access_settings',
   ],
   accountant: [
-    // Accountants can work with invoices, payments, and reports
-    'create_quotation', 'view_quotation', 'edit_quotation', 'export_quotation',
+    // Invoices
     'create_invoice', 'view_invoice', 'edit_invoice', 'export_invoice',
-    'create_credit_note', 'view_credit_note', 'edit_credit_note', 'export_credit_note',
-    'create_proforma', 'view_proforma', 'edit_proforma', 'export_proforma',
+    // Payments
     'create_payment', 'view_payment', 'edit_payment',
-    'view_inventory', 'view_reports', 'export_reports', 'view_customer_reports', 'view_sales_reports',
-    'view_customer', 'view_delivery_note',
-    'view_lpo', 'view_supplier', 'view_remittance', 'create_remittance', 'view_audit_logs',
+    // Credit Notes
+    'create_credit_note', 'view_credit_note', 'edit_credit_note', 'export_credit_note',
+    // Proforma (view/export only)
+    'view_proforma', 'export_proforma',
+    // Quotations (view/export only)
+    'view_quotation', 'export_quotation',
+    // Customers (view only)
+    'view_customer',
+    // Remittance
+    'create_remittance', 'view_remittance', 'edit_remittance',
+    // LPOs (view only)
+    'view_lpo',
+    // Reports
+    'view_reports', 'export_reports', 'view_customer_reports', 'view_sales_reports',
+    // Delivery Notes (view only)
+    'view_delivery_note',
+    // Audit Logs (view only)
+    'view_audit_logs',
   ],
   stock_manager: [
     // Stock managers handle inventory and delivery notes
