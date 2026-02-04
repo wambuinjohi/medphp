@@ -584,8 +584,29 @@ export class ExternalAPIAdapter implements IDatabase {
         }
 
         if (result.token) {
-          this.setAuthToken(result.token);
-          console.log('✅ Token stored successfully');
+          // Verify token format before storing
+          const tokenParts = result.token.split('.');
+          if (tokenParts.length === 3) {
+            // Valid JWT format (header.payload.signature)
+            this.setAuthToken(result.token);
+
+            // Verify it was stored correctly
+            const storedToken = this.getAuthToken();
+            if (storedToken === result.token) {
+              console.log('✅ Token stored successfully');
+              console.log('   - Token Format: Valid JWT (3 parts)');
+              console.log('   - Token Length:', result.token.length);
+              console.log('   - Token Preview:', result.token.substring(0, 30) + '...');
+            } else {
+              console.error('❌ Token storage verification failed - stored token does not match');
+              throw new Error('Token storage verification failed');
+            }
+          } else {
+            console.error('❌ Invalid token format received from server');
+            console.error('   - Expected JWT format (header.payload.signature)');
+            console.error('   - Received:', result.token.substring(0, 50));
+            throw new Error('Invalid token format from server');
+          }
 
           // Store user info in localStorage for consistent access
           if (result.user && result.user.id) {
