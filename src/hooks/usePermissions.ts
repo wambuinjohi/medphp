@@ -244,7 +244,7 @@ export const usePermissions = () => {
             name: userRole,
             role_type: roleType,
             description: `Fallback ${userRole} role`,
-            permissions: DEFAULT_ROLE_PERMISSIONS[roleType],
+            permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS[roleType]),
             company_id: currentUser?.company_id || '',
             is_default: true,
             created_at: new Date().toISOString(),
