@@ -13,7 +13,8 @@
  */
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { getCurrentUser } from '@/utils/getCurrentUser';
+import { getDatabase } from '@/integrations/database';
 
 interface AllocationTestResult {
   success: boolean;
