@@ -234,27 +234,10 @@ export default function Invoices() {
       // Ensure invoice has items; if not, fetch them on demand
       let enrichedInvoice: any = invoice;
       if (!invoice.invoice_items || invoice.invoice_items.length === 0) {
-        const { data: items, error } = await supabase
-          .from('invoice_items')
-          .select(`
-            id,
-            invoice_id,
-            product_id,
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            discount_before_vat,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total,
-            sort_order,
-            products(id, name, product_code, unit_of_measure)
-          `)
-          .eq('invoice_id', invoice.id);
-        if (!error && items) {
-          enrichedInvoice = { ...invoice, invoice_items: items };
+        const db = getDatabase();
+        const result = await db.selectBy('invoice_items', { invoice_id: invoice.id });
+        if (!result.error && result.data) {
+          enrichedInvoice = { ...invoice, invoice_items: result.data };
         }
       }
 
