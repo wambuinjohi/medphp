@@ -29,6 +29,8 @@ import {
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { usePermissions } from '@/hooks/usePermissions';
+import { shouldShowSidebarItem, shouldShowParentMenu } from '@/constants/sidebarPermissions';
 
 interface SidebarItem {
   title: string;
