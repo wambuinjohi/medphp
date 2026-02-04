@@ -194,9 +194,9 @@ export const usePermissions = () => {
           permissions: normalizedRole.permissions
         });
         setRole(normalizedRole);
-      } else {
-        // Role not found in roles table, use default permissions as fallback
-        console.warn(`⚠️ [usePermissions] Role ${userRole} not found in roles table, using default fallback`);
+      } else if (!data && !fetchError) {
+        // Role not found in roles table (no error, just no data)
+        console.warn(`⚠️ [usePermissions] Role "${userRole}" not found in roles table, using default fallback`);
 
         // Try exact match first, then case-insensitive match
         let roleType: keyof typeof DEFAULT_ROLE_PERMISSIONS | null = null;
