@@ -133,9 +133,9 @@ export function Header({ onMenuToggle, isMobileMenuOpen }: HeaderProps) {
                         {profile?.role && (
                           <Badge
                             variant="outline"
-                            className={`text-xs px-1 py-0 h-4 ${getRoleColor(profile.role)}`}
+                            className={`text-xs px-2 py-0.5 h-5 ${getRoleColor(profile.role)}`}
                           >
-                            {profile.role.substring(0, 1).toUpperCase()}
+                            {getRoleDisplay(profile.role)}
                           </Badge>
                         )}
                       </div>
