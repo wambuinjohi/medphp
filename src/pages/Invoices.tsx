@@ -51,7 +51,7 @@ import { RecordPaymentModal } from '@/components/payments/RecordPaymentModal';
 import { CreateDeliveryNoteModal } from '@/components/delivery/CreateDeliveryNoteModal';
 import { downloadInvoicePDF } from '@/utils/pdfGenerator';
 import { reconcileAllInvoiceBalances } from '@/utils/balanceReconciliation';
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 
 interface Invoice {
   id: string;
