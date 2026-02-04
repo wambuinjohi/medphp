@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { CompanyProvider } from "@/contexts/CompanyContext";
+import { routePermissionMap } from "@/constants/routePermissions";
 import Index from "./pages/Index";
 import Quotations from "./pages/Quotations";
 import Invoices from "./pages/Invoices";
