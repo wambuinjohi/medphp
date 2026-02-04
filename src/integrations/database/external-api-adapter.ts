@@ -585,10 +585,26 @@ export class ExternalAPIAdapter implements IDatabase {
         if (!response.ok || result.status === 'error') {
           const errorMsg = result.message || result.error || `Login failed with status ${response.status}`;
           console.error('❌ Login error:', errorMsg);
+          console.error('📊 Response details:', {
+            status: response.status,
+            statusText: response.statusText,
+            result,
+          });
           return {
             token: '',
             user: null,
             error: new Error(errorMsg),
+          };
+        }
+
+        // Validate response structure
+        if (!result.token) {
+          console.error('❌ Server did not return a token');
+          console.error('📊 Response:', result);
+          return {
+            token: '',
+            user: null,
+            error: new Error('Login failed: Server did not return an authentication token'),
           };
         }
 
