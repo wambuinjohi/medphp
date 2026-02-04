@@ -1,5 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
+import { getDatabase } from '@/integrations/database';
+
 export interface ReconciliationResult {
   invoiceId: string;
   invoiceNumber: string;
