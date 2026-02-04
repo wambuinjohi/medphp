@@ -376,14 +376,16 @@ export const useWebManager = () => {
     try {
       setError(null);
 
-      const { data, error: err } = await supabase
-        .from('variant_images')
-        .select('*')
-        .eq('variant_id', variantId)
-        .order('display_order', { ascending: true });
+      const db = getDatabase();
+      const result = await db.selectBy('variant_images', { variant_id: variantId });
 
-      if (err) throw err;
-      return (data || []).map((img) => ({
+      if (result.error) throw result.error;
+
+      let images = (result.data || []);
+      // Sort by display_order
+      images = images.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+
+      return images.map((img: any) => ({
         id: img.id,
         url: img.image_url,
         altText: img.alt_text || '',
