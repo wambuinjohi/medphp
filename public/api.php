@@ -1867,9 +1867,9 @@ try {
                         $base_col = preg_replace('/_lte$/', '', $col);
                         $condition = "`" . escape($conn, $base_col) . "` <= '" . escape($conn, $val) . "'";
                     } elseif (preg_match('/_contains$|_contained_by$|_range_lt$|_range_gte$|_range_overlaps$|_text_search$/', $col)) {
-                        // JSON/Range operators not supported in basic MySQL - skip these for now
+                        // JSON/Range operators not supported in basic MySQL - skip silently
                         // These would need special handling or can be filtered client-side
-                        continue 2; // Skip to next iteration of foreach
+                        $condition = null; // Don't add to WHERE clause
                     } else {
                         // Standard equality operator (no suffix)
                         $condition = "`" . escape($conn, $base_col) . "`='" . escape($conn, $val) . "'";
