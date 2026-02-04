@@ -2973,6 +2973,191 @@ try {
             throw new Exception("Receipt deletion failed: " . $e->getMessage());
         }
     }
+    // ================================================================
+    // eTIMS INTEGRATION ENDPOINTS
+    // ================================================================
+    // HANDLER 1: SUBMIT SALE TO eTIMS
+    // Endpoint: POST /api?action=etims_submit_sale
+    elseif ($action === 'etims_submit_sale') {
+        // Check authentication
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        if (!$auth_header || strpos($auth_header, 'Bearer ') !== 0) {
+            http_response_code(403);
+            echo json_encode(['status' => 'error', 'message' => 'Authentication required']);
+            exit();
+        }
+
+        // Get request body
+        $data = $json_body ?? [];
+
+        if (!$data || !isset($data['invoiceId']) || !isset($data['companyId'])) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Missing required fields: invoiceId, companyId']);
+            exit();
+        }
+
+        // Initialize service
+        $etims = new EtimsService($conn, $ETIMS_CONFIG);
+
+        // Fetch invoice data
+        $invoice_id = (int)$data['invoiceId'];
+        $company_id = escape($conn, $data['companyId']);
+
+        $invoice_result = $conn->query("
+            SELECT i.*, c.name as company_name
+            FROM invoices i
+            JOIN companies c ON i.company_id = c.id
+            WHERE i.id = $invoice_id AND i.company_id = '$company_id'
+            LIMIT 1
+        ");
+
+        if (!$invoice_result || $invoice_result->num_rows === 0) {
+            http_response_code(404);
+            echo json_encode(['status' => 'error', 'message' => 'Invoice not found']);
+            exit();
+        }
+
+        $invoice = $invoice_result->fetch_assoc();
+
+        // Fetch invoice items
+        $items_result = $conn->query("SELECT * FROM invoice_items WHERE invoice_id = $invoice_id");
+        $items = [];
+        while ($item = $items_result->fetch_assoc()) {
+            $items[] = [
+                'description' => $item['description'],
+                'quantity' => (float)$item['quantity'],
+                'unit_price' => (float)$item['unit_price'],
+                'tax_percentage' => (float)$item['tax_percentage'],
+                'line_total' => (float)$item['line_total']
+            ];
+        }
+
+        // Fetch customer name
+        $customer_id = $invoice['customer_id'];
+        $customer_result = $conn->query("SELECT name FROM customers WHERE id = $customer_id LIMIT 1");
+        $customer = $customer_result ? $customer_result->fetch_assoc() : null;
+        $customer_name = $customer['name'] ?? 'Unknown Customer';
+
+        // Prepare sale data for eTIMS
+        $sale_data = [
+            'invoice_number' => $invoice['invoice_number'],
+            'invoice_date' => $invoice['invoice_date'],
+            'customer_id' => $invoice['customer_id'],
+            'customer_name' => $customer_name,
+            'customer_pin' => $data['customerPin'] ?? '',
+            'items' => $items,
+            'subtotal' => (float)$invoice['subtotal'],
+            'tax_amount' => (float)$invoice['tax_amount'],
+            'total_amount' => (float)$invoice['total_amount'],
+            'currency' => 'KES',
+            'payment_method' => $data['paymentMethod'] ?? 'CASH'
+        ];
+
+        // Submit to eTIMS
+        $result = $etims->submitSale($invoice_id, $company_id, $sale_data);
+
+        // Return response
+        http_response_code($result['success'] ? 200 : 400);
+        echo json_encode($result);
+        exit();
+    }
+    // HANDLER 2: RETRY FAILED SUBMISSIONS
+    // Endpoint: POST /api?action=etims_retry_submissions
+    elseif ($action === 'etims_retry_submissions') {
+        // Check authentication - admin level
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        if (!$auth_header || strpos($auth_header, 'Bearer ') !== 0) {
+            http_response_code(403);
+            echo json_encode(['status' => 'error', 'message' => 'Authentication required']);
+            exit();
+        }
+
+        // Get optional parameters
+        $data = $json_body ?? [];
+        $company_id = isset($data['companyId']) ? escape($conn, $data['companyId']) : null;
+        $limit = isset($data['limit']) ? (int)$data['limit'] : 10;
+
+        // Initialize service and retry
+        $etims = new EtimsService($conn, $ETIMS_CONFIG);
+        $result = $etims->retryFailedSubmissions($company_id, $limit);
+
+        http_response_code(200);
+        echo json_encode($result);
+        exit();
+    }
+    // HANDLER 3: CHECK eTIMS STATUS (Public Endpoint)
+    // Endpoint: GET /api?action=etims_status
+    elseif ($action === 'etims_status') {
+        // Initialize service and get status
+        $etims = new EtimsService($conn, $ETIMS_CONFIG);
+        $status = $etims->getStatus();
+
+        http_response_code(200);
+        echo json_encode(['status' => 'success', 'etims' => $status]);
+        exit();
+    }
+    // HANDLER 4: LIST eTIMS SUBMISSIONS
+    // Endpoint: GET /api?action=etims_submissions_list
+    elseif ($action === 'etims_submissions_list') {
+        // Check authentication
+        $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+        if (!$auth_header || strpos($auth_header, 'Bearer ') !== 0) {
+            http_response_code(403);
+            echo json_encode(['status' => 'error', 'message' => 'Authentication required']);
+            exit();
+        }
+
+        // Get query parameters
+        $status = isset($_GET['status']) ? escape($conn, $_GET['status']) : null;
+        $company_id = isset($_GET['company_id']) ? escape($conn, $_GET['company_id']) : null;
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 50;
+        $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+
+        // Build query
+        $where = ['1=1'];
+        if ($status) $where[] = "es.status = '$status'";
+        if ($company_id) $where[] = "es.company_id = '$company_id'";
+
+        $query = "
+            SELECT
+                es.*,
+                i.invoice_number,
+                i.total_amount,
+                c.name as company_name
+            FROM etims_sales es
+            JOIN invoices i ON es.invoice_id = i.id
+            JOIN companies c ON es.company_id = c.id
+            WHERE " . implode(' AND ', $where) . "
+            ORDER BY es.created_at DESC
+            LIMIT $offset, $limit
+        ";
+
+        $result = $conn->query($query);
+        $submissions = [];
+        while ($row = $result->fetch_assoc()) {
+            // Decode JSON fields
+            $row['sale_payload'] = json_decode($row['sale_payload'], true);
+            $submissions[] = $row;
+        }
+
+        // Get total count
+        $count_sql = "SELECT COUNT(*) as total FROM etims_sales es WHERE " . implode(' AND ', $where);
+        $count_result = $conn->query($count_sql);
+        $total = $count_result->fetch_assoc()['total'];
+
+        http_response_code(200);
+        echo json_encode([
+            'status' => 'success',
+            'submissions' => $submissions,
+            'total' => $total,
+            'limit' => $limit,
+            'offset' => $offset
+        ]);
+        exit();
+    }
+    // ================================================================
+    // END eTIMS ENDPOINTS
+    // ================================================================
     else {
         error_log("❌ API ERROR - Reaching Unknown action clause:");
         error_log("  Action value: [" . var_export($action, true) . "]");
