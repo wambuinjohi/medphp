@@ -144,34 +144,11 @@ export default function CreditNotes() {
   const handleEditCreditNote = async (creditNote: CreditNote) => {
     try {
       // Fetch full credit note with items and customer details
-      const { data, error } = await supabase
-        .from('credit_notes')
-        .select(`
-          *,
-          customers!customer_id (
-            name,
-            email,
-            phone,
-            customer_code
-          ),
-          credit_note_items (
-            *,
-            products!product_id (
-              name,
-              product_code,
-              unit_of_measure
-            )
-          ),
-          invoices!invoice_id (
-            invoice_number,
-            total_amount
-          )
-        `)
-        .eq('id', creditNote.id)
-        .single();
+      const db = getDatabase();
+      const result = await db.selectOne('credit_notes', creditNote.id);
 
-      if (error) throw error;
-      setSelectedCreditNote(data);
+      if (result.error) throw result.error;
+      setSelectedCreditNote(result.data as CreditNote);
       setShowEditModal(true);
     } catch (error) {
       console.error('Error fetching credit note data:', error);
