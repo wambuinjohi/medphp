@@ -255,9 +255,9 @@ export function useDeleteCreditNote() {
       let userId: string | null = localStorage.getItem('med_api_user_id');
 
       if (!userId) {
-        // Fall back to Supabase auth
-        const { data: { user } } = await supabase.auth.getUser();
-        userId = user?.id || null;
+        // Get from current user (stored in localStorage)
+        const user = getCurrentUser();
+        userId = user.id;
       }
 
       if (!userId) throw new Error('Not authenticated');
