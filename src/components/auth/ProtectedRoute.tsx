@@ -1,15 +1,20 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent } from '@/components/ui/card';
-import { Lock } from 'lucide-react';
+import { Lock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Permission } from '@/types/permissions';
+import { toast } from 'sonner';
 
 interface ProtectedRouteProps {
   children: ReactNode;
   fallback?: ReactNode;
   requireAuth?: boolean;
   requiredRole?: string;
+  requiredPermissions?: Permission[];
+  requireAllPermissions?: boolean; // If true, user must have ALL permissions; if false, user must have ANY (default: false)
 }
 
 export function ProtectedRoute({
