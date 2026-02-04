@@ -525,13 +525,11 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase
-        .from('user_invitations')
-        .delete()
-        .eq('id', invitationId);
+      const db = getDatabase();
+      const result = await db.delete('user_invitations', invitationId);
 
-      if (error) {
-        throw error;
+      if (result.error) {
+        throw result.error;
       }
 
       toast.success('Invitation deleted successfully');
