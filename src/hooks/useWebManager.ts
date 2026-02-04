@@ -138,16 +138,16 @@ export const useWebManager = () => {
       setLoading(true);
       setError(null);
 
-      const { data: updated, error: err } = await supabase
-        .from('web_categories')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
+      const db = getDatabase();
+      const result = await db.update('web_categories', id, data);
 
-      if (err) throw err;
+      if (result.error) throw result.error;
+
+      const selectResult = await db.selectOne('web_categories', id);
+      if (selectResult.error) throw selectResult.error;
+
       toast.success('Category updated successfully');
-      return updated as WebCategory;
+      return selectResult.data as WebCategory;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update category';
       setError(message);
