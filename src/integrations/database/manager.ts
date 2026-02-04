@@ -97,7 +97,8 @@ class DatabaseManager {
       } else if (provider === 'mysql') {
         this.adapter = new MySQLAdapter();
       } else {
-        this.adapter = new SupabaseAdapter();
+        // Default to external API (Supabase no longer supported)
+        this.adapter = getSharedExternalAdapter();
       }
     }
     return this.adapter;
