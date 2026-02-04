@@ -130,10 +130,9 @@ export const useCreateQuotationWithItems = () => {
       // Ensure created_by references the authenticated user to satisfy FK constraints
       let cleanQuotation = { ...quotation } as any;
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        const authUserId = userData?.user?.id || null;
-        if (authUserId) {
-          cleanQuotation.created_by = authUserId;
+        const currentUser = getCurrentUser();
+        if (currentUser?.id) {
+          cleanQuotation.created_by = currentUser.id;
         } else if (typeof cleanQuotation.created_by === 'undefined') {
           cleanQuotation.created_by = null;
         }
