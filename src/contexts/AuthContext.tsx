@@ -87,6 +87,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const initializingRef = useRef(false);
   const forceCompletedRef = useRef(false);
 
+  // Grace period tracking - prevent token validation immediately after login
+  const justLoggedInRef = useRef<number | null>(null);
+  const GRACE_PERIOD_AFTER_LOGIN = 30000; // 30 seconds grace period
+
   // Toast spam prevention
   const lastNetworkErrorToast = useRef<number>(0);
   const lastPermissionErrorToast = useRef<number>(0);
