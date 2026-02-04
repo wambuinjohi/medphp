@@ -142,6 +142,7 @@ export class ExternalAPIAdapter implements IDatabase {
   /**
    * Automatically refresh token if it's expired or about to expire
    * Refreshes proactively 5 minutes before expiration
+   * Implements exponential backoff to avoid hammering server on repeated failures
    */
   private async refreshTokenIfNeeded(): Promise<void> {
     const token = this.getAuthToken();
@@ -151,6 +152,19 @@ export class ExternalAPIAdapter implements IDatabase {
       // Check if token is expired
       if (this.isTokenExpired()) {
         console.log('🔄 Token expired, attempting automatic refresh...');
+
+        // Implement exponential backoff: 1s → 2s → 4s between attempts
+        const timeSinceLastAttempt = Date.now() - this.lastValidationAttemptTime;
+        const baseDelay = 1000;
+        const requiredDelay = baseDelay * Math.pow(2, Math.max(0, this.failedValidationAttempts - 1));
+
+        if (timeSinceLastAttempt < requiredDelay) {
+          console.log(`⏳ Delaying token refresh: waiting ${Math.round((requiredDelay - timeSinceLastAttempt) / 1000)}s (exponential backoff)`);
+          return;
+        }
+
+        this.lastValidationAttemptTime = Date.now();
+
         // Token is expired - try to refresh using refresh endpoint
         await this.attemptTokenRefresh();
       }
