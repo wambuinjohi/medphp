@@ -1821,7 +1821,8 @@ try {
                 }
 
                 // Check if a specific company filter was requested and verify it matches their company
-                if ($company_id_filter !== null && $company_id_filter !== $user['company_id']) {
+                // Cast both to strings to handle type mismatches (string vs integer)
+                if ($company_id_filter !== null && (string)$company_id_filter !== (string)$user['company_id']) {
                     // Trying to access roles from a different company
                     http_response_code(403);
                     error_log("🔴 [AUTH] READ $table - Non-admin user {$user['email']} (role: {$user['role']}) tried to access roles from company {$company_id_filter} but is assigned to {$user['company_id']} (DENIED)");
