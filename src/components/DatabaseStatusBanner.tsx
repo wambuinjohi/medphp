@@ -3,7 +3,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Database, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 
 export function DatabaseStatusBanner() {
   const [status, setStatus] = React.useState<'checking' | 'connected' | 'error'>('checking');
@@ -12,7 +12,8 @@ export function DatabaseStatusBanner() {
   const checkConnection = async () => {
     setStatus('checking');
     try {
-      const { error } = await supabase.from('companies').select('count').limit(1);
+      const db = getDatabase();
+      const { error } = await db.select('companies');
       if (error) {
         console.error('Database connection error:', error);
         setStatus('error');
