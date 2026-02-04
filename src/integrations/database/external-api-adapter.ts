@@ -976,25 +976,112 @@ export class ExternalAPIAdapter implements IDatabase {
   }
 
   async canRead(table: string, recordId: string, auth: AuthContext): Promise<boolean> {
-    // Simple authorization - admin can read everything
-    // Users can only read their own records or public records
-    if (auth?.role === 'admin') {
+    // Admins can read everything
+    if (auth?.role === 'admin' || auth?.role === 'super_admin') {
       return true;
     }
 
-    // For now, allow all authenticated users to read
-    // This should be enhanced based on actual business logic
-    return !!auth?.user_id;
+    // Non-admin users must be authenticated
+    const userId = auth?.userId || auth?.user_id;
+    if (!userId) {
+      return false;
+    }
+
+    try {
+      // Fetch the record to verify ownership
+      const result = await this.selectOne(table, recordId);
+      if (result.error || !result.data) {
+        return false; // Record not found
+      }
+
+      // Verify user's company matches record's company
+      const recordCompanyId = (result.data as any)?.company_id;
+      const userCompanyId = auth?.companyId;
+
+      if (!recordCompanyId || !userCompanyId) {
+        return false; // Missing company_id
+      }
+
+      return recordCompanyId === userCompanyId;
+    } catch (error) {
+      console.error('Error in canRead authorization:', error);
+      return false; // Deny on error (fail secure)
+    }
   }
 
   async canWrite(table: string, recordId: string | null, companyId: string, auth: AuthContext): Promise<boolean> {
-    // Only admins can write for now
-    return auth?.role === 'admin';
+    // Admins can write everything
+    if (auth?.role === 'admin' || auth?.role === 'super_admin') {
+      return true;
+    }
+
+    // Non-admin users must be authenticated
+    const userId = auth?.userId || auth?.user_id;
+    if (!userId) {
+      return false;
+    }
+
+    // Verify user's company matches the company being written to
+    const userCompanyId = auth?.companyId;
+    if (!userCompanyId || !companyId) {
+      return false;
+    }
+
+    if (userCompanyId !== companyId) {
+      return false; // Company mismatch - prevent cross-company writes
+    }
+
+    // If updating an existing record, verify ownership
+    if (recordId) {
+      try {
+        const result = await this.selectOne(table, recordId);
+        if (result.error || !result.data) {
+          return false; // Record not found
+        }
+
+        const recordCompanyId = (result.data as any)?.company_id;
+        return recordCompanyId === userCompanyId;
+      } catch (error) {
+        console.error('Error in canWrite authorization:', error);
+        return false; // Deny on error (fail secure)
+      }
+    }
+
+    return true; // New record, company already verified
   }
 
   async canDelete(table: string, recordId: string, auth: AuthContext): Promise<boolean> {
-    // Only admins can delete
-    return auth?.role === 'admin';
+    // Admins can delete everything
+    if (auth?.role === 'admin' || auth?.role === 'super_admin') {
+      return true;
+    }
+
+    // Non-admin users must be authenticated
+    const userId = auth?.userId || auth?.user_id;
+    if (!userId) {
+      return false;
+    }
+
+    try {
+      // Fetch the record to verify ownership
+      const result = await this.selectOne(table, recordId);
+      if (result.error || !result.data) {
+        return false; // Record not found
+      }
+
+      // Verify user's company matches record's company
+      const recordCompanyId = (result.data as any)?.company_id;
+      const userCompanyId = auth?.companyId;
+
+      if (!recordCompanyId || !userCompanyId) {
+        return false; // Missing company_id
+      }
+
+      return recordCompanyId === userCompanyId;
+    } catch (error) {
+      console.error('Error in canDelete authorization:', error);
+      return false; // Deny on error (fail secure)
+    }
   }
 
   async transaction<T>(callback: (db: IDatabase) => Promise<T>): Promise<T> {
