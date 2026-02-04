@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
+import { getCurrentUser } from '@/utils/getCurrentUser';
 
 export interface CreditNote {
   id: string;
