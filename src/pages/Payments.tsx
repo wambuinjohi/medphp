@@ -34,6 +34,7 @@ import { usePayments } from '@/hooks/useDatabase';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { useInvoicesFixed as useInvoices } from '@/hooks/useInvoicesFixed';
 import { usePermissions } from '@/hooks/usePermissions';
+import { usePermissionGuards } from '@/hooks/usePermissionGuards';
 import { generatePaymentReceiptPDF } from '@/utils/pdfGenerator';
 
 interface Payment {
