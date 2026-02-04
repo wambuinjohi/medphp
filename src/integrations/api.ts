@@ -222,6 +222,13 @@ export const apiClient = {
       return { session: null };
     },
   },
+
+  /**
+   * Direct adapter access for advanced queries
+   */
+  get adapter() {
+    return getAdapterInstance();
+  },
 };
 
 export default apiClient;
