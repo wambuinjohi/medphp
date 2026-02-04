@@ -95,31 +95,10 @@ export function useCustomerCreditNotes(customerId: string | undefined, companyId
     queryFn: async () => {
       if (!customerId || !companyId) throw new Error('Customer ID and Company ID are required');
 
-      const { data, error } = await supabase
-        .from('credit_notes')
-        .select(`
-          *,
-          customers!customer_id (
-            name,
-            email,
-            phone,
-            customer_code
-          ),
-          credit_note_items (
-            *,
-            products!product_id (
-              name,
-              product_code,
-              unit_of_measure
-            )
-          )
-        `)
-        .eq('customer_id', customerId)
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false });
+      const result = await db.selectBy('credit_notes', { customer_id: customerId, company_id: companyId });
 
-      if (error) throw error;
-      return data as CreditNote[];
+      if (result.error) throw result.error;
+      return (result.data || []) as CreditNote[];
     },
     enabled: !!customerId && !!companyId,
   });
