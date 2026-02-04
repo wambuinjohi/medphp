@@ -352,21 +352,12 @@ export function useConvertInvoiceToCreditNote() {
     }) => {
       console.log('Converting invoice to credit note:', { invoiceId, reason, affectsInventory, itemsToCredit });
 
-      // 1. Fetch the invoice with items
-      const { data: invoice, error: invoiceError } = await supabase
-        .from('invoices')
-        .select(`
-          *,
-          customers (*),
-          invoice_items (
-            *,
-            products (*)
-          )
-        `)
-        .eq('id', invoiceId)
-        .single();
+      const db = getDatabase();
 
-      if (invoiceError) throw invoiceError;
+      // 1. Fetch the invoice with items
+      const invoiceResult = await db.selectOne('invoices', invoiceId);
+      if (invoiceResult.error) throw invoiceResult.error;
+      const invoice = invoiceResult.data;
 
       // 2. Generate credit note number
       const db = getDatabase();
