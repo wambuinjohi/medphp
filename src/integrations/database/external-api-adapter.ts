@@ -14,6 +14,7 @@ import type {
 } from './types';
 import { getAPIBaseURL } from '../../utils/environment-detection';
 import { handleAuthFailure } from '../../utils/authFailureHandler';
+import { logTokenDiagnostics } from '../../utils/tokenDiagnostics';
 
 export class ExternalAPIAdapter implements IDatabase {
   private apiBase: string;
