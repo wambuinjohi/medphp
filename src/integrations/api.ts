@@ -161,8 +161,8 @@ export const apiClient = {
     return { data: result.data, error: result.error };
   },
 
-  selectOne: async (table: string, id: string) => {
-    const result = await getAdapterInstance().selectOne(table, id);
+  selectOne: async (table: string, id: string, isPublic?: boolean) => {
+    const result = await getAdapterInstance().selectOne(table, id, isPublic);
     return { data: result.data, error: result.error };
   },
 
