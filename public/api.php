@@ -143,7 +143,12 @@ if (in_array($request_method, ['POST', 'PUT', 'PATCH'])) {
 $action = $_POST['action'] ?? ($_GET['action'] ?? null);
 $table = $_POST['table'] ?? ($_GET['table'] ?? null);
 $data = $_POST['data'] ?? ($json_body ?? []);
+// For read operations, where clause can come from URL params or JSON body (for filtered reads)
 $where = $_POST['where'] ?? ($_GET['where'] ?? null);
+// If no where in POST/GET and we have JSON body, use it as filter for read operations
+if (!$where && $json_body && is_array($json_body)) {
+    $where = $json_body;
+}
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
 
