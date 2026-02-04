@@ -1,9 +1,10 @@
 /**
- * Supabase Database Adapter
- * Implements IDatabase interface for Supabase/PostgreSQL backend
+ * Supabase Database Adapter (Deprecated)
+ * Now delegates to external API adapter
+ * Kept for backward compatibility only
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { getSharedExternalAdapter } from './shared-adapter';
 import type {
   IDatabase,
   AuthContext,
