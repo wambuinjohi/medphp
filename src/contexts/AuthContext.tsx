@@ -418,6 +418,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(newSession.user);
       setProfile(userProfile);
 
+      // Set grace period to prevent immediate token validation
+      justLoggedInRef.current = Date.now();
+      console.log('⏰ Grace period started after login - token validation will be skipped for 30 seconds');
+
       setTimeout(() => toast.success('Signed in successfully'), 0);
       setLoading(false);
       console.log('🎉 Sign in complete!');
