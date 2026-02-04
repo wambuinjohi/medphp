@@ -343,6 +343,7 @@ export const usePermissions = () => {
       }
     } finally {
       console.log('✅ [usePermissions] fetchUserRole completed, setting loading to false');
+      // Log will be done in useEffect after state is updated
       setLoading(false);
     }
   }, [currentUser]);
