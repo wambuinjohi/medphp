@@ -989,8 +989,8 @@ export class ExternalAPIAdapter implements IDatabase {
     }
   }
 
-  async selectBy<T>(table: string, filter: Record<string, any>): Promise<ListQueryResult<T>> {
-    return this.select<T>(table, filter);
+  async selectBy<T>(table: string, filter: Record<string, any>, isPublic?: boolean): Promise<ListQueryResult<T>> {
+    return this.select<T>(table, filter, isPublic);
   }
 
   async insert<T>(table: string, data: Partial<T>): Promise<InsertResult> {
