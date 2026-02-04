@@ -132,26 +132,21 @@ export const useCustomerStats = (companyId?: string) => {
     queryKey: ['customer-stats', companyId],
     queryFn: async () => {
       console.log('📊 Loading customer statistics...');
-      
-      let query = supabase
-        .from('customers')
-        .select(`
-          credit_limit,
-          is_active,
-          city
-        `);
+
+      const db = getDatabase();
+      const filter: Record<string, any> = {};
 
       if (companyId) {
-        query = query.eq('company_id', companyId);
+        filter.company_id = companyId;
       }
 
-      const { data, error } = await query;
+      const result = await db.selectBy('customers', filter);
 
-      if (error) throw error;
+      if (result.error) throw result.error;
 
-      const stats = (data || []).reduce((acc, customer) => {
+      const stats = (result.data || []).reduce((acc, customer: any) => {
         acc.totalCustomers++;
-        
+
         if (customer.is_active !== false) {
           acc.activeCustomers++;
         } else {
