@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { useCustomers, useCreateCustomer, useCustomerInvoices, useCustomerPayments, useDeleteCustomer } from '@/hooks/useDatabase';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 import { EditCustomerModal } from '@/components/customers/EditCustomerModal';
 import { ViewCustomerModal } from '@/components/customers/ViewCustomerModal';
