@@ -133,6 +133,7 @@ const sidebarItems: SidebarItem[] = [
     title: 'Admin',
     icon: LogOut,
     children: [
+      { title: 'eTIMS Management', icon: QrCode, href: '/app/admin/etims' },
       { title: 'Image Management', icon: ImageIcon, href: '/app/admin/images' },
       { title: 'Audit Logs', icon: FileText, href: '/app/admin/audit-logs' },
       { title: 'Database', icon: Database, href: '/app/admin/database' }
