@@ -811,6 +811,19 @@ export class ExternalAPIAdapter implements IDatabase {
 
   async checkAuth(): Promise<{ user: any; error: Error | null }> {
     try {
+      // Check if we're within grace period after login (5 seconds minimum)
+      const GRACE_PERIOD = 5000; // 5 seconds
+      if (this.lastLoginTime !== null) {
+        const timeSinceLogin = Date.now() - this.lastLoginTime;
+        if (timeSinceLogin < GRACE_PERIOD) {
+          console.log(`⏳ Within grace period after login (${Math.round(timeSinceLogin / 1000)}s < ${GRACE_PERIOD / 1000}s), skipping validation`);
+          return {
+            user: { id: localStorage.getItem('med_api_user_id'), email: localStorage.getItem('med_api_user_email') },
+            error: null
+          };
+        }
+      }
+
       // Automatically refresh token if needed before checking auth
       await this.refreshTokenIfNeeded();
 
@@ -852,13 +865,20 @@ export class ExternalAPIAdapter implements IDatabase {
         });
 
         if (!response.ok) {
-          this.clearAuthToken();
+          // Only clear token on actual 401/403 auth errors, not on network issues
+          const is401Or403 = response.status === 401 || response.status === 403;
+          if (is401Or403) {
+            console.warn(`⚠️ Received ${response.status} from checkAuth - token is invalid`);
+            this.clearAuthToken();
+          }
           return {
             user: null,
-            error: new Error(result.message || 'Not authenticated'),
+            error: new Error(`${is401Or403 ? 'Not authenticated' : 'Authentication check failed'} (HTTP ${response.status})`),
           };
         }
 
+        // Success - reset failure counter
+        this.failedValidationAttempts = 0;
         return { user: result, error: null };
       } catch (fetchError: any) {
         requestCompleted = true;
@@ -866,11 +886,14 @@ export class ExternalAPIAdapter implements IDatabase {
 
         if (fetchError.name === 'AbortError') {
           if (isTimedOut) {
+            // Timeout is a network error, not an auth error - don't clear token
+            console.warn('⚠️ Authentication check timeout (network issue)');
             return {
               user: null,
               error: new Error(`Authentication check timeout. The server may be unresponsive.`),
             };
           } else {
+            console.warn('⚠️ Authentication check cancelled');
             return {
               user: null,
               error: new Error(`Authentication check was cancelled.`),
@@ -879,6 +902,8 @@ export class ExternalAPIAdapter implements IDatabase {
         }
 
         if (fetchError instanceof TypeError && fetchError.message === 'Failed to fetch') {
+          // Network error - don't clear token
+          console.warn('⚠️ Network error during authentication check');
           return {
             user: null,
             error: new Error(`Unable to reach authentication endpoint: ${this.apiBase}. Check your connection.`),
