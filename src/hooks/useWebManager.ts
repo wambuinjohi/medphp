@@ -244,27 +244,29 @@ export const useWebManager = () => {
 
       console.log('Creating variant with data:', data);
 
-      const { data: newVariant, error: err } = await supabase
-        .from('web_variants')
-        .insert(data)
-        .select()
-        .single();
+      const db = getDatabase();
+      const result = await db.insert('web_variants', data);
 
-      if (err) {
-        console.error('Supabase error creating variant:', err);
-        throw err;
+      if (result.error) {
+        console.error('Database error creating variant:', result.error);
+        throw result.error;
       }
 
-      console.log('Variant created successfully:', newVariant);
+      if (!result.id) throw new Error('Failed to create variant: no ID returned');
+
+      const selectResult = await db.selectOne('web_variants', result.id);
+      if (selectResult.error) throw selectResult.error;
+
+      console.log('Variant created successfully:', selectResult.data);
       toast.success('Variant created successfully');
-      return newVariant as WebVariant;
+      return selectResult.data as WebVariant;
     } catch (err) {
       let message = 'Failed to create variant';
 
-      // Handle Supabase errors with specific error codes
+      // Handle database errors with specific error messages
       if (err && typeof err === 'object') {
         if ('code' in err) {
-          const code = err.code;
+          const code = (err as any).code;
           if (code === '23505') {
             // Unique constraint violation
             message = 'A variant with this SKU already exists. Please use a unique SKU.';
@@ -274,13 +276,13 @@ export const useWebManager = () => {
           } else if (code === '42P01') {
             // Table does not exist
             message = 'Database table not found. Please contact support.';
-          } else if ('message' in err && typeof err.message === 'string') {
-            message = err.message;
+          } else if ('message' in err && typeof (err as any).message === 'string') {
+            message = (err as any).message;
           } else {
             message = `Database Error (${code}): Check your input and try again.`;
           }
-        } else if ('message' in err && typeof err.message === 'string') {
-          message = err.message;
+        } else if ('message' in err && typeof (err as any).message === 'string') {
+          message = (err as any).message;
         } else {
           try {
             message = JSON.stringify(err);
