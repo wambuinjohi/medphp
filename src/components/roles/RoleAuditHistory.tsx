@@ -34,36 +34,25 @@ interface AuditLog {
 }
 
 async function fetchRoleAuditLogs(roleId: string) {
-  const { data, error } = await supabase
-    .from('audit_logs')
-    .select('*')
-    .eq('record_id', roleId)
-    .eq('entity_type', 'role')
-    .order('created_at', { ascending: false });
+  try {
+    const result = await apiClient.adapter.selectBy('audit_logs', {
+      record_id: roleId,
+      entity_type: 'role',
+    });
 
-  if (error) {
-    // If table doesn't exist, try to create it
-    if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-      console.warn('Audit logs table not found, attempting to create schema...');
-      try {
-        await ensureAuditLogSchema();
-        // Try fetching again after schema is created
-        const { data: retryData, error: retryError } = await supabase
-          .from('audit_logs')
-          .select('*')
-          .eq('record_id', roleId)
-          .eq('entity_type', 'role')
-          .order('created_at', { ascending: false });
-        if (retryError) throw retryError;
-        return retryData || [];
-      } catch (schemaErr) {
-        console.error('Failed to create audit logs schema:', schemaErr);
-        throw schemaErr;
-      }
+    if (result.error) {
+      throw result.error;
     }
+
+    // Sort by created_at descending
+    const logs = Array.isArray(result.data) ? result.data : [];
+    return logs.sort((a: any, b: any) => {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  } catch (error) {
+    console.error('Error fetching role audit logs:', error);
     throw error;
   }
-  return data || [];
 }
 
 function formatActionBadge(action: string) {
