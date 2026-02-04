@@ -88,6 +88,8 @@ export const ViewProformaModal = ({
 }: ViewProformaModalProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const deleteProforma = useDeleteProforma(companyId);
+  const { canDeleteUI } = usePermissionGuards();
+  const canDelete = canDeleteUI('proforma');
 
   if (!proforma) return null;
 
