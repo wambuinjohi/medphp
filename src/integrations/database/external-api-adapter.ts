@@ -261,7 +261,8 @@ export class ExternalAPIAdapter implements IDatabase {
     action: string,
     table?: string,
     data?: any,
-    where?: any
+    where?: any,
+    isPublic?: boolean
   ): Promise<{ data: T; error: Error | null; status: number }> {
     try {
       // Automatically refresh token if needed before making API call
