@@ -51,12 +51,14 @@ export const usePermissions = () => {
       }
 
       // Fetch the full role definition from the roles table
-      const { data, error: fetchError } = await supabase
-        .from('roles')
-        .select('*')
-        .eq('name', userRole)
-        .eq('company_id', currentUser.company_id)
-        .maybeSingle();
+      const db = getDatabase();
+      const result = await db.selectBy('roles', {
+        name: userRole,
+        company_id: currentUser.company_id
+      });
+
+      const fetchError = result.error;
+      const data = result.data?.[0] || null;
 
       if (fetchError) {
         const errorMessage = fetchError instanceof Error ? fetchError.message : JSON.stringify(fetchError);
