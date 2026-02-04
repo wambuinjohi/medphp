@@ -261,7 +261,8 @@ export class ExternalAPIAdapter implements IDatabase {
     action: string,
     table?: string,
     data?: any,
-    where?: any
+    where?: any,
+    isPublic?: boolean
   ): Promise<{ data: T; error: Error | null; status: number }> {
     try {
       // Automatically refresh token if needed before making API call
@@ -513,6 +514,17 @@ export class ExternalAPIAdapter implements IDatabase {
           });
         } else if (response.status === 401) {
           console.error(`❌ ${logPrefix} - UNAUTHORIZED (401)`);
+
+          // For public endpoints, don't show auth failure toast - just log silently
+          if (isPublic) {
+            console.info('ℹ️ Public endpoint returned 401 - this is expected when not authenticated');
+            return {
+              data: null as any,
+              error: new Error('Not authenticated'),
+              status: response.status,
+            };
+          }
+
           console.error('⚠️ Token appears invalid or expired. Attempting emergency token refresh...');
 
           const hasToken = !!this.getAuthToken();
@@ -943,9 +955,9 @@ export class ExternalAPIAdapter implements IDatabase {
     };
   }
 
-  async select<T>(table: string, filter?: Record<string, any>): Promise<ListQueryResult<T>> {
+  async select<T>(table: string, filter?: Record<string, any>, isPublic?: boolean): Promise<ListQueryResult<T>> {
     try {
-      const { data, error } = await this.apiCall('POST', 'read', table, null, filter);
+      const { data, error } = await this.apiCall('POST', 'read', table, null, filter, isPublic);
 
       if (error) {
         return { data: [], error, count: 0 };
@@ -962,9 +974,9 @@ export class ExternalAPIAdapter implements IDatabase {
     }
   }
 
-  async selectOne<T>(table: string, id: string): Promise<QueryResult<T>> {
+  async selectOne<T>(table: string, id: string, isPublic?: boolean): Promise<QueryResult<T>> {
     try {
-      const { data, error } = await this.apiCall('POST', 'read', table, null, { id });
+      const { data, error } = await this.apiCall('POST', 'read', table, null, { id }, isPublic);
 
       if (error) {
         return { data: null, error };
@@ -977,8 +989,8 @@ export class ExternalAPIAdapter implements IDatabase {
     }
   }
 
-  async selectBy<T>(table: string, filter: Record<string, any>): Promise<ListQueryResult<T>> {
-    return this.select<T>(table, filter);
+  async selectBy<T>(table: string, filter: Record<string, any>, isPublic?: boolean): Promise<ListQueryResult<T>> {
+    return this.select<T>(table, filter, isPublic);
   }
 
   async insert<T>(table: string, data: Partial<T>): Promise<InsertResult> {

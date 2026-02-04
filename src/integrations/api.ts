@@ -156,13 +156,13 @@ export const apiClient = {
   /**
    * Direct methods
    */
-  select: async (table: string, filter?: Record<string, any>) => {
-    const result = await getAdapterInstance().selectBy(table, filter || {});
+  select: async (table: string, filter?: Record<string, any>, isPublic?: boolean) => {
+    const result = await getAdapterInstance().selectBy(table, filter || {}, isPublic);
     return { data: result.data, error: result.error };
   },
 
-  selectOne: async (table: string, id: string) => {
-    const result = await getAdapterInstance().selectOne(table, id);
+  selectOne: async (table: string, id: string, isPublic?: boolean) => {
+    const result = await getAdapterInstance().selectOne(table, id, isPublic);
     return { data: result.data, error: result.error };
   },
 
