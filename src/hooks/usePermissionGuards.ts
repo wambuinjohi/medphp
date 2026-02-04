@@ -34,6 +34,7 @@ export const usePermissionGuards = () => {
   /**
    * Check if user can delete an entity type
    * Enforces delete_* permissions based on entity type
+   * Shows error toast if permission denied
    */
   const checkCanDelete = (
     entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment',
@@ -57,6 +58,23 @@ export const usePermissionGuards = () => {
       return false;
     }
     return true;
+  };
+
+  /**
+   * Check if user can delete an entity type (UI-only, no toast)
+   * Used for conditionally rendering delete buttons in the UI
+   * Does not show any error messages
+   */
+  const canDeleteUI = (
+    entityType: 'quotation' | 'invoice' | 'credit_note' | 'proforma' | 'customer' | 'inventory' | 'delivery_note' | 'lpo' | 'remittance' | 'payment'
+  ): boolean => {
+    // Admin users can delete anything
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check if user has delete permission for this entity type
+    return canDelete(entityType);
   };
 
   /**
