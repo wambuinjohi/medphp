@@ -407,69 +407,62 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
-      // Validate that the company still exists
-      const { data: companyExists } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('id', currentUser.company_id)
-        .maybeSingle();
+      const db = getDatabase();
 
-      if (!companyExists) {
+      // Validate that the company still exists
+      const companyResult = await db.selectOne('companies', currentUser.company_id);
+      if (companyResult.error || !companyResult.data) {
         return { success: false, error: 'Your company no longer exists in the system. Please contact support.' };
       }
 
       // Validate that the current user (inviter) still exists
-      const { data: inviterExists } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', currentUser.id)
-        .maybeSingle();
-
-      if (!inviterExists) {
+      const inviterResult = await db.selectOne('profiles', currentUser.id);
+      if (inviterResult.error || !inviterResult.data) {
         return { success: false, error: 'Your user profile no longer exists. Please sign in again.' };
       }
 
       // Check if user already exists or has pending invitation
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (existingUser) {
+      const existingUserResult = await db.selectBy('profiles', { email });
+      if (existingUserResult.data && existingUserResult.data.length > 0) {
         return { success: false, error: 'User with this email already exists' };
       }
 
-      const { data: existingInvitation } = await supabase
-        .from('user_invitations')
-        .select('id')
-        .eq('email', email)
-        .eq('company_id', currentUser.company_id)
-        .eq('status', 'pending')
-        .maybeSingle();
+      const existingInvitationResult = await db.selectBy('user_invitations', {
+        email,
+        company_id: currentUser.company_id,
+        status: 'pending'
+      });
 
-      if (existingInvitation) {
+      if (existingInvitationResult.data && existingInvitationResult.data.length > 0) {
         return { success: false, error: 'Invitation already sent to this email' };
       }
 
       // Create invitation
-      const { data: invitation, error } = await supabase
-        .from('user_invitations')
-        .insert({
-          email,
-          role,
-          company_id: currentUser.company_id,
-          invited_by: currentUser.id,
-          is_approved: true,
-          approved_by: currentUser.id,
-          approved_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      const inviteData = {
+        email,
+        role,
+        company_id: currentUser.company_id,
+        invited_by: currentUser.id,
+        is_approved: true,
+        approved_by: currentUser.id,
+        approved_at: new Date().toISOString(),
+      };
 
-      if (error) {
-        throw error;
+      const inviteResult = await db.insert('user_invitations', inviteData);
+      if (inviteResult.error) {
+        throw inviteResult.error;
       }
+
+      if (!inviteResult.id) {
+        return { success: false, error: 'Failed to create invitation' };
+      }
+
+      const selectResult = await db.selectOne('user_invitations', inviteResult.id);
+      if (selectResult.error) {
+        return { success: false, error: 'Failed to fetch created invitation' };
+      }
+
+      const invitation = selectResult.data;
 
       // Log user invitation in audit trail
       try {
