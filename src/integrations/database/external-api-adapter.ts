@@ -470,6 +470,14 @@ export class ExternalAPIAdapter implements IDatabase {
             console.error('   - Token Length:', token?.length);
           }
 
+          // Run full diagnostics when 401 occurs
+          console.error('🔍 Running full token diagnostics...');
+          try {
+            logTokenDiagnostics();
+          } catch (diagError) {
+            console.warn('Error running diagnostics:', diagError);
+          }
+
           // Try to refresh token as a backup mechanism
           try {
             await this.attemptTokenRefresh();
