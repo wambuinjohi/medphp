@@ -342,21 +342,10 @@ export function useCreditNoteAllocations(creditNoteId: string | undefined) {
     queryFn: async () => {
       if (!creditNoteId) throw new Error('Credit Note ID is required');
 
-      const { data, error } = await supabase
-        .from('credit_note_allocations')
-        .select(`
-          *,
-          invoices!invoice_id (
-            invoice_number,
-            total_amount,
-            balance_due
-          )
-        `)
-        .eq('credit_note_id', creditNoteId)
-        .order('allocation_date', { ascending: false });
+      const result = await db.selectBy('credit_note_allocations', { credit_note_id: creditNoteId });
 
-      if (error) throw error;
-      return data as (CreditNoteAllocation & {
+      if (result.error) throw result.error;
+      return (result.data || []) as (CreditNoteAllocation & {
         invoices: {
           invoice_number: string;
           total_amount: number;
