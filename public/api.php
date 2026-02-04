@@ -1786,9 +1786,10 @@ try {
                 }
 
                 // Check if the filtered company matches their assigned company
+                // Cast both to strings to handle type mismatches (string vs integer)
                 if ($company_id_filter !== null) {
                     // A specific company was requested - verify it matches the user's company
-                    if ($company_id_filter !== $user['company_id']) {
+                    if ((string)$company_id_filter !== (string)$user['company_id']) {
                         // Trying to access a different company's data
                         http_response_code(403);
                         error_log("🔴 [AUTH] READ $table - Non-admin user {$user['email']} (role: {$user['role']}) tried to access company {$company_id_filter} but is assigned to {$user['company_id']} (DENIED)");
