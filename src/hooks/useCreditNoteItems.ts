@@ -23,6 +23,8 @@ export function useCreateCreditNoteWithItems() {
     mutationFn: async ({ creditNote, items }: CreateCreditNoteWithItemsData) => {
       console.log('Creating credit note with items:', { creditNote, items });
 
+      const db = getDatabase();
+
       // Start transaction-like operations
       try {
         // Ensure created_by defaults to the authenticated user
@@ -41,32 +43,29 @@ export function useCreateCreditNoteWithItems() {
         }
 
         // 1. Create the credit note
-        const db = getDatabase();
-        const insertResult = await db.insert('credit_notes', cleanCreditNote);
+        let createdCreditNote: any;
+        let insertResult = await db.insert('credit_notes', cleanCreditNote);
 
         if (insertResult.error) {
-          if (insertResult.error.message?.includes('created_by')) {
+          if (String(insertResult.error.message || '').includes('created_by')) {
             const retryPayload = { ...cleanCreditNote, created_by: null };
-            const retryRes = await db.insert('credit_notes', retryPayload);
-            if (retryRes.error) {
-              console.error('Error creating credit note:', retryRes.error);
-              throw retryRes.error;
+            insertResult = await db.insert('credit_notes', retryPayload);
+            if (insertResult.error) {
+              console.error('Error creating credit note:', insertResult.error);
+              throw insertResult.error;
             }
-            if (!retryRes.id) throw new Error('Failed to create credit note: no ID returned');
-            const createdCreditNote = await db.selectOne('credit_notes', retryRes.id);
-            if (createdCreditNote.error) throw createdCreditNote.error;
-            console.log('Credit note created:', createdCreditNote.data);
           } else {
             console.error('Error creating credit note:', insertResult.error);
             throw insertResult.error;
           }
-        } else {
-          if (!insertResult.id) throw new Error('Failed to create credit note: no ID returned');
-          const selectResult = await db.selectOne('credit_notes', insertResult.id);
-          if (selectResult.error) throw selectResult.error;
-          const createdCreditNote = selectResult.data;
-          console.log('Credit note created:', createdCreditNote);
         }
+
+        if (!insertResult.id) throw new Error('Failed to create credit note: no ID returned');
+        const selectResult = await db.selectOne('credit_notes', insertResult.id);
+        if (selectResult.error) throw selectResult.error;
+        createdCreditNote = selectResult.data;
+
+        console.log('Credit note created:', createdCreditNote);
 
         // 2. Create credit note items
         if (items.length > 0) {
