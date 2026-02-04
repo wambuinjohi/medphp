@@ -195,18 +195,17 @@ export function useUpdateCreditNoteWithItems() {
         // 2. If the credit note affects inventory, reverse existing stock movements
         if (existingCreditNote.affects_inventory) {
           console.log('Reversing existing stock movements...');
-          
-          const { data: existingMovements, error: movementsError } = await supabase
-            .from('stock_movements')
-            .select('*')
-            .eq('reference_type', 'CREDIT_NOTE')
-            .eq('reference_id', creditNoteId);
 
-          if (movementsError) {
-            console.error('Error fetching existing movements:', movementsError);
-          } else if (existingMovements && existingMovements.length > 0) {
+          const movementsResult = await db.selectBy('stock_movements', {
+            reference_type: 'CREDIT_NOTE',
+            reference_id: creditNoteId
+          });
+
+          if (movementsResult.error) {
+            console.error('Error fetching existing movements:', movementsResult.error);
+          } else if (movementsResult.data && movementsResult.data.length > 0) {
             // Reverse the movements by creating opposite movements
-            const reverseMovements = existingMovements.map(movement => ({
+            const reverseMovements = movementsResult.data.map((movement: any) => ({
               company_id: movement.company_id,
               product_id: movement.product_id,
               movement_type: movement.movement_type === 'IN' ? 'OUT' : 'IN',
@@ -216,24 +215,21 @@ export function useUpdateCreditNoteWithItems() {
               notes: `Reversal of ${movement.notes}`
             }));
 
-            const { error: reverseError } = await supabase
-              .from('stock_movements')
-              .insert(reverseMovements);
+            const reverseResult = await db.insertMany('stock_movements', reverseMovements);
 
-            if (reverseError) {
-              console.error('Error creating reverse movements:', reverseError);
+            if (reverseResult.error) {
+              console.error('Error creating reverse movements:', reverseResult.error);
             } else {
               // Update product stock for reversals
-              const db = getDatabase();
               for (const movement of reverseMovements) {
                 try {
-                  const { error: stockError } = await db.rpc('update_product_stock', {
+                  const rpcResult = await db.rpc('update_product_stock', {
                     product_uuid: movement.product_id,
                     movement_type: movement.movement_type,
                     quantity: Math.abs(movement.quantity)
                   });
-                  if (stockError) {
-                    throw stockError;
+                  if (rpcResult.error) {
+                    throw rpcResult.error;
                   }
                 } catch (stockUpdateError) {
                   console.error('Error updating product stock (reversal):', stockUpdateError);
