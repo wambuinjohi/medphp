@@ -955,9 +955,9 @@ export class ExternalAPIAdapter implements IDatabase {
     };
   }
 
-  async select<T>(table: string, filter?: Record<string, any>): Promise<ListQueryResult<T>> {
+  async select<T>(table: string, filter?: Record<string, any>, isPublic?: boolean): Promise<ListQueryResult<T>> {
     try {
-      const { data, error } = await this.apiCall('POST', 'read', table, null, filter);
+      const { data, error } = await this.apiCall('POST', 'read', table, null, filter, isPublic);
 
       if (error) {
         return { data: [], error, count: 0 };
