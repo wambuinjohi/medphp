@@ -24,7 +24,12 @@ export const usePermissions = () => {
    * Fetch the user's role definition
    */
   const fetchUserRole = useCallback(async () => {
-    console.log('🔍 [usePermissions] fetchUserRole called, currentUser:', currentUser?.id);
+    console.log('🔍 [usePermissions] fetchUserRole called, currentUser:', {
+      id: currentUser?.id,
+      role: currentUser?.role,
+      company_id: currentUser?.company_id,
+      has_roleDefinition: !!currentUser?.roleDefinition
+    });
 
     if (!currentUser) {
       console.log('ℹ️ [usePermissions] No current user, clearing role');
@@ -45,7 +50,11 @@ export const usePermissions = () => {
           permissionCount: currentUser.roleDefinition.permissions?.length || 0,
           permissions: currentUser.roleDefinition.permissions
         });
-        setRole(currentUser.roleDefinition);
+        const normalizedRole = {
+          ...currentUser.roleDefinition,
+          permissions: normalizePermissions(currentUser.roleDefinition.permissions)
+        };
+        setRole(normalizedRole);
         setLoading(false);
         return;
       }
@@ -55,8 +64,22 @@ export const usePermissions = () => {
       console.log('📝 [usePermissions] User role from profile:', userRole);
 
       if (!userRole) {
-        console.warn('⚠️ [usePermissions] No role assigned to user, clearing role');
-        setRole(null);
+        console.warn('⚠️ [usePermissions] No role assigned to user, using default fallback');
+        // Automatically use default fallback for the user role type
+        const roleType = 'user' as keyof typeof DEFAULT_ROLE_PERMISSIONS;
+        const defaultRole: RoleDefinition = {
+          id: `default-user`,
+          name: 'user',
+          role_type: roleType,
+          description: `Default user role`,
+          permissions: normalizePermissions(DEFAULT_ROLE_PERMISSIONS[roleType]),
+          company_id: currentUser.company_id || '',
+          is_default: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        console.log('🔄 [usePermissions] Using default user role:', defaultRole.permissions?.length || 0, 'permissions');
+        setRole(defaultRole);
         setLoading(false);
         return;
       }
