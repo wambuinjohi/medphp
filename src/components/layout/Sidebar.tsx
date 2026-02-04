@@ -24,7 +24,8 @@ import {
   Banknote,
   TrendingDown,
   Image as ImageIcon,
-  LogOut
+  LogOut,
+  QrCode
 } from 'lucide-react';
 import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -132,6 +133,7 @@ const sidebarItems: SidebarItem[] = [
     title: 'Admin',
     icon: LogOut,
     children: [
+      { title: 'eTIMS Management', icon: QrCode, href: '/app/admin/etims' },
       { title: 'Image Management', icon: ImageIcon, href: '/app/admin/images' },
       { title: 'Audit Logs', icon: FileText, href: '/app/admin/audit-logs' },
       { title: 'Database', icon: Database, href: '/app/admin/database' }
