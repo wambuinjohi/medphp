@@ -254,22 +254,17 @@ export function useDeleteCreditNote() {
       }
 
       // 3. If there are allocations, update related invoices
-      if (creditNote.credit_note_allocations && creditNote.credit_note_allocations.length > 0) {
-        for (const allocation of creditNote.credit_note_allocations) {
-          const { data: invoice, error: invoiceError } = await supabase
-            .from('invoices')
-            .select('balance_due, paid_amount, total_amount')
-            .eq('id', allocation.invoice_id)
-            .single();
+      const allocationsResult = await db.selectBy('credit_note_allocations', { credit_note_id: id });
+      if (!allocationsResult.error && allocationsResult.data && allocationsResult.data.length > 0) {
+        for (const allocation of allocationsResult.data) {
+          const invoiceResult = await db.selectOne('invoices', allocation.invoice_id);
 
-          if (!invoiceError && invoice) {
+          if (!invoiceResult.error && invoiceResult.data) {
+            const invoice = invoiceResult.data;
             // Recalculate balance_due by adding back the allocated amount
             const newBalanceDue = (invoice.balance_due || 0) + allocation.allocated_amount;
 
-            await supabase
-              .from('invoices')
-              .update({ balance_due: newBalanceDue })
-              .eq('id', allocation.invoice_id);
+            await db.update('invoices', allocation.invoice_id, { balance_due: newBalanceDue });
           }
         }
       }
