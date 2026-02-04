@@ -107,10 +107,19 @@ export const usePermissions = () => {
       console.log('📊 [usePermissions] Database fetch result:', {
         hasError: !!fetchError,
         errorMessage: fetchError instanceof Error ? fetchError.message : fetchError,
+        result_data_type: typeof result.data,
         dataLength: Array.isArray(result.data) ? result.data.length : 'not an array',
-        data: data,
+        data_found: !!data,
         rawData: result.data
       });
+
+      // Debug: log the actual result object
+      if (!data && !fetchError) {
+        console.warn('⚠️ [usePermissions] No error but also no data returned from selectBy');
+        console.log('   Result object keys:', Object.keys(result));
+        console.log('   result.data:', result.data);
+        console.log('   result.error:', result.error);
+      }
 
       if (fetchError) {
         const errorMessage = fetchError instanceof Error ? fetchError.message : JSON.stringify(fetchError);
