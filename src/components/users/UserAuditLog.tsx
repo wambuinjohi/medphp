@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Search, LogIn, CheckCircle, UserPlus } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ensureAuditLogSchema } from '@/utils/auditLogger';
