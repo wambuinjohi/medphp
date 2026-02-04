@@ -13,6 +13,8 @@ import type {
   DeleteResult,
 } from './types';
 import { getAPIBaseURL } from '../../utils/environment-detection';
+import { handleAuthFailure } from '../../utils/authFailureHandler';
+import { logTokenDiagnostics } from '../../utils/tokenDiagnostics';
 
 export class ExternalAPIAdapter implements IDatabase {
   private apiBase: string;
@@ -161,8 +163,11 @@ export class ExternalAPIAdapter implements IDatabase {
   private async attemptTokenRefresh(): Promise<void> {
     try {
       const userId = localStorage.getItem('med_api_user_id');
-      // Use the stored external API URL for token refresh endpoint construction
+
+      // Try primary refresh endpoint
       const refreshUrl = `${this.apiBase}?action=refresh_token`;
+
+      console.log('🔄 Attempting token refresh with user_id:', userId?.substring(0, 8) + '...');
 
       const response = await fetch(refreshUrl, {
         method: 'POST',
@@ -175,14 +180,35 @@ export class ExternalAPIAdapter implements IDatabase {
       if (response.ok && result?.token) {
         // Store the new token
         this.setAuthToken(result.token);
-        console.log('✅ Token refreshed automatically');
-      } else {
-        // If refresh fails, clear auth and require re-login
-        console.warn('⚠️ Token refresh failed, clearing authentication');
-        this.clearAuthToken();
-        localStorage.removeItem('med_api_user_id');
-        localStorage.removeItem('med_api_user_email');
+        console.log('✅ Token refreshed successfully');
+        return;
       }
+
+      // If primary refresh fails, try alternative approach
+      console.warn('⚠️ Primary token refresh failed (status:', response.status, '), trying check_auth endpoint...');
+
+      // Try checking if we can validate with current token
+      const checkUrl = `${this.apiBase}?action=check_auth`;
+      const checkResponse = await fetch(checkUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: this.getAuthToken() }),
+      });
+
+      const checkResult = await checkResponse.json().catch(() => null);
+
+      if (checkResponse.ok && checkResult?.id) {
+        // Token is actually valid - maybe the refresh endpoint just doesn't exist
+        console.log('✅ Token is valid (check_auth succeeded), continuing without refresh');
+        return;
+      }
+
+      // Token is definitely invalid - clear it
+      console.error('❌ Token is invalid - clearing authentication');
+      this.clearAuthToken();
+      localStorage.removeItem('med_api_user_id');
+      localStorage.removeItem('med_api_user_email');
+
     } catch (error) {
       console.warn('⚠️ Token refresh error:', error);
       // Don't clear auth on network errors - let the user retry
@@ -249,16 +275,35 @@ export class ExternalAPIAdapter implements IDatabase {
       const currentToken = this.getAuthToken();
 
       if (currentToken) {
-        headers['Authorization'] = `Bearer ${currentToken}`;
+        // Validate token format before sending
+        const tokenParts = currentToken.split('.');
+        if (tokenParts.length === 3) {
+          headers['Authorization'] = `Bearer ${currentToken}`;
+        } else {
+          console.warn(`⚠️ Token in localStorage has invalid format (${tokenParts.length} parts, expected 3)`);
+          console.warn('Token will not be sent - may cause 401 error');
+          this.clearAuthToken();
+        }
       }
 
       // Log token status for debugging updates
       if (action === 'update') {
         console.log(`🔐 [Update ${table}] Token check:`, {
           hasLocalStorageToken: !!currentToken,
-          willSendAuthHeader: !!currentToken,
+          willSendAuthHeader: !!currentToken && currentToken.split('.').length === 3,
           authHeaderValue: currentToken ? `Bearer ${currentToken.substring(0, 20)}...` : 'NONE',
+          tokenFormat: currentToken ? `${currentToken.split('.').length} parts` : 'N/A',
           readingFreshFromLocalStorage: true,
+        });
+      }
+
+      // Log token status for read operations too
+      if (action === 'read' && currentToken) {
+        console.log(`🔐 [Read ${table}] Authorization header:`, {
+          hasToken: !!currentToken,
+          tokenLength: currentToken.length,
+          tokenParts: currentToken.split('.').length,
+          preview: currentToken.substring(0, 20) + '...',
         });
       }
 
@@ -429,11 +474,34 @@ export class ExternalAPIAdapter implements IDatabase {
           console.error(`❌ ${logPrefix} - UNAUTHORIZED (401)`);
           console.error('⚠️ Token appears invalid or expired. Attempting emergency token refresh...');
 
+          const hasToken = !!this.getAuthToken();
+          const userId = localStorage.getItem('med_api_user_id');
+
+          console.error('📊 401 Debug Info:');
+          console.error('   - Has Token:', hasToken);
+          console.error('   - Has User ID:', !!userId);
+          console.error('   - Action:', action);
+          console.error('   - Table:', table);
+          console.error('   - Method:', method);
+          if (hasToken) {
+            const token = this.getAuthToken();
+            console.error('   - Token Format:', token?.substring(0, 20) + '...');
+            console.error('   - Token Length:', token?.length);
+          }
+
+          // Run full diagnostics when 401 occurs
+          console.error('🔍 Running full token diagnostics...');
+          try {
+            logTokenDiagnostics();
+          } catch (diagError) {
+            console.warn('Error running diagnostics:', diagError);
+          }
+
           // Try to refresh token as a backup mechanism
           try {
             await this.attemptTokenRefresh();
 
-            // If refresh succeeded, retry the request once
+            // Check if we still have a token after refresh attempt
             const newToken = this.getAuthToken();
             if (newToken) {
               console.log('🔄 Retrying request with refreshed token...');
@@ -452,18 +520,58 @@ export class ExternalAPIAdapter implements IDatabase {
                 console.log(`✅ ${logPrefix} - Success after token refresh`);
                 return { data: retryResult.data || retryResult, error: null, status: retryResponse.status };
               } else {
-                // Still failed after refresh - token is definitely invalid
-                console.error(`❌ ${logPrefix} - Still failed after token refresh, clearing token`);
-                this.clearAuthToken();
+                // Still failed after refresh - log additional details
+                console.error(`❌ ${logPrefix} - Still failed after token refresh`);
+                console.error(`Retry response status: ${retryResponse.status} ${retryResponse.statusText}`);
+                console.error(`Response:`, retryResult);
               }
+            } else {
+              console.warn('⚠️ No token available after refresh attempt');
             }
           } catch (refreshError) {
             console.warn('⚠️ Emergency token refresh failed:', refreshError);
           }
 
-          // Clear token if refresh failed or wasn't possible
+          // Clear token since it's definitely invalid at this point
           this.clearAuthToken();
-          console.error('Your authentication token is invalid. Please log in again.');
+
+          // Provide detailed error message with debugging steps
+          let errorMsg = 'Authentication failed';
+          const debugSteps: string[] = [];
+
+          if (!hasToken) {
+            errorMsg = 'No authentication token found. Please log in.';
+            debugSteps.push('1. Token was never stored or was cleared');
+            debugSteps.push('2. Check if login succeeded before accessing this resource');
+          } else {
+            errorMsg = 'Your authentication token was rejected by the server. Please log in again.';
+            debugSteps.push('1. Your session may have expired');
+            debugSteps.push('2. The API server rejected your token (possible causes: revoked, expired, invalid)');
+            debugSteps.push('3. You may have been logged out by an administrator');
+            debugSteps.push('4. There may be a mismatch between client and server clocks');
+          }
+
+          console.error(`❌ ${errorMsg}`);
+          console.error('🔍 Debugging steps to try:');
+          debugSteps.forEach(step => console.error('   ' + step));
+          console.error('💡 Next steps:');
+          console.error('   1. Log out and log back in');
+          console.error('   2. Clear browser cache and localStorage (localStorage.clear())');
+          console.error('   3. Try a different browser or incognito mode');
+          console.error('   4. Check if the API server is running and accessible');
+
+          // Handle auth failure with user-friendly recovery
+          // This will show a toast and optionally redirect to login
+          try {
+            handleAuthFailure({
+              action,
+              table,
+              status: response.status,
+              originalError: new Error(errorMsg),
+            });
+          } catch (err) {
+            console.warn('Error handling auth failure:', err);
+          }
         } else {
           console.warn(`${logPrefix} - HTTP Error ${response.status}: ${errorMsg}`);
         }
@@ -510,6 +618,11 @@ export class ExternalAPIAdapter implements IDatabase {
         if (!response.ok || result.status === 'error') {
           const errorMsg = result.message || result.error || `Login failed with status ${response.status}`;
           console.error('❌ Login error:', errorMsg);
+          console.error('📊 Response details:', {
+            status: response.status,
+            statusText: response.statusText,
+            result,
+          });
           return {
             token: '',
             user: null,
@@ -517,9 +630,41 @@ export class ExternalAPIAdapter implements IDatabase {
           };
         }
 
+        // Validate response structure
+        if (!result.token) {
+          console.error('❌ Server did not return a token');
+          console.error('📊 Response:', result);
+          return {
+            token: '',
+            user: null,
+            error: new Error('Login failed: Server did not return an authentication token'),
+          };
+        }
+
         if (result.token) {
-          this.setAuthToken(result.token);
-          console.log('✅ Token stored successfully');
+          // Verify token format before storing
+          const tokenParts = result.token.split('.');
+          if (tokenParts.length === 3) {
+            // Valid JWT format (header.payload.signature)
+            this.setAuthToken(result.token);
+
+            // Verify it was stored correctly
+            const storedToken = this.getAuthToken();
+            if (storedToken === result.token) {
+              console.log('✅ Token stored successfully');
+              console.log('   - Token Format: Valid JWT (3 parts)');
+              console.log('   - Token Length:', result.token.length);
+              console.log('   - Token Preview:', result.token.substring(0, 30) + '...');
+            } else {
+              console.error('❌ Token storage verification failed - stored token does not match');
+              throw new Error('Token storage verification failed');
+            }
+          } else {
+            console.error('❌ Invalid token format received from server');
+            console.error('   - Expected JWT format (header.payload.signature)');
+            console.error('   - Received:', result.token.substring(0, 50));
+            throw new Error('Invalid token format from server');
+          }
 
           // Store user info in localStorage for consistent access
           if (result.user && result.user.id) {

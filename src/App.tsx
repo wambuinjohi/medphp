@@ -50,6 +50,7 @@ import PaymentMethods from "./pages/settings/PaymentMethods";
 import Login from "./pages/Login";
 import ImageManagement from "./pages/admin/ImageManagement";
 import NetworkDiagnosticsPage from "./pages/NetworkDiagnostics";
+import TokenDiagnosticsPage from "./pages/TokenDiagnosticsPage";
 
 const App = () => {
 
@@ -73,6 +74,7 @@ const App = () => {
         <Route path="/debug/database" element={<DatabaseDebug />} />
         <Route path="/debug/api" element={<APIDiagnosticsPage />} />
         <Route path="/debug/network" element={<NetworkDiagnosticsPage />} />
+        <Route path="/debug/token" element={<TokenDiagnosticsPage />} />
 
         {/* Login route - Accessible without authentication */}
         <Route path="/login" element={<Login />} />

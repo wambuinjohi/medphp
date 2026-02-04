@@ -272,6 +272,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []); // Empty dependency array - run only once on mount
 
+  // Watch for localStorage changes to detect token clearing (e.g., from API adapter on 401)
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'med_api_token' && event.newValue === null) {
+        // Token was cleared from localStorage
+        if (mountedRef.current && user) {
+          console.warn('⚠️ Token was cleared from storage');
+          toast.error('Your authentication token is invalid. Please log in again.');
+          setUser(null);
+          setProfile(null);
+          setSession(null);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [user]);
+
   // Periodic token validation - check every 5 minutes if token is still valid
   // This catches tokens that become invalid while the app is running (e.g., admin revokes)
   useEffect(() => {
@@ -285,6 +304,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Token was cleared - logout
         if (user) {
           console.warn('⚠️ Token was cleared externally, logging out');
+          toast.error('Your session has expired. Please log in again.');
           setUser(null);
           setProfile(null);
           setSession(null);
@@ -305,6 +325,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(null);
             setProfile(null);
             setSession(null);
+            toast.error('Your authentication session is no longer valid. Please log in again.');
             console.log('🔐 User logged out due to invalid token');
           }
         }
@@ -317,7 +338,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Run validation every 5 minutes
     const validationInterval = setInterval(validateTokenPeriodically, 5 * 60 * 1000);
 
-    return () => clearInterval(validationInterval);
+    // Also do initial check after short delay
+    const initialCheckTimeout = setTimeout(validateTokenPeriodically, 2000);
+
+    return () => {
+      clearInterval(validationInterval);
+      clearTimeout(initialCheckTimeout);
+    };
   }, [user]); // Re-run when user changes
 
   const signIn = useCallback(async (email: string, password: string) => {
