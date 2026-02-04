@@ -29,13 +29,12 @@ export const usePaymentAllocationTest = () => {
     setIsLoading(true);
     
     try {
-      // 1. Check if payment_allocations table exists
-      const { error: tableError } = await supabase
-        .from('payment_allocations')
-        .select('id')
-        .limit(1);
+      const db = getDatabase();
 
-      if (tableError && tableError.message.includes('relation') && tableError.message.includes('does not exist')) {
+      // 1. Check if payment_allocations table exists
+      const { data: tableData, error: tableError } = await db.select('payment_allocations');
+
+      if (tableError) {
         return {
           success: false,
           message: 'payment_allocations table does not exist',
@@ -44,8 +43,8 @@ export const usePaymentAllocationTest = () => {
       }
 
       // 2. Check if user profile is linked to company
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const user = getCurrentUser();
+      if (!user.id) {
         return {
           success: false,
           message: 'No authenticated user found',
@@ -53,11 +52,7 @@ export const usePaymentAllocationTest = () => {
         };
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single();
+      const { data: profile, error: profileError } = await db.selectOne('profiles', user.id);
 
       if (profileError || !profile?.company_id) {
         return {
