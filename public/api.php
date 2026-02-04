@@ -27,8 +27,7 @@ header("Access-Control-Expose-Headers: Content-Type, X-Total-Count, X-Page, X-Pa
 // This is critical for CORS headers to work in all error scenarios
 ob_start();
 
-// ENDPOINT IDENTIFIER - Log which API file is executing (after headers are set)
-error_log("🟢 [ENDPOINT] Using public/api.php (main API)");
+// ENDPOINT IDENTIFIER - Removed redundant endpoint logging (cleanup)
 
 // Set error handler to catch any errors and ensure CORS headers are sent
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
@@ -1787,9 +1786,10 @@ try {
                 }
 
                 // Check if the filtered company matches their assigned company
+                // Cast both to strings to handle type mismatches (string vs integer)
                 if ($company_id_filter !== null) {
                     // A specific company was requested - verify it matches the user's company
-                    if ($company_id_filter !== $user['company_id']) {
+                    if ((string)$company_id_filter !== (string)$user['company_id']) {
                         // Trying to access a different company's data
                         http_response_code(403);
                         error_log("🔴 [AUTH] READ $table - Non-admin user {$user['email']} (role: {$user['role']}) tried to access company {$company_id_filter} but is assigned to {$user['company_id']} (DENIED)");
@@ -1803,6 +1803,35 @@ try {
 
                 // Allow non-admin to read their company
                 error_log("✅ [AUTH] READ $table - Authorization passed for non-admin user {$user['email']} (company_id: {$user['company_id']})");
+            } elseif (!$is_admin && $table === 'roles') {
+                // Special handling for roles table - allow non-admin users to read role definitions from their company
+                // This is essential for the usePermissions hook to work for non-admin users
+                $company_id_filter = null;
+
+                if (is_array($where) && isset($where['company_id'])) {
+                    $company_id_filter = $where['company_id'];
+                } elseif (is_array($where) && isset($where['id'])) {
+                    // When filtering by role ID, we'll allow it - the query will validate ownership
+                    error_log("ℹ️ [AUTH] READ $table - Non-admin user {$user['email']} reading specific role by ID");
+                } elseif (!empty($where)) {
+                    // String-based filter - will allow and let query handle it
+                    error_log("ℹ️ [AUTH] READ $table - Non-admin user {$user['email']} using filter: {$where}");
+                } else {
+                    // No filter - allow to read all roles for their company (query will filter by company_id)
+                    error_log("ℹ️ [AUTH] READ $table - Non-admin user {$user['email']} reading all roles (frontend will filter by company)");
+                }
+
+                // Check if a specific company filter was requested and verify it matches their company
+                // Cast both to strings to handle type mismatches (string vs integer)
+                if ($company_id_filter !== null && (string)$company_id_filter !== (string)$user['company_id']) {
+                    // Trying to access roles from a different company
+                    http_response_code(403);
+                    error_log("🔴 [AUTH] READ $table - Non-admin user {$user['email']} (role: {$user['role']}) tried to access roles from company {$company_id_filter} but is assigned to {$user['company_id']} (DENIED)");
+                    throw new Exception("Insufficient permissions. You can only read roles from your assigned company.");
+                }
+
+                // Allow non-admin to read roles from their company (needed for permission system)
+                error_log("✅ [AUTH] READ $table - Authorization passed for non-admin user {$user['email']} to read roles (company_id: {$user['company_id']})");
             } elseif (!$is_admin) {
                 // For other protected tables, non-admin users are denied
                 http_response_code(403);

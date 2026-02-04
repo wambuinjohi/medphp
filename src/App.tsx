@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { CompanyProvider } from "@/contexts/CompanyContext";
+import { routePermissionMap } from "@/constants/routePermissions";
 import Index from "./pages/Index";
 import Quotations from "./pages/Quotations";
 import Invoices from "./pages/Invoices";
@@ -104,7 +105,10 @@ const App = () => {
                 <Route
                   path="/app/quotations"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/quotations'].requiredPermissions}
+                    >
                       <Quotations />
                     </ProtectedRoute>
                   }
@@ -112,7 +116,10 @@ const App = () => {
                 <Route
                   path="/app/quotations/new"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/quotations/new'].requiredPermissions}
+                    >
                       <Quotations />
                     </ProtectedRoute>
                   }
@@ -120,7 +127,10 @@ const App = () => {
                 <Route
                   path="/app/customers"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/customers'].requiredPermissions}
+                    >
                       <Customers />
                     </ProtectedRoute>
                   }
@@ -128,7 +138,10 @@ const App = () => {
                 <Route
                   path="/app/customers/new"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/customers/new'].requiredPermissions}
+                    >
                       <Customers />
                     </ProtectedRoute>
                   }
@@ -138,7 +151,10 @@ const App = () => {
                 <Route
                   path="/app/invoices"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/invoices'].requiredPermissions}
+                    >
                       <Invoices />
                     </ProtectedRoute>
                   }
@@ -146,7 +162,10 @@ const App = () => {
                 <Route
                   path="/app/invoices/new"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/invoices/new'].requiredPermissions}
+                    >
                       <Invoices />
                     </ProtectedRoute>
                   }
@@ -170,7 +189,10 @@ const App = () => {
                 <Route
                   path="/app/payments"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/payments'].requiredPermissions}
+                    >
                       <Payments />
                     </ProtectedRoute>
                   }
@@ -178,7 +200,10 @@ const App = () => {
                 <Route
                   path="/app/payments/new"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/payments'].requiredPermissions}
+                    >
                       <Payments />
                     </ProtectedRoute>
                   }
@@ -239,7 +264,10 @@ const App = () => {
                 <Route
                   path="/app/lpos"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/lpos'].requiredPermissions}
+                    >
                       <LPOs />
                     </ProtectedRoute>
                   }
@@ -247,7 +275,10 @@ const App = () => {
                 <Route
                   path="/app/lpos/new"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/lpos'].requiredPermissions}
+                    >
                       <LPOs />
                     </ProtectedRoute>
                   }
@@ -255,7 +286,10 @@ const App = () => {
                 <Route
                   path="/app/suppliers"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/suppliers'].requiredPermissions}
+                    >
                       <Suppliers />
                     </ProtectedRoute>
                   }
@@ -263,7 +297,10 @@ const App = () => {
                 <Route
                   path="/app/inventory"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/inventory'].requiredPermissions}
+                    >
                       <Inventory />
                     </ProtectedRoute>
                   }
@@ -271,7 +308,10 @@ const App = () => {
                 <Route
                   path="/app/inventory/new"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/inventory'].requiredPermissions}
+                    >
                       <Inventory />
                     </ProtectedRoute>
                   }
@@ -279,7 +319,10 @@ const App = () => {
                 <Route
                   path="/app/stock-movements"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute
+                      requireAuth={true}
+                      requiredPermissions={routePermissionMap['/app/stock-movements'].requiredPermissions}
+                    >
                       <StockMovements />
                     </ProtectedRoute>
                   }
@@ -409,7 +452,7 @@ const App = () => {
                 <Route
                   path="/app/settings/company"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute requireAuth={true} requiredRole="admin">
                       <CompanySettings />
                     </ProtectedRoute>
                   }
@@ -417,7 +460,7 @@ const App = () => {
                 <Route
                   path="/app/settings/users"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute requireAuth={true} requiredRole="admin">
                       <UserManagement />
                     </ProtectedRoute>
                   }
@@ -425,7 +468,7 @@ const App = () => {
                 <Route
                   path="/app/settings/payment-methods"
                   element={
-                    <ProtectedRoute requireAuth={true}>
+                    <ProtectedRoute requireAuth={true} requiredRole="admin">
                       <PaymentMethods />
                     </ProtectedRoute>
                   }
