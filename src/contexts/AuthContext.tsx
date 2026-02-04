@@ -285,6 +285,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Token was cleared - logout
         if (user) {
           console.warn('⚠️ Token was cleared externally, logging out');
+          toast.error('Your session has expired. Please log in again.');
           setUser(null);
           setProfile(null);
           setSession(null);
@@ -305,6 +306,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(null);
             setProfile(null);
             setSession(null);
+            toast.error('Your authentication session is no longer valid. Please log in again.');
             console.log('🔐 User logged out due to invalid token');
           }
         }
@@ -317,7 +319,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Run validation every 5 minutes
     const validationInterval = setInterval(validateTokenPeriodically, 5 * 60 * 1000);
 
-    return () => clearInterval(validationInterval);
+    // Also do initial check after short delay
+    const initialCheckTimeout = setTimeout(validateTokenPeriodically, 2000);
+
+    return () => {
+      clearInterval(validationInterval);
+      clearTimeout(initialCheckTimeout);
+    };
   }, [user]); // Re-run when user changes
 
   const signIn = useCallback(async (email: string, password: string) => {
