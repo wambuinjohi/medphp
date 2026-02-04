@@ -364,31 +364,29 @@ export function useDeleteCreditNote() {
 
       // 5. Log the deletion with full snapshot
       try {
-        const { data } = await supabase.auth.getUser();
-        const userId = data?.user?.id || null;
-        const userEmail = (data?.user?.email as string) || null;
+        const currentUser = getCurrentUser();
+        const userId = currentUser.id;
+        const userEmail = currentUser.email;
 
-        await supabase.from('audit_logs').insert([
-          {
-            action: 'DELETE',
-            entity_type: 'credit_note',
-            record_id: id,
-            company_id: creditNote.company_id,
-            actor_user_id: userId,
-            actor_email: userEmail,
-            details: {
-              credit_note_number: creditNote.credit_note_number,
-              customer_id: creditNote.customer_id,
-              total_amount: creditNote.total_amount,
-              applied_amount: creditNote.applied_amount,
-              items_count: creditNote.credit_note_items?.length || 0,
-              allocations_count: creditNote.credit_note_allocations?.length || 0,
-              affected_invoices: creditNote.credit_note_allocations?.map((a) => a.invoice_id) || [],
-              inventory_affected: creditNote.affects_inventory,
-              stock_movements_reversed: stockMovementsReversedCount,
-            },
+        await db.insert('audit_logs', {
+          action: 'DELETE',
+          entity_type: 'credit_note',
+          record_id: id,
+          company_id: creditNote.company_id,
+          actor_user_id: userId,
+          actor_email: userEmail,
+          details: {
+            credit_note_number: creditNote.credit_note_number,
+            customer_id: creditNote.customer_id,
+            total_amount: creditNote.total_amount,
+            applied_amount: creditNote.applied_amount,
+            items_count: creditNote.credit_note_items?.length || 0,
+            allocations_count: creditNote.credit_note_allocations?.length || 0,
+            affected_invoices: creditNote.credit_note_allocations?.map((a) => a.invoice_id) || [],
+            inventory_affected: creditNote.affects_inventory,
+            stock_movements_reversed: stockMovementsReversedCount,
           },
-        ]);
+        });
       } catch (auditError) {
         console.warn('Audit log creation failed:', auditError);
       }
