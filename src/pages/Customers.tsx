@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { useCustomers, useCreateCustomer, useCustomerInvoices, useCustomerPayments, useDeleteCustomer } from '@/hooks/useDatabase';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
+import { usePermissionGuards } from '@/hooks/usePermissionGuards';
 import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
 import { EditCustomerModal } from '@/components/customers/EditCustomerModal';
