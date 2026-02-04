@@ -24,11 +24,16 @@ export const usePermissions = () => {
    * Fetch the user's role definition
    */
   const fetchUserRole = useCallback(async () => {
-    console.log('🔍 [usePermissions] fetchUserRole called, currentUser:', {
+    console.log('🔍 [usePermissions] fetchUserRole called');
+    console.log('📋 [usePermissions] currentUser data:', {
       id: currentUser?.id,
+      email: currentUser?.email,
       role: currentUser?.role,
       company_id: currentUser?.company_id,
-      has_roleDefinition: !!currentUser?.roleDefinition
+      status: currentUser?.status,
+      has_roleDefinition: !!currentUser?.roleDefinition,
+      roleDefinition_name: currentUser?.roleDefinition?.name,
+      roleDefinition_permissions_count: currentUser?.roleDefinition?.permissions?.length || 0
     });
 
     if (!currentUser) {
