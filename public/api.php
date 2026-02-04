@@ -1825,7 +1825,7 @@ try {
                     $operator = '=';
                     $condition = null;
 
-                    // Handle different filter operators
+                    // Handle different filter operators - stripping suffixes and building SQL conditions
                     if (preg_match('/_in$/', $col)) {
                         // IN operator - expects array values
                         $base_col = preg_replace('/_in$/', '', $col);
@@ -1838,6 +1838,14 @@ try {
                             // Handle single value passed with _in suffix - treat as equality
                             $condition = "`" . escape($conn, $base_col) . "`='" . escape($conn, $val) . "'";
                         }
+                    } elseif (preg_match('/_neq$/', $col)) {
+                        // NOT EQUAL operator
+                        $base_col = preg_replace('/_neq$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "`!='" . escape($conn, $val) . "'";
+                    } elseif (preg_match('/_ilike$/', $col)) {
+                        // Case-insensitive LIKE operator (same as LIKE in MySQL for non-binary)
+                        $base_col = preg_replace('/_ilike$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "` LIKE '%" . escape($conn, $val) . "%'";
                     } elseif (preg_match('/_like$/', $col)) {
                         // LIKE operator
                         $base_col = preg_replace('/_like$/', '', $col);
@@ -1858,6 +1866,10 @@ try {
                         // Less than or equal operator
                         $base_col = preg_replace('/_lte$/', '', $col);
                         $condition = "`" . escape($conn, $base_col) . "` <= '" . escape($conn, $val) . "'";
+                    } elseif (preg_match('/_contains$|_contained_by$|_range_lt$|_range_gte$|_range_overlaps$|_text_search$/', $col)) {
+                        // JSON/Range operators not supported in basic MySQL - skip these for now
+                        // These would need special handling or can be filtered client-side
+                        continue 2; // Skip to next iteration of foreach
                     } else {
                         // Standard equality operator (no suffix)
                         $condition = "`" . escape($conn, $base_col) . "`='" . escape($conn, $val) . "'";
