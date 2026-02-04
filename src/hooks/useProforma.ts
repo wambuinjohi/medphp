@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
+import { getCurrentUser } from '@/utils/getCurrentUser';
 import { calculateDocumentTotals, type TaxableItem } from '@/utils/taxCalculation';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { externalApiAdapter } from '@/integrations/database/external-api-adapter';
@@ -150,9 +150,9 @@ export const useCreateProforma = () => {
       // Ensure created_by defaults to authenticated user
       let cleanProforma = { ...proformaWithTotals } as any;
       try {
-        // Try to get user from Supabase auth
-        const { data: userData } = await supabase.auth.getUser();
-        const authUserId = userData?.user?.id || null;
+        // Get user from current session
+        const userData = getCurrentUser();
+        const authUserId = userData?.id || null;
         if (authUserId) {
           cleanProforma.created_by = authUserId;
         } else {
@@ -488,8 +488,8 @@ export const useConvertProformaToInvoice = () => {
       // Get current user
       let createdBy: string | null = null;
       try {
-        const { data: userData } = await supabase.auth.getUser();
-        createdBy = userData?.user?.id || null;
+        const userData = getCurrentUser();
+        createdBy = userData?.id || null;
       } catch {
         createdBy = null;
       }

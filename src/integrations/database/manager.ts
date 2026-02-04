@@ -19,7 +19,7 @@ class DatabaseManager {
    */
   getProvider(): DatabaseProvider {
     const provider = import.meta.env.VITE_DATABASE_PROVIDER as DatabaseProvider;
-    return provider || 'supabase'; // Default to Supabase for backward compatibility
+    return provider || 'external-api'; // Default to external API
   }
 
   /**
@@ -40,13 +40,19 @@ class DatabaseManager {
     if (provider === 'external-api') {
       // Use the shared instance so authentication is preserved
       adapterToTry = getSharedExternalAdapter();
-      shouldFallback = true; // Fallback to Supabase if external API fails
+      shouldFallback = false; // No fallback - use external API exclusively
     } else if (provider === 'mysql') {
       adapterToTry = new MySQLAdapter();
-      shouldFallback = true; // Fallback to Supabase if MySQL fails
+      shouldFallback = false; // No fallback - use selected provider exclusively
+    } else if (provider === 'supabase') {
+      // Supabase is no longer supported, force external-api
+      console.warn('⚠️  Supabase provider is deprecated. Using external-api instead.');
+      adapterToTry = getSharedExternalAdapter();
+      shouldFallback = false;
     } else {
-      // Default to Supabase
-      adapterToTry = new SupabaseAdapter();
+      // Default to external API
+      adapterToTry = getSharedExternalAdapter();
+      shouldFallback = false;
     }
 
     try {
@@ -91,7 +97,8 @@ class DatabaseManager {
       } else if (provider === 'mysql') {
         this.adapter = new MySQLAdapter();
       } else {
-        this.adapter = new SupabaseAdapter();
+        // Default to external API (Supabase no longer supported)
+        this.adapter = getSharedExternalAdapter();
       }
     }
     return this.adapter;

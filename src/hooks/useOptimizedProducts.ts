@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect, useMemo } from 'react';
+import { getCurrentUser } from '@/utils/getCurrentUser';
 
 export interface ProductSearchResult {
   id: string;
@@ -129,18 +129,10 @@ export const usePopularProducts = (companyId?: string, limit: number = 20) => {
         console.log('Fetching popular products for company:', companyId);
 
         // Check authentication first
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) {
-          // Use parseErrorMessage to extract useful text
-          const { parseErrorMessage } = await import('@/utils/errorHelpers');
-          const parsed = parseErrorMessage(authError);
-          // Properly serialize the error object to prevent [object Object] logging
-          try {
-            const serializedError = typeof authError === 'object' ? JSON.stringify(authError) : String(authError);
-            console.error('Authentication error:', parsed, serializedError);
-          } catch {
-            console.error('Authentication error:', parsed);
-          }
+        const user = getCurrentUser();
+        if (!user.id) {
+          // Not authenticated
+          console.error('User not authenticated');
           throw new Error(`Authentication failed: ${parsed}`);
         }
         if (!user) {

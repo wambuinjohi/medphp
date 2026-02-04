@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { getDatabase } from '@/integrations/database';
 import { toast } from 'sonner';
+import { getCurrentUser } from '@/utils/getCurrentUser';
 
 export interface CreditNote {
   id: string;
@@ -255,9 +255,9 @@ export function useDeleteCreditNote() {
       let userId: string | null = localStorage.getItem('med_api_user_id');
 
       if (!userId) {
-        // Fall back to Supabase auth
-        const { data: { user } } = await supabase.auth.getUser();
-        userId = user?.id || null;
+        // Get from current user (stored in localStorage)
+        const user = getCurrentUser();
+        userId = user.id;
       }
 
       if (!userId) throw new Error('Not authenticated');
@@ -364,31 +364,29 @@ export function useDeleteCreditNote() {
 
       // 5. Log the deletion with full snapshot
       try {
-        const { data } = await supabase.auth.getUser();
-        const userId = data?.user?.id || null;
-        const userEmail = (data?.user?.email as string) || null;
+        const currentUser = getCurrentUser();
+        const userId = currentUser.id;
+        const userEmail = currentUser.email;
 
-        await supabase.from('audit_logs').insert([
-          {
-            action: 'DELETE',
-            entity_type: 'credit_note',
-            record_id: id,
-            company_id: creditNote.company_id,
-            actor_user_id: userId,
-            actor_email: userEmail,
-            details: {
-              credit_note_number: creditNote.credit_note_number,
-              customer_id: creditNote.customer_id,
-              total_amount: creditNote.total_amount,
-              applied_amount: creditNote.applied_amount,
-              items_count: creditNote.credit_note_items?.length || 0,
-              allocations_count: creditNote.credit_note_allocations?.length || 0,
-              affected_invoices: creditNote.credit_note_allocations?.map((a) => a.invoice_id) || [],
-              inventory_affected: creditNote.affects_inventory,
-              stock_movements_reversed: stockMovementsReversedCount,
-            },
+        await db.insert('audit_logs', {
+          action: 'DELETE',
+          entity_type: 'credit_note',
+          record_id: id,
+          company_id: creditNote.company_id,
+          actor_user_id: userId,
+          actor_email: userEmail,
+          details: {
+            credit_note_number: creditNote.credit_note_number,
+            customer_id: creditNote.customer_id,
+            total_amount: creditNote.total_amount,
+            applied_amount: creditNote.applied_amount,
+            items_count: creditNote.credit_note_items?.length || 0,
+            allocations_count: creditNote.credit_note_allocations?.length || 0,
+            affected_invoices: creditNote.credit_note_allocations?.map((a) => a.invoice_id) || [],
+            inventory_affected: creditNote.affects_inventory,
+            stock_movements_reversed: stockMovementsReversedCount,
           },
-        ]);
+        });
       } catch (auditError) {
         console.warn('Audit log creation failed:', auditError);
       }

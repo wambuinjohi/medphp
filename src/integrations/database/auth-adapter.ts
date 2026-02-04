@@ -1,13 +1,14 @@
 /**
  * Database-Agnostic Authentication Adapter
- * Provides unified authentication interface for both Supabase and MySQL
+ * Provides unified authentication interface
  */
 
 import type { IAuth, AuthContext } from './types';
-import { supabase } from '@/integrations/supabase/client';
+import { getSharedExternalAdapter } from './shared-adapter';
 
 /**
- * Supabase Authentication Implementation
+ * External API Authentication Implementation
+ * Uses the med.wayrus.co.ke/api.php backend for all auth operations
  */
 class SupabaseAuthAdapter implements IAuth {
   async signIn(
@@ -15,30 +16,31 @@ class SupabaseAuthAdapter implements IAuth {
     password: string
   ): Promise<{ user: AuthContext | null; error: Error | null }> {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const adapter = getSharedExternalAdapter();
+      const result = await (adapter as any).login(email, password);
 
-      if (error || !data.user) {
-        return { user: null, error };
+      if (result.error) {
+        return { user: null, error: result.error as Error };
+      }
+
+      // Store auth info in localStorage
+      if (result.user?.id) {
+        localStorage.setItem('med_api_user_id', result.user.id);
+        localStorage.setItem('med_api_user_email', email);
+        localStorage.setItem('med_api_token', result.token || '');
       }
 
       // Fetch profile information
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
+      const profileResult = await adapter.selectOne('profiles', result.user?.id);
 
-      if (profile) {
+      if (profileResult.data) {
         return {
           user: {
-            userId: profile.id,
-            email: profile.email,
-            role: profile.role,
-            companyId: profile.company_id,
-            status: profile.status,
+            userId: profileResult.data.id,
+            email: profileResult.data.email || email,
+            role: profileResult.data.role,
+            companyId: profileResult.data.company_id,
+            status: profileResult.data.status,
           },
           error: null,
         };
@@ -56,35 +58,35 @@ class SupabaseAuthAdapter implements IAuth {
     fullName?: string
   ): Promise<{ user: AuthContext | null; error: Error | null }> {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
+      const adapter = getSharedExternalAdapter();
+      const result = await (adapter as any).signup(email, password, fullName);
 
-      if (error || !data.user) {
-        return { user: null, error };
+      if (result.error) {
+        return { user: null, error: result.error as Error };
+      }
+
+      // Store auth info in localStorage
+      if (result.user?.id) {
+        localStorage.setItem('med_api_user_id', result.user.id);
+        localStorage.setItem('med_api_user_email', email);
+        localStorage.setItem('med_api_token', result.token || '');
       }
 
       // Create profile
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: data.user.id,
+      const profileResult = await adapter.insert('profiles', {
+        id: result.user?.id,
         email,
         full_name: fullName,
         status: 'pending',
       });
 
-      if (profileError) {
-        return { user: null, error: profileError };
+      if (profileResult.error) {
+        return { user: null, error: profileResult.error as Error };
       }
 
       return {
         user: {
-          userId: data.user.id,
+          userId: result.user?.id || '',
           email,
           role: 'user',
           companyId: null,
@@ -99,8 +101,15 @@ class SupabaseAuthAdapter implements IAuth {
 
   async signOut(): Promise<{ error: Error | null }> {
     try {
-      const { error } = await supabase.auth.signOut();
-      return { error };
+      const adapter = getSharedExternalAdapter();
+      const result = await (adapter as any).logout();
+
+      // Clear localStorage
+      localStorage.removeItem('med_api_token');
+      localStorage.removeItem('med_api_user_id');
+      localStorage.removeItem('med_api_user_email');
+
+      return { error: result.error || null };
     } catch (error) {
       return { error: error as Error };
     }
@@ -108,27 +117,27 @@ class SupabaseAuthAdapter implements IAuth {
 
   async getSession(): Promise<{ user: AuthContext | null; error: Error | null }> {
     try {
-      const { data, error } = await supabase.auth.getSession();
+      // Get user from localStorage (external API auth method)
+      const userId = localStorage.getItem('med_api_user_id');
+      const email = localStorage.getItem('med_api_user_email');
+      const token = localStorage.getItem('med_api_token');
 
-      if (error || !data.session?.user) {
-        return { user: null, error };
+      if (!userId || !token) {
+        return { user: null, error: null };
       }
 
       // Fetch profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.session.user.id)
-        .single();
+      const adapter = getSharedExternalAdapter();
+      const profileResult = await adapter.selectOne('profiles', userId);
 
-      if (profile) {
+      if (profileResult.data) {
         return {
           user: {
-            userId: profile.id,
-            email: profile.email,
-            role: profile.role,
-            companyId: profile.company_id,
-            status: profile.status,
+            userId: profileResult.data.id,
+            email: profileResult.data.email || email,
+            role: profileResult.data.role,
+            companyId: profileResult.data.company_id,
+            status: profileResult.data.status,
           },
           error: null,
         };
@@ -142,8 +151,11 @@ class SupabaseAuthAdapter implements IAuth {
 
   async resetPassword(email: string): Promise<{ error: Error | null }> {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
-      return { error };
+      // Password reset would be handled by the backend API
+      // For now, return an error indicating this functionality
+      return {
+        error: new Error('Password reset not implemented'),
+      };
     } catch (error) {
       return { error: error as Error };
     }
@@ -151,10 +163,10 @@ class SupabaseAuthAdapter implements IAuth {
 
   async updatePassword(userId: string, newPassword: string): Promise<{ error: Error | null }> {
     try {
-      const { error } = await supabase.auth.admin.updateUserById(userId, {
-        password: newPassword,
-      });
-      return { error };
+      // Password update would be handled by the backend API
+      return {
+        error: new Error('Password update not implemented via client SDK'),
+      };
     } catch (error) {
       return { error: error as Error };
     }
@@ -167,8 +179,6 @@ class SupabaseAuthAdapter implements IAuth {
     companyId: string
   ): Promise<{ user: AuthContext | null; error: Error | null }> {
     try {
-      // This would typically be done via an Edge Function with service role
-      // For now, return an error indicating this should be done server-side
       return {
         user: null,
         error: new Error('User creation should be done via server-side admin API'),
@@ -179,30 +189,21 @@ class SupabaseAuthAdapter implements IAuth {
   }
 
   onAuthStateChange(callback: (user: AuthContext | null) => void): () => void {
-    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+    // Check initial auth state
+    this.getSession().then(({ user }) => callback(user));
 
-        if (profile) {
-          callback({
-            userId: profile.id,
-            email: profile.email,
-            role: profile.role,
-            companyId: profile.company_id,
-            status: profile.status,
-          });
-        }
-      } else {
-        callback(null);
+    // Listen for storage changes (for multi-tab sync)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'med_api_token' || e.key === 'med_api_user_id') {
+        this.getSession().then(({ user }) => callback(user));
       }
-    });
+    };
 
+    window.addEventListener('storage', handleStorageChange);
+
+    // Return unsubscribe function
     return () => {
-      data?.subscription.unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
     };
   }
 }
