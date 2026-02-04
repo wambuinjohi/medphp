@@ -27,23 +27,18 @@ export async function reconcileInvoiceBalance(
   fix: boolean = false
 ): Promise<ReconciliationResult> {
   try {
-    // 1. Get invoice
-    const { data: invoice, error: invoiceError } = await supabase
-      .from('invoices')
-      .select('id, invoice_number, total_amount, paid_amount, balance_due, status')
-      .eq('id', invoiceId)
-      .single();
+    const db = getDatabase();
 
-    if (invoiceError) throw invoiceError;
+    // 1. Get invoice
+    const invoiceResult = await db.selectOne('invoices', invoiceId);
+    if (invoiceResult.error) throw invoiceResult.error;
+    const invoice = invoiceResult.data;
     if (!invoice) throw new Error('Invoice not found');
 
     // 2. Get all allocations for this invoice
-    const { data: allocations, error: allocationsError } = await supabase
-      .from('payment_allocations')
-      .select('amount_allocated')
-      .eq('invoice_id', invoiceId);
-
-    if (allocationsError) throw allocationsError;
+    const allocationsResult = await db.selectBy('payment_allocations', { invoice_id: invoiceId });
+    if (allocationsResult.error) throw allocationsResult.error;
+    const allocations = allocationsResult.data || [];
 
     // 3. Calculate values
     const calculatedPaidAmount = (allocations || []).reduce(
