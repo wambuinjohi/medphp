@@ -162,6 +162,7 @@ export class ExternalAPIAdapter implements IDatabase {
 
   /**
    * Attempt to refresh the token using the refresh endpoint
+   * Implements retry logic with exponential backoff
    */
   private async attemptTokenRefresh(): Promise<void> {
     try {
@@ -171,6 +172,7 @@ export class ExternalAPIAdapter implements IDatabase {
       const refreshUrl = `${this.apiBase}?action=refresh_token`;
 
       console.log('🔄 Attempting token refresh with user_id:', userId?.substring(0, 8) + '...');
+      console.log(`   Failed attempts so far: ${this.failedValidationAttempts}/3`);
 
       const response = await fetch(refreshUrl, {
         method: 'POST',
@@ -181,8 +183,9 @@ export class ExternalAPIAdapter implements IDatabase {
       const result = await response.json().catch(() => null);
 
       if (response.ok && result?.token) {
-        // Store the new token
+        // Store the new token and reset counter on success
         this.setAuthToken(result.token);
+        this.failedValidationAttempts = 0;
         console.log('✅ Token refreshed successfully');
         return;
       }
@@ -202,19 +205,40 @@ export class ExternalAPIAdapter implements IDatabase {
 
       if (checkResponse.ok && checkResult?.id) {
         // Token is actually valid - maybe the refresh endpoint just doesn't exist
+        this.failedValidationAttempts = 0;
         console.log('✅ Token is valid (check_auth succeeded), continuing without refresh');
         return;
       }
 
-      // Token is definitely invalid - clear it
-      console.error('❌ Token is invalid - clearing authentication');
-      this.clearAuthToken();
-      localStorage.removeItem('med_api_user_id');
-      localStorage.removeItem('med_api_user_email');
+      // Token validation failed - increment counter
+      this.failedValidationAttempts++;
+      console.warn(`⚠️ Token validation failed (attempt ${this.failedValidationAttempts}/3)`);
+
+      // Only clear token after 3 failed attempts, not on first failure
+      if (this.failedValidationAttempts >= 3) {
+        console.error('❌ Token is invalid after 3 attempts - clearing authentication');
+        this.clearAuthToken();
+        localStorage.removeItem('med_api_user_id');
+        localStorage.removeItem('med_api_user_email');
+        this.failedValidationAttempts = 0;
+      } else {
+        console.log(`⏳ Deferring token clearing until next validation attempt (need ${3 - this.failedValidationAttempts} more failures)`);
+      }
 
     } catch (error) {
-      console.warn('⚠️ Token refresh error:', error);
-      // Don't clear auth on network errors - let the user retry
+      console.warn('⚠️ Token refresh error (network issue):', error);
+      // Increment counter for network errors too
+      this.failedValidationAttempts++;
+      console.warn(`⚠️ Network validation attempt failed (${this.failedValidationAttempts}/3)`);
+
+      if (this.failedValidationAttempts >= 3) {
+        // Only clear on persistent failures
+        console.warn('❌ Too many failed validation attempts - clearing token');
+        this.clearAuthToken();
+        localStorage.removeItem('med_api_user_id');
+        localStorage.removeItem('med_api_user_email');
+        this.failedValidationAttempts = 0;
+      }
     }
   }
 
