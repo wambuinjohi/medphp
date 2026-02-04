@@ -161,8 +161,11 @@ export class ExternalAPIAdapter implements IDatabase {
   private async attemptTokenRefresh(): Promise<void> {
     try {
       const userId = localStorage.getItem('med_api_user_id');
-      // Use the stored external API URL for token refresh endpoint construction
+
+      // Try primary refresh endpoint
       const refreshUrl = `${this.apiBase}?action=refresh_token`;
+
+      console.log('🔄 Attempting token refresh with user_id:', userId?.substring(0, 8) + '...');
 
       const response = await fetch(refreshUrl, {
         method: 'POST',
@@ -175,14 +178,35 @@ export class ExternalAPIAdapter implements IDatabase {
       if (response.ok && result?.token) {
         // Store the new token
         this.setAuthToken(result.token);
-        console.log('✅ Token refreshed automatically');
-      } else {
-        // If refresh fails, clear auth and require re-login
-        console.warn('⚠️ Token refresh failed, clearing authentication');
-        this.clearAuthToken();
-        localStorage.removeItem('med_api_user_id');
-        localStorage.removeItem('med_api_user_email');
+        console.log('✅ Token refreshed successfully');
+        return;
       }
+
+      // If primary refresh fails, try alternative approach
+      console.warn('⚠️ Primary token refresh failed (status:', response.status, '), trying check_auth endpoint...');
+
+      // Try checking if we can validate with current token
+      const checkUrl = `${this.apiBase}?action=check_auth`;
+      const checkResponse = await fetch(checkUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: this.getAuthToken() }),
+      });
+
+      const checkResult = await checkResponse.json().catch(() => null);
+
+      if (checkResponse.ok && checkResult?.id) {
+        // Token is actually valid - maybe the refresh endpoint just doesn't exist
+        console.log('✅ Token is valid (check_auth succeeded), continuing without refresh');
+        return;
+      }
+
+      // Token is definitely invalid - clear it
+      console.error('❌ Token is invalid - clearing authentication');
+      this.clearAuthToken();
+      localStorage.removeItem('med_api_user_id');
+      localStorage.removeItem('med_api_user_email');
+
     } catch (error) {
       console.warn('⚠️ Token refresh error:', error);
       // Don't clear auth on network errors - let the user retry
