@@ -10,6 +10,44 @@ import {
 } from '@/utils/permissionChecker';
 
 /**
+ * Normalize permissions to ensure they're always an array
+ * Handles cases where permissions come back as JSON strings from the API
+ */
+function normalizePermissions(permissions: any): Permission[] {
+  if (!permissions) {
+    console.warn('🔐 [normalizePermissions] Permissions is null/undefined');
+    return [];
+  }
+
+  // If already an array, return it
+  if (Array.isArray(permissions)) {
+    console.log('✅ [normalizePermissions] Permissions already an array:', permissions.length, 'items');
+    return permissions as Permission[];
+  }
+
+  // If it's a JSON string, parse it
+  if (typeof permissions === 'string') {
+    try {
+      console.log('🔄 [normalizePermissions] Parsing permissions JSON string...');
+      const parsed = JSON.parse(permissions);
+      if (Array.isArray(parsed)) {
+        console.log('✅ [normalizePermissions] Successfully parsed JSON array:', parsed.length, 'items');
+        return parsed as Permission[];
+      } else {
+        console.warn('⚠️ [normalizePermissions] Parsed JSON is not an array:', parsed);
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ [normalizePermissions] Failed to parse permissions JSON:', error, 'Raw value:', permissions);
+      return [];
+    }
+  }
+
+  console.warn('⚠️ [normalizePermissions] Unknown permissions type:', typeof permissions, permissions);
+  return [];
+}
+
+/**
  * Hook to check permissions for the current user
  * Fetches the user's role and provides permission checking utilities
  */
