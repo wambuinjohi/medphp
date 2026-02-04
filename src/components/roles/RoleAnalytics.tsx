@@ -26,15 +26,16 @@ export function RoleAnalytics() {
 
     setLoading(true);
     try {
-      const { data: users } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('company_id', currentUser.company_id);
+      const usersResult = await apiClient.adapter.selectBy('profiles', {
+        company_id: currentUser.company_id,
+      });
 
-      const { data: roles } = await supabase
-        .from('roles')
-        .select('name, is_default')
-        .eq('company_id', currentUser.company_id);
+      const rolesResult = await apiClient.adapter.selectBy('roles', {
+        company_id: currentUser.company_id,
+      });
+
+      const users = Array.isArray(usersResult.data) ? usersResult.data : [];
+      const roles = Array.isArray(rolesResult.data) ? rolesResult.data : [];
 
       if (users && roles) {
         const roleMap = new Map<string, number>();
