@@ -746,45 +746,35 @@ export const useUserManagement = () => {
     setLoading(true);
 
     try {
+      const db = getDatabase();
+
       // Get invitation details first for audit logging
-      const { data: invitationData } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('id', invitationId)
-        .single();
+      const invitationResult = await db.selectOne('user_invitations', invitationId);
+      const invitationData = invitationResult.data;
 
-      const { error } = await supabase
-        .from('user_invitations')
-        .update({
-          is_approved: true,
-          approved_by: currentUser?.id,
-          approved_at: new Date().toISOString()
-        })
-        .eq('id', invitationId);
+      const updateResult = await db.update('user_invitations', invitationId, {
+        is_approved: true,
+        approved_by: currentUser?.id,
+        approved_at: new Date().toISOString()
+      });
 
-      if (error) {
-        throw error;
+      if (updateResult.error) {
+        throw updateResult.error;
       }
 
       // If a profile already exists for this email (user already signed up), activate it and assign role/company
       try {
         if (invitationData?.email) {
-          const { data: profileExists } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('email', invitationData.email)
-            .maybeSingle();
+          const profileResult = await db.selectBy('profiles', { email: invitationData.email });
 
-          if (profileExists?.id) {
+          if (profileResult.data && profileResult.data.length > 0) {
+            const profileExists = profileResult.data[0];
+
             // Validate that the company still exists before updating
             if (invitationData.company_id) {
-              const { data: companyExists } = await supabase
-                .from('companies')
-                .select('id')
-                .eq('id', invitationData.company_id)
-                .maybeSingle();
+              const companyResult = await db.selectOne('companies', invitationData.company_id);
 
-              if (!companyExists) {
+              if (companyResult.error || !companyResult.data) {
                 console.warn('Cannot activate profile: company no longer exists', {
                   profileId: profileExists.id,
                   companyId: invitationData.company_id
@@ -793,18 +783,15 @@ export const useUserManagement = () => {
               }
             }
 
-            const { error: updateErr } = await supabase
-              .from('profiles')
-              .update({
-                status: 'active',
-                role: invitationData.role,
-                company_id: invitationData.company_id
-              })
-              .eq('id', profileExists.id);
+            const updateProfileResult = await db.update('profiles', profileExists.id, {
+              status: 'active',
+              role: invitationData.role,
+              company_id: invitationData.company_id
+            });
 
-            if (updateErr) {
+            if (updateProfileResult.error) {
               console.warn('Could not auto-activate existing profile on approval:', {
-                error: updateErr,
+                error: updateProfileResult.error,
                 profileId: profileExists.id,
                 invitationId: invitationId
               });
