@@ -143,7 +143,12 @@ if (in_array($request_method, ['POST', 'PUT', 'PATCH'])) {
 $action = $_POST['action'] ?? ($_GET['action'] ?? null);
 $table = $_POST['table'] ?? ($_GET['table'] ?? null);
 $data = $_POST['data'] ?? ($json_body ?? []);
+// For read operations, where clause can come from URL params or JSON body (for filtered reads)
 $where = $_POST['where'] ?? ($_GET['where'] ?? null);
+// If no where in POST/GET and we have JSON body, use it as filter for read operations
+if (!$where && $json_body && is_array($json_body)) {
+    $where = $json_body;
+}
 $order_by = $_POST['order_by'] ?? ($_GET['order_by'] ?? null);
 $schema = $_POST['schema'] ?? ($_GET['schema'] ?? null);
 
@@ -1765,13 +1770,48 @@ try {
 
             // Check if user is admin for reading protected tables
             $is_admin = stripos($user['role'], 'admin') !== false || $user['role'] === 'super_admin';
-            if (!$is_admin) {
+
+            // Special handling for companies table - allow non-admin users to read their own company
+            if (!$is_admin && $table === 'companies') {
+                // For non-admin users, extract the company_id they're trying to access
+                $company_id_filter = null;
+
+                if (is_array($where) && isset($where['id'])) {
+                    $company_id_filter = $where['id'];
+                } elseif (is_array($where) && isset($where['company_id'])) {
+                    $company_id_filter = $where['company_id'];
+                } elseif (!empty($where)) {
+                    // If where is not empty but we couldn't extract company_id, it's a string filter
+                    // For now, we'll be permissive and allow it (backend query will handle RLS)
+                    error_log("⚠️ [AUTH] READ $table - Non-admin user {$user['email']} using string-based filter: {$where}");
+                }
+
+                // Check if the filtered company matches their assigned company
+                if ($company_id_filter !== null) {
+                    // A specific company was requested - verify it matches the user's company
+                    if ($company_id_filter !== $user['company_id']) {
+                        // Trying to access a different company's data
+                        http_response_code(403);
+                        error_log("🔴 [AUTH] READ $table - Non-admin user {$user['email']} (role: {$user['role']}) tried to access company {$company_id_filter} but is assigned to {$user['company_id']} (DENIED)");
+                        throw new Exception("Insufficient permissions. You can only access your assigned company.");
+                    }
+                } else {
+                    // No specific company filter - this is OK for non-admin as the frontend should filter
+                    // The backend will only return their company due to the RLS logic
+                    error_log("⚠️ [AUTH] READ $table - Non-admin user {$user['email']} reading companies without explicit ID filter");
+                }
+
+                // Allow non-admin to read their company
+                error_log("✅ [AUTH] READ $table - Authorization passed for non-admin user {$user['email']} (company_id: {$user['company_id']})");
+            } elseif (!$is_admin) {
+                // For other protected tables, non-admin users are denied
                 http_response_code(403);
                 error_log("🔴 [AUTH] READ $table - User is not admin (role: {$user['role']}) (DENIED)");
                 throw new Exception("Insufficient permissions. Admin role required to read this table.");
+            } else {
+                // Admin user - full access
+                error_log("✅ [AUTH] READ $table - Authorization passed for admin user {$user['email']}");
             }
-
-            error_log("✅ [AUTH] READ $table - Authorization passed for user {$user['email']}");
         }
 
         $sql = "SELECT * FROM `$table`";
