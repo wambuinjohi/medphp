@@ -30,14 +30,17 @@ import { BiolegendLogo } from '@/components/ui/biolegend-logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { shouldShowSidebarItem, shouldShowParentMenu } from '@/constants/sidebarPermissions';
+import { 
+  shouldShowSidebarItem, 
+  shouldShowParentMenu,
+  getPermissionKey
+} from '@/constants/sidebarPermissions';
 
 interface SidebarItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   href?: string;
   children?: SidebarItem[];
-  allowedRoles?: string[]; // Roles that can see this item
 }
 
 const sidebarItems: SidebarItem[] = [
@@ -118,22 +121,20 @@ const sidebarItems: SidebarItem[] = [
   {
     title: 'Settings',
     icon: Settings,
-    allowedRoles: ['admin'],
     children: [
-      { title: 'Company Settings', icon: Building2, href: '/app/settings/company', allowedRoles: ['admin'] },
-      { title: 'User Management', icon: Users, href: '/app/settings/users', allowedRoles: ['admin'] },
-      { title: 'Payment Methods', icon: Banknote, href: '/app/settings/payment-methods', allowedRoles: ['admin'] },
-      { title: 'Database & Roles', icon: Database, href: '/app/settings/database-roles', allowedRoles: ['admin'] }
+      { title: 'Company Settings', icon: Building2, href: '/app/settings/company' },
+      { title: 'User Management', icon: Users, href: '/app/settings/users' },
+      { title: 'Payment Methods', icon: Banknote, href: '/app/settings/payment-methods' },
+      { title: 'Database & Roles', icon: Database, href: '/app/settings/database-roles' }
     ]
   },
   {
     title: 'Admin',
     icon: LogOut,
-    allowedRoles: ['admin'],
     children: [
-      { title: 'Image Management', icon: ImageIcon, href: '/app/admin/images', allowedRoles: ['admin'] },
-      { title: 'Audit Logs', icon: FileText, href: '/app/admin/audit-logs', allowedRoles: ['admin'] },
-      { title: 'Database', icon: Database, href: '/app/admin/database', allowedRoles: ['admin'] }
+      { title: 'Image Management', icon: ImageIcon, href: '/app/admin/images' },
+      { title: 'Audit Logs', icon: FileText, href: '/app/admin/audit-logs' },
+      { title: 'Database', icon: Database, href: '/app/admin/database' }
     ]
   }
 ];
@@ -168,7 +169,12 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       return false;
     }
 
+    // For child items, check if they are in a collapsed parent
+    // We need to ensure we use the correct permission key
+    const permissionKey = getPermissionKey(item.title, false);
+    
     // Use permission-based visibility check from constants
+    // Pass the original item title but let shouldShowSidebarItem handle the key mapping
     return shouldShowSidebarItem(item.title, can, userIsAdmin);
   };
 
@@ -184,7 +190,6 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   const renderSidebarItem = (item: SidebarItem) => {
     const hasChildren = item.children && item.children.length > 0;
-    const childTitles = item.children?.map(child => child.title) || [];
     const isExpanded = expandedItems.includes(item.title);
     const isActive = isItemActive(item.href);
     const isChildActive = isParentActive(item.children);
@@ -192,17 +197,22 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
     // Filter children based on visibility
     const visibleChildren = item.children?.filter(isItemVisible) || [];
 
-    // For parent items with children, show parent if ANY child is visible
-    if (hasChildren && visibleChildren.length === 0) {
-      return null;
-    }
-
-    // For items without children, check visibility
-    if (!hasChildren && !isItemVisible(item)) {
-      return null;
-    }
-
+    // For parent items with children
     if (hasChildren) {
+      // Use shouldShowParentMenu to determine if parent should be visible
+      const childTitles = item.children.map(child => child.title);
+      const parentShouldShow = shouldShowParentMenu(
+        item.title,
+        childTitles,
+        can,
+        userIsAdmin
+      );
+
+      // Don't render parent if it has no visible children
+      if (!parentShouldShow || visibleChildren.length === 0) {
+        return null;
+      }
+
       return (
         <div key={item.title} className="space-y-1">
           <button
@@ -246,6 +256,11 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           )}
         </div>
       );
+    }
+
+    // For items without children, check visibility
+    if (!isItemVisible(item)) {
+      return null;
     }
 
     return (
