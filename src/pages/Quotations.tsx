@@ -139,38 +139,11 @@ export default function Quotations() {
     try {
       setIsLoadingConversionData(true);
       // Fetch full quotation with items and product details
-      const { data, error } = await supabase
-        .from('quotations')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          quotation_items (
-            id,
-            product_id,
-            products (
-              name
-            ),
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total
-          )
-        `)
-        .eq('id', quotation.id)
-        .single();
+      const db = getDatabase();
+      const result = await db.selectOne('quotations', quotation.id);
 
-      if (error) throw error;
-      setSelectedQuotation(data as Quotation);
+      if (result.error) throw result.error;
+      setSelectedQuotation(result.data as Quotation);
       setShowEditModal(true);
     } catch (error) {
       console.error('Error fetching quotation data:', error);
