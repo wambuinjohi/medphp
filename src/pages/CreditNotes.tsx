@@ -53,7 +53,7 @@ import { CreditNotesConnectionStatus } from '@/components/credit-notes/CreditNot
 import { useCreditNotePDFDownload } from '@/hooks/useCreditNotePDF';
 import { useDeleteCreditNote } from '@/hooks/useCreditNotes';
 import type { CreditNote } from '@/hooks/useCreditNotes';
-import { supabase } from '@/integrations/supabase/client';
+import { getDatabase } from '@/integrations/database';
 
 function getStatusColor(status: string) {
   switch (status) {
