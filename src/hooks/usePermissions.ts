@@ -90,16 +90,22 @@ export const usePermissions = () => {
       }
 
       // Fetch the full role definition from the roles table
+      // Ensure company_id is included and properly formatted
+      const companyId = currentUser.company_id || '';
       console.log('🔄 [usePermissions] Fetching role from database:', {
         name: userRole,
-        company_id: currentUser.company_id
+        company_id: companyId,
+        company_id_type: typeof companyId
       });
 
       const db = getDatabase();
-      const result = await db.selectBy('roles', {
+      const filterObj = {
         name: userRole,
-        company_id: currentUser.company_id
-      });
+        ...(companyId && { company_id: companyId })  // Only include if present
+      };
+      console.log('📝 [usePermissions] Filter object:', filterObj);
+
+      const result = await db.selectBy('roles', filterObj);
 
       const fetchError = result.error;
       const data = result.data?.[0] || null;
