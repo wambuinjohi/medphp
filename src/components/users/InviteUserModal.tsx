@@ -20,7 +20,7 @@ import {
 import { Loader2, Mail, Send } from 'lucide-react';
 import { UserRole } from '@/contexts/AuthContext';
 import { validateEmail } from '@/utils/validation';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { RoleDefinition } from '@/types/permissions';
 import { toast } from 'sonner';
@@ -60,19 +60,24 @@ export function InviteUserModal({
 
     setRolesLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('roles')
-        .select('*')
-        .eq('company_id', currentUser.company_id)
-        .order('is_default', { ascending: false })
-        .order('name', { ascending: true });
+      const result = await apiClient.adapter.selectBy('roles', {
+        company_id: currentUser.company_id,
+      });
 
-      if (error) throw error;
+      if (result.error) throw result.error;
 
-      setRoles(data || []);
+      // Sort roles: default first, then alphabetically
+      const sortedRoles = (Array.isArray(result.data) ? result.data : []).sort((a: any, b: any) => {
+        if (a.is_default !== b.is_default) {
+          return (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0);
+        }
+        return a.name.localeCompare(b.name);
+      });
+
+      setRoles(sortedRoles);
       // Set first role as default if available
-      if (data && data.length > 0) {
-        setFormData(prev => ({ ...prev, role: data[0].name }));
+      if (sortedRoles && sortedRoles.length > 0) {
+        setFormData(prev => ({ ...prev, role: sortedRoles[0].name }));
       }
     } catch (err) {
       console.error('Error fetching roles:', err);

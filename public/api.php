@@ -1820,7 +1820,64 @@ try {
             if (is_array($where)) {
                 $conditions = [];
                 foreach ($where as $col => $val) {
-                    $conditions[] = "`" . escape($conn, $col) . "`='" . escape($conn, $val) . "'";
+                    // Check if column has a filter operator suffix (_in, _gt, _lt, _gte, _lte, _like)
+                    $base_col = $col;
+                    $operator = '=';
+                    $condition = null;
+
+                    // Handle different filter operators - stripping suffixes and building SQL conditions
+                    if (preg_match('/_in$/', $col)) {
+                        // IN operator - expects array values
+                        $base_col = preg_replace('/_in$/', '', $col);
+                        if (is_array($val) && count($val) > 0) {
+                            $escaped_values = array_map(function($v) use ($conn) {
+                                return "'" . escape($conn, $v) . "'";
+                            }, $val);
+                            $condition = "`" . escape($conn, $base_col) . "` IN (" . implode(",", $escaped_values) . ")";
+                        } else if (is_string($val) || is_numeric($val)) {
+                            // Handle single value passed with _in suffix - treat as equality
+                            $condition = "`" . escape($conn, $base_col) . "`='" . escape($conn, $val) . "'";
+                        }
+                    } elseif (preg_match('/_neq$/', $col)) {
+                        // NOT EQUAL operator
+                        $base_col = preg_replace('/_neq$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "`!='" . escape($conn, $val) . "'";
+                    } elseif (preg_match('/_ilike$/', $col)) {
+                        // Case-insensitive LIKE operator (same as LIKE in MySQL for non-binary)
+                        $base_col = preg_replace('/_ilike$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "` LIKE '%" . escape($conn, $val) . "%'";
+                    } elseif (preg_match('/_like$/', $col)) {
+                        // LIKE operator
+                        $base_col = preg_replace('/_like$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "` LIKE '%" . escape($conn, $val) . "%'";
+                    } elseif (preg_match('/_gt$/', $col)) {
+                        // Greater than operator
+                        $base_col = preg_replace('/_gt$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "` > '" . escape($conn, $val) . "'";
+                    } elseif (preg_match('/_gte$/', $col)) {
+                        // Greater than or equal operator
+                        $base_col = preg_replace('/_gte$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "` >= '" . escape($conn, $val) . "'";
+                    } elseif (preg_match('/_lt$/', $col)) {
+                        // Less than operator
+                        $base_col = preg_replace('/_lt$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "` < '" . escape($conn, $val) . "'";
+                    } elseif (preg_match('/_lte$/', $col)) {
+                        // Less than or equal operator
+                        $base_col = preg_replace('/_lte$/', '', $col);
+                        $condition = "`" . escape($conn, $base_col) . "` <= '" . escape($conn, $val) . "'";
+                    } elseif (preg_match('/_contains$|_contained_by$|_range_lt$|_range_gte$|_range_overlaps$|_text_search$/', $col)) {
+                        // JSON/Range operators not supported in basic MySQL - skip silently
+                        // These would need special handling or can be filtered client-side
+                        $condition = null; // Don't add to WHERE clause
+                    } else {
+                        // Standard equality operator (no suffix)
+                        $condition = "`" . escape($conn, $base_col) . "`='" . escape($conn, $val) . "'";
+                    }
+
+                    if ($condition) {
+                        $conditions[] = $condition;
+                    }
                 }
                 $sql .= " WHERE " . implode(" AND ", $conditions);
             } else {

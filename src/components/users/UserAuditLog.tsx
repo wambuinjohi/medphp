@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Search, LogIn, CheckCircle, UserPlus } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ensureAuditLogSchema } from '@/utils/auditLogger';
@@ -81,46 +81,31 @@ export function UserAuditLog({ limit = 50 }: UserAuditLogProps) {
   const fetchAuditLogs = async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('audit_logs')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      // Filter by user creation and approval events
-      query = query.in('entity_type', ['user_creation', 'user_invitation']);
+      // Build filter for user-related audit logs
+      const filter: any = {
+        entity_type_in: ['user_creation', 'user_invitation'],
+      };
 
       // If user belongs to a company, filter to that company
       if (currentUser?.company_id) {
-        query = query.eq('company_id', currentUser.company_id);
+        filter.company_id = currentUser.company_id;
       }
 
-      query = query.limit(limit);
+      const result = await apiClient.adapter.selectBy('audit_logs', filter);
 
-      const { data, error } = await query;
-
-      if (error) {
-        // If table doesn't exist, try to create it
-        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-          console.warn('Audit logs table not found, attempting to create schema...');
-          try {
-            await ensureAuditLogSchema();
-            // Try fetching again after schema is created
-            const { data: retryData, error: retryError } = await query;
-            if (retryError) {
-              throw retryError;
-            }
-            setLogs(retryData || []);
-            return;
-          } catch (schemaErr) {
-            const schemaErrorMsg = schemaErr instanceof Error ? schemaErr.message : JSON.stringify(schemaErr);
-            console.error('Failed to create audit logs schema:', schemaErrorMsg);
-            throw schemaErr;
-          }
-        }
-        throw error;
+      if (result.error) {
+        throw result.error;
       }
 
-      setLogs(data || []);
+      // Sort by created_at descending and limit
+      const logs = Array.isArray(result.data) ? result.data : [];
+      const sortedLogs = logs
+        .sort((a: any, b: any) => {
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        })
+        .slice(0, limit);
+
+      setLogs(sortedLogs);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
       console.error('Error fetching audit logs:', errorMessage);

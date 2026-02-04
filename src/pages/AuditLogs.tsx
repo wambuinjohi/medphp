@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { formatDistanceToNow } from 'date-fns';
 import { Download, ChevronDown } from 'lucide-react';
 import { ensureAuditLogSchema } from '@/utils/auditLogger';
@@ -30,34 +30,22 @@ interface AuditLog {
 }
 
 async function fetchAuditLogs() {
-  const { data, error } = await supabase
-    .from('audit_logs')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(500);
+  try {
+    const result = await apiClient.adapter.selectBy('audit_logs', {});
 
-  if (error) {
-    // If table doesn't exist, try to create it
-    if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-      console.warn('Audit logs table not found, attempting to create schema...');
-      try {
-        await ensureAuditLogSchema();
-        // Try fetching again after schema is created
-        const { data: retryData, error: retryError } = await supabase
-          .from('audit_logs')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(500);
-        if (retryError) throw retryError;
-        return retryData || [];
-      } catch (schemaErr) {
-        console.error('Failed to create audit logs schema:', schemaErr);
-        throw schemaErr;
-      }
+    if (result.error) {
+      throw result.error;
     }
+
+    // Sort by created_at descending
+    const logs = Array.isArray(result.data) ? result.data : [];
+    return logs.sort((a: any, b: any) => {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }).slice(0, 500); // Limit to 500 records
+  } catch (error) {
+    console.error('Error fetching audit logs:', error);
     throw error;
   }
-  return data || [];
 }
 
 function getActionColor(action: string) {

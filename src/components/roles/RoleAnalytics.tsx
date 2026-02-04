@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, Shield, AlertCircle } from 'lucide-react';
 
@@ -26,15 +26,16 @@ export function RoleAnalytics() {
 
     setLoading(true);
     try {
-      const { data: users } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('company_id', currentUser.company_id);
+      const usersResult = await apiClient.adapter.selectBy('profiles', {
+        company_id: currentUser.company_id,
+      });
 
-      const { data: roles } = await supabase
-        .from('roles')
-        .select('name, is_default')
-        .eq('company_id', currentUser.company_id);
+      const rolesResult = await apiClient.adapter.selectBy('roles', {
+        company_id: currentUser.company_id,
+      });
+
+      const users = Array.isArray(usersResult.data) ? usersResult.data : [];
+      const roles = Array.isArray(rolesResult.data) ? rolesResult.data : [];
 
       if (users && roles) {
         const roleMap = new Map<string, number>();
