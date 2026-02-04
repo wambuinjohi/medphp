@@ -80,18 +80,15 @@ export async function reconcileInvoiceBalance(
 
     // 6. Fix if requested and needed
     if (fix && hasDiscrepancy) {
-      const { error: updateError } = await supabase
-        .from('invoices')
-        .update({
-          paid_amount: calculatedPaidAmount,
-          balance_due: calculatedBalance,
-          status: expectedStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', invoiceId);
+      const updateResult = await db.update('invoices', invoiceId, {
+        paid_amount: calculatedPaidAmount,
+        balance_due: calculatedBalance,
+        status: expectedStatus,
+        updated_at: new Date().toISOString()
+      });
 
-      if (updateError) {
-        result.error = updateError.message;
+      if (updateResult.error) {
+        result.error = updateResult.error.message || 'Update failed';
         result.fixed = false;
       } else {
         result.fixed = true;
