@@ -21,7 +21,7 @@ import { Loader2, Mail, User, Phone, Building, MapPin } from 'lucide-react';
 import { UserRole } from '@/contexts/AuthContext';
 import { CreateUserData } from '@/hooks/useUserManagement';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/integrations/api';
 import { useAuth } from '@/contexts/AuthContext';
 import usePermissions from '@/hooks/usePermissions';
 import { RoleDefinition } from '@/types/permissions';
