@@ -13,6 +13,7 @@ import type {
   DeleteResult,
 } from './types';
 import { getAPIBaseURL } from '../../utils/environment-detection';
+import { handleAuthFailure } from '../../utils/authFailureHandler';
 
 export class ExternalAPIAdapter implements IDatabase {
   private apiBase: string;
