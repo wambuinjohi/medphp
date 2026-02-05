@@ -99,39 +99,27 @@ export default function Proforma() {
 
   const handleEdit = async (proforma: ProformaWithItems) => {
     try {
-      // Fetch full proforma with items and product details
-      const { data, error } = await supabase
-        .from('proforma_invoices')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          proforma_items (
-            id,
-            product_id,
-            products (
-              name
-            ),
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total
-          )
-        `)
-        .eq('id', proforma.id)
-        .single();
+      // Fetch proforma using external API
+      const result = await externalApiAdapter.selectOne('proforma_invoices', proforma.id);
 
-      if (error) throw error;
-      setSelectedProforma(data as ProformaWithItems);
+      if (result.error) {
+        console.error('Error fetching proforma:', result.error);
+        toast.error('Failed to load proforma details');
+        return;
+      }
+
+      const proformaData = result.data;
+
+      // Fetch customer if needed
+      if (proformaData?.customer_id) {
+        const customerResult = await externalApiAdapter.selectOne('customers', proformaData.customer_id);
+        if (!customerResult.error && customerResult.data) {
+          proformaData.customers = customerResult.data;
+        }
+      }
+
+      // EditProformaModal will load items automatically via useEffect
+      setSelectedProforma(proformaData as ProformaWithItems);
       setShowEditModal(true);
     } catch (error) {
       console.error('Error fetching proforma data:', error);
