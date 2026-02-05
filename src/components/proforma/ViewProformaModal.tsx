@@ -171,15 +171,15 @@ export const ViewProformaModal = ({
   };
 
   const handleDownload = () => {
-    onDownloadPDF?.(proforma);
+    onDownloadPDF?.(displayProforma);
   };
 
   const handleSendEmail = () => {
-    onSendEmail?.(proforma);
+    onSendEmail?.(displayProforma);
   };
 
   const handleCreateInvoice = () => {
-    onCreateInvoice?.(proforma);
+    onCreateInvoice?.(displayProforma);
   };
 
   return (
