@@ -523,7 +523,8 @@ export const useConvertProformaToInvoice = () => {
       console.log('📦 Fetching proforma items');
       const itemsResult = await externalApiAdapter.selectBy('proforma_items', { proforma_id: proformaId });
       if (itemsResult.error) throw itemsResult.error;
-      const proformaItems = itemsResult.data || [];
+      // Normalize items to ensure numeric fields are numbers
+      const proformaItems = (itemsResult.data || []).map(normalizeProformaItem);
       console.log('✅ Proforma items fetched:', proformaItems.length);
 
       // Generate invoice number using centralized API
