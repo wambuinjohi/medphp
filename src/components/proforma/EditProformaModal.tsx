@@ -21,17 +21,21 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Plus, 
-  Trash2, 
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Plus,
+  Trash2,
   Search,
   Calculator,
   Receipt,
-  Edit
+  Edit,
+  AlertCircle
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useCustomers, useProducts, useTaxSettings } from '@/hooks/useDatabase';
 import { useCreateQuotationWithItems } from '@/hooks/useQuotationItems';
 import { useUpdateProforma } from '@/hooks/useProforma';
+import { externalApiAdapter } from '@/integrations/database/external-api-adapter';
 import { toast } from 'sonner';
 
 interface ProformaItem {
@@ -93,6 +97,8 @@ export const EditProformaModal = ({
   const [items, setItems] = useState<ProformaItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showProductSearch, setShowProductSearch] = useState(false);
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
+  const [itemsLoadError, setItemsLoadError] = useState<string | null>(null);
 
   const { data: customers } = useCustomers(companyId);
   const { data: products } = useProducts(companyId);
@@ -112,15 +118,61 @@ export const EditProformaModal = ({
         terms_and_conditions: proforma.terms_and_conditions || '',
         status: proforma.status,
       });
-      
-      if (proforma.proforma_items) {
-        setItems(proforma.proforma_items.map(item => ({
-          ...item,
-          tax_inclusive: false // Default to false if not provided
-        })));
-      }
     }
   }, [proforma, open]);
+
+  // Load proforma items when modal opens or proforma changes
+  useEffect(() => {
+    if (!open || !proforma?.id) {
+      setItems([]);
+      setItemsLoadError(null);
+      return;
+    }
+
+    const loadProformaItems = async () => {
+      try {
+        setIsLoadingItems(true);
+        setItemsLoadError(null);
+
+        console.log('📦 Loading proforma items for:', proforma.id);
+        const itemsResult = await externalApiAdapter.selectBy('proforma_items', { proforma_id: proforma.id });
+
+        if (itemsResult.error) {
+          console.error('Error fetching proforma items:', itemsResult.error);
+          setItemsLoadError('Failed to load line items');
+          setItems([]);
+        } else if (itemsResult.data && itemsResult.data.length > 0) {
+          // Enrich items with product names if not already present
+          const enrichedItems = itemsResult.data.map((item: any) => ({
+            id: item.id,
+            product_id: item.product_id,
+            product_name: item.product_name || item.products?.name || 'Unknown Product',
+            description: item.description || '',
+            quantity: item.quantity || 1,
+            unit_price: item.unit_price || 0,
+            tax_percentage: item.tax_percentage || defaultTaxRate,
+            tax_amount: item.tax_amount || 0,
+            tax_inclusive: item.tax_inclusive || false,
+            line_total: item.line_total || 0,
+          }));
+
+          console.log('✅ Loaded', enrichedItems.length, 'items');
+          setItems(enrichedItems);
+        } else {
+          console.log('ℹ️ No items found for proforma');
+          setItems([]);
+        }
+      } catch (error) {
+        console.error('Error loading proforma items:', error);
+        setItemsLoadError('Failed to load line items. Please try again.');
+        setItems([]);
+      } finally {
+        setIsLoadingItems(false);
+      }
+    };
+
+    loadProformaItems();
+  }, [open, proforma?.id, defaultTaxRate]);
 
   const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -262,6 +314,8 @@ export const EditProformaModal = ({
   const handleClose = () => {
     setSearchTerm('');
     setShowProductSearch(false);
+    setIsLoadingItems(false);
+    setItemsLoadError(null);
     onOpenChange(false);
   };
 
@@ -364,6 +418,7 @@ export const EditProformaModal = ({
                   variant="outline"
                   size="sm"
                   onClick={() => setShowProductSearch(true)}
+                  disabled={isLoadingItems}
                 >
                   <Plus className="h-4 w-4" />
                   Add Item
@@ -371,6 +426,28 @@ export const EditProformaModal = ({
               </div>
             </CardHeader>
             <CardContent>
+              {/* Loading State */}
+              {isLoadingItems && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <p className="text-sm text-muted-foreground animate-pulse">Loading line items...</p>
+                </div>
+              )}
+
+              {/* Error State */}
+              {itemsLoadError && !isLoadingItems && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {itemsLoadError}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {showProductSearch && (
                 <Card className="mb-4">
                   <CardHeader>
@@ -385,32 +462,40 @@ export const EditProformaModal = ({
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           className="pl-10"
+                          disabled={isLoadingItems}
                         />
                       </div>
                       <div className="max-h-40 overflow-y-auto space-y-2">
-                        {filteredProducts?.map((product) => (
-                          <div
-                            key={product.id}
-                            className="flex items-center justify-between p-2 border rounded cursor-pointer hover:bg-muted/50"
-                            onClick={() => addItem(product)}
-                          >
-                            <div>
-                              <p className="font-medium">{product.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {product.product_code} • ${product.selling_price}
-                              </p>
+                        {filteredProducts && filteredProducts.length > 0 ? (
+                          filteredProducts.map((product) => (
+                            <div
+                              key={product.id}
+                              className="flex items-center justify-between p-2 border rounded cursor-pointer hover:bg-muted/50"
+                              onClick={() => addItem(product)}
+                            >
+                              <div>
+                                <p className="font-medium">{product.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {product.product_code} • ${product.selling_price}
+                                </p>
+                              </div>
+                              <Button size="sm" variant="ghost">
+                                <Plus className="h-4 w-4" />
+                              </Button>
                             </div>
-                            <Button size="sm" variant="ghost">
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
+                          ))
+                        ) : (
+                          <p className="text-center text-sm text-muted-foreground py-4">
+                            {searchTerm ? 'No products found' : 'No products available'}
+                          </p>
+                        )}
                       </div>
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => setShowProductSearch(false)}
                         className="w-full"
+                        disabled={isLoadingItems}
                       >
                         Cancel
                       </Button>
@@ -419,11 +504,13 @@ export const EditProformaModal = ({
                 </Card>
               )}
 
-              {items.length === 0 ? (
+              {!isLoadingItems && items.length === 0 && !itemsLoadError && (
                 <div className="text-center py-8 text-muted-foreground">
                   No items added yet. Click "Add Item" to start.
                 </div>
-              ) : (
+              )}
+
+              {!isLoadingItems && items.length > 0 && (
                 <Table>
                   <TableHeader>
                     <TableRow>

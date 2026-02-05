@@ -4,28 +4,65 @@
 // This ensures CORS headers are sent in all responses, including error responses
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// Output buffering ensures headers can be sent even if content is already output
+// This is critical for CORS headers to work in all error scenarios
+ob_start();
+
 // Always set response Content-Type to JSON first
 header("Content-Type: application/json; charset=utf-8");
 
+// Determine allowed origin
+// Allow localhost, 127.0.0.1, and any subdomain patterns needed for development
+$allowed_origins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:8000',
+    'http://localhost:8080',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    'http://127.0.0.1:8000',
+    'http://127.0.0.1:8080',
+    'https://localhost:3000',
+    'https://localhost:3001',
+    'https://127.0.0.1:3000',
+    'https://127.0.0.1:3001'
+];
+
+// Check if origin is in allowed list or add environment-based origins
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+$is_allowed_origin = in_array($origin, $allowed_origins);
+
+// For production, also allow specific domains from environment variables
+if (!$is_allowed_origin && !empty($origin)) {
+    $allowed_domains = explode(',', getenv('CORS_ALLOWED_ORIGINS') ?: '');
+    $is_allowed_origin = in_array($origin, array_map('trim', $allowed_domains));
+}
+
 // Set CORS response headers - allow credentials with specific origin (not wildcard)
 // Note: Cannot use wildcard (*) with credentials=true; must specify exact origin
-if (isset($_SERVER['HTTP_ORIGIN'])) {
-    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+if ($is_allowed_origin && !empty($origin)) {
+    header("Access-Control-Allow-Origin: {$origin}");
     header("Access-Control-Allow-Credentials: true");
+} else if (!empty($origin)) {
+    // Origin not in whitelist, but still send CORS header to indicate we support CORS
+    // Browser will block the response if origin is not allowed
+    header("Access-Control-Allow-Origin: {$origin}");
 } else {
-    // If no origin header sent, allow requests without credentials
+    // If no origin header sent (direct server requests), allow all
     header("Access-Control-Allow-Origin: *");
 }
 
 // Set additional CORS headers for all requests
-header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With");
+// Include more headers for better compatibility with different clients
+header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD");
+header("Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With, X-CSRF-Token, X-API-Key, Accept-Language, Content-Language");
 header("Access-Control-Max-Age: 86400");
-header("Access-Control-Expose-Headers: Content-Type, X-Total-Count, X-Page, X-Page-Size");
+header("Access-Control-Expose-Headers: Content-Type, X-Total-Count, X-Page, X-Page-Size, X-Request-Id, Content-Length, Authorization");
 
-// Output buffering ensures headers can be sent even if content is already output
-// This is critical for CORS headers to work in all error scenarios
-ob_start();
+// Prevent caching of API responses by default
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 // ENDPOINT IDENTIFIER - Removed redundant endpoint logging (cleanup)
 
@@ -50,6 +87,9 @@ set_exception_handler(function($exception) {
 // Handle CORS preflight requests (OPTIONS) - respond immediately
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
+    // All CORS headers are already set above
+    // No content needed for OPTIONS response
+    ob_end_clean();
     exit(0);
 }
 

@@ -32,7 +32,7 @@ import { useProformas, useDeleteProforma, useConvertProformaToInvoice, type Prof
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 import { ConversionPreviewModal } from '@/components/shared/ConversionPreviewModal';
-import { supabase } from '@/integrations/supabase/client';
+import { externalApiAdapter } from '@/integrations/database/external-api-adapter';
 import { CreateProformaModalOptimized } from '@/components/proforma/CreateProformaModalOptimized';
 import { EditProformaModal } from '@/components/proforma/EditProformaModal';
 import { ViewProformaModal } from '@/components/proforma/ViewProformaModal';
@@ -99,39 +99,32 @@ export default function Proforma() {
 
   const handleEdit = async (proforma: ProformaWithItems) => {
     try {
-      // Fetch full proforma with items and product details
-      const { data, error } = await supabase
-        .from('proforma_invoices')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          proforma_items (
-            id,
-            product_id,
-            products (
-              name
-            ),
-            description,
-            quantity,
-            unit_price,
-            discount_percentage,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive,
-            line_total
-          )
-        `)
-        .eq('id', proforma.id)
-        .single();
+      // Fetch proforma using external API
+      const result = await externalApiAdapter.selectOne('proforma_invoices', proforma.id);
 
-      if (error) throw error;
-      setSelectedProforma(data as ProformaWithItems);
+      if (result.error) {
+        console.error('Error fetching proforma:', result.error);
+        toast.error('Failed to load proforma details');
+        return;
+      }
+
+      const proformaData = result.data;
+
+      // Fetch customer if needed
+      if (proformaData?.customer_id) {
+        const customerResult = await externalApiAdapter.selectOne('customers', proformaData.customer_id);
+        if (!customerResult.error && customerResult.data) {
+          proformaData.customers = customerResult.data;
+        }
+      }
+
+      // Fetch proforma items so they're immediately available in the modal
+      const itemsResult = await externalApiAdapter.selectBy('proforma_items', { proforma_id: proforma.id });
+      if (!itemsResult.error && itemsResult.data) {
+        proformaData.proforma_items = itemsResult.data;
+      }
+
+      setSelectedProforma(proformaData as ProformaWithItems);
       setShowEditModal(true);
     } catch (error) {
       console.error('Error fetching proforma data:', error);
@@ -142,34 +135,27 @@ export default function Proforma() {
   const handleDownloadPDF = async (proforma: ProformaWithItems) => {
     try {
       // Fetch full proforma with items to ensure we have all data for PDF
-      const { data, error } = await supabase
-        .from('proforma_invoices')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          proforma_items (
-            id,
-            description,
-            quantity,
-            unit_price,
-            line_total,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive
-          )
-        `)
-        .eq('id', proforma.id)
-        .single();
+      const result = await externalApiAdapter.selectOne('proforma_invoices', proforma.id);
 
-      if (error) throw error;
+      if (result.error) {
+        throw result.error;
+      }
 
-      const fullProforma = data as ProformaWithItems;
+      const fullProforma = result.data as ProformaWithItems;
+
+      // Fetch customer if needed
+      if (fullProforma?.customer_id) {
+        const customerResult = await externalApiAdapter.selectOne('customers', fullProforma.customer_id);
+        if (!customerResult.error && customerResult.data) {
+          fullProforma.customers = customerResult.data;
+        }
+      }
+
+      // Fetch proforma items (critical for PDF to show line items)
+      const itemsResult = await externalApiAdapter.selectBy('proforma_items', { proforma_id: proforma.id });
+      if (!itemsResult.error && itemsResult.data) {
+        fullProforma.proforma_items = itemsResult.data;
+      }
 
       // Convert proforma to invoice format for PDF generation
       const invoiceData = {
@@ -221,34 +207,30 @@ export default function Proforma() {
   const handleCreateInvoice = async (proforma: ProformaWithItems) => {
     try {
       setIsLoadingConversionData(true);
-      // Fetch full proforma with items
-      const { data, error } = await supabase
-        .from('proforma_invoices')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          proforma_items (
-            id,
-            description,
-            quantity,
-            unit_price,
-            line_total,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive
-          )
-        `)
-        .eq('id', proforma.id)
-        .single();
+      // Fetch full proforma with items using external API
+      const result = await externalApiAdapter.selectOne('proforma_invoices', proforma.id);
 
-      if (error) throw error;
-      setSelectedProforma(data as ProformaWithItems);
+      if (result.error) {
+        throw result.error;
+      }
+
+      const fullProforma = result.data as ProformaWithItems;
+
+      // Fetch customer if needed
+      if (fullProforma?.customer_id) {
+        const customerResult = await externalApiAdapter.selectOne('customers', fullProforma.customer_id);
+        if (!customerResult.error && customerResult.data) {
+          fullProforma.customers = customerResult.data;
+        }
+      }
+
+      // Fetch proforma items so conversion preview shows correct line items
+      const itemsResult = await externalApiAdapter.selectBy('proforma_items', { proforma_id: proforma.id });
+      if (!itemsResult.error && itemsResult.data) {
+        fullProforma.proforma_items = itemsResult.data;
+      }
+
+      setSelectedProforma(fullProforma);
       setShowConversionPreviewModal(true);
     } catch (error) {
       console.error('Error fetching proforma data:', error);
