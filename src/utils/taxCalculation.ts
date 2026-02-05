@@ -183,11 +183,22 @@ export function convertToTaxInclusive(exclusivePrice: number, taxPercentage: num
 /**
  * Format currency with proper decimals
  */
-export function formatCurrency(amount: number, locale: string = 'en-KE', currency: string = 'KES'): string {
+export function formatCurrency(amount: any, locale: string = 'en-KE', currency: string = 'KES'): string {
   try {
-    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
+    // Ensure amount is a number (handles string values from database)
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : typeof amount === 'number' ? amount : 0;
+
+    // Check if parsing resulted in NaN
+    if (isNaN(numAmount)) {
+      return `KSh 0.00`;
+    }
+
+    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(numAmount);
   } catch {
-    return `KSh ${amount.toFixed(2)}`;
+    // Ensure amount is a number for the fallback
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : typeof amount === 'number' ? amount : 0;
+    const safeAmount = isNaN(numAmount) ? 0 : numAmount;
+    return `KSh ${safeAmount.toFixed(2)}`;
   }
 }
 
