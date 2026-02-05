@@ -28,7 +28,7 @@ import {
   Trash2,
   ArrowRightCircle
 } from 'lucide-react';
-import { useProformas, useDeleteProforma, useConvertProformaToInvoice, type ProformaWithItems } from '@/hooks/useProforma';
+import { useProformas, useDeleteProforma, useConvertProformaToInvoice, type ProformaWithItems, type ProformaItem } from '@/hooks/useProforma';
 import { useCurrentCompany } from '@/contexts/CompanyContext';
 import { toast } from 'sonner';
 import { ConversionPreviewModal } from '@/components/shared/ConversionPreviewModal';
