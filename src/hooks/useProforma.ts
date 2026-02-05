@@ -120,6 +120,48 @@ const serializeError = (error: any): string => {
 };
 
 /**
+ * Normalize proforma item data to ensure all numeric fields are actually numbers
+ * Fixes issues where database returns numeric fields as strings
+ */
+const normalizeProformaItem = (item: any): ProformaItem => {
+  return {
+    ...item,
+    quantity: typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity || 0,
+    unit_price: typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : item.unit_price || 0,
+    discount_percentage: typeof item.discount_percentage === 'string' ? parseFloat(item.discount_percentage) : item.discount_percentage || 0,
+    discount_amount: typeof item.discount_amount === 'string' ? parseFloat(item.discount_amount) : item.discount_amount || 0,
+    tax_percentage: typeof item.tax_percentage === 'string' ? parseFloat(item.tax_percentage) : item.tax_percentage || 0,
+    tax_amount: typeof item.tax_amount === 'string' ? parseFloat(item.tax_amount) : item.tax_amount || 0,
+    line_total: typeof item.line_total === 'string' ? parseFloat(item.line_total) : item.line_total || 0,
+    tax_inclusive: item.tax_inclusive === true || item.tax_inclusive === 1 || item.tax_inclusive === '1' || item.tax_inclusive === 'true',
+  };
+};
+
+/**
+ * Normalize proforma invoice data to ensure all numeric fields are actually numbers
+ */
+const normalizeProformaInvoice = (proforma: any): ProformaInvoice => {
+  return {
+    ...proforma,
+    subtotal: typeof proforma.subtotal === 'string' ? parseFloat(proforma.subtotal) : proforma.subtotal || 0,
+    tax_amount: typeof proforma.tax_amount === 'string' ? parseFloat(proforma.tax_amount) : proforma.tax_amount || 0,
+    total_amount: typeof proforma.total_amount === 'string' ? parseFloat(proforma.total_amount) : proforma.total_amount || 0,
+    tax_percentage: typeof proforma.tax_percentage === 'string' ? parseFloat(proforma.tax_percentage) : proforma.tax_percentage,
+  };
+};
+
+/**
+ * Normalize complete proforma with items
+ */
+const normalizeProformaWithItems = (proforma: any): ProformaWithItems => {
+  const normalized = normalizeProformaInvoice(proforma);
+  return {
+    ...normalized,
+    proforma_items: proforma.proforma_items?.map(normalizeProformaItem) || [],
+  };
+};
+
+/**
  * Hook to create a proforma invoice with items
  */
 export const useCreateProforma = () => {
