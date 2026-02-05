@@ -446,7 +446,7 @@ export const EditProformaModal = ({
                 </Alert>
               )}
 
-              {!isLoadingItems && showProductSearch && (
+              {showProductSearch && (
                 <Card className="mb-4">
                   <CardHeader>
                     <CardTitle className="text-sm">Add Product</CardTitle>
@@ -460,32 +460,40 @@ export const EditProformaModal = ({
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           className="pl-10"
+                          disabled={isLoadingItems}
                         />
                       </div>
                       <div className="max-h-40 overflow-y-auto space-y-2">
-                        {filteredProducts?.map((product) => (
-                          <div
-                            key={product.id}
-                            className="flex items-center justify-between p-2 border rounded cursor-pointer hover:bg-muted/50"
-                            onClick={() => addItem(product)}
-                          >
-                            <div>
-                              <p className="font-medium">{product.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {product.product_code} • ${product.selling_price}
-                              </p>
+                        {filteredProducts && filteredProducts.length > 0 ? (
+                          filteredProducts.map((product) => (
+                            <div
+                              key={product.id}
+                              className="flex items-center justify-between p-2 border rounded cursor-pointer hover:bg-muted/50"
+                              onClick={() => addItem(product)}
+                            >
+                              <div>
+                                <p className="font-medium">{product.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {product.product_code} • ${product.selling_price}
+                                </p>
+                              </div>
+                              <Button size="sm" variant="ghost">
+                                <Plus className="h-4 w-4" />
+                              </Button>
                             </div>
-                            <Button size="sm" variant="ghost">
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
+                          ))
+                        ) : (
+                          <p className="text-center text-sm text-muted-foreground py-4">
+                            {searchTerm ? 'No products found' : 'No products available'}
+                          </p>
+                        )}
                       </div>
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => setShowProductSearch(false)}
                         className="w-full"
+                        disabled={isLoadingItems}
                       >
                         Cancel
                       </Button>
