@@ -89,11 +89,54 @@ export const ViewProformaModal = ({
   companyId
 }: ViewProformaModalProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [loadedProforma, setLoadedProforma] = useState<Proforma | null>(null);
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
   const deleteProforma = useDeleteProforma(companyId);
   const { canDeleteUI } = usePermissionGuards();
   const canDelete = canDeleteUI('proforma');
 
+  // Load proforma items when modal opens or proforma changes
+  useEffect(() => {
+    if (!open || !proforma?.id) {
+      setLoadedProforma(proforma || null);
+      return;
+    }
+
+    const loadProformaWithItems = async () => {
+      try {
+        setIsLoadingItems(true);
+        // Fetch proforma items
+        const itemsResult = await externalApiAdapter.selectBy('proforma_items', { proforma_id: proforma.id });
+
+        if (!itemsResult.error && itemsResult.data) {
+          // Enrich items with product names if available
+          const enrichedItems = itemsResult.data.map((item: any) => ({
+            ...item,
+            product_name: item.product_name || item.products?.name || 'Unknown Product'
+          }));
+
+          setLoadedProforma({
+            ...proforma,
+            proforma_items: enrichedItems
+          });
+        } else {
+          setLoadedProforma(proforma);
+        }
+      } catch (error) {
+        console.error('Error loading proforma items:', error);
+        setLoadedProforma(proforma);
+      } finally {
+        setIsLoadingItems(false);
+      }
+    };
+
+    loadProformaWithItems();
+  }, [open, proforma?.id]);
+
   if (!proforma) return null;
+
+  // Use loaded proforma with items if available, otherwise fall back to original
+  const displayProforma = loadedProforma || proforma;
 
   const handleDeleteConfirm = async () => {
     try {
