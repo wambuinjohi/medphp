@@ -44,6 +44,20 @@ import { formatCurrency } from '@/utils/taxCalculation';
 import { ensureProformaSchema } from '@/utils/proformaDatabaseSetup';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
+// Helper function to normalize proforma items from database
+function normalizeProformaItems(items: any[]): ProformaItem[] {
+  return items.map(item => ({
+    ...item,
+    quantity: typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity || 0,
+    unit_price: typeof item.unit_price === 'string' ? parseFloat(item.unit_price) : item.unit_price || 0,
+    discount_percentage: typeof item.discount_percentage === 'string' ? parseFloat(item.discount_percentage) : item.discount_percentage || 0,
+    discount_amount: typeof item.discount_amount === 'string' ? parseFloat(item.discount_amount) : item.discount_amount || 0,
+    tax_percentage: typeof item.tax_percentage === 'string' ? parseFloat(item.tax_percentage) : item.tax_percentage || 0,
+    tax_amount: typeof item.tax_amount === 'string' ? parseFloat(item.tax_amount) : item.tax_amount || 0,
+    line_total: typeof item.line_total === 'string' ? parseFloat(item.line_total) : item.line_total || 0,
+  }));
+}
+
 export default function Proforma() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
