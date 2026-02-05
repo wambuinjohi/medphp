@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -21,6 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   FileText,
   Download,
@@ -33,6 +34,7 @@ import {
 } from 'lucide-react';
 import { useDeleteProforma } from '@/hooks/useProforma';
 import { usePermissionGuards } from '@/hooks/usePermissionGuards';
+import { externalApiAdapter } from '@/integrations/database/external-api-adapter';
 
 interface ProformaItem {
   id: string;
