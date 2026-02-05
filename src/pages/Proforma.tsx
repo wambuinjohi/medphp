@@ -130,34 +130,21 @@ export default function Proforma() {
   const handleDownloadPDF = async (proforma: ProformaWithItems) => {
     try {
       // Fetch full proforma with items to ensure we have all data for PDF
-      const { data, error } = await supabase
-        .from('proforma_invoices')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          proforma_items (
-            id,
-            description,
-            quantity,
-            unit_price,
-            line_total,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive
-          )
-        `)
-        .eq('id', proforma.id)
-        .single();
+      const result = await externalApiAdapter.selectOne('proforma_invoices', proforma.id);
 
-      if (error) throw error;
+      if (result.error) {
+        throw result.error;
+      }
 
-      const fullProforma = data as ProformaWithItems;
+      const fullProforma = result.data as ProformaWithItems;
+
+      // Fetch customer if needed
+      if (fullProforma?.customer_id) {
+        const customerResult = await externalApiAdapter.selectOne('customers', fullProforma.customer_id);
+        if (!customerResult.error && customerResult.data) {
+          fullProforma.customers = customerResult.data;
+        }
+      }
 
       // Convert proforma to invoice format for PDF generation
       const invoiceData = {
