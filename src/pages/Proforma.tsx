@@ -141,20 +141,50 @@ export default function Proforma() {
 
   const handleDownloadPDF = async (proforma: ProformaWithItems) => {
     try {
+      // Fetch full proforma with items to ensure we have all data for PDF
+      const { data, error } = await supabase
+        .from('proforma_invoices')
+        .select(`
+          *,
+          customers (
+            id,
+            name,
+            email,
+            phone,
+            address
+          ),
+          proforma_items (
+            id,
+            description,
+            quantity,
+            unit_price,
+            line_total,
+            tax_percentage,
+            tax_amount,
+            tax_inclusive
+          )
+        `)
+        .eq('id', proforma.id)
+        .single();
+
+      if (error) throw error;
+
+      const fullProforma = data as ProformaWithItems;
+
       // Convert proforma to invoice format for PDF generation
       const invoiceData = {
-        id: proforma.id,
-        invoice_number: proforma.proforma_number,
-        customers: proforma.customers,
-        invoice_date: proforma.proforma_date,
-        valid_until: proforma.valid_until,
-        total_amount: proforma.total_amount,
-        invoice_items: proforma.proforma_items || [],
-        subtotal: proforma.subtotal,
-        tax_amount: proforma.tax_amount,
-        status: proforma.status,
-        notes: proforma.notes || 'This is a proforma invoice for advance payment.',
-        terms_and_conditions: proforma.terms_and_conditions || 'Payment required before goods are delivered.',
+        id: fullProforma.id,
+        invoice_number: fullProforma.proforma_number,
+        customers: fullProforma.customers,
+        invoice_date: fullProforma.proforma_date,
+        valid_until: fullProforma.valid_until,
+        total_amount: fullProforma.total_amount,
+        invoice_items: fullProforma.proforma_items || [],
+        subtotal: fullProforma.subtotal,
+        tax_amount: fullProforma.tax_amount,
+        status: fullProforma.status,
+        notes: fullProforma.notes || 'This is a proforma invoice for advance payment.',
+        terms_and_conditions: fullProforma.terms_and_conditions || 'Payment required before goods are delivered.',
       };
 
       // Get current company details for PDF
