@@ -21,17 +21,21 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Plus, 
-  Trash2, 
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Plus,
+  Trash2,
   Search,
   Calculator,
   Receipt,
-  Edit
+  Edit,
+  AlertCircle
 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useCustomers, useProducts, useTaxSettings } from '@/hooks/useDatabase';
 import { useCreateQuotationWithItems } from '@/hooks/useQuotationItems';
 import { useUpdateProforma } from '@/hooks/useProforma';
+import { externalApiAdapter } from '@/integrations/database/external-api-adapter';
 import { toast } from 'sonner';
 
 interface ProformaItem {
