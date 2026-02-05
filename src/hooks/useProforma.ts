@@ -100,7 +100,8 @@ export const useProforma = (proformaId?: string) => {
       }
 
       console.log('✅ Fetched proforma:', proformaId);
-      return result.data as ProformaWithItems;
+      // Normalize numeric fields from database
+      return normalizeProformaWithItems(result.data) as ProformaWithItems;
     },
     enabled: !!proformaId,
   });
