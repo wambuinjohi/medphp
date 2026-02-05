@@ -196,34 +196,24 @@ export default function Proforma() {
   const handleCreateInvoice = async (proforma: ProformaWithItems) => {
     try {
       setIsLoadingConversionData(true);
-      // Fetch full proforma with items
-      const { data, error } = await supabase
-        .from('proforma_invoices')
-        .select(`
-          *,
-          customers (
-            id,
-            name,
-            email,
-            phone,
-            address
-          ),
-          proforma_items (
-            id,
-            description,
-            quantity,
-            unit_price,
-            line_total,
-            tax_percentage,
-            tax_amount,
-            tax_inclusive
-          )
-        `)
-        .eq('id', proforma.id)
-        .single();
+      // Fetch full proforma with items using external API
+      const result = await externalApiAdapter.selectOne('proforma_invoices', proforma.id);
 
-      if (error) throw error;
-      setSelectedProforma(data as ProformaWithItems);
+      if (result.error) {
+        throw result.error;
+      }
+
+      const fullProforma = result.data as ProformaWithItems;
+
+      // Fetch customer if needed
+      if (fullProforma?.customer_id) {
+        const customerResult = await externalApiAdapter.selectOne('customers', fullProforma.customer_id);
+        if (!customerResult.error && customerResult.data) {
+          fullProforma.customers = customerResult.data;
+        }
+      }
+
+      setSelectedProforma(fullProforma);
       setShowConversionPreviewModal(true);
     } catch (error) {
       console.error('Error fetching proforma data:', error);
