@@ -70,7 +70,9 @@ export const useProformas = (companyId?: string) => {
       }
 
       console.log('✅ Fetched', result.data?.length || 0, 'proforma invoices');
-      return (result.data || []) as ProformaWithItems[];
+      // Normalize numeric fields from database
+      const normalized = (result.data || []).map(normalizeProformaWithItems);
+      return normalized as ProformaWithItems[];
     },
     enabled: !!companyId,
   });
