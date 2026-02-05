@@ -118,7 +118,12 @@ export default function Proforma() {
         }
       }
 
-      // EditProformaModal will load items automatically via useEffect
+      // Fetch proforma items so they're immediately available in the modal
+      const itemsResult = await externalApiAdapter.selectBy('proforma_items', { proforma_id: proforma.id });
+      if (!itemsResult.error && itemsResult.data) {
+        proformaData.proforma_items = itemsResult.data;
+      }
+
       setSelectedProforma(proformaData as ProformaWithItems);
       setShowEditModal(true);
     } catch (error) {
