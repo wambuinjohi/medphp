@@ -146,6 +146,12 @@ export default function Proforma() {
         }
       }
 
+      // Fetch proforma items (critical for PDF to show line items)
+      const itemsResult = await externalApiAdapter.selectBy('proforma_items', { proforma_id: proforma.id });
+      if (!itemsResult.error && itemsResult.data) {
+        fullProforma.proforma_items = itemsResult.data;
+      }
+
       // Convert proforma to invoice format for PDF generation
       const invoiceData = {
         id: fullProforma.id,
