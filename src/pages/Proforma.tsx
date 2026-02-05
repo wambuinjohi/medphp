@@ -224,6 +224,12 @@ export default function Proforma() {
         }
       }
 
+      // Fetch proforma items so conversion preview shows correct line items
+      const itemsResult = await externalApiAdapter.selectBy('proforma_items', { proforma_id: proforma.id });
+      if (!itemsResult.error && itemsResult.data) {
+        fullProforma.proforma_items = itemsResult.data;
+      }
+
       setSelectedProforma(fullProforma);
       setShowConversionPreviewModal(true);
     } catch (error) {
