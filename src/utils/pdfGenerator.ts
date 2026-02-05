@@ -1015,7 +1015,8 @@ export const downloadInvoicePDF = async (invoice: any, documentType: 'INVOICE' |
   // For receipts: invoice_items should contain receipt_items (snapshot from payment time)
   // prioritized over current invoice_items. The caller is responsible for this prioritization.
   // This ensures the receipt PDF shows the items as they were when the payment was made.
-  let lineItems = invoice.invoice_items || [];
+  // For proformas: use proforma_items if available
+  let lineItems = invoice.invoice_items || invoice.proforma_items || [];
 
   // If no line items and this is a receipt or invoice, create a fallback item from the total
   if ((!lineItems || lineItems.length === 0) && (docType === 'receipt' || docType === 'invoice')) {

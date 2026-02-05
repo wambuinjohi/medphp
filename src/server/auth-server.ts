@@ -278,7 +278,7 @@ app.post('/api/admin/database/check-status', (req: Request, res: Response) => {
       { name: 'companies', exists: true },
       { name: 'invoices', exists: true },
       { name: 'quotations', exists: true },
-      { name: 'proformas', exists: true },
+      { name: 'proforma_invoices', exists: true },
       { name: 'customers', exists: true },
       { name: 'products', exists: true },
       { name: 'categories', exists: true },

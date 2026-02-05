@@ -209,9 +209,19 @@ export default function Invoices() {
     toast.success('Invoice updated successfully!');
   };
 
-  const handleViewInvoice = (invoice: Invoice) => {
-    setSelectedInvoice(invoice);
-    setShowViewModal(true);
+  const handleViewInvoice = async (invoice: Invoice) => {
+    try {
+      // Fetch full invoice with items and product details
+      const db = getDatabase();
+      const result = await db.selectOne('invoices', invoice.id);
+
+      if (result.error) throw result.error;
+      setSelectedInvoice(result.data as Invoice);
+      setShowViewModal(true);
+    } catch (error) {
+      console.error('Error fetching invoice data:', error);
+      toast.error('Failed to load invoice details');
+    }
   };
 
   const handleEditInvoice = async (invoice: Invoice) => {
