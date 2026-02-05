@@ -189,7 +189,7 @@ export const ViewProformaModal = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5" />
-            Proforma Invoice #{proforma.proforma_number}
+            Proforma Invoice #{displayProforma.proforma_number}
           </DialogTitle>
           <DialogDescription>
             View proforma invoice details and perform actions
@@ -205,34 +205,34 @@ export const ViewProformaModal = ({
                   <FileText className="h-4 w-4" />
                   Proforma Details
                 </CardTitle>
-                {getStatusBadge(proforma.status)}
+                {getStatusBadge(displayProforma.status)}
               </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Proforma Number</p>
-                  <p className="text-sm">{proforma.proforma_number}</p>
+                  <p className="text-sm">{displayProforma.proforma_number}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Date</p>
                   <p className="text-sm flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    {formatDate(proforma.proforma_date)}
+                    {formatDate(displayProforma.proforma_date)}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Valid Until</p>
                   <p className="text-sm flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    {formatDate(proforma.valid_until)}
+                    {formatDate(displayProforma.valid_until)}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Amount</p>
                   <p className="text-sm flex items-center gap-1">
                     <DollarSign className="h-3 w-3" />
-                    ${Number(proforma.total_amount || 0).toFixed(2)}
+                    ${Number(displayProforma.total_amount || 0).toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -240,7 +240,7 @@ export const ViewProformaModal = ({
           </Card>
 
           {/* Customer Information */}
-          {proforma.customers && (
+          {displayProforma.customers && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -250,15 +250,15 @@ export const ViewProformaModal = ({
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <p className="font-medium">{proforma.customers.name}</p>
-                  {proforma.customers.email && (
-                    <p className="text-sm text-muted-foreground">{proforma.customers.email}</p>
+                  <p className="font-medium">{displayProforma.customers.name}</p>
+                  {displayProforma.customers.email && (
+                    <p className="text-sm text-muted-foreground">{displayProforma.customers.email}</p>
                   )}
-                  {proforma.customers.phone && (
-                    <p className="text-sm text-muted-foreground">{proforma.customers.phone}</p>
+                  {displayProforma.customers.phone && (
+                    <p className="text-sm text-muted-foreground">{displayProforma.customers.phone}</p>
                   )}
-                  {proforma.customers.address && (
-                    <p className="text-sm text-muted-foreground">{proforma.customers.address}</p>
+                  {displayProforma.customers.address && (
+                    <p className="text-sm text-muted-foreground">{displayProforma.customers.address}</p>
                   )}
                 </div>
               </CardContent>
@@ -266,84 +266,96 @@ export const ViewProformaModal = ({
           )}
 
           {/* Items */}
-          {proforma.proforma_items && proforma.proforma_items.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Items</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>Unit Price</TableHead>
-                      <TableHead>Tax %</TableHead>
-                      <TableHead>Tax Amount</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {proforma.proforma_items.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{item.product_name}</TableCell>
-                        <TableCell>{item.description}</TableCell>
-                        <TableCell>{item.quantity}</TableCell>
-                        <TableCell>${Number(item.unit_price || 0).toFixed(2)}</TableCell>
-                        <TableCell>{item.tax_percentage}%</TableCell>
-                        <TableCell>${Number(item.tax_amount || 0).toFixed(2)}</TableCell>
-                        <TableCell className="text-right">${Number(item.line_total || 0).toFixed(2)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-
-                <Separator className="my-4" />
-
-                {/* Totals */}
-                <div className="space-y-2 max-w-sm ml-auto">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Subtotal:</span>
-                    <span className="text-sm">${proforma.subtotal?.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Tax:</span>
-                    <span className="text-sm">${Number(proforma.tax_amount || 0).toFixed(2)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between font-semibold">
-                    <span>Total:</span>
-                    <span>${Number(proforma.total_amount || 0).toFixed(2)}</span>
-                  </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Line Items</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoadingItems ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              ) : displayProforma.proforma_items && displayProforma.proforma_items.length > 0 ? (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">Quantity</TableHead>
+                        <TableHead className="text-right">Unit Price</TableHead>
+                        <TableHead className="text-right">Tax %</TableHead>
+                        <TableHead className="text-right">Tax Amount</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {displayProforma.proforma_items.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.product_name || 'Unknown Product'}</TableCell>
+                          <TableCell>{item.description}</TableCell>
+                          <TableCell className="text-right">{item.quantity}</TableCell>
+                          <TableCell className="text-right">${Number(item.unit_price || 0).toFixed(2)}</TableCell>
+                          <TableCell className="text-right">{item.tax_percentage}%</TableCell>
+                          <TableCell className="text-right">${Number(item.tax_amount || 0).toFixed(2)}</TableCell>
+                          <TableCell className="text-right font-medium">${Number(item.line_total || 0).toFixed(2)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+
+                  <Separator className="my-4" />
+
+                  {/* Totals */}
+                  <div className="space-y-2 max-w-sm ml-auto">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Subtotal:</span>
+                      <span className="text-sm">${displayProforma.subtotal?.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Tax:</span>
+                      <span className="text-sm">${Number(displayProforma.tax_amount || 0).toFixed(2)}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between font-semibold">
+                      <span>Total:</span>
+                      <span>${Number(displayProforma.total_amount || 0).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No line items found for this proforma</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Notes and Terms */}
-          {(proforma.notes || proforma.terms_and_conditions) && (
+          {(displayProforma.notes || displayProforma.terms_and_conditions) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {proforma.notes && (
+              {displayProforma.notes && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-sm">Notes</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {proforma.notes}
+                      {displayProforma.notes}
                     </p>
                   </CardContent>
                 </Card>
               )}
-              {proforma.terms_and_conditions && (
+              {displayProforma.terms_and_conditions && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-sm">Terms & Conditions</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {proforma.terms_and_conditions}
+                      {displayProforma.terms_and_conditions}
                     </p>
                   </CardContent>
                 </Card>
@@ -362,7 +374,7 @@ export const ViewProformaModal = ({
               <Send className="h-4 w-4 mr-2" />
               Send Email
             </Button>
-            {proforma.status !== 'converted' && (
+            {displayProforma.status !== 'converted' && (
               <Button
                 onClick={handleCreateInvoice}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -394,7 +406,7 @@ export const ViewProformaModal = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Proforma Invoice</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete proforma invoice {proforma.proforma_number}? This action cannot be undone.
+            Are you sure you want to delete proforma invoice {displayProforma.proforma_number}? This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogAction
