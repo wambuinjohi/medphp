@@ -101,7 +101,7 @@ export default function Proforma() {
     try {
       // Fetch full proforma with items and product details
       const { data, error } = await supabase
-        .from('proformas')
+        .from('proforma_invoices')
         .select(`
           *,
           customers (
