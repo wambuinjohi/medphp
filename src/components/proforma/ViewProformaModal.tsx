@@ -312,7 +312,7 @@ export const ViewProformaModal = ({
                   <div className="space-y-2 max-w-sm ml-auto">
                     <div className="flex justify-between">
                       <span className="text-sm">Subtotal:</span>
-                      <span className="text-sm">${displayProforma.subtotal?.toFixed(2)}</span>
+                      <span className="text-sm">${Number(displayProforma.subtotal || 0).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Tax:</span>
