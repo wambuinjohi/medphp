@@ -314,6 +314,8 @@ export const EditProformaModal = ({
   const handleClose = () => {
     setSearchTerm('');
     setShowProductSearch(false);
+    setIsLoadingItems(false);
+    setItemsLoadError(null);
     onOpenChange(false);
   };
 
