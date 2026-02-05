@@ -494,11 +494,13 @@ export const EditProformaModal = ({
                 </Card>
               )}
 
-              {items.length === 0 ? (
+              {!isLoadingItems && items.length === 0 && !itemsLoadError && (
                 <div className="text-center py-8 text-muted-foreground">
                   No items added yet. Click "Add Item" to start.
                 </div>
-              ) : (
+              )}
+
+              {!isLoadingItems && items.length > 0 && (
                 <Table>
                   <TableHeader>
                     <TableRow>
