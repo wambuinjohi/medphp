@@ -97,6 +97,8 @@ export const EditProformaModal = ({
   const [items, setItems] = useState<ProformaItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showProductSearch, setShowProductSearch] = useState(false);
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
+  const [itemsLoadError, setItemsLoadError] = useState<string | null>(null);
 
   const { data: customers } = useCustomers(companyId);
   const { data: products } = useProducts(companyId);
@@ -116,15 +118,61 @@ export const EditProformaModal = ({
         terms_and_conditions: proforma.terms_and_conditions || '',
         status: proforma.status,
       });
-      
-      if (proforma.proforma_items) {
-        setItems(proforma.proforma_items.map(item => ({
-          ...item,
-          tax_inclusive: false // Default to false if not provided
-        })));
-      }
     }
   }, [proforma, open]);
+
+  // Load proforma items when modal opens or proforma changes
+  useEffect(() => {
+    if (!open || !proforma?.id) {
+      setItems([]);
+      setItemsLoadError(null);
+      return;
+    }
+
+    const loadProformaItems = async () => {
+      try {
+        setIsLoadingItems(true);
+        setItemsLoadError(null);
+
+        console.log('📦 Loading proforma items for:', proforma.id);
+        const itemsResult = await externalApiAdapter.selectBy('proforma_items', { proforma_id: proforma.id });
+
+        if (itemsResult.error) {
+          console.error('Error fetching proforma items:', itemsResult.error);
+          setItemsLoadError('Failed to load line items');
+          setItems([]);
+        } else if (itemsResult.data && itemsResult.data.length > 0) {
+          // Enrich items with product names if not already present
+          const enrichedItems = itemsResult.data.map((item: any) => ({
+            id: item.id,
+            product_id: item.product_id,
+            product_name: item.product_name || item.products?.name || 'Unknown Product',
+            description: item.description || '',
+            quantity: item.quantity || 1,
+            unit_price: item.unit_price || 0,
+            tax_percentage: item.tax_percentage || defaultTaxRate,
+            tax_amount: item.tax_amount || 0,
+            tax_inclusive: item.tax_inclusive || false,
+            line_total: item.line_total || 0,
+          }));
+
+          console.log('✅ Loaded', enrichedItems.length, 'items');
+          setItems(enrichedItems);
+        } else {
+          console.log('ℹ️ No items found for proforma');
+          setItems([]);
+        }
+      } catch (error) {
+        console.error('Error loading proforma items:', error);
+        setItemsLoadError('Failed to load line items. Please try again.');
+        setItems([]);
+      } finally {
+        setIsLoadingItems(false);
+      }
+    };
+
+    loadProformaItems();
+  }, [open, proforma?.id, defaultTaxRate]);
 
   const filteredProducts = products?.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
