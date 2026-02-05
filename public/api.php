@@ -87,6 +87,9 @@ set_exception_handler(function($exception) {
 // Handle CORS preflight requests (OPTIONS) - respond immediately
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
+    // All CORS headers are already set above
+    // No content needed for OPTIONS response
+    ob_end_clean();
     exit(0);
 }
 
