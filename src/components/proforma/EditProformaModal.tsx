@@ -416,6 +416,7 @@ export const EditProformaModal = ({
                   variant="outline"
                   size="sm"
                   onClick={() => setShowProductSearch(true)}
+                  disabled={isLoadingItems}
                 >
                   <Plus className="h-4 w-4" />
                   Add Item
@@ -423,7 +424,29 @@ export const EditProformaModal = ({
               </div>
             </CardHeader>
             <CardContent>
-              {showProductSearch && (
+              {/* Loading State */}
+              {isLoadingItems && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <p className="text-sm text-muted-foreground animate-pulse">Loading line items...</p>
+                </div>
+              )}
+
+              {/* Error State */}
+              {itemsLoadError && !isLoadingItems && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {itemsLoadError}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {!isLoadingItems && showProductSearch && (
                 <Card className="mb-4">
                   <CardHeader>
                     <CardTitle className="text-sm">Add Product</CardTitle>
