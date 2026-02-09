@@ -174,8 +174,7 @@ export async function generateDocumentNumberAPI(
       throw new Error(`Unknown document type: ${type}`);
     }
 
-    const currentYear = year || new Date().getFullYear();
-    console.log(`[DOC_NUM] Mapped type: ${type} -> ${apiType}, year: ${currentYear}`);
+    console.log(`[DOC_NUM] Mapped type: ${type} -> ${apiType}`);
 
     // Get API base URL with proper environment detection
     // This handles both local (/api.php) and cloud (external API URL) setups
@@ -191,10 +190,14 @@ export async function generateDocumentNumberAPI(
 
     // Build the API URL with action in query string, parameters in POST body
     const fullUrl = `${apiUrl}?action=get_next_document_number`;
-    const requestBody = {
+    const requestBody: { type: string; date?: string } = {
       type: apiType,
-      year: currentYear,
     };
+
+    // Add optional date parameter if provided
+    if (date) {
+      requestBody.date = date;
+    }
 
     console.log(`[DOC_NUM] Sending request to: ${fullUrl}`);
     console.log(`[DOC_NUM] Request parameters:`, requestBody);
