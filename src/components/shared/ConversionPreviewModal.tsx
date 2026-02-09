@@ -136,22 +136,34 @@ export function ConversionPreviewModal({
 
   const updateItem = (index: number, updates: any) => {
     const newItems = [...items];
-    const updatedItem = { ...newItems[index], ...updates };
+    const item = newItems[index];
+    const updatedItem = { ...item, ...updates };
 
-    // Ensure numeric values
-    if ('quantity' in updates) updatedItem.quantity = parseFloat(updates.quantity) || 0;
-    if ('unit_price' in updates) updatedItem.unit_price = parseFloat(updates.unit_price) || 0;
+    // Process numeric values carefully to avoid snapping
+    let qty = updatedItem.quantity;
+    let price = updatedItem.unit_price;
+
+    if ('quantity' in updates) {
+      qty = updates.quantity === '' ? 0 : parseFloat(updates.quantity);
+      if (isNaN(qty)) qty = item.quantity;
+    }
+    if ('unit_price' in updates) {
+      price = updates.unit_price === '' ? 0 : parseFloat(updates.unit_price);
+      if (isNaN(price)) price = item.unit_price;
+    }
 
     // Recalculate line totals
     const result = calculateLineItemTotal({
-      quantity: updatedItem.quantity,
-      unit_price: updatedItem.unit_price,
+      quantity: qty,
+      unit_price: price,
       tax_percentage: updatedItem.tax_percentage,
       tax_inclusive: updatedItem.tax_inclusive
     });
 
     newItems[index] = {
       ...updatedItem,
+      quantity: qty,
+      unit_price: price,
       tax_amount: result.tax_amount,
       line_total: result.line_total
     };
@@ -435,23 +447,25 @@ export function ConversionPreviewModal({
                                 <Input
                                   value={item.description}
                                   onChange={(e) => updateItem(index, { description: e.target.value })}
-                                  className="h-7 text-xs border-transparent hover:border-input focus:border-input px-1"
+                                  className="h-8 text-xs px-2"
                                 />
                               </td>
                               <td className="p-2">
                                 <Input
                                   type="number"
+                                  step="any"
                                   value={item.quantity}
                                   onChange={(e) => updateItem(index, { quantity: e.target.value })}
-                                  className="h-7 text-xs border-transparent hover:border-input focus:border-input px-1 text-center"
+                                  className="h-8 text-xs px-1 text-center"
                                 />
                               </td>
                               <td className="p-2">
                                 <Input
                                   type="number"
+                                  step="any"
                                   value={item.unit_price}
                                   onChange={(e) => updateItem(index, { unit_price: e.target.value })}
-                                  className="h-7 text-xs border-transparent hover:border-input focus:border-input px-1 text-right"
+                                  className="h-8 text-xs px-1 text-right"
                                 />
                               </td>
                               <td className="p-2 text-right text-xs">
