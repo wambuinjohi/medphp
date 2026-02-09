@@ -2546,28 +2546,19 @@ try {
             throw new Exception("Invalid document type: $type. Valid types are: " . implode(', ', $valid_types));
         }
 
-        // Default to current year if not provided
-        if (!$year) {
-            $year = date('Y');
-        } else {
-            $year = (int)$year;
-            // Validate year is reasonable
-            if ($year < 2000 || $year > (date('Y') + 10)) {
-                throw new Exception("Invalid year: $year");
-            }
-        }
+        // Get today's date in DDMMYYYY format
+        $dateString = date('dmY');
 
-        // Ensure document_sequences table exists
+        // Ensure document_sequences table exists (new schema without year column)
         $table_check = $database_conn->query("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_sequences'");
         if (!$table_check || $table_check->num_rows === 0) {
             $create_sql = "CREATE TABLE IF NOT EXISTS `document_sequences` (
                 id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
                 document_type CHAR(3) NOT NULL,
-                year INT NOT NULL,
                 sequence_number INT DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                UNIQUE KEY unique_type_year (document_type, year),
+                UNIQUE KEY unique_document_type (document_type),
                 INDEX idx_document_sequences_type (document_type)
             )";
             if (!$database_conn->query($create_sql)) {
@@ -2575,27 +2566,27 @@ try {
             }
         }
 
-        // Check if this type-year combination exists, if not insert it
+        // Check if this document type exists
         $escaped_type = escape($database_conn, $type);
-        $check_sql = "SELECT id, sequence_number FROM document_sequences WHERE document_type = '$escaped_type' AND year = $year LIMIT 1";
+        $check_sql = "SELECT id, sequence_number FROM document_sequences WHERE document_type = '$escaped_type' LIMIT 1";
         $result = $database_conn->query($check_sql);
 
         if (!$result || $result->num_rows === 0) {
-            // Insert new entry with sequence 0
-            $insert_sql = "INSERT INTO document_sequences (document_type, year, sequence_number) VALUES ('$escaped_type', $year, 0)";
+            // Insert new entry with sequence 0 (will be incremented to 1)
+            $insert_sql = "INSERT INTO document_sequences (document_type, sequence_number) VALUES ('$escaped_type', 0)";
             if (!$database_conn->query($insert_sql)) {
                 throw new Exception("Failed to initialize sequence: " . $database_conn->error);
             }
         }
 
-        // Increment the sequence number (atomic operation)
-        $update_sql = "UPDATE document_sequences SET sequence_number = sequence_number + 1 WHERE document_type = '$escaped_type' AND year = $year";
+        // Increment the global sequence number for this document type (atomic operation)
+        $update_sql = "UPDATE document_sequences SET sequence_number = sequence_number + 1 WHERE document_type = '$escaped_type'";
         if (!$database_conn->query($update_sql)) {
             throw new Exception("Failed to increment sequence: " . $database_conn->error);
         }
 
         // Get the updated sequence number
-        $fetch_sql = "SELECT sequence_number FROM document_sequences WHERE document_type = '$escaped_type' AND year = $year LIMIT 1";
+        $fetch_sql = "SELECT sequence_number FROM document_sequences WHERE document_type = '$escaped_type' LIMIT 1";
         $result = $database_conn->query($fetch_sql);
         if (!$result || $result->num_rows === 0) {
             throw new Exception("Failed to fetch sequence number");
@@ -2604,8 +2595,8 @@ try {
         $row = $result->fetch_assoc();
         $sequence = (int)$row['sequence_number'];
 
-        // Format the number: TYPE-YEAR-NNNN (4-digit zero-padded)
-        return sprintf('%s-%d-%04d', $type, $year, $sequence);
+        // Format the number: TYPE-DDMMYYYY-N (e.g., INV-09022026-1)
+        return sprintf('%s-%s-%d', $type, $dateString, $sequence);
     }
 
     // Handle transaction-safe receipt creation
