@@ -261,11 +261,11 @@ export default function Proforma() {
     toast.success(`Successfully converted to invoice ${invoiceNumber}`);
   };
 
-  const handleConversionPreviewConfirm = async () => {
+  const handleConversionPreviewConfirm = async (modifiedData?: any) => {
     if (!selectedProforma) return;
 
     try {
-      const result = await convertToInvoice.mutateAsync(selectedProforma.id!);
+      const result = await convertToInvoice.mutateAsync({ proformaId: selectedProforma.id!, modifiedData });
       refetch();
       setShowConversionPreviewModal(false);
       setSelectedProforma(null);
