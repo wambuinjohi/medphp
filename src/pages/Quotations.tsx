@@ -284,14 +284,14 @@ Email: ${companyEmail}`;
     setSelectedQuotation(null);
   };
 
-  const handleConversionPreviewConfirm = async () => {
+  const handleConversionPreviewConfirm = async (modifiedData?: any) => {
     if (!selectedQuotation) return;
 
     try {
       if (conversionType === 'proforma') {
-        await convertToProforma.mutateAsync(selectedQuotation.id);
+        await convertToProforma.mutateAsync({ quotationId: selectedQuotation.id, modifiedData });
       } else if (conversionType === 'invoice') {
-        await convertToInvoice.mutateAsync(selectedQuotation.id);
+        await convertToInvoice.mutateAsync({ quotationId: selectedQuotation.id, modifiedData });
       }
       refetch();
       setShowConversionPreviewModal(false);
