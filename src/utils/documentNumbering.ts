@@ -26,11 +26,11 @@
  *
  * 1. Generate an invoice number:
  *    const invoiceNumber = await generateDocumentNumberAPI('invoice');
- *    // Result: "INV-2026-0001"
+ *    // Result: "INV-09022026-1"
  *
  * 2. Generate a proforma number:
  *    const proformaNumber = await generateDocumentNumberAPI('proforma');
- *    // Result: "PRO-2026-0001"
+ *    // Result: "PRO-09022026-2"
  *
  * 3. Using legacy wrapper (deprecated but still functional):
  *    const receiptNumber = await generateReceiptNumber();
