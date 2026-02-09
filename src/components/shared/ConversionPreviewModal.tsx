@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,8 +11,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, ArrowRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Loader2, ArrowRight, Trash2, Search, Plus } from 'lucide-react';
 import { formatCurrency } from '@/utils/taxCalculation';
+import { useProducts, useTaxSettings } from '@/hooks/useDatabase';
+import { calculateLineItemTotal } from '@/hooks/useQuotationItems';
+import { useCurrentCompany } from '@/contexts/CompanyContext';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 export interface ConversionSourceData {
   id: string;
@@ -23,9 +32,13 @@ export interface ConversionSourceData {
     email?: string;
   };
   items?: Array<{
+    product_id?: string;
     description: string;
     quantity: number;
     unit_price: number;
+    tax_percentage?: number;
+    tax_inclusive?: boolean;
+    tax_amount?: number;
     line_total: number;
   }>;
   subtotal: number;
@@ -49,7 +62,7 @@ interface ConversionPreviewModalProps {
   sourceDocumentType: 'quotation' | 'proforma';
   destinationData: ConversionDestinationData;
   isLoading?: boolean;
-  onConfirm: () => void | Promise<void>;
+  onConfirm: (modifiedData?: any) => void | Promise<void>;
   onCancel?: () => void;
 }
 
@@ -81,8 +94,97 @@ export function ConversionPreviewModal({
   onConfirm,
   onCancel,
 }: ConversionPreviewModalProps) {
+  const { currentCompany } = useCurrentCompany();
+  const { data: products } = useProducts(currentCompany?.id);
+  const { data: taxSettings } = useTaxSettings(currentCompany?.id);
+
+  const [items, setItems] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
+
+  // Initialize items from sourceDocument
+  useEffect(() => {
+    if (open && sourceDocument.items) {
+      setItems(sourceDocument.items.map(item => ({
+        ...item,
+        tax_percentage: item.tax_percentage ?? 0,
+        tax_inclusive: item.tax_inclusive ?? false,
+      })));
+    }
+  }, [open, sourceDocument.items]);
+
   const destinationLabel = getDocumentTypeLabel(destinationData.documentType);
   const sourceLabel = getDocumentTypeLabel(sourceDocumentType);
+
+  // Recalculate totals
+  const totals = useMemo(() => {
+    const subtotal = items.reduce((sum, item) => {
+      // Use the subtotal from calculateLineItemTotal logic
+      const result = calculateLineItemTotal({
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        tax_percentage: item.tax_percentage,
+        tax_inclusive: item.tax_inclusive
+      });
+      return sum + result.subtotal;
+    }, 0);
+    const tax_amount = items.reduce((sum, item) => sum + (item.tax_amount || 0), 0);
+    const total_amount = items.reduce((sum, item) => sum + (item.line_total || 0), 0);
+
+    return { subtotal, tax_amount, total_amount };
+  }, [items]);
+
+  const updateItem = (index: number, updates: any) => {
+    const newItems = [...items];
+    const updatedItem = { ...newItems[index], ...updates };
+
+    // Ensure numeric values
+    if ('quantity' in updates) updatedItem.quantity = parseFloat(updates.quantity) || 0;
+    if ('unit_price' in updates) updatedItem.unit_price = parseFloat(updates.unit_price) || 0;
+
+    // Recalculate line totals
+    const result = calculateLineItemTotal({
+      quantity: updatedItem.quantity,
+      unit_price: updatedItem.unit_price,
+      tax_percentage: updatedItem.tax_percentage,
+      tax_inclusive: updatedItem.tax_inclusive
+    });
+
+    newItems[index] = {
+      ...updatedItem,
+      tax_amount: result.tax_amount,
+      line_total: result.line_total
+    };
+    setItems(newItems);
+  };
+
+  const removeItem = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const addProduct = (product: any) => {
+    const newItem = {
+      product_id: product.id,
+      description: product.name,
+      quantity: 1,
+      unit_price: product.price || 0,
+      tax_percentage: product.tax_percentage || 0,
+      tax_inclusive: product.tax_inclusive || false,
+    };
+
+    const result = calculateLineItemTotal(newItem);
+    setItems([...items, { ...newItem, tax_amount: result.tax_amount, line_total: result.line_total }]);
+    setSearchTerm('');
+    setIsProductSearchOpen(false);
+  };
+
+  const filteredProducts = useMemo(() => {
+    if (!searchTerm) return [];
+    return (products || []).filter(p =>
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+    ).slice(0, 5);
+  }, [products, searchTerm]);
 
   // Format dates
   const formatDate = (dateString: string) => {
@@ -95,7 +197,12 @@ export function ConversionPreviewModal({
 
   const handleConfirm = async () => {
     try {
-      await onConfirm();
+      await onConfirm({
+        items,
+        subtotal: totals.subtotal,
+        tax_amount: totals.tax_amount,
+        total_amount: totals.total_amount
+      });
       onOpenChange(false);
     } catch (error) {
       console.error('Conversion error:', error);
@@ -110,7 +217,7 @@ export function ConversionPreviewModal({
   };
 
   // Memoize computed values
-  const itemCount = useMemo(() => sourceDocument.items?.length || 0, [sourceDocument.items]);
+  const itemCount = useMemo(() => items.length, [items]);
   const statusLabel = useMemo(() => {
     return destinationData.status.charAt(0).toUpperCase() + destinationData.status.slice(1);
   }, [destinationData.status]);
@@ -254,12 +361,125 @@ export function ConversionPreviewModal({
 
                 <Separator />
 
-                {/* Items (same as source) */}
-                <div className="space-y-2">
-                  <span className="text-muted-foreground text-sm block">
-                    Items ({itemCount})
-                  </span>
-                  <p className="text-sm text-muted-foreground">All items will be copied from {sourceLabel.toLowerCase()}</p>
+                {/* Items (Editable) */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground text-sm block font-medium">
+                      Items ({itemCount})
+                    </span>
+
+                    <Popover open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 gap-1">
+                          <Plus className="h-3.5 w-3.5" />
+                          Add Item
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 p-0" align="end">
+                        <div className="p-2 border-b">
+                          <div className="relative">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Search products..."
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              className="pl-8"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                        <div className="max-h-60 overflow-y-auto p-1">
+                          {filteredProducts.length > 0 ? (
+                            filteredProducts.map((product) => (
+                              <button
+                                key={product.id}
+                                className="w-full text-left px-2 py-1.5 text-sm hover:bg-muted rounded transition-colors"
+                                onClick={() => addProduct(product)}
+                              >
+                                <div className="font-medium">{product.name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {product.sku} - {formatCurrency(product.price || 0)}
+                                </div>
+                              </button>
+                            ))
+                          ) : searchTerm ? (
+                            <div className="p-4 text-center text-sm text-muted-foreground">
+                              No products found
+                            </div>
+                          ) : (
+                            <div className="p-4 text-center text-sm text-muted-foreground">
+                              Start typing to search...
+                            </div>
+                          )}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  <div className="border rounded-md overflow-hidden">
+                    <div className="max-h-60 overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-muted/50 sticky top-0">
+                          <tr>
+                            <th className="text-left p-2 font-medium">Description</th>
+                            <th className="text-center p-2 font-medium w-16">Qty</th>
+                            <th className="text-right p-2 font-medium w-24">Price</th>
+                            <th className="text-right p-2 font-medium w-24">Total</th>
+                            <th className="w-8"></th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {items.map((item, index) => (
+                            <tr key={index} className="hover:bg-muted/30">
+                              <td className="p-2">
+                                <Input
+                                  value={item.description}
+                                  onChange={(e) => updateItem(index, { description: e.target.value })}
+                                  className="h-7 text-xs border-transparent hover:border-input focus:border-input px-1"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  value={item.quantity}
+                                  onChange={(e) => updateItem(index, { quantity: e.target.value })}
+                                  className="h-7 text-xs border-transparent hover:border-input focus:border-input px-1 text-center"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <Input
+                                  type="number"
+                                  value={item.unit_price}
+                                  onChange={(e) => updateItem(index, { unit_price: e.target.value })}
+                                  className="h-7 text-xs border-transparent hover:border-input focus:border-input px-1 text-right"
+                                />
+                              </td>
+                              <td className="p-2 text-right text-xs">
+                                {formatCurrency(item.line_total)}
+                              </td>
+                              <td className="p-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => removeItem(index)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                          {items.length === 0 && (
+                            <tr>
+                              <td colSpan={5} className="p-8 text-center text-muted-foreground italic">
+                                No items. Add an item to continue.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
 
                 <Separator />
@@ -272,15 +492,15 @@ export function ConversionPreviewModal({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span>{formatCurrency(sourceDocument.subtotal)}</span>
+                    <span>{formatCurrency(totals.subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tax</span>
-                    <span>{formatCurrency(sourceDocument.tax_amount)}</span>
+                    <span>{formatCurrency(totals.tax_amount)}</span>
                   </div>
                   <div className="flex justify-between font-semibold text-base pt-2 border-t">
                     <span>Total</span>
-                    <span>{formatCurrency(sourceDocument.total_amount)}</span>
+                    <span>{formatCurrency(totals.total_amount)}</span>
                   </div>
                 </div>
               </CardContent>
