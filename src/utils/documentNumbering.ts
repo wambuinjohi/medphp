@@ -81,7 +81,7 @@
  * ========================
  * When converting documents (quotation -> invoice, proforma -> invoice, etc.):
  * ✅ BEFORE: const invoiceNumber = `INV-${Date.now()}` (timestamp-based, non-sequential)
- * ✅ NOW:    const invoiceNumber = await generateDocumentNumberAPI('invoice') (sequential, proper)
+ * ✅ NOW:    const invoiceNumber = await generateDocumentNumberAPI('invoice') (sequential with global counter, proper)
  *
  * Affected functions:
  * - useProforma.ts: useConvertProformaToInvoice()
