@@ -202,7 +202,7 @@ export function ConversionPreviewModal({
         product_id: product.id,
         description: product.name,
         quantity: 1,
-        unit_price: product.price || 0,
+        unit_price: product.unit_price || product.selling_price || 0,
         tax_percentage: product.tax_percentage || 0,
         tax_inclusive: product.tax_inclusive || false,
       };
@@ -359,7 +359,7 @@ export function ConversionPreviewModal({
                               >
                                 <div className="font-medium">{product.name}</div>
                                 <div className="text-xs text-muted-foreground">
-                                  {product.sku} - {formatCurrency(product.price || 0)}
+                                  {product.sku} - {formatCurrency(product.unit_price || product.selling_price || 0)}
                                 </div>
                               </button>
                             ))
