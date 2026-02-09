@@ -102,6 +102,12 @@ export function ConversionPreviewModal({
   const [searchTerm, setSearchTerm] = useState('');
   const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
 
+  const defaultTaxRate = useMemo(() => {
+    if (!taxSettings || !Array.isArray(taxSettings)) return 0;
+    const defaultTax = (taxSettings as any[]).find((t: any) => t.is_default);
+    return defaultTax ? parseFloat(defaultTax.rate) : (parseFloat(taxSettings[0]?.rate) || 0);
+  }, [taxSettings]);
+
   // Initialize items from sourceDocument
   useEffect(() => {
     if (open && sourceDocument.items) {
@@ -202,9 +208,9 @@ export function ConversionPreviewModal({
         product_id: product.id,
         description: product.name,
         quantity: 1,
-        unit_price: product.unit_price || product.selling_price || 0,
-        tax_percentage: product.tax_percentage || 0,
-        tax_inclusive: product.tax_inclusive || false,
+        unit_price: parseFloat(product.unit_price || product.selling_price || 0),
+        tax_percentage: parseFloat(product.tax_percentage || defaultTaxRate),
+        tax_inclusive: product.tax_inclusive === true || product.tax_inclusive === 1 || product.tax_inclusive === '1' || false,
       };
 
       const result = calculateLineItemTotal(newItem);
