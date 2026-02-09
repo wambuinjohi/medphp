@@ -384,7 +384,7 @@ export function ConversionPreviewModal({
                   </div>
 
                   <div className="border rounded-md overflow-hidden">
-                    <div className="max-h-60 overflow-y-auto">
+                    <div className="max-h-60 overflow-y-auto overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead className="bg-muted/50 sticky top-0">
                           <tr>
