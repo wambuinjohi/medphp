@@ -235,9 +235,8 @@ export async function generateDocumentNumberAPI(
     console.error('[DOC_NUM] Error generating document number via API:', error);
     // Return fallback format on network/parsing error
     const apiType = DOCUMENT_TYPE_MAP[type] || type.toUpperCase().substring(0, 3);
-    const currentYear = year || new Date().getFullYear();
     console.warn(`[DOC_NUM] Falling back to random number generation`);
-    return generateFallbackNumber(apiType, currentYear);
+    return generateFallbackNumber(apiType);
   }
 }
 
