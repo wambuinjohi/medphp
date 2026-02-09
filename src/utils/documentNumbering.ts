@@ -42,8 +42,8 @@
  * API Request Pattern:
  * - URL: /backend/api.php?action=get_next_document_number
  * - Method: POST
- * - Body: { type: "INV", year: 2026 }
- * - Response: { success: true, number: "INV-2026-0001", type: "INV", year: 2026, sequence: 1 }
+ * - Body: { type: "INV", date?: "2026-02-09" } (date is optional, defaults to today)
+ * - Response: { success: true, number: "INV-09022026-1", type: "INV", date: "09022026", sequence: 1 }
  *
  * Fallback Behavior (when API unavailable):
  * - Still returns valid format: TYPE-YYYY-RANDOM (e.g., INV-2026-A7K2)
