@@ -242,7 +242,7 @@ export const useConvertQuotationToInvoice = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (quotationId: string) => {
+    mutationFn: async ({ quotationId, modifiedData }: { quotationId: string; modifiedData?: any }) => {
       const db = getDatabase();
 
       // Get quotation data using database adapter
@@ -278,9 +278,9 @@ export const useConvertQuotationToInvoice = () => {
         invoice_date: new Date().toISOString().split('T')[0],
         due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         status: 'sent',
-        subtotal: quotation.subtotal,
-        tax_amount: quotation.tax_amount,
-        total_amount: quotation.total_amount,
+        subtotal: modifiedData?.subtotal ?? quotation.subtotal,
+        tax_amount: modifiedData?.tax_amount ?? quotation.tax_amount,
+        total_amount: modifiedData?.total_amount ?? quotation.total_amount,
         created_by: createdBy
       };
 
@@ -307,9 +307,10 @@ export const useConvertQuotationToInvoice = () => {
 
       const invoice = invoiceSelectResult.data as any;
 
-      // Create invoice items from quotation items
-      if (quotationItems && quotationItems.length > 0) {
-        const invoiceItems = quotationItems.map((item: any, index: number) => ({
+      // Create invoice items from quotation items or modified data
+      const finalItems = modifiedData?.items || quotationItems;
+      if (finalItems && finalItems.length > 0) {
+        const invoiceItems = finalItems.map((item: any, index: number) => ({
           invoice_id: invoice.id,
           product_id: item.product_id,
           description: item.description,
@@ -753,7 +754,7 @@ export const useConvertQuotationToProforma = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (quotationId: string) => {
+    mutationFn: async ({ quotationId, modifiedData }: { quotationId: string; modifiedData?: any }) => {
       const db = getDatabase();
 
       // Get quotation data using database adapter
@@ -790,9 +791,9 @@ export const useConvertQuotationToProforma = () => {
         proforma_date: new Date().toISOString().split('T')[0],
         valid_until: validUntilDate.toISOString().split('T')[0],
         status: 'draft',
-        subtotal: quotation.subtotal,
-        tax_amount: quotation.tax_amount,
-        total_amount: quotation.total_amount,
+        subtotal: modifiedData?.subtotal ?? quotation.subtotal,
+        tax_amount: modifiedData?.tax_amount ?? quotation.tax_amount,
+        total_amount: modifiedData?.total_amount ?? quotation.total_amount,
         notes: `Converted from quotation ${quotation.quotation_number}`,
         terms_and_conditions: quotation.terms_and_conditions
         // Note: created_by column does not exist in proforma_invoices table
@@ -823,9 +824,10 @@ export const useConvertQuotationToProforma = () => {
 
       const proforma = proformaSelectResult.data as any;
 
-      // Create proforma items from quotation items
-      if (quotationItems && quotationItems.length > 0) {
-        const proformaItems = quotationItems.map((item: any, index: number) => ({
+      // Create proforma items from quotation items or modified data
+      const finalItems = modifiedData?.items || quotationItems;
+      if (finalItems && finalItems.length > 0) {
+        const proformaItems = finalItems.map((item: any, index: number) => ({
           proforma_id: proforma.id,
           product_id: item.product_id,
           description: item.description,

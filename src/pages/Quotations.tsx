@@ -249,7 +249,15 @@ Email: ${companyEmail}`;
       const result = await db.selectOne('quotations', quotation.id);
 
       if (result.error) throw result.error;
-      setSelectedQuotation(result.data as Quotation);
+      const quotationData = result.data as Quotation;
+
+      // Fetch items
+      const itemsResult = await db.selectBy('quotation_items', { quotation_id: quotation.id });
+      if (!itemsResult.error && itemsResult.data) {
+        quotationData.quotation_items = itemsResult.data;
+      }
+
+      setSelectedQuotation(quotationData);
       setConversionType('proforma');
       setShowConversionPreviewModal(true);
     } catch (error) {
@@ -268,7 +276,15 @@ Email: ${companyEmail}`;
       const result = await db.selectOne('quotations', quotation.id);
 
       if (result.error) throw result.error;
-      setSelectedQuotation(result.data as Quotation);
+      const quotationData = result.data as Quotation;
+
+      // Fetch items
+      const itemsResult = await db.selectBy('quotation_items', { quotation_id: quotation.id });
+      if (!itemsResult.error && itemsResult.data) {
+        quotationData.quotation_items = itemsResult.data;
+      }
+
+      setSelectedQuotation(quotationData);
       setConversionType('invoice');
       setShowConversionPreviewModal(true);
     } catch (error) {
@@ -284,14 +300,14 @@ Email: ${companyEmail}`;
     setSelectedQuotation(null);
   };
 
-  const handleConversionPreviewConfirm = async () => {
+  const handleConversionPreviewConfirm = async (modifiedData?: any) => {
     if (!selectedQuotation) return;
 
     try {
       if (conversionType === 'proforma') {
-        await convertToProforma.mutateAsync(selectedQuotation.id);
+        await convertToProforma.mutateAsync({ quotationId: selectedQuotation.id, modifiedData });
       } else if (conversionType === 'invoice') {
-        await convertToInvoice.mutateAsync(selectedQuotation.id);
+        await convertToInvoice.mutateAsync({ quotationId: selectedQuotation.id, modifiedData });
       }
       refetch();
       setShowConversionPreviewModal(false);
@@ -662,9 +678,13 @@ Email: ${companyEmail}`;
             date: selectedQuotation.quotation_date,
             customer: selectedQuotation.customers,
             items: (selectedQuotation.quotation_items || []).map((item: any) => ({
+              product_id: item.product_id,
               description: item.description,
               quantity: item.quantity,
               unit_price: item.unit_price,
+              tax_percentage: item.tax_percentage,
+              tax_inclusive: item.tax_inclusive,
+              tax_amount: item.tax_amount,
               line_total: item.line_total,
             })),
             subtotal: selectedQuotation.subtotal || 0,

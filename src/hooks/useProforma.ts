@@ -509,7 +509,7 @@ export const useConvertProformaToInvoice = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (proformaId: string) => {
+    mutationFn: async ({ proformaId, modifiedData }: { proformaId: string; modifiedData?: any }) => {
       // Get proforma data using external API adapter
       console.log('📋 Fetching proforma for conversion:', proformaId);
       const proformaResult = await externalApiAdapter.selectOne('proforma_invoices', proformaId);
@@ -548,9 +548,9 @@ export const useConvertProformaToInvoice = () => {
         invoice_date: new Date().toISOString().split('T')[0],
         due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         status: 'sent',
-        subtotal: proforma.subtotal,
-        tax_amount: proforma.tax_amount,
-        total_amount: proforma.total_amount,
+        subtotal: modifiedData?.subtotal ?? proforma.subtotal,
+        tax_amount: modifiedData?.tax_amount ?? proforma.tax_amount,
+        total_amount: modifiedData?.total_amount ?? proforma.total_amount,
         created_by: createdBy
       };
 
@@ -581,9 +581,10 @@ export const useConvertProformaToInvoice = () => {
 
       const invoice = invoiceSelectResult.data as any;
 
-      // Create invoice items from proforma items
-      if (proformaItems && proformaItems.length > 0) {
-        const invoiceItems = proformaItems.map((item: any, index: number) => ({
+      // Create invoice items from proforma items or modified data
+      const finalItems = modifiedData?.items || proformaItems;
+      if (finalItems && finalItems.length > 0) {
+        const invoiceItems = finalItems.map((item: any, index: number) => ({
           invoice_id: invoice.id,
           product_id: item.product_id,
           description: item.description,

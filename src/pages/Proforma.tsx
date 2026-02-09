@@ -261,11 +261,11 @@ export default function Proforma() {
     toast.success(`Successfully converted to invoice ${invoiceNumber}`);
   };
 
-  const handleConversionPreviewConfirm = async () => {
+  const handleConversionPreviewConfirm = async (modifiedData?: any) => {
     if (!selectedProforma) return;
 
     try {
-      const result = await convertToInvoice.mutateAsync(selectedProforma.id!);
+      const result = await convertToInvoice.mutateAsync({ proformaId: selectedProforma.id!, modifiedData });
       refetch();
       setShowConversionPreviewModal(false);
       setSelectedProforma(null);
@@ -647,9 +647,13 @@ export default function Proforma() {
             date: selectedProforma.proforma_date,
             customer: selectedProforma.customers,
             items: (selectedProforma.proforma_items || []).map((item: any) => ({
+              product_id: item.product_id,
               description: item.description,
               quantity: item.quantity,
               unit_price: item.unit_price,
+              tax_percentage: item.tax_percentage,
+              tax_inclusive: item.tax_inclusive,
+              tax_amount: item.tax_amount,
               line_total: item.line_total,
             })),
             subtotal: selectedProforma.subtotal || 0,
