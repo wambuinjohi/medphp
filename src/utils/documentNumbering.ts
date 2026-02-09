@@ -155,15 +155,15 @@ export interface DocumentNumberResponse {
 
 /**
  * Generate a unique document number via the backend API
- * Format: TYPE-YYYY-NNNN (e.g., INV-2026-0001)
+ * Format: TYPE-DDMMYYYY-N (e.g., INV-09022026-1)
  *
  * @param type - Document type (e.g., 'invoice', 'proforma', 'quotation')
- * @param year - Optional year (defaults to current year)
+ * @param date - Optional date in YYYY-MM-DD format (defaults to today)
  * @returns Promise resolving to the generated document number
  */
 export async function generateDocumentNumberAPI(
   type: string,
-  year?: number
+  date?: string
 ): Promise<string> {
   try {
     console.log(`[DOC_NUM] Starting document number generation for type: ${type}`);
