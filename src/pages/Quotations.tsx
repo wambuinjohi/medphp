@@ -249,7 +249,15 @@ Email: ${companyEmail}`;
       const result = await db.selectOne('quotations', quotation.id);
 
       if (result.error) throw result.error;
-      setSelectedQuotation(result.data as Quotation);
+      const quotationData = result.data as Quotation;
+
+      // Fetch items
+      const itemsResult = await db.selectBy('quotation_items', { quotation_id: quotation.id });
+      if (!itemsResult.error && itemsResult.data) {
+        quotationData.quotation_items = itemsResult.data;
+      }
+
+      setSelectedQuotation(quotationData);
       setConversionType('proforma');
       setShowConversionPreviewModal(true);
     } catch (error) {
@@ -268,7 +276,15 @@ Email: ${companyEmail}`;
       const result = await db.selectOne('quotations', quotation.id);
 
       if (result.error) throw result.error;
-      setSelectedQuotation(result.data as Quotation);
+      const quotationData = result.data as Quotation;
+
+      // Fetch items
+      const itemsResult = await db.selectBy('quotation_items', { quotation_id: quotation.id });
+      if (!itemsResult.error && itemsResult.data) {
+        quotationData.quotation_items = itemsResult.data;
+      }
+
+      setSelectedQuotation(quotationData);
       setConversionType('invoice');
       setShowConversionPreviewModal(true);
     } catch (error) {
