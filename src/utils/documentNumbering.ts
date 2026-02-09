@@ -217,7 +217,7 @@ export async function generateDocumentNumberAPI(
       console.error(`[DOC_NUM] Failed to generate document number (${response.status}):`, errorData);
       console.warn(`[DOC_NUM] Falling back to random number generation`);
       // Return fallback format on API error
-      return generateFallbackNumber(apiType, currentYear);
+      return generateFallbackNumber(apiType);
     }
 
     const data = await response.json() as DocumentNumberResponse;
