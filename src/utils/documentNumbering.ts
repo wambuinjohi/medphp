@@ -226,7 +226,7 @@ export async function generateDocumentNumberAPI(
     if (!data.success || !data.number) {
       console.error('[DOC_NUM] API returned unsuccessful response:', data);
       console.warn(`[DOC_NUM] Falling back to random number generation`);
-      return generateFallbackNumber(apiType, currentYear);
+      return generateFallbackNumber(apiType);
     }
 
     console.log(`[DOC_NUM] Successfully generated document number:`, data.number);
