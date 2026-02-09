@@ -8,7 +8,7 @@
  * ARCHITECTURE:
  * - Primary: Backend PHP API endpoint (/backend/api.php?action=get_next_document_number)
  * - Fallback: Client-side random alphanumeric generation (when API unavailable)
- * - Format: TYPE-YYYY-NNNN (e.g., INV-2026-0001, PRO-2026-0042, QT-2026-0115)
+ * - Format: TYPE-DDMMYYYY-N (e.g., INV-09022026-1, PRO-09022026-2, QT-10022026-3)
  *
  * SUPPORTED DOCUMENT TYPES:
  * - INV: Invoices (generateDocumentNumberAPI('invoice'))
@@ -26,11 +26,11 @@
  *
  * 1. Generate an invoice number:
  *    const invoiceNumber = await generateDocumentNumberAPI('invoice');
- *    // Result: "INV-2026-0001"
+ *    // Result: "INV-09022026-1"
  *
  * 2. Generate a proforma number:
  *    const proformaNumber = await generateDocumentNumberAPI('proforma');
- *    // Result: "PRO-2026-0001"
+ *    // Result: "PRO-09022026-2"
  *
  * 3. Using legacy wrapper (deprecated but still functional):
  *    const receiptNumber = await generateReceiptNumber();
@@ -42,11 +42,11 @@
  * API Request Pattern:
  * - URL: /backend/api.php?action=get_next_document_number
  * - Method: POST
- * - Body: { type: "INV", year: 2026 }
- * - Response: { success: true, number: "INV-2026-0001", type: "INV", year: 2026, sequence: 1 }
+ * - Body: { type: "INV", date?: "2026-02-09" } (date is optional, defaults to today)
+ * - Response: { success: true, number: "INV-09022026-1", type: "INV", date: "09022026", sequence: 1 }
  *
  * Fallback Behavior (when API unavailable):
- * - Still returns valid format: TYPE-YYYY-RANDOM (e.g., INV-2026-A7K2)
+ * - Still returns valid format: TYPE-DDMMYYYY-RANDOM (e.g., INV-09022026-K7X2)
  * - Uses random alphanumeric characters (A-Z, 0-9) instead of sequential
  * - Prevents application crashes when API is down
  * - Logs warnings to console for monitoring
@@ -81,7 +81,7 @@
  * ========================
  * When converting documents (quotation -> invoice, proforma -> invoice, etc.):
  * ✅ BEFORE: const invoiceNumber = `INV-${Date.now()}` (timestamp-based, non-sequential)
- * ✅ NOW:    const invoiceNumber = await generateDocumentNumberAPI('invoice') (sequential, proper)
+ * ✅ NOW:    const invoiceNumber = await generateDocumentNumberAPI('invoice') (sequential with global counter, proper)
  *
  * Affected functions:
  * - useProforma.ts: useConvertProformaToInvoice()
@@ -155,15 +155,15 @@ export interface DocumentNumberResponse {
 
 /**
  * Generate a unique document number via the backend API
- * Format: TYPE-YYYY-NNNN (e.g., INV-2026-0001)
+ * Format: TYPE-DDMMYYYY-N (e.g., INV-09022026-1)
  *
  * @param type - Document type (e.g., 'invoice', 'proforma', 'quotation')
- * @param year - Optional year (defaults to current year)
+ * @param date - Optional date in YYYY-MM-DD format (defaults to today)
  * @returns Promise resolving to the generated document number
  */
 export async function generateDocumentNumberAPI(
   type: string,
-  year?: number
+  date?: string
 ): Promise<string> {
   try {
     console.log(`[DOC_NUM] Starting document number generation for type: ${type}`);
@@ -174,8 +174,7 @@ export async function generateDocumentNumberAPI(
       throw new Error(`Unknown document type: ${type}`);
     }
 
-    const currentYear = year || new Date().getFullYear();
-    console.log(`[DOC_NUM] Mapped type: ${type} -> ${apiType}, year: ${currentYear}`);
+    console.log(`[DOC_NUM] Mapped type: ${type} -> ${apiType}`);
 
     // Get API base URL with proper environment detection
     // This handles both local (/api.php) and cloud (external API URL) setups
@@ -191,10 +190,14 @@ export async function generateDocumentNumberAPI(
 
     // Build the API URL with action in query string, parameters in POST body
     const fullUrl = `${apiUrl}?action=get_next_document_number`;
-    const requestBody = {
+    const requestBody: { type: string; date?: string } = {
       type: apiType,
-      year: currentYear,
     };
+
+    // Add optional date parameter if provided
+    if (date) {
+      requestBody.date = date;
+    }
 
     console.log(`[DOC_NUM] Sending request to: ${fullUrl}`);
     console.log(`[DOC_NUM] Request parameters:`, requestBody);
@@ -214,7 +217,7 @@ export async function generateDocumentNumberAPI(
       console.error(`[DOC_NUM] Failed to generate document number (${response.status}):`, errorData);
       console.warn(`[DOC_NUM] Falling back to random number generation`);
       // Return fallback format on API error
-      return generateFallbackNumber(apiType, currentYear);
+      return generateFallbackNumber(apiType);
     }
 
     const data = await response.json() as DocumentNumberResponse;
@@ -223,7 +226,7 @@ export async function generateDocumentNumberAPI(
     if (!data.success || !data.number) {
       console.error('[DOC_NUM] API returned unsuccessful response:', data);
       console.warn(`[DOC_NUM] Falling back to random number generation`);
-      return generateFallbackNumber(apiType, currentYear);
+      return generateFallbackNumber(apiType);
     }
 
     console.log(`[DOC_NUM] Successfully generated document number:`, data.number);
@@ -232,28 +235,33 @@ export async function generateDocumentNumberAPI(
     console.error('[DOC_NUM] Error generating document number via API:', error);
     // Return fallback format on network/parsing error
     const apiType = DOCUMENT_TYPE_MAP[type] || type.toUpperCase().substring(0, 3);
-    const currentYear = year || new Date().getFullYear();
     console.warn(`[DOC_NUM] Falling back to random number generation`);
-    return generateFallbackNumber(apiType, currentYear);
+    return generateFallbackNumber(apiType);
   }
 }
 
 /**
  * Generate a fallback document number when API is unavailable
- * Format: TYPE-YYYY-XXXX where XXXX is random alphanumeric
+ * Format: TYPE-DDMMYYYY-XXXX where XXXX is random alphanumeric
  *
  * @param type - Document type code (e.g., 'INV', 'PRO')
- * @param year - Year for the number
  * @returns Fallback number string
  */
-function generateFallbackNumber(type: string, year: number): string {
+function generateFallbackNumber(type: string): string {
+  // Get today's date in DDMMYYYY format
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  const dateString = `${day}${month}${year}`;
+
   // Generate 4 random alphanumeric characters for fallback
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let random = '';
   for (let i = 0; i < 4; i++) {
     random += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  const fallbackNumber = `${type}-${year}-${random}`;
+  const fallbackNumber = `${type}-${dateString}-${random}`;
   console.warn(`[DOC_NUM] Generated FALLBACK number (API unavailable):`, fallbackNumber);
   return fallbackNumber;
 }

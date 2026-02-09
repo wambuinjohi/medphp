@@ -659,11 +659,10 @@ CREATE TABLE IF NOT EXISTS `migration_logs` (
 CREATE TABLE IF NOT EXISTS `document_sequences` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `document_type` CHAR(3) NOT NULL,
-  `year` INT NOT NULL,
   `sequence_number` INT DEFAULT 0,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY `unique_type_year` (`document_type`, `year`),
+  UNIQUE KEY `unique_document_type` (`document_type`),
   INDEX `idx_document_sequences_type` (`document_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
