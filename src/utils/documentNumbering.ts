@@ -46,7 +46,7 @@
  * - Response: { success: true, number: "INV-09022026-1", type: "INV", date: "09022026", sequence: 1 }
  *
  * Fallback Behavior (when API unavailable):
- * - Still returns valid format: TYPE-YYYY-RANDOM (e.g., INV-2026-A7K2)
+ * - Still returns valid format: TYPE-DDMMYYYY-RANDOM (e.g., INV-09022026-K7X2)
  * - Uses random alphanumeric characters (A-Z, 0-9) instead of sequential
  * - Prevents application crashes when API is down
  * - Logs warnings to console for monitoring
