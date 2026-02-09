@@ -662,9 +662,13 @@ Email: ${companyEmail}`;
             date: selectedQuotation.quotation_date,
             customer: selectedQuotation.customers,
             items: (selectedQuotation.quotation_items || []).map((item: any) => ({
+              product_id: item.product_id,
               description: item.description,
               quantity: item.quantity,
               unit_price: item.unit_price,
+              tax_percentage: item.tax_percentage,
+              tax_inclusive: item.tax_inclusive,
+              tax_amount: item.tax_amount,
               line_total: item.line_total,
             })),
             subtotal: selectedQuotation.subtotal || 0,
