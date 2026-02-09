@@ -8,7 +8,7 @@
  * ARCHITECTURE:
  * - Primary: Backend PHP API endpoint (/backend/api.php?action=get_next_document_number)
  * - Fallback: Client-side random alphanumeric generation (when API unavailable)
- * - Format: TYPE-YYYY-NNNN (e.g., INV-2026-0001, PRO-2026-0042, QT-2026-0115)
+ * - Format: TYPE-DDMMYYYY-N (e.g., INV-09022026-1, PRO-09022026-2, QT-10022026-3)
  *
  * SUPPORTED DOCUMENT TYPES:
  * - INV: Invoices (generateDocumentNumberAPI('invoice'))
