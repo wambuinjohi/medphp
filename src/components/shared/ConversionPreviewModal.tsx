@@ -175,17 +175,42 @@ export function ConversionPreviewModal({
   };
 
   const addProduct = (product: any) => {
-    const newItem = {
-      product_id: product.id,
-      description: product.name,
-      quantity: 1,
-      unit_price: product.price || 0,
-      tax_percentage: product.tax_percentage || 0,
-      tax_inclusive: product.tax_inclusive || false,
-    };
+    // Check if product already exists in items
+    const existingItemIndex = items.findIndex(item => item.product_id === product.id);
 
-    const result = calculateLineItemTotal(newItem);
-    setItems([...items, { ...newItem, tax_amount: result.tax_amount, line_total: result.line_total }]);
+    if (existingItemIndex > -1) {
+      // Increment quantity for existing item
+      const existingItem = items[existingItemIndex];
+      const newQuantity = (existingItem.quantity || 0) + 1;
+
+      const result = calculateLineItemTotal({
+        ...existingItem,
+        quantity: newQuantity,
+      });
+
+      const newItems = [...items];
+      newItems[existingItemIndex] = {
+        ...existingItem,
+        quantity: newQuantity,
+        tax_amount: result.tax_amount,
+        line_total: result.line_total
+      };
+      setItems(newItems);
+    } else {
+      // Add as new item
+      const newItem = {
+        product_id: product.id,
+        description: product.name,
+        quantity: 1,
+        unit_price: product.price || 0,
+        tax_percentage: product.tax_percentage || 0,
+        tax_inclusive: product.tax_inclusive || false,
+      };
+
+      const result = calculateLineItemTotal(newItem);
+      setItems([...items, { ...newItem, tax_amount: result.tax_amount, line_total: result.line_total }]);
+    }
+
     setSearchTerm('');
     setIsProductSearchOpen(false);
   };
@@ -248,85 +273,9 @@ export function ConversionPreviewModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Source and Destination Preview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Source Document */}
-            <Card className={`border-2 ${getDocumentTypeColor(sourceDocumentType)}`}>
-              <CardHeader>
-                <CardTitle className="text-base">{sourceLabel}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Document Number and Date */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground text-sm">Number</span>
-                    <span className="font-semibold">{sourceDocument.number}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground text-sm">Date</span>
-                    <span className="text-sm">{formatDate(sourceDocument.date)}</span>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Customer */}
-                {sourceDocument.customer && (
-                  <div className="space-y-2">
-                    <span className="text-muted-foreground text-sm block">Customer</span>
-                    <div className="font-medium">{sourceDocument.customer.name}</div>
-                    {sourceDocument.customer.email && (
-                      <div className="text-sm text-muted-foreground">{sourceDocument.customer.email}</div>
-                    )}
-                  </div>
-                )}
-
-                <Separator />
-
-                {/* Items Summary */}
-                <div className="space-y-2">
-                  <span className="text-muted-foreground text-sm block">
-                    Items ({itemCount})
-                  </span>
-                  {sourceDocument.items && sourceDocument.items.length > 0 ? (
-                    <div className="space-y-1 max-h-40 overflow-y-auto">
-                      {sourceDocument.items.map((item, index) => (
-                        <div key={index} className="flex justify-between items-start text-sm gap-2">
-                          <span className="text-muted-foreground truncate">
-                            {item.description}
-                          </span>
-                          <span className="text-right">
-                            {item.quantity} × {formatCurrency(item.unit_price)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No items</p>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* Amounts */}
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span>{formatCurrency(sourceDocument.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tax</span>
-                    <span>{formatCurrency(sourceDocument.tax_amount)}</span>
-                  </div>
-                  <div className="flex justify-between font-semibold text-base pt-2 border-t">
-                    <span>Total</span>
-                    <span>{formatCurrency(sourceDocument.total_amount)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
+        <div className="space-y-6 max-w-2xl mx-auto w-full">
+          {/* Destination Document Preview */}
+          <div className="grid grid-cols-1 gap-4">
             {/* Destination Document */}
             <Card className={`border-2 ${getDocumentTypeColor(destinationData.documentType)}`}>
               <CardHeader>
