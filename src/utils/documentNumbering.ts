@@ -242,20 +242,26 @@ export async function generateDocumentNumberAPI(
 
 /**
  * Generate a fallback document number when API is unavailable
- * Format: TYPE-YYYY-XXXX where XXXX is random alphanumeric
+ * Format: TYPE-DDMMYYYY-XXXX where XXXX is random alphanumeric
  *
  * @param type - Document type code (e.g., 'INV', 'PRO')
- * @param year - Year for the number
  * @returns Fallback number string
  */
-function generateFallbackNumber(type: string, year: number): string {
+function generateFallbackNumber(type: string): string {
+  // Get today's date in DDMMYYYY format
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  const dateString = `${day}${month}${year}`;
+
   // Generate 4 random alphanumeric characters for fallback
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let random = '';
   for (let i = 0; i < 4; i++) {
     random += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  const fallbackNumber = `${type}-${year}-${random}`;
+  const fallbackNumber = `${type}-${dateString}-${random}`;
   console.warn(`[DOC_NUM] Generated FALLBACK number (API unavailable):`, fallbackNumber);
   return fallbackNumber;
 }
