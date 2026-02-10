@@ -420,7 +420,7 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
           font-size: 10px;
           color: #333;
           border-top: 2px solid #000;
-          margin-top: 30px;
+          margin-top: auto;
           padding: 15px 0;
           line-height: 1.5;
         }
