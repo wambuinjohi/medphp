@@ -23,6 +23,7 @@ import { getUserFriendlyMessage, logError } from '@/utils/errorParser';
 import { parseErrorMessage } from '@/utils/errorHelpers';
 import { QuickSchemaFix } from '@/components/QuickSchemaFix';
 import { addCurrencyColumn, ADD_CURRENCY_COLUMN_SQL } from '@/utils/addCurrencyColumn';
+import { addPdfFooterColumns, ADD_PDF_FOOTER_COLUMNS_SQL } from '@/utils/addPdfFooterColumns';
 import { getDatabaseProvider } from '@/integrations/database';
 import { validateLogoUrl, addCacheBustingParam, sanitizeLogoUrl } from '@/utils/logoUploadUtils';
 import { uploadImage } from '@/utils/directFileUpload';
@@ -57,6 +58,7 @@ export default function CompanySettings() {
   const [uploading, setUploading] = useState(false);
   const [schemaError, setSchemaError] = useState<string | null>(null);
   const [fixingCurrency, setFixingCurrency] = useState(false);
+  const [fixingFooterColumns, setFixingFooterColumns] = useState(false);
   const [logoLoadError, setLogoLoadError] = useState(false);
   const [logoRefreshKey, setLogoRefreshKey] = useState(0); // Force re-render of logo image
   const [permissionError, setPermissionError] = useState<{ statusCode: number; message: string } | null>(null);
@@ -78,7 +80,10 @@ export default function CompanySettings() {
     website: '',
     logo_url: '',
     primary_color: '#FF8C42',
-    pdf_template: 'default'
+    pdf_template: 'default',
+    pdf_footer_line1: '',
+    pdf_footer_line2: '',
+    pdf_footer_enabled_docs: [] as string[]
   });
 
   const { currentCompany, isLoading: companiesLoading, error: companiesError } = useCurrentCompany();
@@ -119,6 +124,8 @@ export default function CompanySettings() {
       const errorString = String(companiesError);
       if (errorString.includes('currency') && (errorString.includes('column') || errorString.includes('schema cache'))) {
         setSchemaError('currency column missing');
+      } else if ((errorString.includes('pdf_footer_line1') || errorString.includes('pdf_footer_line2') || errorString.includes('pdf_footer_enabled_docs')) && (errorString.includes('column') || errorString.includes('schema cache'))) {
+        setSchemaError('pdf_footer columns missing');
       }
     }
   }, [companiesLoading, companiesError, currentCompany, taxSettings, taxSettingsLoading, taxSettingsError]);
@@ -141,7 +148,14 @@ export default function CompanySettings() {
         logo_url: currentCompany.logo_url || '',
         primary_color: currentCompany.primary_color || '#FF8C42',
         pdf_template: currentCompany.pdf_template || 'default',
-        website: currentCompany.website || ''
+        website: currentCompany.website || '',
+        pdf_footer_line1: currentCompany.pdf_footer_line1 || '',
+        pdf_footer_line2: currentCompany.pdf_footer_line2 || '',
+        pdf_footer_enabled_docs: Array.isArray(currentCompany.pdf_footer_enabled_docs)
+          ? currentCompany.pdf_footer_enabled_docs
+          : typeof currentCompany.pdf_footer_enabled_docs === 'string'
+            ? JSON.parse(currentCompany.pdf_footer_enabled_docs)
+            : []
       });
     }
   }, [currentCompany]);
@@ -306,6 +320,26 @@ export default function CompanySettings() {
     }
   };
 
+  const fixFooterColumns = async () => {
+    setFixingFooterColumns(true);
+    try {
+      const result = await addPdfFooterColumns();
+      if (result.success) {
+        toast.success('PDF footer columns added! You can now save company settings.');
+        setSchemaError(null);
+      } else {
+        toast.error(result.message);
+        // Copy SQL to clipboard for manual execution
+        navigator.clipboard.writeText(ADD_PDF_FOOTER_COLUMNS_SQL);
+        toast.info('SQL copied to clipboard for manual execution');
+      }
+    } catch (error) {
+      toast.error('Failed to add PDF footer columns');
+    } finally {
+      setFixingFooterColumns(false);
+    }
+  };
+
   const handleSaveCompany = async () => {
     // Perform validation before saving
     const validation = validateCompanyData(companyData);
@@ -332,7 +366,10 @@ export default function CompanySettings() {
         country: companyData.country?.trim() || 'Kenya',
         logo_url: companyData.logo_url?.trim() || null,
         primary_color: companyData.primary_color?.trim() || '#FF8C42',
-        pdf_template: companyData.pdf_template?.trim() || 'default'
+        pdf_template: companyData.pdf_template?.trim() || 'default',
+        pdf_footer_line1: companyData.pdf_footer_line1?.trim() || null,
+        pdf_footer_line2: companyData.pdf_footer_line2?.trim() || null,
+        pdf_footer_enabled_docs: companyData.pdf_footer_enabled_docs || []
       };
 
       // Include optional fields that exist in the schema
@@ -653,7 +690,7 @@ export default function CompanySettings() {
       )}
 
       {/* Simple Currency Column Fix - Show when schema errors are detected */}
-      {schemaError && !companiesError && (
+      {schemaError === 'currency column missing' && !companiesError && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -673,6 +710,31 @@ export default function CompanySettings() {
           </div>
           <p className="text-sm text-orange-700 mt-2">
             Click the button to add the missing currency column to the database.
+          </p>
+        </div>
+      )}
+
+      {/* PDF Footer Columns Fix */}
+      {schemaError === 'pdf_footer columns missing' && !companiesError && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-5 w-5 text-orange-600" />
+              <span className="font-medium text-orange-800">
+                PDF Footer columns missing from companies table
+              </span>
+            </div>
+            <Button
+              onClick={fixFooterColumns}
+              disabled={fixingFooterColumns}
+              size="sm"
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {fixingFooterColumns ? 'Adding...' : 'Add Footer Columns'}
+            </Button>
+          </div>
+          <p className="text-sm text-orange-700 mt-2">
+            Click the button to add the missing PDF footer columns to the database.
           </p>
         </div>
       )}
@@ -1123,6 +1185,78 @@ export default function CompanySettings() {
                       </Button>
                     </div>
                   ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* PDF Footer Customization */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle>PDF Footer Customization</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="pdf_footer_line1">Footer Line 1 (e.g. Mail & Tel)</Label>
+                    <Input
+                      id="pdf_footer_line1"
+                      value={companyData.pdf_footer_line1}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, pdf_footer_line1: e.target.value }))}
+                      placeholder="Mail:sales@heal.co.ke| info@heal.co.ke, Tel:+254 207 863 782 | +254 721 697 123"
+                    />
+                    <p className="text-xs text-muted-foreground">This line will appear centered below a horizontal line.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pdf_footer_line2">Footer Line 2 (e.g. Address)</Label>
+                    <Input
+                      id="pdf_footer_line2"
+                      value={companyData.pdf_footer_line2}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, pdf_footer_line2: e.target.value }))}
+                      placeholder="Naivasha Road, Kamrose Plaza, 1st Flr, Rm 14, P.O Box 61214-00200, Nairobi"
+                    />
+                    <p className="text-xs text-muted-foreground">This line will appear centered below Line 1.</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <Label>Enable custom footer for:</Label>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {[
+                      { id: 'quotation', label: 'Quotation' },
+                      { id: 'invoice', label: 'Invoice' },
+                      { id: 'proforma', label: 'Proforma Invoice' },
+                      { id: 'delivery', label: 'Delivery Note' },
+                      { id: 'receipt', label: 'Payment Receipt' },
+                      { id: 'lpo', label: 'LPO' },
+                      { id: 'statement', label: 'Customer Statement' },
+                      { id: 'remittance', label: 'Remittance Advice' },
+                    ].map((doc) => (
+                      <div key={doc.id} className="flex items-center space-x-2">
+                        <Switch
+                          id={`footer-${doc.id}`}
+                          checked={companyData.pdf_footer_enabled_docs?.includes(doc.id)}
+                          onCheckedChange={(checked) => {
+                            const current = [...(companyData.pdf_footer_enabled_docs || [])];
+                            if (checked) {
+                              if (!current.includes(doc.id)) {
+                                setCompanyData(prev => ({ ...prev, pdf_footer_enabled_docs: [...current, doc.id] }));
+                              }
+                            } else {
+                              setCompanyData(prev => ({ ...prev, pdf_footer_enabled_docs: current.filter(id => id !== doc.id) }));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`footer-${doc.id}`} className="text-xs cursor-pointer">{doc.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Select which document types should use this customized footer.
+                  </p>
                 </div>
               </div>
             </CardContent>
