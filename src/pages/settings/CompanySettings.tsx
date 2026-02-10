@@ -1209,9 +1209,8 @@ export default function CompanySettings() {
                     <Label htmlFor="pdf_footer_line1">Footer Line 1 (e.g. Mail & Tel)</Label>
                     <Input
                       id="pdf_footer_line1"
-                      value={companyData.pdf_footer_line1}
+                      value={companyData.pdf_footer_line1 || 'Mail:sales@heal.co.ke| info@heal.co.ke, Tel:+254 207 863 782 | +254 721 697 123'}
                       onChange={(e) => setCompanyData(prev => ({ ...prev, pdf_footer_line1: e.target.value }))}
-                      placeholder="Mail:sales@heal.co.ke| info@heal.co.ke, Tel:+254 207 863 782 | +254 721 697 123"
                     />
                     <p className="text-xs text-muted-foreground">This line will appear centered below a horizontal line.</p>
                   </div>
@@ -1219,9 +1218,8 @@ export default function CompanySettings() {
                     <Label htmlFor="pdf_footer_line2">Footer Line 2 (e.g. Address)</Label>
                     <Input
                       id="pdf_footer_line2"
-                      value={companyData.pdf_footer_line2}
+                      value={companyData.pdf_footer_line2 || 'Naivasha Road, Kamrose Plaza, 1st Flr, Rm 14, P.O Box 61214-00200, Nairobi'}
                       onChange={(e) => setCompanyData(prev => ({ ...prev, pdf_footer_line2: e.target.value }))}
-                      placeholder="Naivasha Road, Kamrose Plaza, 1st Flr, Rm 14, P.O Box 61214-00200, Nairobi"
                     />
                     <p className="text-xs text-muted-foreground">This line will appear centered below Line 1.</p>
                   </div>
