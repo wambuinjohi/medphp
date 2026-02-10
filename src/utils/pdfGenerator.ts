@@ -102,19 +102,19 @@ const DEFAULT_COMPANY: CompanyDetails = {
 
 // Default terms and conditions (extracted from provided invoice image)
 const DEFAULT_TERMS_TEXT = `
-  <div style="text-align:left; font-size:11px; color:#333; line-height:1.0; margin:0; padding:0;">
-    <div style="margin:0; padding:0; margin-bottom:5px;">
+  <div style="text-align:left; font-size:11px; color:#333; line-height:0.9; margin:0; padding:0;">
+    <div style="margin:0; padding:0; margin-bottom:1px;">
       <strong>Prepared By:</strong>……………………………………………………….………………….&nbsp;&nbsp;&nbsp;
       <strong>Checked By:</strong>………………………………………………...……….
     </div>
     <strong>Terms and regulations</strong>
-    <ol style="margin:5px 0; padding-left:18px; line-height:1.0;">
-      <li style="margin:3px 0; padding:0; line-height:1.0;">The company shall have general as well as particular lien on all goods for any unpaid A/C</li>
-      <li style="margin:3px 0; padding:0; line-height:1.0;">Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only</li>
-      <li style="margin:3px 0; padding:0; line-height:1.0;">Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be accepted back</li>
-      <li style="margin:3px 0; padding:0; line-height:1.0;">Where applicable, transport will be invoiced separately</li>
-      <li style="margin:3px 0; padding:0; line-height:1.0;">The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C</li>
-      <li style="margin:3px 0; padding:0; line-height:1.0;">The VAT is inclusive where applicable</li>
+    <ol style="margin:2px 0; padding-left:18px; line-height:0.9;">
+      <li style="margin:1px 0; padding:0; line-height:0.9;">The company shall have general as well as particular lien on all goods for any unpaid A/C</li>
+      <li style="margin:1px 0; padding:0; line-height:0.9;">Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only</li>
+      <li style="margin:1px 0; padding:0; line-height:0.9;">Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be accepted back</li>
+      <li style="margin:1px 0; padding:0; line-height:0.9;">Where applicable, transport will be invoiced separately</li>
+      <li style="margin:1px 0; padding:0; line-height:0.9;">The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C</li>
+      <li style="margin:1px 0; padding:0; line-height:0.9;">The VAT is inclusive where applicable</li>
     </ol>
   </div>
 `;
