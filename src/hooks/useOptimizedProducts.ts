@@ -337,8 +337,7 @@ export const useInventoryStats = (companyId?: string) => {
 
       try {
         const { data, error } = await apiClient.select('products', {
-          company_id: companyId,
-          is_active: true
+          company_id: companyId
         });
 
         if (error) {
