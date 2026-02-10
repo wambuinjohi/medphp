@@ -391,7 +391,7 @@ export default function CompanySettings() {
 
       // Remove empty strings and convert to null for optional fields
       Object.keys(sanitizedData).forEach(key => {
-        if (key !== 'name' && key !== 'country') {
+        if (key !== 'name' && key !== 'country' && key !== 'pdf_footer_enabled_docs') {
           if (sanitizedData[key] === '' || sanitizedData[key] === undefined) {
             sanitizedData[key] = null;
           }
