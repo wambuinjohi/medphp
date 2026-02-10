@@ -413,15 +413,13 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         }
         
         .footer {
-          position: absolute;
-          bottom: 20mm;
-          left: 20mm;
-          right: 20mm;
+          position: relative;
           text-align: center;
           font-size: 10px;
           color: #333;
           border-top: 2px solid #000;
-          padding-top: 10px;
+          margin-top: 30px;
+          padding: 15px 0;
           line-height: 1.5;
         }
         
