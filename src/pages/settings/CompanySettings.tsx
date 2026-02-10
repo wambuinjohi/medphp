@@ -153,8 +153,15 @@ export default function CompanySettings() {
         pdf_footer_line2: currentCompany.pdf_footer_line2 || '',
         pdf_footer_enabled_docs: Array.isArray(currentCompany.pdf_footer_enabled_docs)
           ? currentCompany.pdf_footer_enabled_docs
-          : typeof currentCompany.pdf_footer_enabled_docs === 'string'
-            ? JSON.parse(currentCompany.pdf_footer_enabled_docs)
+          : typeof currentCompany.pdf_footer_enabled_docs === 'string' && currentCompany.pdf_footer_enabled_docs.trim()
+            ? (() => {
+                try {
+                  return JSON.parse(currentCompany.pdf_footer_enabled_docs);
+                } catch (e) {
+                  console.error('Failed to parse pdf_footer_enabled_docs:', e);
+                  return [];
+                }
+              })()
             : []
       });
     }
