@@ -219,12 +219,14 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         
         .page {
           width: 210mm;
-          min-height: 297mm;
+          min-height: 100vh;
           margin: 0 auto;
           background: white;
           box-shadow: 0 0 10px rgba(0,0,0,0.1);
           padding: 20mm;
           position: relative;
+          display: flex;
+          flex-direction: column;
         }
         
         /* Template-specific header styles */
