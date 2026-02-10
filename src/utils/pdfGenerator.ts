@@ -102,19 +102,19 @@ const DEFAULT_COMPANY: CompanyDetails = {
 
 // Default terms and conditions (extracted from provided invoice image)
 const DEFAULT_TERMS_TEXT = `
-  <div style="text-align:left; font-size:11px; color:#333; line-height:1.0;">
-    <div style="margin-bottom:1px;">
+  <div style="text-align:left; font-size:11px; color:#333; line-height:1.6;">
+    <div style="margin-bottom:12px;">
       <strong>Prepared By:</strong>……………………………………………………….………………….&nbsp;&nbsp;&nbsp;
       <strong>Checked By:</strong>………………………………………………...……….
     </div>
     <strong>Terms and regulations</strong>
-    <ol style="margin-top:1px; margin-bottom:0; padding-left:18px; line-height:1.1;">
-      <li style="margin-bottom:0;">The company shall have general as well as particular lien on all goods for any unpaid A/C</li>
-      <li style="margin-bottom:0;">Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only</li>
-      <li style="margin-bottom:0;">Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be acceopted back</li>
-      <li style="margin-bottom:0;">Where applicable, transport will be invoiced seperately</li>
-      <li style="margin-bottom:0;">The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C</li>
-      <li>The VAT is inclusive where applicable</li>
+    <ol style="margin-top:12px; margin-bottom:12px; padding-left:18px; line-height:1.6;">
+      <li style="margin-bottom:8px;">The company shall have general as well as particular lien on all goods for any unpaid A/C</li>
+      <li style="margin-bottom:8px;">Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only</li>
+      <li style="margin-bottom:8px;">Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be accepted back</li>
+      <li style="margin-bottom:8px;">Where applicable, transport will be invoiced separately</li>
+      <li style="margin-bottom:8px;">The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C</li>
+      <li style="margin-bottom:0;">The VAT is inclusive where applicable</li>
     </ol>
   </div>
 `;
