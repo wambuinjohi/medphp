@@ -102,19 +102,18 @@ const DEFAULT_COMPANY: CompanyDetails = {
 
 // Default terms and conditions (extracted from provided invoice image)
 const DEFAULT_TERMS_TEXT = `
-  <div style="text-align:left; font-size:11px; color:#333; line-height:1.0;">
-    <div style="margin-bottom:1px;">
-      <strong>Prepared By:</strong>……………………………………………………….………………….&nbsp;&nbsp;&nbsp;
-      <strong>Checked By:</strong>………………………………………………...……….
+  <div style="text-align:left; font-size:11px; color:#333; line-height:0.8; margin:0; padding:0;">
+    <div style="margin:0; padding:0; margin-bottom:0;">
+      <strong>Prepared By:</strong>……………………………………………………….………………….&nbsp;&nbsp;&nbsp;<strong>Checked By:</strong>………………………………………………...……….
     </div>
-    <strong>Terms and regulations</strong>
-    <ol style="margin-top:1px; margin-bottom:0; padding-left:18px; line-height:1.1;">
-      <li style="margin-bottom:0;">The company shall have general as well as particular lien on all goods for any unpaid A/C</li>
-      <li style="margin-bottom:0;">Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only</li>
-      <li style="margin-bottom:0;">Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be acceopted back</li>
-      <li style="margin-bottom:0;">Where applicable, transport will be invoiced seperately</li>
-      <li style="margin-bottom:0;">The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C</li>
-      <li>The VAT is inclusive where applicable</li>
+    <strong style="margin:0; padding:0; line-height:0.7;">Terms and regulations</strong>
+    <ol style="margin:0; padding-left:18px; line-height:0.7;">
+      <li style="margin:0; padding:0; line-height:0.7;">The company shall have general as well as particular lien on all goods for any unpaid A/C</li>
+      <li style="margin:0; padding:0; line-height:0.7;">Cash transactions of any kind are not acceptable. All payments should be made by cheque , MPESA, or Bank transfer only</li>
+      <li style="margin:0; padding:0; line-height:0.7;">Claims and queries must be lodged with us within 21 days of dispatch of goods, otherwise they will not be accepted back</li>
+      <li style="margin:0; padding:0; line-height:0.7;">Where applicable, transport will be invoiced separately</li>
+      <li style="margin:0; padding:0; line-height:0.7;">The company will not be responsible for any loss or damage of goods on transit collected by the customer or sent via customer's courier A/C</li>
+      <li style="margin:0; padding:0; line-height:0.7;">The VAT is inclusive where applicable</li>
     </ol>
   </div>
 `;
@@ -219,12 +218,14 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         
         .page {
           width: 210mm;
-          min-height: 297mm;
+          min-height: 100vh;
           margin: 0 auto;
           background: white;
           box-shadow: 0 0 10px rgba(0,0,0,0.1);
           padding: 20mm;
           position: relative;
+          display: flex;
+          flex-direction: column;
         }
         
         /* Template-specific header styles */
@@ -259,7 +260,7 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         .items-table {
           width: 100%;
           border-collapse: collapse;
-          margin: 20px 0;
+          margin: 10px 0;
           font-size: 11px;
           border: 2px solid ${primaryColor};
           border-radius: 8px;
@@ -273,7 +274,7 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         }
 
         .items-table th {
-          padding: 8px 8px;
+          padding: 4px 6px;
           text-align: center;
           font-weight: bold;
           font-size: 10px;
@@ -288,7 +289,7 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         }
 
         .items-table td {
-          padding: 6px 8px;
+          padding: 3px 6px;
           border-bottom: 1px solid #e9ecef;
           border-right: 1px solid #e9ecef;
           text-align: center;
@@ -382,12 +383,12 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         }
         
         .notes-section {
-          margin-top: 30px;
+          margin-top: 8px;
           display: block;
         }
 
         .notes, .terms {
-          margin-bottom: 20px;
+          margin-bottom: 5px;
           padding: 0;
           background: transparent;
           border-radius: 0;
@@ -398,14 +399,14 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
           font-size: 11px;
           font-weight: bold;
           color: ${primaryColor};
-          margin: 0 0 8px 0;
+          margin: 0 0 3px 0;
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
         
         .notes-content, .terms-content {
           font-size: 10px;
-          line-height: 1.5;
+          line-height: 0.7;
           color: #333;
           white-space: pre-wrap;
           word-wrap: break-word;
@@ -413,15 +414,13 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         }
         
         .footer {
-          position: absolute;
-          bottom: 20mm;
-          left: 20mm;
-          right: 20mm;
+          position: relative;
           text-align: center;
           font-size: 10px;
           color: #333;
           border-top: 2px solid #000;
-          padding-top: 10px;
+          margin-top: auto;
+          padding: 15px 0;
           line-height: 1.5;
         }
         
@@ -783,7 +782,7 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         ` : ''}
 
         <!-- Terms & Conditions (invoice only) -->
-        ${data.type === 'invoice' ? `
+        ${(data.type === 'invoice' || data.type === 'proforma') ? `
         <div class="notes-section">
           <div class="terms">
             <div class="section-subtitle">Terms &amp; Conditions</div>
@@ -804,8 +803,10 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
 
             if (isEnabled && (company.pdf_footer_line1 || company.pdf_footer_line2)) {
               return `
-                <div style="font-weight: 500;">${company.pdf_footer_line1 || ''}</div>
-                <div style="margin-top: 2px;">${company.pdf_footer_line2 || ''}</div>
+                <div style="display: flex; flex-direction: column; gap: 4px; text-align: center;">
+                  ${company.pdf_footer_line1 ? `<div style="font-weight: 500; font-size: 10px;">${company.pdf_footer_line1}</div>` : ''}
+                  ${company.pdf_footer_line2 ? `<div style="font-size: 10px;">${company.pdf_footer_line2}</div>` : ''}
+                </div>
               `;
             }
 

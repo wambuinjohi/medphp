@@ -149,12 +149,19 @@ export default function CompanySettings() {
         primary_color: currentCompany.primary_color || '#FF8C42',
         pdf_template: currentCompany.pdf_template || 'default',
         website: currentCompany.website || '',
-        pdf_footer_line1: currentCompany.pdf_footer_line1 || '',
-        pdf_footer_line2: currentCompany.pdf_footer_line2 || '',
+        pdf_footer_line1: currentCompany.pdf_footer_line1 || 'Mail:sales@heal.co.ke| info@heal.co.ke, Tel:+254 207 863 782 | +254 721 697 123',
+        pdf_footer_line2: currentCompany.pdf_footer_line2 || 'Naivasha Road, Kamrose Plaza, 1st Flr, Rm 14, P.O Box 61214-00200, Nairobi',
         pdf_footer_enabled_docs: Array.isArray(currentCompany.pdf_footer_enabled_docs)
           ? currentCompany.pdf_footer_enabled_docs
-          : typeof currentCompany.pdf_footer_enabled_docs === 'string'
-            ? JSON.parse(currentCompany.pdf_footer_enabled_docs)
+          : typeof currentCompany.pdf_footer_enabled_docs === 'string' && currentCompany.pdf_footer_enabled_docs.trim()
+            ? (() => {
+                try {
+                  return JSON.parse(currentCompany.pdf_footer_enabled_docs);
+                } catch (e) {
+                  console.error('Failed to parse pdf_footer_enabled_docs:', e);
+                  return [];
+                }
+              })()
             : []
       });
     }
@@ -369,7 +376,7 @@ export default function CompanySettings() {
         pdf_template: companyData.pdf_template?.trim() || 'default',
         pdf_footer_line1: companyData.pdf_footer_line1?.trim() || null,
         pdf_footer_line2: companyData.pdf_footer_line2?.trim() || null,
-        pdf_footer_enabled_docs: companyData.pdf_footer_enabled_docs || []
+        pdf_footer_enabled_docs: JSON.stringify(companyData.pdf_footer_enabled_docs || [])
       };
 
       // Include optional fields that exist in the schema
@@ -391,7 +398,7 @@ export default function CompanySettings() {
 
       // Remove empty strings and convert to null for optional fields
       Object.keys(sanitizedData).forEach(key => {
-        if (key !== 'name' && key !== 'country') {
+        if (key !== 'name' && key !== 'country' && key !== 'pdf_footer_enabled_docs') {
           if (sanitizedData[key] === '' || sanitizedData[key] === undefined) {
             sanitizedData[key] = null;
           }
@@ -1204,7 +1211,6 @@ export default function CompanySettings() {
                       id="pdf_footer_line1"
                       value={companyData.pdf_footer_line1}
                       onChange={(e) => setCompanyData(prev => ({ ...prev, pdf_footer_line1: e.target.value }))}
-                      placeholder="Mail:sales@heal.co.ke| info@heal.co.ke, Tel:+254 207 863 782 | +254 721 697 123"
                     />
                     <p className="text-xs text-muted-foreground">This line will appear centered below a horizontal line.</p>
                   </div>
@@ -1214,7 +1220,6 @@ export default function CompanySettings() {
                       id="pdf_footer_line2"
                       value={companyData.pdf_footer_line2}
                       onChange={(e) => setCompanyData(prev => ({ ...prev, pdf_footer_line2: e.target.value }))}
-                      placeholder="Naivasha Road, Kamrose Plaza, 1st Flr, Rm 14, P.O Box 61214-00200, Nairobi"
                     />
                     <p className="text-xs text-muted-foreground">This line will appear centered below Line 1.</p>
                   </div>

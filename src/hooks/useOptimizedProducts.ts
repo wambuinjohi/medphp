@@ -39,8 +39,7 @@ export const useOptimizedProductSearch = (companyId?: string, enabled: boolean =
       try {
         // First get products without embedded relationships
         let filterObj: any = {
-          company_id: companyId,
-          is_active: true
+          company_id: companyId
         };
 
         // Add search filter if search term exists
@@ -125,8 +124,7 @@ export const usePopularProducts = (companyId?: string, limit: number = 20) => {
 
         // Get products without embedded relationships first
         const { data: products, error: productsError } = await apiClient.select('products', {
-          company_id: companyId,
-          is_active: true
+          company_id: companyId
         });
 
         if (productsError) {
@@ -339,8 +337,7 @@ export const useInventoryStats = (companyId?: string) => {
 
       try {
         const { data, error } = await apiClient.select('products', {
-          company_id: companyId,
-          is_active: true
+          company_id: companyId
         });
 
         if (error) {
