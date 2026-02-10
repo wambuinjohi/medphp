@@ -39,8 +39,7 @@ export const useOptimizedProductSearch = (companyId?: string, enabled: boolean =
       try {
         // First get products without embedded relationships
         let filterObj: any = {
-          company_id: companyId,
-          is_active: true
+          company_id: companyId
         };
 
         // Add search filter if search term exists
