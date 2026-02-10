@@ -78,7 +78,10 @@ export default function CompanySettings() {
     website: '',
     logo_url: '',
     primary_color: '#FF8C42',
-    pdf_template: 'default'
+    pdf_template: 'default',
+    pdf_footer_line1: '',
+    pdf_footer_line2: '',
+    pdf_footer_enabled_docs: [] as string[]
   });
 
   const { currentCompany, isLoading: companiesLoading, error: companiesError } = useCurrentCompany();
@@ -141,7 +144,14 @@ export default function CompanySettings() {
         logo_url: currentCompany.logo_url || '',
         primary_color: currentCompany.primary_color || '#FF8C42',
         pdf_template: currentCompany.pdf_template || 'default',
-        website: currentCompany.website || ''
+        website: currentCompany.website || '',
+        pdf_footer_line1: currentCompany.pdf_footer_line1 || '',
+        pdf_footer_line2: currentCompany.pdf_footer_line2 || '',
+        pdf_footer_enabled_docs: Array.isArray(currentCompany.pdf_footer_enabled_docs)
+          ? currentCompany.pdf_footer_enabled_docs
+          : typeof currentCompany.pdf_footer_enabled_docs === 'string'
+            ? JSON.parse(currentCompany.pdf_footer_enabled_docs)
+            : []
       });
     }
   }, [currentCompany]);
@@ -332,7 +342,10 @@ export default function CompanySettings() {
         country: companyData.country?.trim() || 'Kenya',
         logo_url: companyData.logo_url?.trim() || null,
         primary_color: companyData.primary_color?.trim() || '#FF8C42',
-        pdf_template: companyData.pdf_template?.trim() || 'default'
+        pdf_template: companyData.pdf_template?.trim() || 'default',
+        pdf_footer_line1: companyData.pdf_footer_line1?.trim() || null,
+        pdf_footer_line2: companyData.pdf_footer_line2?.trim() || null,
+        pdf_footer_enabled_docs: companyData.pdf_footer_enabled_docs || []
       };
 
       // Include optional fields that exist in the schema
@@ -1123,6 +1136,78 @@ export default function CompanySettings() {
                       </Button>
                     </div>
                   ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* PDF Footer Customization */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <CardTitle>PDF Footer Customization</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="pdf_footer_line1">Footer Line 1 (e.g. Mail & Tel)</Label>
+                    <Input
+                      id="pdf_footer_line1"
+                      value={companyData.pdf_footer_line1}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, pdf_footer_line1: e.target.value }))}
+                      placeholder="Mail:sales@heal.co.ke| info@heal.co.ke, Tel:+254 207 863 782 | +254 721 697 123"
+                    />
+                    <p className="text-xs text-muted-foreground">This line will appear centered below a horizontal line.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pdf_footer_line2">Footer Line 2 (e.g. Address)</Label>
+                    <Input
+                      id="pdf_footer_line2"
+                      value={companyData.pdf_footer_line2}
+                      onChange={(e) => setCompanyData(prev => ({ ...prev, pdf_footer_line2: e.target.value }))}
+                      placeholder="Naivasha Road, Kamrose Plaza, 1st Flr, Rm 14, P.O Box 61214-00200, Nairobi"
+                    />
+                    <p className="text-xs text-muted-foreground">This line will appear centered below Line 1.</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-3">
+                  <Label>Enable custom footer for:</Label>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {[
+                      { id: 'quotation', label: 'Quotation' },
+                      { id: 'invoice', label: 'Invoice' },
+                      { id: 'proforma', label: 'Proforma Invoice' },
+                      { id: 'delivery', label: 'Delivery Note' },
+                      { id: 'receipt', label: 'Payment Receipt' },
+                      { id: 'lpo', label: 'LPO' },
+                      { id: 'statement', label: 'Customer Statement' },
+                      { id: 'remittance', label: 'Remittance Advice' },
+                    ].map((doc) => (
+                      <div key={doc.id} className="flex items-center space-x-2">
+                        <Switch
+                          id={`footer-${doc.id}`}
+                          checked={companyData.pdf_footer_enabled_docs?.includes(doc.id)}
+                          onCheckedChange={(checked) => {
+                            const current = [...(companyData.pdf_footer_enabled_docs || [])];
+                            if (checked) {
+                              if (!current.includes(doc.id)) {
+                                setCompanyData(prev => ({ ...prev, pdf_footer_enabled_docs: [...current, doc.id] }));
+                              }
+                            } else {
+                              setCompanyData(prev => ({ ...prev, pdf_footer_enabled_docs: current.filter(id => id !== doc.id) }));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`footer-${doc.id}`} className="text-xs cursor-pointer">{doc.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Select which document types should use this customized footer.
+                  </p>
                 </div>
               </div>
             </CardContent>
