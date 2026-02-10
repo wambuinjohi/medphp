@@ -407,7 +407,7 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         
         .notes-content, .terms-content {
           font-size: 10px;
-          line-height: 1.5;
+          line-height: 1.1;
           color: #333;
           white-space: pre-wrap;
           word-wrap: break-word;
