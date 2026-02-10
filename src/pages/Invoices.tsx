@@ -262,7 +262,10 @@ export default function Invoices() {
         tax_number: currentCompany.tax_number,
         logo_url: currentCompany.logo_url,
         primary_color: currentCompany.primary_color,
-        pdf_template: currentCompany.pdf_template
+        pdf_template: currentCompany.pdf_template,
+        pdf_footer_line1: currentCompany.pdf_footer_line1,
+        pdf_footer_line2: currentCompany.pdf_footer_line2,
+        pdf_footer_enabled_docs: currentCompany.pdf_footer_enabled_docs
       } : undefined;
 
       await downloadInvoicePDF(enrichedInvoice, 'INVOICE', companyDetails);
