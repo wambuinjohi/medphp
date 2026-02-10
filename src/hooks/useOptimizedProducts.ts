@@ -124,8 +124,7 @@ export const usePopularProducts = (companyId?: string, limit: number = 20) => {
 
         // Get products without embedded relationships first
         const { data: products, error: productsError } = await apiClient.select('products', {
-          company_id: companyId,
-          is_active: true
+          company_id: companyId
         });
 
         if (productsError) {
