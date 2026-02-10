@@ -149,8 +149,8 @@ export default function CompanySettings() {
         primary_color: currentCompany.primary_color || '#FF8C42',
         pdf_template: currentCompany.pdf_template || 'default',
         website: currentCompany.website || '',
-        pdf_footer_line1: currentCompany.pdf_footer_line1 || '',
-        pdf_footer_line2: currentCompany.pdf_footer_line2 || '',
+        pdf_footer_line1: currentCompany.pdf_footer_line1 || 'Mail:sales@heal.co.ke| info@heal.co.ke, Tel:+254 207 863 782 | +254 721 697 123',
+        pdf_footer_line2: currentCompany.pdf_footer_line2 || 'Naivasha Road, Kamrose Plaza, 1st Flr, Rm 14, P.O Box 61214-00200, Nairobi',
         pdf_footer_enabled_docs: Array.isArray(currentCompany.pdf_footer_enabled_docs)
           ? currentCompany.pdf_footer_enabled_docs
           : typeof currentCompany.pdf_footer_enabled_docs === 'string' && currentCompany.pdf_footer_enabled_docs.trim()
