@@ -384,12 +384,12 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
         }
         
         .notes-section {
-          margin-top: 30px;
+          margin-top: 15px;
           display: block;
         }
 
         .notes, .terms {
-          margin-bottom: 20px;
+          margin-bottom: 5px;
           padding: 0;
           background: transparent;
           border-radius: 0;
