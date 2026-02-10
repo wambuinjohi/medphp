@@ -369,7 +369,7 @@ export default function CompanySettings() {
         pdf_template: companyData.pdf_template?.trim() || 'default',
         pdf_footer_line1: companyData.pdf_footer_line1?.trim() || null,
         pdf_footer_line2: companyData.pdf_footer_line2?.trim() || null,
-        pdf_footer_enabled_docs: companyData.pdf_footer_enabled_docs || []
+        pdf_footer_enabled_docs: JSON.stringify(companyData.pdf_footer_enabled_docs || [])
       };
 
       // Include optional fields that exist in the schema
