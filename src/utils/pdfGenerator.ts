@@ -83,6 +83,9 @@ interface CompanyDetails {
   logo_url?: string;
   primary_color?: string;
   pdf_template?: string;
+  pdf_footer_line1?: string;
+  pdf_footer_line2?: string;
+  pdf_footer_enabled_docs?: string[] | string;
 }
 
 // Default company details (fallback) - logo will be determined dynamically
@@ -416,9 +419,10 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
           right: 20mm;
           text-align: center;
           font-size: 10px;
-          color: #666;
-          border-top: 1px solid #e9ecef;
+          color: #333;
+          border-top: 2px solid #000;
           padding-top: 10px;
+          line-height: 1.5;
         }
         
         .delivery-info-section {
@@ -798,14 +802,33 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
 
         <!-- Footer -->
         <div class="footer">
-          ${data.type === 'proforma' ? '<em>This is a proforma invoice and not a request for payment</em>' : ''}
-          ${data.type === 'delivery' ? '<em>This delivery note confirms the items delivered and includes detailed line items</em>' : ''}
-          ${data.type === 'receipt' ? '<em>This receipt serves as proof of payment received and includes detailed line items breakdown</em>' : ''}
-          ${data.type === 'remittance' ? '<em>This remittance advice details payments made to your account with itemized breakdown</em>' : ''}
-          ${data.type === 'lpo' ? '<em>This Local Purchase Order serves as an official request for goods/services with detailed items</em>' : ''}
-          ${data.type === 'invoice' ? '<em>This invoice includes detailed line items and billing information</em>' : ''}
-          ${data.type === 'quotation' ? '<em>This quotation includes detailed line items and pricing breakdown</em>' : ''}
-          ${data.type === 'statement' ? '<em>This statement includes detailed transaction history</em>' : ''}
+          ${(() => {
+            const enabledDocs = company.pdf_footer_enabled_docs;
+            const isEnabled = Array.isArray(enabledDocs)
+              ? enabledDocs.includes(data.type)
+              : typeof enabledDocs === 'string'
+                ? JSON.parse(enabledDocs || '[]').includes(data.type)
+                : false;
+
+            if (isEnabled && (company.pdf_footer_line1 || company.pdf_footer_line2)) {
+              return `
+                <div style="font-weight: 500;">${company.pdf_footer_line1 || ''}</div>
+                <div style="margin-top: 2px;">${company.pdf_footer_line2 || ''}</div>
+              `;
+            }
+
+            // Fallback to default behavior
+            return `
+              ${data.type === 'proforma' ? '<em>This is a proforma invoice and not a request for payment</em>' : ''}
+              ${data.type === 'delivery' ? '<em>This delivery note confirms the items delivered and includes detailed line items</em>' : ''}
+              ${data.type === 'receipt' ? '<em>This receipt serves as proof of payment received and includes detailed line items breakdown</em>' : ''}
+              ${data.type === 'remittance' ? '<em>This remittance advice details payments made to your account with itemized breakdown</em>' : ''}
+              ${data.type === 'lpo' ? '<em>This Local Purchase Order serves as an official request for goods/services with detailed items</em>' : ''}
+              ${data.type === 'invoice' ? '<em>This invoice includes detailed line items and billing information</em>' : ''}
+              ${data.type === 'quotation' ? '<em>This quotation includes detailed line items and pricing breakdown</em>' : ''}
+              ${data.type === 'statement' ? '<em>This statement includes detailed transaction history</em>' : ''}
+            `;
+          })()}
         </div>
       </div>
     </body>
