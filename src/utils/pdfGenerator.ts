@@ -804,8 +804,10 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
 
             if (isEnabled && (company.pdf_footer_line1 || company.pdf_footer_line2)) {
               return `
-                <div style="font-weight: 500;">${company.pdf_footer_line1 || ''}</div>
-                <div style="margin-top: 2px;">${company.pdf_footer_line2 || ''}</div>
+                <div style="display: flex; flex-direction: column; gap: 4px; text-align: center;">
+                  ${company.pdf_footer_line1 ? `<div style="font-weight: 500; font-size: 10px;">${company.pdf_footer_line1}</div>` : ''}
+                  ${company.pdf_footer_line2 ? `<div style="font-size: 10px;">${company.pdf_footer_line2}</div>` : ''}
+                </div>
               `;
             }
 
