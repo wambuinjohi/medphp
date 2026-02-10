@@ -400,7 +400,7 @@ export const generatePDF = (data: DocumentData, downloadAsFile: boolean = true) 
           font-size: 11px;
           font-weight: bold;
           color: ${primaryColor};
-          margin: 0 0 8px 0;
+          margin: 0 0 3px 0;
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
