@@ -56,6 +56,7 @@ import { getDatabase } from '@/integrations/database';
 interface Invoice {
   id: string;
   invoice_number: string;
+  customer_id?: string;
   customers: {
     name: string;
     email?: string;
@@ -69,6 +70,11 @@ interface Invoice {
   invoice_items?: any[];
   created_by?: string;
   created_by_profile?: { full_name?: string } | null;
+  notes?: string;
+  terms_and_conditions?: string;
+  lpo_number?: string;
+  subtotal?: number;
+  tax_amount?: number;
 }
 
 function calculateActualStatus(invoice: Invoice): 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' {
