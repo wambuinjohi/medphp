@@ -102,9 +102,8 @@ const DEFAULT_COMPANY: CompanyDetails = {
 
 // Default terms and conditions
 const DEFAULT_TERMS_TEXT = `
-  <div style="text-align:left; font-size:11px; color:#333; line-height:1.2; margin:0; padding:0;">
-    <strong style="margin:0; padding:0; display:block; margin-bottom:8px;">Terms & Conditions</strong>
-    <ul style="margin:0; padding-left:20px; line-height:1.3;">
+  <div style="text-align:left; font-size:11px; color:#333; line-height:1.3; margin:0; padding:0;">
+    <ul style="margin:0; padding-left:20px; line-height:1.4;">
       <li style="margin:0; padding:0; margin-bottom:4px;">A 50% deposit is required before project commencement.</li>
       <li style="margin:0; padding:0; margin-bottom:4px;">The remaining 50% balance is payable upon project completion and before final deployment.</li>
       <li style="margin:0; padding:0; margin-bottom:4px;">All payments must be made via Bank Transfer or M-Pesa.</li>
