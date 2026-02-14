@@ -2,6 +2,12 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // CORS headers MUST be set IMMEDIATELY, before any output or logging
 // This ensures CORS headers are sent in all responses, including error responses
+//
+// CORS Configuration:
+// - Development: Allows localhost:3000-8080, localhost:5173 (Vite), and other dev ports
+// - Production: Set CORS_ALLOWED_ORIGINS environment variable with comma-separated domains
+// - Example: CORS_ALLOWED_ORIGINS="https://yoursite.com,https://app.yoursite.com"
+// - Debug Mode: Set APP_ENV=development or DEBUG=1 to allow all localhost origins
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Output buffering ensures headers can be sent even if content is already output
@@ -14,28 +20,53 @@ header("Content-Type: application/json; charset=utf-8");
 // Determine allowed origin
 // Allow localhost, 127.0.0.1, and any subdomain patterns needed for development
 $allowed_origins = [
+    // Local development
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:8000',
     'http://localhost:8080',
+    'http://localhost:5173',
     'http://127.0.0.1:3000',
     'http://127.0.0.1:3001',
     'http://127.0.0.1:8000',
     'http://127.0.0.1:8080',
+    'http://127.0.0.1:5173',
     'https://localhost:3000',
     'https://localhost:3001',
+    'https://localhost:5173',
     'https://127.0.0.1:3000',
-    'https://127.0.0.1:3001'
+    'https://127.0.0.1:3001',
+    'https://127.0.0.1:5173',
+    // Self-same origin
+    'https://med.wayrus.co.ke',
+    'http://med.wayrus.co.ke',
 ];
 
-// Check if origin is in allowed list or add environment-based origins
+// Get origin from request
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $is_allowed_origin = in_array($origin, $allowed_origins);
 
 // For production, also allow specific domains from environment variables
 if (!$is_allowed_origin && !empty($origin)) {
     $allowed_domains = explode(',', getenv('CORS_ALLOWED_ORIGINS') ?: '');
-    $is_allowed_origin = in_array($origin, array_map('trim', $allowed_domains));
+    $allowed_domains = array_map('trim', $allowed_domains);
+    $is_allowed_origin = in_array($origin, $allowed_domains);
+}
+
+// In development mode, allow any localhost/127.0.0.1 origin
+if (!$is_allowed_origin && !empty($origin)) {
+    // Check if it's a development environment
+    $is_dev = getenv('APP_ENV') === 'development' || getenv('APP_ENV') === 'dev' || getenv('DEBUG') === '1';
+    if ($is_dev) {
+        // Allow any localhost variant
+        if (preg_match('/^https?:\/\/(localhost|127\.0\.0\.1|::1):/i', $origin)) {
+            $is_allowed_origin = true;
+        }
+        // Allow any fly.dev or similar preview domains
+        if (preg_match('/\.fly\.dev$|\.vercel\.app$|\.netlify\.app$|localhost/i', $origin)) {
+            $is_allowed_origin = true;
+        }
+    }
 }
 
 // Set CORS response headers - allow credentials with specific origin (not wildcard)
