@@ -15,7 +15,7 @@ export default function NetworkDiagnosticsPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Network Diagnostics</h1>
             <p className="mt-2 text-gray-600">
-              Troubleshoot connectivity issues with med.wayrus.co.ke API
+              Troubleshoot connectivity issues with accounts.heal.co.ke API
             </p>
           </div>
           <Button

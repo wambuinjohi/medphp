@@ -19,8 +19,8 @@ export default defineConfig(({ mode }) => {
     apiUrl = 'http://localhost:3001';
     console.log('✅ Using LOCAL authentication server at http://localhost:3001');
   } else {
-    // Use the new external API endpoint at med.wayrus.co.ke (primary remote server)
-    apiUrl = 'https://med.wayrus.co.ke';
+    // Use the new external API endpoint at accounts.heal.co.ke (primary remote server)
+    apiUrl = 'https://accounts.heal.co.ke';
     // Remove trailing /api.php if present (we'll add it back in proxy config)
     apiUrl = apiUrl.replace(/\/api\.php$/, '');
     console.log(`🌐 Using REMOTE API: ${apiUrl}/api.php`);

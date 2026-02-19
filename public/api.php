@@ -38,8 +38,8 @@ $allowed_origins = [
     'https://127.0.0.1:3001',
     'https://127.0.0.1:5173',
     // Self-same origin
-    'https://med.wayrus.co.ke',
-    'http://med.wayrus.co.ke',
+    'https://accounts.heal.co.ke',
+    'http://accounts.heal.co.ke',
 ];
 
 // Get origin from request
@@ -124,18 +124,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Configuration Variables - med.wayrus.co.ke
+// Configuration Variables - accounts.heal.co.ke
 // JWT Configuration
 $JWT_SECRET = 'Sirgeorge.123';
 
 // Database Configuration
 $db_host = 'localhost';
-$db_user = 'wayrusc1_med';
+$db_user = 'hycmvsgn_healinvoices';
 $db_pass = 'Sirgeorge.12';
-$db_name = 'wayrusc1_med';
+$db_name = 'hycmvsgn_healinvoices';
 
 // Uploads Configuration
-$UPLOADS_DIR = '/home/wayrusc1/med.wayrus.co.ke/uploads';
+$UPLOADS_DIR = '/home/hycmvsgn/accounts.heal.co.ke/uploads';
 
 // Validate required database configuration
 if (!$db_host || !$db_user || !$db_pass || !$db_name) {
