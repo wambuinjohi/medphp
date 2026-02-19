@@ -88,7 +88,7 @@ export interface EtimsSubmissionsListResponse {
  * Get auth token from localStorage
  */
 function getAuthToken(): string {
-  return localStorage.getItem('auth_token') || '';
+  return localStorage.getItem('med_api_token') || '';
 }
 
 /**

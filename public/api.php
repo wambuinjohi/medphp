@@ -850,12 +850,17 @@ try {
 
     // Admin endpoint - promote user to admin or set specific role
     if ($action === "admin_promote_user" || $action === "set_user_role") {
-        // Require authentication
+        // Require authentication for modifications
         $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
         $token = null;
 
         if ($auth_header && preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
             $token = $matches[1];
+        }
+
+        // Fallback to POST/JSON token for compatibility
+        if (!$token) {
+            $token = $_POST['token'] ?? ($json_body['token'] ?? null);
         }
 
         if (!$token) {
@@ -912,12 +917,17 @@ try {
 
     // Admin endpoint - create user with specific role (admin only)
     if ($action === "admin_create_user") {
-        // Require authentication
+        // Require authentication for modifications
         $auth_header = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
         $token = null;
 
         if ($auth_header && preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
             $token = $matches[1];
+        }
+
+        // Fallback to POST/JSON token for compatibility
+        if (!$token) {
+            $token = $_POST['token'] ?? ($json_body['token'] ?? null);
         }
 
         if (!$token) {
@@ -1045,7 +1055,7 @@ try {
 
         // Fallback to POST data for compatibility
         if (!$token) {
-            $token = $_POST['token'] ?? null;
+            $token = $_POST['token'] ?? ($json_body['token'] ?? null);
         }
 
         // If no token provided, deny the operation
@@ -1309,7 +1319,7 @@ try {
 
         // Fallback to POST data for compatibility
         if (!$token) {
-            $token = $_POST['token'] ?? null;
+            $token = $_POST['token'] ?? ($json_body['token'] ?? null);
         }
 
         if (!$token) {
@@ -1803,6 +1813,11 @@ try {
 
             if ($auth_header && preg_match('/Bearer\s+(\S+)/', $auth_header, $matches)) {
                 $token = $matches[1];
+            }
+
+            // Fallback to POST/JSON token for compatibility
+            if (!$token) {
+                $token = $_POST['token'] ?? ($json_body['token'] ?? null);
             }
 
             if (!$token) {
