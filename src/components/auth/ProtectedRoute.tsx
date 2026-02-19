@@ -86,12 +86,16 @@ export function ProtectedRoute({
 
     if (!hasPermission) {
       // Show error toast
+      const permissionsList = Array.isArray(requiredPermissions)
+        ? requiredPermissions.join(', ')
+        : JSON.stringify(requiredPermissions);
+
       console.error('❌ [ProtectedRoute] Access denied:', {
         requiredPermissions,
         userRole: profile?.role,
-        message: `You do not have permission to access this page. Required: ${requiredPermissions.join(', ')}`
+        message: `You do not have permission to access this page. Required: ${permissionsList}`
       });
-      toast.error(`You do not have permission to access this page. Required: ${requiredPermissions.join(', ')}`);
+      toast.error(`You do not have permission to access this page. Required: ${permissionsList}`);
 
       return fallback || (
         <div className="flex items-center justify-center min-h-[400px]">
@@ -103,7 +107,7 @@ export function ProtectedRoute({
                 You do not have the required permissions to access this page.
               </p>
               <div className="text-sm text-muted-foreground mb-4 p-3 bg-muted rounded">
-                Required: {requiredPermissions.join(', ')}
+                Required: {Array.isArray(requiredPermissions) ? requiredPermissions.join(', ') : JSON.stringify(requiredPermissions)}
               </div>
               <Button onClick={() => window.location.href = '/app'}>
                 Go to Dashboard
