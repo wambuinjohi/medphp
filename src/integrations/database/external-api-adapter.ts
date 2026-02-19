@@ -37,7 +37,7 @@ export class ExternalAPIAdapter implements IDatabase {
 
       this.apiBase = this.externalApiUrl;
 
-      console.log('✅ Using external API at https://med.wayrus.co.ke/api.php');
+      console.log('✅ Using external API at https://accounts.heal.co.ke/api.php');
       console.log('📡 API endpoint:', this.apiBase);
 
       // NOTE: We no longer cache the token on construction.
@@ -181,6 +181,7 @@ export class ExternalAPIAdapter implements IDatabase {
   private async attemptTokenRefresh(): Promise<void> {
     try {
       const userId = localStorage.getItem('med_api_user_id');
+      const currentToken = this.getAuthToken();
 
       // Try primary refresh endpoint
       const refreshUrl = `${this.apiBase}?action=refresh_token`;
@@ -188,10 +189,15 @@ export class ExternalAPIAdapter implements IDatabase {
       console.log('🔄 Attempting token refresh with user_id:', userId?.substring(0, 8) + '...');
       console.log(`   Failed attempts so far: ${this.failedValidationAttempts}/3`);
 
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (currentToken) {
+        headers['Authorization'] = `Bearer ${currentToken}`;
+      }
+
       const response = await fetch(refreshUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId }),
+        headers,
+        body: JSON.stringify({ user_id: userId, token: currentToken }),
       });
 
       const result = await response.json().catch(() => null);
@@ -209,10 +215,16 @@ export class ExternalAPIAdapter implements IDatabase {
 
       // Try checking if we can validate with current token
       const checkUrl = `${this.apiBase}?action=check_auth`;
+      const currentToken = this.getAuthToken();
+      const checkHeaders: HeadersInit = { 'Content-Type': 'application/json' };
+      if (currentToken) {
+        checkHeaders['Authorization'] = `Bearer ${currentToken}`;
+      }
+
       const checkResponse = await fetch(checkUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: this.getAuthToken() }),
+        headers: checkHeaders,
+        body: JSON.stringify({ token: currentToken }),
       });
 
       const checkResult = await checkResponse.json().catch(() => null);
