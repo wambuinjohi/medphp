@@ -69,9 +69,9 @@ if ($check && $check->num_rows > 0) {
         exit();
     }
     
-    // Also update profile if it exists
+    // Also update profile if it exists (profiles table doesn't have password)
     $profile_sql = "UPDATE profiles SET role = '$role', status = 'active' WHERE id = $admin_id";
-    $conn->query($profile_sql);
+    @$conn->query($profile_sql); // Use @ to suppress error if profile doesn't exist
     
     $status = 'updated';
 } else {
