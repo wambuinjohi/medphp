@@ -215,16 +215,16 @@ export class ExternalAPIAdapter implements IDatabase {
 
       // Try checking if we can validate with current token
       const checkUrl = `${this.apiBase}?action=check_auth`;
-      const currentToken = this.getAuthToken();
+      const checkToken = this.getAuthToken();
       const checkHeaders: HeadersInit = { 'Content-Type': 'application/json' };
-      if (currentToken) {
-        checkHeaders['Authorization'] = `Bearer ${currentToken}`;
+      if (checkToken) {
+        checkHeaders['Authorization'] = `Bearer ${checkToken}`;
       }
 
       const checkResponse = await fetch(checkUrl, {
         method: 'POST',
         headers: checkHeaders,
-        body: JSON.stringify({ token: currentToken }),
+        body: JSON.stringify({ token: checkToken }),
       });
 
       const checkResult = await checkResponse.json().catch(() => null);
