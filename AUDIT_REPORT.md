@@ -172,7 +172,7 @@ The app implements hybrid environment detection:
    - **Local hosting:** If hostname is `localhost`, private IP (`10.x.x.x`, `192.168.x.x`, `172.16-31.x.x`), or `.local` domain
      - Returns: `protocol://hostname:port/api.php`
    - **Cloud hosting:** If hostname is public
-     - Returns: Explicit URL or fallback to `https://med.wayrus.co.ke/api.php`
+     - Returns: Explicit URL or fallback to `https://accounts.heal.co.ke/api.php`
 
 ### Supported Configurations
 

@@ -53,7 +53,7 @@ export default function NetworkDiagnosticsPage() {
               <li>
                 Try accessing the API directly from your browser:{' '}
                 <code className="bg-gray-100 px-2 py-1 rounded text-xs">
-                  https://med.wayrus.co.ke/api.php?action=health
+                  https://accounts.heal.co.ke/api.php?action=health
                 </code>
               </li>
             </ul>
