@@ -1,7 +1,7 @@
 <?php
 /**
  * Admin Setup Script
- * Creates or updates the admin user with credentials:
+ * Creates or updates the admin user with credentials and permissions:
  * Email: admin@mail.com
  * Password: Pass123
  */
@@ -23,6 +23,25 @@ if ($conn->connect_error) {
 }
 
 $conn->set_charset("utf8");
+
+// Admin permissions - full access to all features
+$adminPermissions = [
+    'create_quotation', 'view_quotation', 'edit_quotation', 'delete_quotation', 'export_quotation',
+    'create_invoice', 'view_invoice', 'edit_invoice', 'delete_invoice', 'export_invoice',
+    'create_credit_note', 'view_credit_note', 'edit_credit_note', 'delete_credit_note', 'export_credit_note',
+    'create_proforma', 'view_proforma', 'edit_proforma', 'delete_proforma', 'export_proforma',
+    'create_payment', 'view_payment', 'edit_payment', 'delete_payment',
+    'create_inventory', 'view_inventory', 'edit_inventory', 'delete_inventory', 'manage_inventory',
+    'view_reports', 'export_reports', 'view_customer_reports', 'view_inventory_reports', 'view_sales_reports',
+    'create_customer', 'view_customer', 'edit_customer', 'delete_customer',
+    'create_delivery_note', 'view_delivery_note', 'edit_delivery_note', 'delete_delivery_note',
+    'create_lpo', 'view_lpo', 'edit_lpo', 'delete_lpo',
+    'create_remittance', 'view_remittance', 'edit_remittance', 'delete_remittance',
+    'create_supplier', 'view_supplier', 'edit_supplier', 'delete_supplier',
+    'create_user', 'edit_user', 'delete_user', 'manage_users', 'approve_users', 'invite_users',
+    'manage_transport', 'view_transport',
+    'view_audit_logs', 'manage_roles', 'manage_permissions', 'access_settings',
+];
 
 // Hash password
 $email = 'admin@mail.com';
@@ -51,8 +70,8 @@ if ($check && $check->num_rows > 0) {
     }
     
     // Also update profile if it exists
-    $profile_sql = "UPDATE profiles SET password = '$hashedPassword', role = '$role' WHERE id = $admin_id";
-    $conn->query($profile_sql); // Don't fail if profile doesn't exist
+    $profile_sql = "UPDATE profiles SET role = '$role', status = 'active' WHERE id = $admin_id";
+    $conn->query($profile_sql);
     
     $status = 'updated';
 } else {
@@ -70,20 +89,40 @@ if ($check && $check->num_rows > 0) {
     
     // Also create profile entry
     $profile_sql = "INSERT INTO profiles (id, email, full_name, role, status) VALUES ($admin_id, '$email_escaped', 'Administrator', '$role', 'active')";
-    $conn->query($profile_sql); // Don't fail if profile creation fails
+    $conn->query($profile_sql);
     
     $status = 'created';
+}
+
+// Clear existing permissions for this user
+$conn->query("DELETE FROM user_permissions WHERE user_id = $admin_id");
+
+// Assign all admin permissions
+$permissionsAssigned = 0;
+$permissionsFailed = 0;
+
+foreach ($adminPermissions as $permission) {
+    $permission_escaped = $conn->real_escape_string($permission);
+    $insert_sql = "INSERT INTO user_permissions (user_id, permission_name, granted) 
+                   VALUES ($admin_id, '$permission_escaped', 1)";
+    if ($conn->query($insert_sql)) {
+        $permissionsAssigned++;
+    } else {
+        $permissionsFailed++;
+    }
 }
 
 // Output success message
 echo json_encode([
     'status' => 'success',
-    'message' => "Admin user successfully $status",
+    'message' => "Admin user successfully $status with full permissions",
     'email' => $email,
     'password' => $password,
     'role' => $role,
     'user_id' => $admin_id,
-    'note' => 'Admin credentials have been reset. You can now login with these credentials.'
+    'permissions_assigned' => $permissionsAssigned,
+    'permissions_failed' => $permissionsFailed,
+    'note' => 'Admin now has full access to all features including inventory management.'
 ]);
 
 $conn->close();
