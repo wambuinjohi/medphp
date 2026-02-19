@@ -61,7 +61,7 @@ getSharedExternalAdapter() [singleton]
     ↓
 ExternalAPIAdapter (login/logout/checkAuth)
     ↓
-fetch() → med.wayrus.co.ke/api.php?action=login
+fetch() → accounts.heal.co.ke/api.php?action=login
 ```
 
 ### Authentication Methods Implemented
@@ -106,7 +106,7 @@ getSharedExternalAdapter() [External API Adapter]
     ↓
 fetch(apiUrl?action=read&table=...) [POST request with filters]
     ↓
-med.wayrus.co.ke/api.php [Backend executes SELECT * FROM table]
+accounts.heal.co.ke/api.php [Backend executes SELECT * FROM table]
 ```
 
 ### CRUD Operations Supported
@@ -274,7 +274,7 @@ const response = await fetch(`${API_BASE_URL}?action=upload_file`, {
 ### File Upload URL Calculation
 ```typescript
 const UPLOAD_BASE_URL = API_BASE_URL.replace(/\/api\.php$/, '') + '/uploads';
-// Result: https://med.wayrus.co.ke/uploads
+// Result: https://accounts.heal.co.ke/uploads
 ```
 
 ### File Size Limits
@@ -362,7 +362,7 @@ initializeDatabase({ provider });
 
 | Provider | Adapter | API Endpoint | Used By |
 |----------|---------|---|---|
-| `'external-api'` | ExternalAPIAdapter | `med.wayrus.co.ke/api.php` | Main app (current) |
+| `'external-api'` | ExternalAPIAdapter | `accounts.heal.co.ke/api.php` | Main app (current) |
 | `'supabase'` | SupabaseAdapter | Points to external API shimmed as "supabase" | Not actively used |
 | `'mysql'` | MySQLAdapter | `/api/db/*` endpoints (server-side) | Tests only |
 

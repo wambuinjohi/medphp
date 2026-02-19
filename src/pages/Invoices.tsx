@@ -56,6 +56,7 @@ import { getDatabase } from '@/integrations/database';
 interface Invoice {
   id: string;
   invoice_number: string;
+  customer_id?: string;
   customers: {
     name: string;
     email?: string;
@@ -69,6 +70,11 @@ interface Invoice {
   invoice_items?: any[];
   created_by?: string;
   created_by_profile?: { full_name?: string } | null;
+  notes?: string;
+  terms_and_conditions?: string;
+  lpo_number?: string;
+  subtotal?: number;
+  tax_amount?: number;
 }
 
 function calculateActualStatus(invoice: Invoice): 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' {
@@ -231,7 +237,39 @@ export default function Invoices() {
       const result = await db.selectOne('invoices', invoice.id);
 
       if (result.error) throw result.error;
-      setSelectedInvoice(result.data as Invoice);
+
+      let enrichedInvoice: any = result.data;
+
+      // Fetch invoice items if not already included or empty
+      if (!enrichedInvoice.invoice_items || enrichedInvoice.invoice_items.length === 0) {
+        const itemsResult = await db.selectBy('invoice_items', { invoice_id: invoice.id });
+        if (!itemsResult.error && itemsResult.data) {
+          // Enrich items with product details
+          const enrichedItems = await Promise.all(
+            itemsResult.data.map(async (item: any) => {
+              if (item.product_id && !item.products) {
+                try {
+                  const { data: product } = await db.selectOne('products', item.product_id);
+                  return { ...item, products: product || {} };
+                } catch (e) {
+                  return item;
+                }
+              }
+              return item;
+            })
+          );
+          enrichedInvoice = { ...enrichedInvoice, invoice_items: enrichedItems };
+        }
+      }
+
+      console.log('Invoice loaded for editing:', {
+        id: enrichedInvoice.id,
+        invoice_number: enrichedInvoice.invoice_number,
+        terms_and_conditions: enrichedInvoice.terms_and_conditions,
+        items_count: enrichedInvoice.invoice_items?.length || 0
+      });
+
+      setSelectedInvoice(enrichedInvoice as Invoice);
       setShowEditModal(true);
     } catch (error) {
       console.error('Error fetching invoice data:', error);

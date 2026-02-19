@@ -14,8 +14,8 @@ Create a `.env` file in your project root:
 
 ```env
 # API Configuration
-VITE_API_URL=https://med.wayrus.co.ke
-VITE_EXTERNAL_API_URL=https://med.wayrus.co.ke/api.php
+VITE_API_URL=https://accounts.heal.co.ke
+VITE_EXTERNAL_API_URL=https://accounts.heal.co.ke/api.php
 ```
 
 **OR for local development:**
@@ -38,8 +38,8 @@ your-project/
 
 | Variable | Purpose | Example |
 |----------|---------|---------|
-| `VITE_API_URL` | Base URL of your API | `https://med.wayrus.co.ke` |
-| `VITE_EXTERNAL_API_URL` | Direct PHP API endpoint | `https://med.wayrus.co.ke/api.php` |
+| `VITE_API_URL` | Base URL of your API | `https://accounts.heal.co.ke` |
+| `VITE_EXTERNAL_API_URL` | Direct PHP API endpoint | `https://accounts.heal.co.ke/api.php` |
 
 ---
 
@@ -50,9 +50,9 @@ Create a `.env` file in your PHP application directory:
 ```env
 # Database
 DB_HOST=localhost
-DB_USER=wayrusc1_med
+DB_USER=hycmvsgn_healinvoices
 DB_PASS=your_password
-DB_NAME=wayrusc1_med
+DB_NAME=hycmvsgn_healinvoices
 
 # JWT
 JWT_SECRET=your_secret_key
@@ -71,7 +71,7 @@ ETIMS_PRODUCTION_API_KEY=your-production-key
 
 ### Backend Directory Structure
 ```
-/home/wayrusc1/med.wayrus.co.ke/
+/home/hycmvsgn/accounts.heal.co.ke/
 ├── .env             ← Create here (NOT in version control)
 ├── .env.example     ← In version control
 ├── public/
@@ -93,15 +93,15 @@ cp .env.example .env
 
 Edit `.env`:
 ```env
-VITE_API_URL=https://med.wayrus.co.ke
+VITE_API_URL=https://accounts.heal.co.ke
 ```
 
 ### 2. Backend (.env on server)
 
 **SSH into your server:**
 ```bash
-ssh user@med.wayrus.co.ke
-cd /home/wayrusc1/med.wayrus.co.ke
+ssh user@accounts.heal.co.ke
+cd /home/hycmvsgn/accounts.heal.co.ke
 cp .env.example .env
 nano .env  # or vim, edit with your values
 ```
@@ -120,13 +120,13 @@ ETIMS_SANDBOX_API_KEY=get-from-kra
 1. Press `F12` to open developer tools
 2. Go to Console tab
 3. Type: `window.location.origin`
-4. Should show: `https://med.wayrus.co.ke` or `http://localhost:8000`
+4. Should show: `https://accounts.heal.co.ke` or `http://localhost:8000`
 
 ### 4. Test API Connection
 
 **Test the status endpoint (no auth needed):**
 ```bash
-curl https://med.wayrus.co.ke/api?action=etims_status
+curl https://accounts.heal.co.ke/api?action=etims_status
 ```
 
 Should return:
@@ -221,8 +221,8 @@ const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
 
 **Solution:**
 ```
-Check: https://med.wayrus.co.ke/api?action=etims_status
-Not: https://med.wayrus.co.ke//api or https://med.wayrus.co.ke/api.php?action=
+Check: https://accounts.heal.co.ke/api?action=etims_status
+Not: https://accounts.heal.co.ke//api or https://accounts.heal.co.ke/api.php?action=
 ```
 
 ### Configuration Incomplete Error
@@ -232,7 +232,7 @@ Not: https://med.wayrus.co.ke//api or https://med.wayrus.co.ke/api.php?action=
 **Solution:**
 ```bash
 # SSH to server
-nano /home/wayrusc1/med.wayrus.co.ke/.env
+nano /home/hycmvsgn/accounts.heal.co.ke/.env
 
 # Add:
 ETIMS_ENV=sandbox
@@ -281,8 +281,8 @@ cat .env | grep VITE_API_URL
 
 ```bash
 # 1. Create backend .env
-ssh user@med.wayrus.co.ke << 'EOF'
-cd /home/wayrusc1/med.wayrus.co.ke
+ssh user@accounts.heal.co.ke << 'EOF'
+cd /home/hycmvsgn/accounts.heal.co.ke
 cat > .env << 'CONFIG'
 ETIMS_ENV=sandbox
 ETIMS_SANDBOX_URL=https://sandbox.etims.kra.go.ke/api/submit-sale
@@ -293,10 +293,10 @@ chmod 600 .env
 EOF
 
 # 2. Create frontend .env locally
-echo "VITE_API_URL=https://med.wayrus.co.ke" > .env
+echo "VITE_API_URL=https://accounts.heal.co.ke" > .env
 
 # 3. Test
-curl https://med.wayrus.co.ke/api?action=etims_status
+curl https://accounts.heal.co.ke/api?action=etims_status
 ```
 
 ---

@@ -89,21 +89,34 @@ export function EditInvoiceModal({ open, onOpenChange, onSuccess, invoice }: Edi
       setTermsAndConditions(invoice.terms_and_conditions || '');
 
       // Convert invoice items to local format
-      const invoiceItems = (invoice.invoice_items || []).map((item: any, index: number) => ({
-        id: item.id || `existing-${index}`,
-        product_id: item.product_id || '',
-        product_name: item.products?.name || 'Unknown Product',
-        description: item.description || '',
-        quantity: item.quantity || 0,
-        unit_price: item.unit_price || 0,
-        discount_percentage: item.discount_percentage || 0,
-        discount_before_vat: item.discount_before_vat || 0,
-        tax_percentage: item.tax_percentage || 16,
-        tax_amount: item.tax_amount || 0,
-        tax_inclusive: item.tax_inclusive || false,
-        line_total: item.line_total || 0,
-      }));
-      
+      const invoiceItems = (invoice.invoice_items || []).map((item: any, index: number) => {
+        // Get product name from multiple possible sources
+        const productName = item.products?.name || item.product_name || item.description || 'Unknown Product';
+
+        return {
+          id: item.id || `existing-${index}`,
+          product_id: item.product_id || '',
+          product_name: productName,
+          description: item.description || '',
+          quantity: item.quantity || 0,
+          unit_price: item.unit_price || 0,
+          discount_percentage: item.discount_percentage || 0,
+          discount_before_vat: item.discount_before_vat || 0,
+          tax_percentage: item.tax_percentage || 16,
+          tax_amount: item.tax_amount || 0,
+          tax_inclusive: item.tax_inclusive || false,
+          line_total: item.line_total || 0,
+        };
+      });
+
+      console.log('EditInvoiceModal - Loaded invoice data:', {
+        invoice_number: invoice.invoice_number,
+        terms_and_conditions: invoice.terms_and_conditions,
+        notes: invoice.notes,
+        items_count: invoiceItems.length,
+        first_item: invoiceItems[0]
+      });
+
       setItems(invoiceItems);
     }
   }, [invoice, open]);

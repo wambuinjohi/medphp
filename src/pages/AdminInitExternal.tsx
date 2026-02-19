@@ -23,7 +23,7 @@ export default function AdminInitExternal() {
   const [customPassword, setCustomPassword] = useState('Pass123');
   const [apiUrl, setApiUrl] = useState(() => {
     // Always use the new API endpoint, ensure it ends with /api.php
-    const url = 'https://med.wayrus.co.ke';
+    const url = 'https://accounts.heal.co.ke';
     return url.endsWith('/api.php') ? url : url + '/api.php';
   });
   const [showDiagnostics, setShowDiagnostics] = useState(false);

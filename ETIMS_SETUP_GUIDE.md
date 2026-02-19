@@ -27,7 +27,7 @@ KRA eTIMS API (Sandbox/Production)
 Run the eTIMS database migration:
 
 ```bash
-mysql -u wayrusc1_med -p wayrusc1_med < sql/08-etims-tables-mysql.sql
+mysql -u hycmvsgn_healinvoices -p hycmvsgn_healinvoices < sql/08-etims-tables-mysql.sql
 ```
 
 Or manually execute in your database manager.
@@ -37,12 +37,12 @@ Or manually execute in your database manager.
 Verify the three new tables were created:
 
 ```bash
-mysql wayrusc1_med -e "SHOW TABLES LIKE 'etims_%';"
+mysql hycmvsgn_healinvoices -e "SHOW TABLES LIKE 'etims_%';"
 ```
 
 Expected output:
 ```
-Tables_in_wayrusc1_med (etims_%)
+Tables_in_hycmvsgn_healinvoices (etims_%)
 etims_responses
 etims_sales
 etims_sync_logs
@@ -53,7 +53,7 @@ etims_sync_logs
 Check that the `etims_synced` column was added to invoices:
 
 ```bash
-mysql wayrusc1_med -e "DESCRIBE invoices;" | grep etims_synced
+mysql hycmvsgn_healinvoices -e "DESCRIBE invoices;" | grep etims_synced
 ```
 
 ---
@@ -109,7 +109,7 @@ ls -la public/api.php  # Should contain eTIMS endpoints
 
 **Test 1: Status Endpoint (Public)**
 ```bash
-curl -X GET "http://med.wayrus.co.ke/api?action=etims_status" \
+curl -X GET "http://accounts.heal.co.ke/api?action=etims_status" \
   -H "Content-Type: application/json"
 ```
 
@@ -134,7 +134,7 @@ Expected response:
 
 **Test 2: List Submissions (Requires Auth)**
 ```bash
-curl -X GET "http://med.wayrus.co.ke/api?action=etims_submissions_list" \
+curl -X GET "http://accounts.heal.co.ke/api?action=etims_submissions_list" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json"
 ```
@@ -176,7 +176,7 @@ export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost';
 
 In your `.env` or `.env.local`:
 ```env
-REACT_APP_API_URL=http://med.wayrus.co.ke
+REACT_APP_API_URL=http://accounts.heal.co.ke
 ```
 
 ---
@@ -227,7 +227,7 @@ In the admin dashboard:
 Query the audit logs to verify submissions:
 
 ```bash
-mysql wayrusc1_med -e "
+mysql hycmvsgn_healinvoices -e "
   SELECT action, action_status, created_at 
   FROM etims_sync_logs 
   ORDER BY created_at DESC 
